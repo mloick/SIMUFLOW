@@ -33,12 +33,25 @@ app.json        Configuration Expo (nom, icônes, plugins)
 | Commande | Rôle |
 | --- | --- |
 | `npm install` | Installer les dépendances |
-| `npx expo start` | Lancer le serveur de développement (QR code pour Expo Go, `i` pour le Simulateur iOS, `a` pour l'émulateur Android) |
+| `npx expo run:ios` | Compiler l'app avec Xcode (build de développement) et l'ouvrir dans le Simulateur iOS |
+| `npx expo run:ios --device` | Installer le build de développement sur un iPhone branché en USB |
+| `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
 
 Point connu : `npx tsc --noEmit` signale une erreur dans `src/components/app-tabs.web.tsx`, un fichier du modèle Expo réservé au web. Il disparaîtra avec les écrans de démonstration.
+
+## Build de développement
+
+L'app se teste avec un build de développement compilé par Xcode, et non avec Expo Go : le futur module natif de lecture de texte (Kotlin et Swift) ne peut pas tourner dans Expo Go. `npx expo run:ios` génère le dossier `ios/` (génération native continue), le compile et lance l'app. Les dossiers `ios/` et `android/` ne sont pas versionnés : la configuration native passe par `app.json` et les plugins de configuration.
+
+## Fichiers exclus du dépôt
+
+Le `.gitignore` exclut, en plus des fichiers générés :
+
+- les secrets : `.env` et ses variantes (sauf `.env.example`), clés et certificats (`*.key`, `*.p8`, `*.p12`, `*.pem`, `*.jks`, `*.keystore`, `*.mobileprovision`), `credentials.json`, `google-services.json`, `GoogleService-Info.plist` ;
+- l'état local de Claude Code : le dossier `.claude/` et `CLAUDE.local.md`. `CLAUDE.md` et `AGENTS.md` restent versionnés, car ils portent les règles du projet.
 
 ## Architecture visée
 
