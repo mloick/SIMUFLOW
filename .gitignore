@@ -30,8 +30,18 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# local env files and secrets (never commit keys or tokens)
+.env
+.env.*
+!.env.example
+credentials.json
+google-services.json
+GoogleService-Info.plist
+*.keystore
+
+# Claude Code state (local settings, sessions, worktrees)
+.claude/
+CLAUDE.local.md
 
 # typescript
 *.tsbuildinfo

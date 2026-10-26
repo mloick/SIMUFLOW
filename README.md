@@ -25,14 +25,16 @@ The full mockup is in [`docs/maquette/`](docs/maquette/).
 
 ## Getting started
 
-Requirements: Node.js 22.13 or later, and the Expo Go app on your phone.
+Requirements: a Mac with Xcode, and Node.js 22.13 or later.
 
 ```bash
 npm install
-npx expo start
+npx expo run:ios
 ```
 
-Scan the QR code with your phone camera to open the app in Expo Go. On a Mac with Xcode installed, press `i` to open the iOS Simulator.
+The app is compiled with Xcode (development build) and opens in the iOS Simulator. To install it on an iPhone plugged in over USB: `npx expo run:ios --device`. The `ios/` folder is generated automatically and is not committed.
+
+Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.claude/`) are kept out of the repository by `.gitignore`.
 
 ## Documentation
 

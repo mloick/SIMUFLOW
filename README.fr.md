@@ -25,14 +25,16 @@ La maquette complète est dans [`docs/maquette/`](docs/maquette/).
 
 ## Démarrer
 
-Prérequis : Node.js 22.13 ou plus récent, et l'application Expo Go sur le téléphone.
+Prérequis : un Mac avec Xcode, et Node.js 22.13 ou plus récent.
 
 ```bash
 npm install
-npx expo start
+npx expo run:ios
 ```
 
-Scannez le QR code avec l'appareil photo du téléphone pour ouvrir l'app dans Expo Go. Sur un Mac avec Xcode, appuyez sur `i` pour ouvrir le Simulateur iOS.
+L'app est compilée avec Xcode (build de développement) et s'ouvre dans le Simulateur iOS. Pour l'installer sur un iPhone branché en USB : `npx expo run:ios --device`. Le dossier `ios/` est généré automatiquement et n'est pas versionné.
+
+Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Claude Code (`.claude/`) sont exclus du dépôt par le `.gitignore`.
 
 ## Documentation
 
