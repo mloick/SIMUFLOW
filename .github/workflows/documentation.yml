@@ -1,0 +1,55 @@
+name: Documentation
+
+# À chaque push qui touche le code, Claude relit les changements et met à jour
+# README.md, README.fr.md, docs/technique.md et docs/fonctionnalites.md.
+# Les pushes qui ne changent que la documentation sont ignorés, ce qui évite
+# que le robot se relance sur ses propres commits.
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "README.fr.md"
+      - "docs/**"
+      - "CLAUDE.md"
+      - ".github/**"
+
+concurrency:
+  group: documentation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+    if: github.actor != 'claude[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            BRANCHE: ${{ github.ref_name }}
+            AVANT: ${{ github.event.before }}
+            APRÈS: ${{ github.sha }}
+
+            Du code vient d'être poussé sur cette branche. Lis CLAUDE.md, puis les
+            changements entre AVANT et APRÈS (si AVANT ne vaut que des zéros, compare
+            avec origin/main).
+
+            Mets à jour la documentation selon la règle « Documentation à tenir à jour »
+            de CLAUDE.md : README.md, README.fr.md, docs/technique.md,
+            docs/fonctionnalites.md. Ne touche qu'à ces quatre fichiers, et seulement
+            si les changements les concernent.
+
+            S'il y a quelque chose à changer, fais un seul commit intitulé
+            « Mettre à jour la documentation » et pousse-le sur la branche BRANCHE.
+            Sinon, ne fais rien.
+          claude_args: |
+            --max-turns 30
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*)"

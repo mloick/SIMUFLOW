@@ -1,56 +1,48 @@
 # SimuFlow
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+[Français](README.fr.md) · English
 
-## Get started
+SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. Import a draw.io diagram or photograph a process table, see the anomalies, then replay the process step by step by choosing each branch.
 
-1. Install dependencies
+> Status: early stage. The project currently contains the Expo starter app and the screen mockup. The simulator features are being built step by step.
 
-   ```bash
-   npm install
-   ```
+## Who it is for
 
-2. Start the app
+Project managers and analysts who design IT service management (ITSM) workflows with business teams. A static diagram is hard to validate: dead ends, one-way decisions and inconsistent delays show up too late. SimuFlow makes them visible in under a minute.
 
-   ```bash
-   npx expo start
-   ```
+## Key screens
 
-In the output, you'll find options to open the app in a
+- **Process**: the list of imported processes with their diagnostic status.
+- **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow.
+- **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+The full mockup is in [`docs/maquette/`](docs/maquette/).
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Phone features
 
-## Get a fresh project
+- Camera with on-device text recognition (native module in Kotlin and Swift).
+- Notifications when a shared process is validated or commented.
 
-When you're ready, run:
+## Getting started
+
+Requirements: Node.js 22.13 or later, and the Expo Go app on your phone.
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Scan the QR code with your phone camera to open the app in Expo Go. On a Mac with Xcode installed, press `i` to open the iOS Simulator.
 
-### Other setup steps
+## Documentation
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- [Technical documentation](docs/technique.md) (French): architecture, structure, commands.
+- [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
 
-## Learn more
+## Tech stack
 
-To learn more about developing your project with Expo, look at the following resources:
+Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## License
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+See [LICENSE](LICENSE).
