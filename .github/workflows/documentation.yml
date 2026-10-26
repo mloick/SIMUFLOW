@@ -4,6 +4,10 @@ name: Documentation
 # README.md, README.fr.md, docs/technique.md et docs/fonctionnalites.md.
 # Les pushes qui ne changent que la documentation sont ignorés, ce qui évite
 # que le robot se relance sur ses propres commits.
+#
+# claude-code-action n'accepte pas l'événement « push » : le job « declencher »
+# relance donc ce même workflow en « workflow_dispatch », et c'est ce second
+# passage qui exécute Claude.
 on:
   push:
     paths-ignore:
@@ -12,14 +16,39 @@ on:
       - "docs/**"
       - "CLAUDE.md"
       - ".github/**"
+  workflow_dispatch:
+    inputs:
+      avant:
+        description: "Commit avant le push"
+        required: false
+        default: ""
+      apres:
+        description: "Commit après le push"
+        required: false
+        default: ""
 
 concurrency:
-  group: documentation-${{ github.ref }}
+  group: documentation-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
+  declencher:
+    if: github.event_name == 'push' && github.actor != 'claude[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run documentation.yml \
+            --repo "${{ github.repository }}" \
+            --ref "${{ github.ref_name }}" \
+            -f avant="${{ github.event.before }}" \
+            -f apres="${{ github.sha }}"
+
   documentation:
-    if: github.actor != 'claude[bot]'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -35,12 +64,12 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             BRANCHE: ${{ github.ref_name }}
-            AVANT: ${{ github.event.before }}
-            APRÈS: ${{ github.sha }}
+            AVANT: ${{ inputs.avant }}
+            APRÈS: ${{ inputs.apres || github.sha }}
 
             Du code vient d'être poussé sur cette branche. Lis CLAUDE.md, puis les
-            changements entre AVANT et APRÈS (si AVANT ne vaut que des zéros, compare
-            avec origin/main).
+            changements entre AVANT et APRÈS (si AVANT est vide ou ne vaut que des
+            zéros, compare avec origin/main).
 
             Mets à jour la documentation selon la règle « Documentation à tenir à jour »
             de CLAUDE.md : README.md, README.fr.md, docs/technique.md,
