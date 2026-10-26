@@ -1,0 +1,528 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Maquette SimuFlow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>body{margin:0;background:#e9eef4;font-family:Inter,system-ui,sans-serif;color:#0b2540}header{padding:32px 24px 8px}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#4a5b70}
+main{display:flex;flex-wrap:wrap;gap:40px;padding:24px}.frame h2{font-size:15px;margin:0 0 10px;color:#4a5b70}.screen{border-radius:28px;overflow:hidden;box-shadow:0 10px 30px rgba(11,37,64,.15);background:#fff}</style></head>
+<body><header><h1>Maquette SimuFlow</h1><p>10 écrans · exemples fictifs · cliquez sur un bouton pour aller à l’écran lié.</p></header><main><section id="Main" class="frame"><h2>1 · Connexion</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; padding: 96px 24px 40px 24px; gap: 32px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
+<div style="width: 72px; height: 72px; border-radius: 20px; background: #007ec5; display: flex; align-items: center; justify-content: center">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="2"></circle><rect x="10" y="4" width="10" height="4" rx="1"></rect><path d="M12 12l3 3-3 3-3-3z"></path><circle cx="19" cy="19" r="2"></circle><path d="M7 6h3M15 8v4M15 18h2"></path></svg>
+</div>
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px">SimuFlow</h1>
+<p style="margin: 0; font-size: 16px; line-height: 24px; color: #4a5b70; text-align: center">Validez vos workflows en les rejouant pas à pas.</p>
+</div>
+<form style="display: flex; flex-direction: column; gap: 16px; background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(11,37,64,0.08)">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="email" style="font-size: 14px; font-weight: 600">Adresse e-mail</label>
+<input id="email" type="email" value="prenom.nom@exemple.fr" style="height: 48px; box-sizing: border-box; border: 1px solid #c3d0de; border-radius: 12px; padding: 0 14px; font-size: 16px; font-family: inherit; color: #0b2540; background: #ffffff">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="mdp" style="font-size: 14px; font-weight: 600">Mot de passe</label>
+<input id="mdp" type="password" value="motdepasse" style="height: 48px; box-sizing: border-box; border: 1px solid #c3d0de; border-radius: 12px; padding: 0 14px; font-size: 16px; font-family: inherit; color: #0b2540; background: #ffffff">
+</div>
+<button type="button" style="height: 52px; border: none; border-radius: 12px; background: #007ec5; color: #ffffff; font-size: 16px; font-weight: 600; font-family: inherit">Se connecter</button>
+<a href="#" style="font-size: 14px; text-align: center; padding: 12px 0">Mot de passe oublié ?</a>
+</form>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: auto">
+<p style="margin: 0; font-size: 15px; color: #4a5b70">Pas encore de compte ?</p>
+<button type="button" style="height: 48px; padding: 0 24px; border: 1px solid #007ec5; border-radius: 12px; background: transparent; color: #006aa6; font-size: 16px; font-weight: 600; font-family: inherit">Créer un compte</button>
+<a href="#" style="font-size: 13px; padding: 12px 0">Politique de confidentialité</a>
+</div>
+</div>
+</div></section><section id="Process" class="frame"><h2>2 · Onglet Process (liste)</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; position: relative">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 64px 16px 12px 16px">
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px">Process</h1>
+<label for="recherche" style="position: absolute; left: -9999px">Rechercher un process</label>
+<div style="display: flex; align-items: center; gap: 8px; height: 44px; background: #e3eaf2; border-radius: 12px; padding: 0 12px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+<input id="recherche" type="search" placeholder="Rechercher un process" style="flex: 1; border: none; background: transparent; font-size: 16px; font-family: inherit; color: #0b2540; min-width: 0">
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px 16px">
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #ffffff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(11,37,64,0.06); text-decoration: none; color: #0b2540">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Demande d'accès</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #4a5b70">6 étapes · 1 décision · 2 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e2f5ee; color: #0b6b4b">Aucune anomalie</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #eef3f8; color: #4a5b70">draw.io</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #ffffff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(11,37,64,0.06); text-decoration: none; color: #0b2540">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Gestion d’un incident</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #4a5b70">14 étapes · 3 décisions · 4 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #fdeedf; color: #9a4510">2 avertissements</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #eef3f8; color: #4a5b70">draw.io</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #ffffff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(11,37,64,0.06); text-decoration: none; color: #0b2540">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Commande de matériel</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #4a5b70">8 étapes · 2 décisions · 3 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #fbe3e1; color: #a8261b">1 erreur</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #eef3f8; color: #4a5b70">Scan</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #ffffff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(11,37,64,0.06); text-decoration: none; color: #0b2540">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Changement standard</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #4a5b70">5 étapes · 1 décision · 2 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #e2f5ee; color: #0b6b4b">Aucune anomalie</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #eef3f8; color: #4a5b70">Scan</span>
+</div>
+</a>
+
+</div>
+<a href="#Import" aria-label="Ajouter un process" style="position: absolute; right: 20px; bottom: 112px; width: 60px; height: 60px; border-radius: 30px; background: #007ec5; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,126,197,0.35)">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</a>
+<nav aria-label="Onglets" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 8px 0 24px 0; background: #ffffff; border-top: 1px solid #dde5ee; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<a href="#Process" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #006aa6; font-size: 12px; font-weight: 600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1"></rect><rect x="14" y="15" width="7" height="5" rx="1"></rect><path d="M6.5 9v4.5h11V15"></path></svg>Process</a>
+<a href="#Scanner" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4a5b70; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M8 10h8M8 14h5"></path></svg>Scanner</a>
+<a href="#Profil" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4a5b70; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profil</a>
+</nav>
+</div>
+</div></section><section id="Detail" class="frame"><h2>3 · Détail d'un process</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; gap: 16px; padding: 56px 16px 24px 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="#Process" style="display: flex; align-items: center; gap: 2px; min-height: 44px; font-size: 17px; text-decoration: none">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Process</a>
+<button type="button" aria-label="Partager le process" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"></path><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"></path></svg>
+</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.4px">Gestion d’un incident</h1>
+<p style="margin: 0; font-size: 14px; color: #4a5b70">Importé depuis draw.io · page 1 sur 2</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 700">14</span><span style="font-size: 13px; color: #4a5b70">étapes</span></div>
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 700">3</span><span style="font-size: 13px; color: #4a5b70">décisions</span></div>
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 700">9</span><span style="font-size: 13px; color: #4a5b70">chemins possibles</span></div>
+<div style="background: #fdeedf; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 26px; font-weight: 700; color: #9a4510">2</span><span style="font-size: 13px; color: #9a4510">points à corriger</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #4a5b70">Acteurs</h2>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 14px; padding: 6px 12px; border-radius: 999px; background: #dff0fa; color: #0b2540">Service A</span>
+<span style="font-size: 14px; padding: 6px 12px; border-radius: 999px; background: #dff0fa; color: #0b2540">Service B</span>
+<span style="font-size: 14px; padding: 6px 12px; border-radius: 999px; background: #dff0fa; color: #0b2540">Support N2</span>
+<span style="font-size: 14px; padding: 6px 12px; border-radius: 999px; background: #dff0fa; color: #0b2540">Demandeur</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #4a5b70">Diagnostic</h2>
+<div style="background: #ffffff; border-radius: 14px; display: flex; flex-direction: column">
+<div style="display: flex; gap: 12px; align-items: flex-start; padding: 14px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c45a12" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">Impasse</span><span style="font-size: 14px; color: #4a5b70">« Escalader au N3 » n’a aucune sortie.</span></div>
+<button type="button" style="min-height: 44px; padding: 0 8px; border: none; background: transparent; color: #006aa6; font-size: 15px; font-weight: 600; font-family: inherit">Voir</button>
+</div>
+<div style="height: 1px; background: #e6edf4; margin-left: 46px"></div>
+<div style="display: flex; gap: 12px; align-items: flex-start; padding: 14px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c45a12" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">Branche sans étiquette</span><span style="font-size: 14px; color: #4a5b70">Décision « Résolu ? » : une sortie n’a pas de libellé.</span></div>
+<button type="button" style="min-height: 44px; padding: 0 8px; border: none; background: transparent; color: #006aa6; font-size: 15px; font-weight: 600; font-family: inherit">Voir</button>
+</div>
+<div style="height: 1px; background: #e6edf4; margin-left: 14px"></div>
+<button type="button" style="display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 14px; border: none; background: transparent; font-family: inherit; font-size: 14px; color: #4a5b70">3 informations repliées<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+</div>
+</div>
+<a href="#Simulation" style="margin-top: auto; height: 54px; border-radius: 14px; background: #007ec5; color: #ffffff; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff" aria-hidden="true"><path d="M7 4v16l13-8z"></path></svg>Lancer la simulation</a>
+</div>
+</div></section><section id="Simulation" class="frame"><h2>4 · Simulation</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; position: relative; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 56px 8px 8px 8px">
+<a href="#Detail" style="display: flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px; font-size: 17px; text-decoration: none">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Détail</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 600">Simulation</h1>
+<button type="button" aria-label="Plein écran pour la présentation" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg>
+</button>
+</div>
+<div style="display: flex; gap: 8px; padding: 0 16px 10px 16px">
+<button type="button" style="flex: 1; height: 40px; border: none; border-radius: 10px; background: #007ec5; color: #ffffff; font-size: 14px; font-weight: 600; font-family: inherit">Pas à pas</button>
+<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Cas simple</button>
+<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Cas complexe</button>
+</div>
+<div role="img" aria-label="Schéma du process, l’étape courante est la décision Résolu ?" style="margin: 0 16px; height: 300px; background: #ffffff; border-radius: 16px; position: relative">
+<div style="position: absolute; left: 179px; top: 36px; width: 2px; height: 210px; background: #007ec5"></div>
+<div style="position: absolute; left: 180px; top: 246px; width: 120px; height: 2px; background: #c3d0de"></div>
+<div style="position: absolute; left: 60px; top: 246px; width: 120px; height: 2px; background: #c3d0de"></div>
+<div style="position: absolute; left: 140px; top: 16px; width: 80px; height: 32px; border-radius: 16px; background: #1b3a6b; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">Début</div>
+<div style="position: absolute; left: 105px; top: 68px; width: 150px; height: 42px; border-radius: 10px; background: #007ec5; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center">Qualifier (1 JO)</div>
+<div style="position: absolute; left: 105px; top: 130px; width: 150px; height: 42px; border-radius: 10px; background: #007ec5; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center">Diagnostiquer (2 JO)</div>
+<div style="position: absolute; left: 152px; top: 190px; width: 56px; height: 56px; transform: rotate(45deg); background: #f2b632; box-shadow: 0 0 0 6px rgba(0,166,224,0.35)"></div>
+<div style="position: absolute; left: 130px; top: 208px; width: 100px; font-size: 11px; font-weight: 700; text-align: center; color: #0b2540">Résolu ?</div>
+<div style="position: absolute; left: 12px; top: 256px; width: 96px; height: 34px; border-radius: 10px; border: 1px dashed #c3d0de; color: #7b8a9c; font-size: 11px; display: flex; align-items: center; justify-content: center">Clôturer</div>
+<div style="position: absolute; left: 252px; top: 256px; width: 96px; height: 34px; border-radius: 10px; border: 1px dashed #c3d0de; color: #7b8a9c; font-size: 11px; display: flex; align-items: center; justify-content: center">Escalader N3</div>
+<span style="position: absolute; left: 64px; top: 228px; font-size: 11px; color: #7b8a9c">Oui</span>
+<span style="position: absolute; left: 278px; top: 228px; font-size: 11px; color: #7b8a9c">Non</span>
+</div>
+<div aria-live="polite" style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #4a5b70">Déroulé · 3 JO cumulés</h2>
+<div style="display: flex; align-items: center; gap: 10px; background: #ffffff; border-radius: 12px; padding: 10px 12px"><span style="width: 10px; height: 10px; border-radius: 5px; background: #1b3a6b"></span><span style="font-size: 14px; flex: 1">Début</span><span style="font-size: 13px; color: #4a5b70">Demandeur</span></div>
+<div style="display: flex; align-items: center; gap: 10px; background: #ffffff; border-radius: 12px; padding: 10px 12px"><span style="width: 10px; height: 10px; border-radius: 5px; background: #007ec5"></span><span style="font-size: 14px; flex: 1">Qualifier · 1 JO</span><span style="font-size: 13px; color: #4a5b70">Service A</span></div>
+<div style="display: flex; align-items: center; gap: 10px; background: #ffffff; border-radius: 12px; padding: 10px 12px"><span style="width: 10px; height: 10px; border-radius: 5px; background: #007ec5"></span><span style="font-size: 14px; flex: 1">Diagnostiquer · 2 JO</span><span style="font-size: 13px; color: #4a5b70">Support N2</span></div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; background: #ffffff; border-radius: 22px 22px 0 0; box-shadow: 0 -8px 24px rgba(11,37,64,0.12); padding: 10px 16px 34px 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: #c3d0de"></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600; color: #8a5a00">Décision · Support N2</span>
+<h3 style="margin: 0; font-size: 20px; font-weight: 700">Le problème est-il résolu ?</h3>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button type="button" style="height: 52px; border: none; border-radius: 12px; background: #007ec5; color: #ffffff; font-size: 16px; font-weight: 600; font-family: inherit">Oui</button>
+<button type="button" style="height: 52px; border: none; border-radius: 12px; background: #007ec5; color: #ffffff; font-size: 16px; font-weight: 600; font-family: inherit">Non</button>
+</div>
+<button type="button" style="height: 44px; border: none; background: transparent; color: #006aa6; font-size: 15px; font-weight: 600; font-family: inherit">Suivre les deux branches</button>
+</div>
+</div>
+</div></section><section id="Import" class="frame"><h2>5 · Modale Importer</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #8a96a5; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; justify-content: flex-end">
+<div style="height: 784px; box-sizing: border-box; background: #f2f6fa; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; gap: 20px; padding: 10px 16px 34px 16px">
+<div style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: #c3d0de"></div>
+<div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+<a href="#Process" style="min-height: 44px; display: flex; align-items: center; font-size: 17px; text-decoration: none">Annuler</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 600">Nouveau process</h1>
+<span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="nom" style="font-size: 14px; font-weight: 600">Nom du process</label>
+<input id="nom" type="text" value="" aria-invalid="true" aria-describedby="nom-erreur" style="height: 48px; box-sizing: border-box; border: 2px solid #d23b2e; border-radius: 12px; padding: 0 14px; font-size: 16px; font-family: inherit; background: #ffffff; color: #0b2540">
+<span id="nom-erreur" style="font-size: 13px; color: #a8261b">Le nom est obligatoire.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #4a5b70">Source</h2>
+<button type="button" style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 2px solid #007ec5; border-radius: 14px; background: #ffffff; font-family: inherit; text-align: left">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #dff0fa; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"></path><path d="M14 3v5h5"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 16px; font-weight: 600; color: #0b2540">Fichier draw.io</span><span style="font-size: 14px; color: #4a5b70">Depuis Fichiers, un mail ou Drive</span></span>
+</button>
+<a href="#Scanner" style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #c3d0de; border-radius: 14px; background: #ffffff; text-decoration: none">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #dff0fa; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 16px; font-weight: 600; color: #0b2540">Scanner un tableau</span><span style="font-size: 14px; color: #4a5b70">Photo d’un tableau étape, acteur, délai</span></span>
+</a>
+<button type="button" style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #c3d0de; border-radius: 14px; background: #ffffff; font-family: inherit; text-align: left">
+<span style="width: 44px; height: 44px; border-radius: 12px; background: #dff0fa; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4c-2 0-2 2-2 4s-2 4-2 4 2 0 2 4 0 4 2 4M16 4c2 0 2 2 2 4s2 4 2 4-2 0-2 4 0 4-2 4"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 16px; font-weight: 600; color: #0b2540">Fichier JSON</span><span style="font-size: 14px; color: #4a5b70">Export d’un autre SimuFlow</span></span>
+</button>
+</div>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<p style="margin: 0; font-size: 14px; color: #4a5b70">Fichier choisi : incident-v3.drawio · 2 pages</p>
+<button type="button" style="height: 54px; border: none; border-radius: 14px; background: #007ec5; color: #ffffff; font-size: 17px; font-weight: 600; font-family: inherit">Importer</button>
+</div>
+</div>
+</div>
+</div></section><section id="Scanner" class="frame"><h2>6 · Onglet Scanner</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #10161d; font-family: Inter, system-ui, sans-serif; color: #ffffff; display: flex; flex-direction: column; position: relative">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 64px 20px 16px 20px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">Scanner</h1>
+<p style="margin: 0; font-size: 15px; line-height: 22px; color: #c9d4e0">Cadrez un tableau avec une colonne par information : étape, acteur, délai.</p>
+</div>
+<div role="img" aria-label="Aperçu de la caméra : un tableau de process est détecté" style="margin: 0 20px; height: 380px; border-radius: 18px; background: #2a333d; position: relative; display: flex; align-items: center; justify-content: center">
+<div style="width: 290px; background: #f4f1ea; border-radius: 4px; transform: rotate(-2deg); padding: 12px; display: grid; grid-template-columns: 1.6fr 1fr 0.7fr; gap: 6px; color: #333333; font-size: 11px">
+<span style="font-weight: 700; outline: 2px solid #00a6e0; outline-offset: 1px">Étape</span><span style="font-weight: 700; outline: 2px solid #00a6e0; outline-offset: 1px">Acteur</span><span style="font-weight: 700; outline: 2px solid #00a6e0; outline-offset: 1px">Délai</span>
+<span style="outline: 2px solid #00a6e0; outline-offset: 1px">Recevoir la demande</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">Accueil</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">0,5 JO</span>
+<span style="outline: 2px solid #00a6e0; outline-offset: 1px">Valider le besoin</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">Manager</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">1 JO</span>
+<span style="outline: 2px solid #00a6e0; outline-offset: 1px">Commander</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">Achats</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">3 JO</span>
+<span style="outline: 2px solid #00a6e0; outline-offset: 1px">Livrer et clôturer</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">Logistique</span><span style="outline: 2px solid #00a6e0; outline-offset: 1px">2 JO</span>
+</div>
+<div style="position: absolute; left: 14px; top: 14px; width: 34px; height: 34px; border-left: 4px solid #ffffff; border-top: 4px solid #ffffff; border-radius: 8px 0 0 0"></div>
+<div style="position: absolute; right: 14px; top: 14px; width: 34px; height: 34px; border-right: 4px solid #ffffff; border-top: 4px solid #ffffff; border-radius: 0 8px 0 0"></div>
+<div style="position: absolute; left: 14px; bottom: 14px; width: 34px; height: 34px; border-left: 4px solid #ffffff; border-bottom: 4px solid #ffffff; border-radius: 0 0 0 8px"></div>
+<div style="position: absolute; right: 14px; bottom: 14px; width: 34px; height: 34px; border-right: 4px solid #ffffff; border-bottom: 4px solid #ffffff; border-radius: 0 0 8px 0"></div>
+</div>
+<p style="margin: 14px 20px 0 20px; font-size: 14px; color: #8fe3c4; display: flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8fe3c4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Tableau détecté : 4 lignes, 3 colonnes</p>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 40px 0 40px">
+<button type="button" aria-label="Choisir une photo existante" style="width: 48px; height: 48px; border-radius: 12px; border: none; background: #2a333d; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-8 8"></path></svg></button>
+<a href="#Colonnes" aria-label="Prendre la photo" style="width: 76px; height: 76px; border-radius: 38px; border: 4px solid #ffffff; box-sizing: border-box; display: flex; align-items: center; justify-content: center"><span style="width: 58px; height: 58px; border-radius: 29px; background: #ffffff"></span></a>
+<button type="button" aria-label="Activer le flash" style="width: 48px; height: 48px; border-radius: 12px; border: none; background: #2a333d; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3L5 14h6l-1 7 8-11h-6z"></path></svg></button>
+</div>
+<nav aria-label="Onglets" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 8px 0 24px 0; background: #161d25; border-top: 1px solid #2a333d; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<a href="#Process" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #a9b6c4; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1"></rect><rect x="14" y="15" width="7" height="5" rx="1"></rect><path d="M6.5 9v4.5h11V15"></path></svg>Process</a>
+<a href="#Scanner" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4fc3f0; font-size: 12px; font-weight: 600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M8 10h8M8 14h5"></path></svg>Scanner</a>
+<a href="#Profil" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #a9b6c4; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profil</a>
+</nav>
+</div>
+</div></section><section id="Colonnes" class="frame"><h2>7 · Correspondance des colonnes</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; gap: 16px; padding: 56px 16px 34px 16px">
+<a href="#Scanner" style="display: flex; align-items: center; gap: 2px; min-height: 44px; font-size: 17px; text-decoration: none; align-self: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Reprendre la photo</a>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.3px">Vérifiez les colonnes</h1>
+<p style="margin: 0; font-size: 15px; line-height: 22px; color: #4a5b70">SimuFlow a deviné le rôle de chaque colonne. Corrigez si besoin.</p>
+</div>
+
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-size: 16px; font-weight: 600">« Étape »</span>
+<span style="font-size: 13px; font-weight: 600; color: #0b6b4b">Sûr</span>
+</div>
+<span style="font-size: 14px; color: #4a5b70">Recevoir la demande, Valider le besoin…</span>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #4a5b70">Rôle de la colonne
+<select style="height: 44px; border: 1px solid #c3d0de; border-radius: 10px; padding: 0 10px; font-size: 16px; font-family: inherit; color: #0b2540; background: #ffffff">
+<option>Étape</option>
+</select>
+</label>
+</div>
+
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-size: 16px; font-weight: 600">« Acteur »</span>
+<span style="font-size: 13px; font-weight: 600; color: #0b6b4b">Sûr</span>
+</div>
+<span style="font-size: 14px; color: #4a5b70">Accueil, Manager, Achats…</span>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #4a5b70">Rôle de la colonne
+<select style="height: 44px; border: 1px solid #c3d0de; border-radius: 10px; padding: 0 10px; font-size: 16px; font-family: inherit; color: #0b2540; background: #ffffff">
+<option>Acteur</option>
+</select>
+</label>
+</div>
+
+<div style="background: #ffffff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-size: 16px; font-weight: 600">« Délai »</span>
+<span style="font-size: 13px; font-weight: 600; color: #9a4510">À vérifier</span>
+</div>
+<span style="font-size: 14px; color: #4a5b70">0,5 JO, 1 JO, 3 JO…</span>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #4a5b70">Rôle de la colonne
+<select style="height: 44px; border: 1px solid #c3d0de; border-radius: 10px; padding: 0 10px; font-size: 16px; font-family: inherit; color: #0b2540; background: #ffffff">
+<option>Délai (jours ouvrés)</option>
+</select>
+</label>
+</div>
+
+<div style="display: flex; gap: 10px; align-items: center; background: #e2f5ee; border-radius: 12px; padding: 12px 14px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b6b4b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>
+<span style="font-size: 14px; color: #0b6b4b">Résultat : 4 étapes, 4 acteurs, 6,5 JO au total</span>
+</div>
+<a href="#Detail" style="margin-top: auto; height: 54px; border-radius: 14px; background: #007ec5; color: #ffffff; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Créer le workflow</a>
+</div>
+</div></section><section id="Profil" class="frame"><h2>8 · Onglet Profil</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; gap: 18px; padding: 64px 16px 0 16px; position: relative">
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px">Profil</h1>
+<div style="display: flex; align-items: center; gap: 14px; background: #ffffff; border-radius: 16px; padding: 16px">
+<span style="width: 52px; height: 52px; border-radius: 26px; background: #1b3a6b; color: #ffffff; font-size: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center">PN</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 17px; font-weight: 600">Prénom Nom</span><span style="font-size: 14px; color: #4a5b70">prenom.nom@exemple.fr</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; font-weight: 600; color: #4a5b70; text-transform: uppercase; letter-spacing: 0.4px">Préférences</h2>
+<div style="background: #ffffff; border-radius: 14px; display: flex; flex-direction: column">
+<button type="button" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; padding: 0 16px; border: none; background: transparent; font-family: inherit; font-size: 16px; color: #0b2540">Langue<span style="color: #4a5b70">Français</span></button>
+<div style="height: 1px; background: #e6edf4; margin-left: 16px"></div>
+<button type="button" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; padding: 0 16px; border: none; background: transparent; font-family: inherit; font-size: 16px; color: #0b2540">Thème<span style="color: #4a5b70">Automatique</span></button>
+<div style="height: 1px; background: #e6edf4; margin-left: 16px"></div>
+<label style="display: flex; justify-content: space-between; align-items: center; min-height: 60px; padding: 0 16px; gap: 12px; font-size: 16px">
+<span style="display: flex; flex-direction: column; gap: 2px">Notifications<span style="font-size: 13px; color: #4a5b70">Validation et commentaires sur vos process</span></span>
+<input type="checkbox" role="switch" checked style="width: 51px; height: 31px; accent-color: #13a374">
+</label>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; font-weight: 600; color: #4a5b70; text-transform: uppercase; letter-spacing: 0.4px">Compte et données</h2>
+<div style="background: #ffffff; border-radius: 14px; display: flex; flex-direction: column">
+<a href="#" style="display: flex; justify-content: space-between; align-items: center; min-height: 52px; padding: 0 16px; font-size: 16px; text-decoration: none; color: #0b2540">Politique de confidentialité<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a5b70" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+<div style="height: 1px; background: #e6edf4; margin-left: 16px"></div>
+<a href="#Main" style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; font-size: 16px; text-decoration: none; color: #006aa6">Se déconnecter</a>
+<div style="height: 1px; background: #e6edf4; margin-left: 16px"></div>
+<button type="button" style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; border: none; background: transparent; font-family: inherit; font-size: 16px; color: #a8261b">Supprimer mon compte</button>
+</div>
+<p style="margin: 0 4px; font-size: 13px; line-height: 18px; color: #4a5b70">La suppression efface vos process et vos commentaires. Elle vous sera demandée une seconde fois pour confirmer.</p>
+</div>
+<p style="margin: 0 4px; font-size: 13px; color: #4a5b70">SimuFlow version 1.0.0</p>
+<nav aria-label="Onglets" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 8px 0 24px 0; background: #ffffff; border-top: 1px solid #dde5ee; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<a href="#Process" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4a5b70; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1"></rect><rect x="14" y="15" width="7" height="5" rx="1"></rect><path d="M6.5 9v4.5h11V15"></path></svg>Process</a>
+<a href="#Scanner" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4a5b70; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M8 10h8M8 14h5"></path></svg>Scanner</a>
+<a href="#Profil" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #006aa6; font-size: 12px; font-weight: 600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profil</a>
+</nav>
+</div>
+</div></section><section id="ProcessSombre" class="frame"><h2>9 · Liste en mode sombre</h2><div class="screen" style="width:390px;height:844px">
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0b1621; font-family: Inter, system-ui, sans-serif; color: #e8eef5; display: flex; flex-direction: column; position: relative">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 64px 16px 12px 16px">
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px">Process</h1>
+<label for="recherche-sombre" style="position: absolute; left: -9999px">Rechercher un process</label>
+<div style="display: flex; align-items: center; gap: 8px; height: 44px; background: #1c2a38; border-radius: 12px; padding: 0 12px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a9b6c4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+<input id="recherche-sombre" type="search" placeholder="Rechercher un process" style="flex: 1; border: none; background: transparent; font-size: 16px; font-family: inherit; color: #e8eef5; min-width: 0">
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px 16px">
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #15222f; border-radius: 16px; padding: 16px; text-decoration: none; color: #e8eef5">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Demande d'accès</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a9b6c4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #a9b6c4">6 étapes · 1 décision · 2 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #123a2e; color: #8fe3c4">Aucune anomalie</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #1c2a38; color: #a9b6c4">draw.io</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #15222f; border-radius: 16px; padding: 16px; text-decoration: none; color: #e8eef5">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Gestion d’un incident</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a9b6c4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #a9b6c4">14 étapes · 3 décisions · 4 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #3d2614; color: #f6b27a">2 avertissements</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #1c2a38; color: #a9b6c4">draw.io</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #15222f; border-radius: 16px; padding: 16px; text-decoration: none; color: #e8eef5">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Commande de matériel</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a9b6c4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #a9b6c4">8 étapes · 2 décisions · 3 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #3e1a17; color: #f4a49c">1 erreur</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #1c2a38; color: #a9b6c4">Scan</span>
+</div>
+</a>
+
+<a href="#Detail" style="display: flex; flex-direction: column; gap: 10px; background: #15222f; border-radius: 16px; padding: 16px; text-decoration: none; color: #e8eef5">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 17px; font-weight: 600">Changement standard</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a9b6c4" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</div>
+<span style="font-size: 14px; color: #a9b6c4">5 étapes · 1 décision · 2 acteurs</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #123a2e; color: #8fe3c4">Aucune anomalie</span>
+<span style="font-size: 13px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: #1c2a38; color: #a9b6c4">Scan</span>
+</div>
+</a>
+
+</div>
+<a href="#Import" aria-label="Ajouter un process" style="position: absolute; right: 20px; bottom: 112px; width: 60px; height: 60px; border-radius: 30px; background: #2ea3e0; display: flex; align-items: center; justify-content: center">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0b1621" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+</a>
+<nav aria-label="Onglets" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 8px 0 24px 0; background: #111d29; border-top: 1px solid #1f2e3d; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<a href="#Process" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #4fc3f0; font-size: 12px; font-weight: 600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1"></rect><rect x="14" y="15" width="7" height="5" rx="1"></rect><path d="M6.5 9v4.5h11V15"></path></svg>Process</a>
+<a href="#Scanner" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #a9b6c4; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"></path><path d="M8 10h8M8 14h5"></path></svg>Scanner</a>
+<a href="#Profil" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #a9b6c4; font-size: 12px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profil</a>
+</nav>
+</div>
+</div></section><section id="Etats" class="frame"><h2>10 · Les cinq états de la liste</h2><div class="screen" style="width:1680px;height:844px">
+
+<div style="width: 1680px; height: 844px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px; font-family: Inter, system-ui, sans-serif; color: #0b2540">
+
+<section aria-label="État chargement" style="background: #f2f6fa; display: flex; flex-direction: column; gap: 12px; padding: 24px 16px 16px 16px; position: relative">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #1b3a6b; color: #ffffff">1 · Chargement</span>
+<h1 style="margin: 16px 0 0 0; font-size: 32px; font-weight: 700">Process</h1>
+<div style="height: 44px; border-radius: 12px; background: #e3eaf2"></div>
+
+<div aria-hidden="true" style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="width: 60%; height: 16px; border-radius: 6px; background: #e3eaf2"></div>
+<div style="width: 85%; height: 12px; border-radius: 6px; background: #edf2f7"></div>
+<div style="width: 40%; height: 22px; border-radius: 11px; background: #edf2f7"></div>
+</div>
+
+<div aria-hidden="true" style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="width: 60%; height: 16px; border-radius: 6px; background: #e3eaf2"></div>
+<div style="width: 85%; height: 12px; border-radius: 6px; background: #edf2f7"></div>
+<div style="width: 40%; height: 22px; border-radius: 11px; background: #edf2f7"></div>
+</div>
+
+<div aria-hidden="true" style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="width: 60%; height: 16px; border-radius: 6px; background: #e3eaf2"></div>
+<div style="width: 85%; height: 12px; border-radius: 6px; background: #edf2f7"></div>
+<div style="width: 40%; height: 22px; border-radius: 11px; background: #edf2f7"></div>
+</div>
+
+<div aria-hidden="true" style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="width: 60%; height: 16px; border-radius: 6px; background: #e3eaf2"></div>
+<div style="width: 85%; height: 12px; border-radius: 6px; background: #edf2f7"></div>
+<div style="width: 40%; height: 22px; border-radius: 11px; background: #edf2f7"></div>
+</div>
+
+<p style="margin: 0; font-size: 13px; color: #4a5b70">Un squelette de la forme des cartes, pas de spinner.</p>
+</section>
+
+<section aria-label="État vide" style="background: #f2f6fa; display: flex; flex-direction: column; gap: 12px; padding: 24px 16px 16px 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #1b3a6b; color: #ffffff">2 · Vide</span>
+<h1 style="margin: 16px 0 0 0; font-size: 32px; font-weight: 700">Process</h1>
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 0 16px">
+<span style="width: 84px; height: 84px; border-radius: 24px; background: #dff0fa; display: flex; align-items: center; justify-content: center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1"></rect><rect x="14" y="15" width="7" height="5" rx="1"></rect><path d="M6.5 9v4.5h11V15"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">Aucun process pour l’instant</h2>
+<p style="margin: 0; font-size: 15px; line-height: 22px; color: #4a5b70">Importez un fichier draw.io ou scannez un tableau pour commencer.</p>
+<a href="#Import" style="height: 50px; padding: 0 22px; border-radius: 12px; background: #007ec5; color: #ffffff; font-size: 16px; font-weight: 600; display: flex; align-items: center; text-decoration: none">Ajouter un process</a>
+</div>
+</section>
+
+<section aria-label="État erreur" style="background: #f2f6fa; display: flex; flex-direction: column; gap: 12px; padding: 24px 16px 16px 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #1b3a6b; color: #ffffff">3 · Erreur</span>
+<h1 style="margin: 16px 0 0 0; font-size: 32px; font-weight: 700">Process</h1>
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 0 16px">
+<span style="width: 84px; height: 84px; border-radius: 24px; background: #fbe3e1; display: flex; align-items: center; justify-content: center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#a8261b" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg></span>
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">Impossible de charger vos process</h2>
+<p style="margin: 0; font-size: 15px; line-height: 22px; color: #4a5b70">Le serveur n’a pas répondu. Vos données ne sont pas perdues.</p>
+<button type="button" style="height: 50px; padding: 0 22px; border: none; border-radius: 12px; background: #007ec5; color: #ffffff; font-size: 16px; font-weight: 600; font-family: inherit">Réessayer</button>
+</div>
+</section>
+
+<section aria-label="État hors-ligne" style="background: #f2f6fa; display: flex; flex-direction: column; gap: 12px; padding: 24px 16px 16px 16px">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #1b3a6b; color: #ffffff">4 · Hors-ligne</span>
+<h1 style="margin: 16px 0 0 0; font-size: 32px; font-weight: 700">Process</h1>
+<div role="status" style="display: flex; align-items: center; gap: 10px; background: #fdeedf; border-radius: 12px; padding: 12px 14px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a4510" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01M3 3l18 18"></path></svg>
+<span style="font-size: 14px; color: #9a4510">Hors connexion. Vous voyez la dernière version enregistrée.</span>
+</div>
+
+<div style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 17px; font-weight: 600">Demande d'accès</span>
+<span style="font-size: 14px; color: #4a5b70">6 étapes · 1 décision · 2 acteurs</span>
+</div>
+
+<div style="background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 17px; font-weight: 600">Gestion d’un incident</span>
+<span style="font-size: 14px; color: #4a5b70">14 étapes · 3 décisions · 4 acteurs</span>
+</div>
+
+<p style="margin: 0; font-size: 13px; color: #4a5b70">Le 5e état, « contenu », est l’écran 2.</p>
+</section>
+
+</div>
+</div></section></main></body></html>
