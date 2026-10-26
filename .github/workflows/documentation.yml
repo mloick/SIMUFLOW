@@ -7,7 +7,8 @@ name: Documentation
 #
 # claude-code-action n'accepte pas l'événement « push » : le job « declencher »
 # relance donc ce même workflow en « workflow_dispatch », et c'est ce second
-# passage qui exécute Claude.
+# passage qui exécute Claude. Ce second passage est lancé par le bot
+# github-actions, d'où « allowed_bots ».
 on:
   push:
     paths-ignore:
@@ -61,6 +62,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "github-actions"
           prompt: |
             REPO: ${{ github.repository }}
             BRANCHE: ${{ github.ref_name }}
