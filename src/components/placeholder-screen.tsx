@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type PlaceholderLink = {
@@ -31,16 +31,16 @@ export function PlaceholderScreen({ title, description, links = [], children }: 
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
-      <ThemedText type="subtitle" accessibilityRole="header">
+      <ThemedText type="title" accessibilityRole="header">
         {title}
       </ThemedText>
       <ThemedText themeColor="textSecondary">{description}</ThemedText>
 
       {links.length > 0 && (
-        <ThemedView type="backgroundElement" style={styles.links}>
+        <ThemedView type="surface" style={[styles.links, { borderColor: theme.border }]}>
           {links.map((link) => (
             <Link key={link.label} href={link.href} style={styles.link} accessibilityRole="link">
-              <ThemedText type="smallBold">{link.label} →</ThemedText>
+              <ThemedText type="link">{link.label} →</ThemedText>
             </Link>
           ))}
         </ThemedView>
@@ -58,7 +58,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   links: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
   },

@@ -7,9 +7,11 @@ export default function TabsLayout() {
 
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      backgroundColor={colors.surface}
+      tintColor={colors.link}
+      iconColor={{ default: colors.textSecondary, selected: colors.link }}
+      indicatorColor={colors.surfaceMuted}
+      labelStyle={{ default: { color: colors.textSecondary }, selected: { color: colors.link } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Process</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="list.bullet.rectangle" md="account_tree" />

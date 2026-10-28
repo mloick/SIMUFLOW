@@ -32,8 +32,11 @@ Le déroulé affiche chaque étape, son acteur et le délai cumulé en jours ouv
 
 Partagez un process avec vos collègues. Vous recevez une notification quand quelqu'un valide ou commente une étape.
 
+## Mode sombre · Disponible
+
+L'app suit le réglage de votre téléphone : claire le jour, sombre si vous avez choisi le mode sombre.
+
 ## Confort · Prévue
 
-- Mode sombre automatique.
 - Interface en français et en anglais.
 - Lisible avec VoiceOver et TalkBack, et avec une grande taille de texte.
