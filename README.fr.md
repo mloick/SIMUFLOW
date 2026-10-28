@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo/simuflow-logo.svg" width="320" alt="SimuFlow"></p>
+
 # SimuFlow
 
 Français · [English](README.md)
@@ -17,6 +19,10 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
 
 La maquette complète est dans [`docs/maquette/`](docs/maquette/).
+
+## Logo
+
+Le logo est un chemin en S : un point de départ, deux virages, une flèche d'arrivée. Il représente un process que l'on parcourt pas à pas, et forme le S de SimuFlow. Son histoire, ses couleurs et ses fichiers sont dans [`docs/logo/`](docs/logo/).
 
 ## Fonctionnalités du téléphone
 

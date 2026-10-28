@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Logo SimuFlow">
+  <rect x="1" y="1" width="238" height="238" rx="54" fill="#ffffff" stroke="#d5e1ec" stroke-width="2"/>
+  <path d="M80 64 H150 A30 30 0 0 1 150 124 H90 A30 30 0 0 0 90 184 H160" fill="none" stroke="#007ec5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="64" r="18" fill="#0b2540"/>
+  <path d="M160 164 L190 184 L160 204 Z" fill="#007ec5" stroke="#007ec5" stroke-width="6" stroke-linejoin="round"/>
+</svg>

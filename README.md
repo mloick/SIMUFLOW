@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo/simuflow-logo.svg" width="320" alt="SimuFlow"></p>
+
 # SimuFlow
 
 [Français](README.fr.md) · English
@@ -17,6 +19,10 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 
 The full mockup is in [`docs/maquette/`](docs/maquette/).
+
+## Logo
+
+The logo is an S-shaped path: a starting point, two turns and an arrival arrow. It stands for a process walked through step by step, and draws the S of SimuFlow. Its story, colors and files are in [`docs/logo/`](docs/logo/) (French).
 
 ## Phone features
 
