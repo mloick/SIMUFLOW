@@ -42,6 +42,18 @@ app.json        Configuration Expo (nom, icônes, plugins)
 
 Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
 
+## Thème
+
+Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.ts` :
+
+- `Brand` : les deux couleurs du logo, bleu `#007ec5` et marine `#0b2540`.
+- `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
+- `Radius` (arrondis), `Spacing` (espacements), `Fonts` (polices système).
+
+Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
+
+Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
+
 ## Navigation
 
 Expo Router associe chaque fichier de `src/app/` à un écran.

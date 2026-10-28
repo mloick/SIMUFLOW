@@ -1,26 +1,61 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
+ * Thème SimuFlow : les couleurs de la maquette (docs/maquette/), en mode clair
+ * et en mode sombre. Les écrans lisent ces couleurs avec le hook useTheme().
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/** Couleurs de la marque, identiques dans les deux modes (logo, docs/logo/). */
+export const Brand = {
+  blue: '#007ec5',
+  navy: '#0b2540',
+} as const;
+
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    // Fonds
+    background: '#f2f6fa',
+    surface: '#ffffff',
+    surfaceMuted: '#eef3f8',
+    field: '#e3eaf2',
+    border: '#dde5ee',
+    fieldBorder: '#c3d0de',
+    // Textes
+    text: '#0b2540',
+    textSecondary: '#4a5b70',
+    link: '#006aa6',
+    // Actions. Un peu plus foncé que Brand.blue pour que le texte blanc
+    // des boutons reste lisible (contraste 4,75:1, minimum WCAG 4,5:1).
+    primary: '#0078bd',
+    onPrimary: '#ffffff',
+    // Diagnostic : badges « Aucune anomalie », « avertissement », « erreur »
+    success: '#0b6b4b',
+    successBackground: '#e2f5ee',
+    warning: '#9a4510',
+    warningBackground: '#fdeedf',
+    danger: '#a8261b',
+    dangerBackground: '#fbe3e1',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    background: '#0b1621',
+    surface: '#15222f',
+    surfaceMuted: '#1c2a38',
+    field: '#1c2a38',
+    border: '#1f2e3d',
+    fieldBorder: '#2c3e50',
+    text: '#e8eef5',
+    textSecondary: '#a9b6c4',
+    link: '#4fc3f0',
+    primary: '#2ea3e0',
+    onPrimary: '#0b1621',
+    success: '#8fe3c4',
+    successBackground: '#123a2e',
+    warning: '#f6b27a',
+    warningBackground: '#3d2614',
+    danger: '#f4a49c',
+    dangerBackground: '#3e1a17',
   },
 } as const;
 
@@ -59,6 +94,12 @@ export const Spacing = {
   four: 24,
   five: 32,
   six: 64,
+} as const;
+
+export const Radius = {
+  small: 12,
+  medium: 16,
+  pill: 999,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
