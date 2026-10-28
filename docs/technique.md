@@ -23,7 +23,7 @@ src/
   constants/    Thème : couleurs, espacements, polices
   hooks/        Hooks partagés (thème, mode sombre)
 assets/         Icônes, images, écran de démarrage
-docs/           Documentation et maquette des écrans
+docs/           Documentation, maquette des écrans (maquette/) et logo (logo/)
 scripts/        Script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, plugins)
 ```
