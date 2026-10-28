@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le dépôt contient l'application de départ générée par `create-expo-app` (modèle par défaut), renommée SimuFlow. Aucun écran du simulateur n'est encore codé : l'app affiche les écrans de démonstration d'Expo.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux, mais chacun n'affiche encore qu'un titre, une phrase qui décrit son rôle et des liens vers les écrans suivants. Aucune donnée ni logique du simulateur n'est encore codée.
 
 | Élément | Version |
 | --- | --- |
@@ -19,7 +19,7 @@ Le dépôt contient l'application de départ générée par `create-expo-app` (m
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables
+  components/   Composants réutilisables (texte et vue thémés, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
   hooks/        Hooks partagés (thème, mode sombre)
 assets/         Icônes, images, écran de démarrage
@@ -40,7 +40,25 @@ app.json        Configuration Expo (nom, icônes, plugins)
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
 
-Point connu : `npx tsc --noEmit` signale une erreur dans `src/components/app-tabs.web.tsx`, un fichier du modèle Expo réservé au web. Il disparaîtra avec les écrans de démonstration.
+Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
+
+## Navigation
+
+Expo Router associe chaque fichier de `src/app/` à un écran.
+
+| Fichier | Route | Écran |
+| --- | --- | --- |
+| `_layout.tsx` | | Pile de navigation principale (thème clair ou sombre, écran de démarrage) |
+| `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Profil |
+| `(tabs)/index.tsx` | `/` | Liste des process |
+| `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
+| `(tabs)/profil.tsx` | `/profil` | Profil et compte |
+| `process/[id].tsx` | `/process/:id` | Détail d'un process |
+| `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
+| `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
+| `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
+
+Les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Build de développement
 
@@ -62,7 +80,6 @@ Le cœur du simulateur ne dépend pas de l'écran : il sera écrit en TypeScript
 | `src/domain/` | Types du workflow, règles du diagnostic, calcul des chemins |
 | `src/import/` | Lecture des fichiers draw.io et JSON, et des tableaux scannés |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état |
-| `src/app/` | Écrans : onglets Process, Scanner, Profil ; détail `[id]` ; simulation ; modale d'import |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
 Backend prévu : Supabase (comptes, process partagés, statuts de validation).

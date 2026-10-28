@@ -4,7 +4,7 @@ Français · [English](README.md)
 
 SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. On importe un schéma draw.io ou on photographie un tableau de process, on voit les anomalies, puis on rejoue le process pas à pas en choisissant chaque branche.
 
-> État : début du projet. Le dépôt contient pour l'instant l'application de départ d'Expo et la maquette des écrans. Les fonctionnalités du simulateur sont construites étape par étape.
+> État : début du projet. Tous les écrans existent et sont reliés entre eux (onglets Process, Scanner, Profil ; détail, simulation, import, connexion), mais ils sont encore provisoires. Les fonctionnalités du simulateur sont construites étape par étape, d'après la maquette.
 
 ## Pour qui
 

@@ -4,7 +4,7 @@
 
 SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. Import a draw.io diagram or photograph a process table, see the anomalies, then replay the process step by step by choosing each branch.
 
-> Status: early stage. The project currently contains the Expo starter app and the screen mockup. The simulator features are being built step by step.
+> Status: early stage. All screens exist and are linked together (Process, Scanner and Profile tabs; detail, simulation, import, sign-in), but they are still placeholders. The simulator features are being built step by step, following the mockup.
 
 ## Who it is for
 
