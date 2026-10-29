@@ -34,7 +34,7 @@ src/
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
-app.json        Configuration Expo (nom, icônes, plugins)
+app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
 ```
 
 ## Commandes
