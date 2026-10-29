@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process et Importer suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON (gardés en mémoire jusqu'à la fermeture de l'app) ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process et Importer suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
 
 | Élément | Version |
 | --- | --- |
@@ -22,7 +22,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, pastille, bouton, squelette de chargement, message d'état, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs et chargement simulé, en attendant le backend
+  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   hooks/        Hooks partagés (thème, mode sombre)
@@ -177,13 +177,26 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
 
-Les process importés sont gardés en mémoire (un petit magasin lu avec `useSyncExternalStore`) : ils disparaissent quand l'app est fermée. Les garder sur le téléphone est l'étape suivante.
-
 `docs/exemples/` contient deux fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
 
 **Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
+
+### Process importés enregistrés sur le téléphone
+
+`src/data/process-store.ts` garde la liste des process importés dans un petit magasin lu avec `useSyncExternalStore`, et l'enregistre à chaque changement (ajout, suppression) :
+
+- sur iOS et Android, dans le fichier `process-importes.json` du dossier Documents de l'app (`src/data/saved-file.ts`, avec `File` et `Paths.document` d'`expo-file-system`). Le système ne vide pas ce dossier ; le fichier disparaît seulement si l'app est désinstallée ;
+- sur le web, dans le stockage local du navigateur (`saved-file.web.ts`).
+
+Le fichier contient `{ "format": "simuflow-imports", "version": 1, "processes": [...] }`. Il est relu au démarrage de l'app : un fichier abîmé ou d'un autre format donne une liste vide, et une entrée qui n'a pas la forme d'un process est ignorée (`parseSaved`). Si l'écriture échoue, l'app continue et le signale dans la console.
+
+Un process importé a un bouton « Supprimer ce process » en bas de son détail. Il demande une confirmation (`Alert`), retire le process de la liste et du fichier, puis revient à la liste. Les process d'exemple n'ont pas ce bouton.
+
+![Process importé relu après redémarrage, en tête de liste, et son bouton Supprimer en clair et en sombre](captures/etape-5c-garder.png)
+
+Ce stockage est local à un téléphone. Le partage entre téléphones passera par le backend (étapes 7 et 8).
 
 ## Écran Détail d'un process
 

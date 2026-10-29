@@ -6,9 +6,8 @@
  * (chargement, vide, erreur, hors connexion) pour les montrer sans réseau.
  * Il se choisit dans l'onglet Profil, en mode développement.
  *
- * Les process importés (écran Importer) sont gardés en mémoire et affichés en
- * tête de liste. Ils disparaissent quand l'application est fermée : les garder
- * sur le téléphone est l'étape suivante.
+ * Les process importés (écran Importer) sont affichés en tête de liste et
+ * enregistrés sur le téléphone (saved-file.ts) : ils sont relus au démarrage.
  */
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -16,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import type { Process } from '@/domain';
 
 import { demoProcesses } from './demo-processes';
+import { readSaved, writeSaved } from './saved-file';
 
 export type DemoScenario = 'contenu' | 'chargement' | 'vide' | 'erreur' | 'hors-ligne';
 
@@ -46,13 +46,63 @@ export function useDemoScenario(): DemoScenario {
   );
 }
 
-let imported: Process[] = [];
+const SAVED_FORMAT = 'simuflow-imports';
+
+function isProcess(value: unknown): value is Process {
+  const process = value as Process;
+  return (
+    typeof process?.id === 'string' &&
+    typeof process.name === 'string' &&
+    Array.isArray(process.steps) &&
+    Array.isArray(process.links)
+  );
+}
+
+/** Relit les process enregistrés. Un fichier abîmé ou inconnu donne une liste vide. */
+export function parseSaved(text: string | null): Process[] {
+  if (!text) return [];
+  try {
+    const data = JSON.parse(text);
+    if (data?.format !== SAVED_FORMAT || !Array.isArray(data.processes)) return [];
+    return data.processes.filter(isProcess);
+  } catch {
+    return [];
+  }
+}
+
+function loadImported(): Process[] {
+  try {
+    return parseSaved(readSaved());
+  } catch {
+    return [];
+  }
+}
+
+let imported: Process[] = loadImported();
 const importListeners = new Set<() => void>();
 
-/** Ajoute un process importé en tête de liste. */
-export function addImportedProcess(process: Process) {
-  imported = [process, ...imported];
+function setImported(next: Process[]) {
+  imported = next;
   importListeners.forEach((listener) => listener());
+  try {
+    writeSaved(JSON.stringify({ format: SAVED_FORMAT, version: 1, processes: next }));
+  } catch (error) {
+    console.warn('Les process importés n’ont pas pu être enregistrés.', error);
+  }
+}
+
+/** Ajoute un process importé en tête de liste et l'enregistre. */
+export function addImportedProcess(process: Process) {
+  setImported([process, ...imported]);
+}
+
+/** Supprime un process importé (les process d'exemple ne se suppriment pas). */
+export function removeImportedProcess(id: string) {
+  setImported(imported.filter((process) => process.id !== id));
+}
+
+export function isImported(id: string): boolean {
+  return imported.some((process) => process.id === id);
 }
 
 function useImportedProcesses(): Process[] {

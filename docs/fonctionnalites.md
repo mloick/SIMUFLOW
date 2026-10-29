@@ -16,7 +16,9 @@ La liste montre quatre process d'exemple, et ceux que vous importez apparaissent
 
 Touchez le bouton **+** de la liste, puis **Fichier draw.io** ou **Fichier JSON**, et choisissez le fichier dans Fichiers, iCloud Drive ou Drive. L'app vous montre ce qu'elle a lu : le nombre d'étapes et d'acteurs, les problèmes éventuels, et ce qu'elle a dû deviner (par exemple une flèche qui n'était accrochée à rien). Si le schéma a plusieurs pages, choisissez celle à importer. Vérifiez le nom, puis touchez **Importer** : le process s'ouvre et rejoint la liste.
 
-Pour l'instant, un process importé disparaît quand vous fermez l'app. Il sera bientôt gardé sur le téléphone.
+Vos process importés sont enregistrés sur le téléphone : vous les retrouvez à chaque ouverture de l'app. Pour en retirer un, ouvrez-le et touchez **Supprimer ce process**, tout en bas.
+
+![Un process importé retrouvé après redémarrage, et le bouton pour le supprimer](captures/etape-5c-garder.png)
 
 ![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
 
