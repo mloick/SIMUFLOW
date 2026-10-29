@@ -61,6 +61,15 @@ export const Colors = {
   },
 } as const;
 
+/**
+ * Couleurs des familles de chemins (vue « Tous les cas »), dans l'ordre :
+ * bleu, vert, orange, violet, rose, turquoise. Au-delà de six, on recommence.
+ */
+export const FamilyColors = {
+  light: ['#0078bd', '#0b8a5f', '#c26a05', '#7a4fc9', '#c2185b', '#00838f'],
+  dark: ['#4fb8ec', '#5fd3a6', '#f6b27a', '#b99cf2', '#f48fb1', '#5ed3dc'],
+} as const;
+
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({

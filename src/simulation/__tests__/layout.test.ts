@@ -5,7 +5,7 @@ import { demandeMateriel } from '@/domain/exemples';
 import { importProcessFile } from '@/import';
 import { FICHIER_CONGES } from '@/import/__fixtures__/conges';
 
-import { borderPoint, computeRanks, layoutProcess, midpoint, NODE_WIDTH } from '../layout';
+import { borderPoint, computeRanks, layoutProcess, midpoint, NODE_WIDTH, offsetPolyline } from '../layout';
 
 const boucle: Process = {
   id: 'boucle',
@@ -90,5 +90,22 @@ describe('géométrie', () => {
 
   it('trouve le milieu d’une ligne brisée', () => {
     expect(midpoint([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }])).toEqual({ x: 10, y: 0 });
+  });
+});
+
+describe('traits côte à côte', () => {
+  it('décale une ligne brisée sans casser ses coins', () => {
+    // Vers la droite, puis vers le bas : décalé de 4 vers la gauche de la marche.
+    const points = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ];
+    expect(offsetPolyline(points, 4)).toEqual([
+      { x: 0, y: -4 },
+      { x: 14, y: -4 },
+      { x: 14, y: 10 },
+    ]);
+    expect(offsetPolyline(points, 0)).toBe(points);
   });
 });

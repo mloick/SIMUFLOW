@@ -258,3 +258,25 @@ export function midpoint(points: Point[]): Point {
   }
   return points[0];
 }
+
+/**
+ * Ligne brisée décalée de `distance` sur sa gauche (dans le sens de la
+ * marche), pour poser côte à côte les traits de plusieurs familles.
+ */
+export function offsetPolyline(points: Point[], distance: number): Point[] {
+  if (distance === 0 || points.length < 2) return points;
+  const normals = points.slice(1).map((p, i) => {
+    const dx = p.x - points[i].x;
+    const dy = p.y - points[i].y;
+    const length = Math.hypot(dx, dy) || 1;
+    return { x: dy / length, y: -dx / length };
+  });
+  return points.map((p, i) => {
+    const before = normals[Math.max(0, i - 1)];
+    const after = normals[Math.min(normals.length - 1, i)];
+    // Au coin, on prolonge les deux côtés jusqu'à ce qu'ils se rejoignent.
+    const join = 1 + before.x * after.x + before.y * after.y;
+    const scale = join < 0.1 ? 1 : 1 / join;
+    return { x: p.x + (before.x + after.x) * distance * scale, y: p.y + (before.y + after.y) * distance * scale };
+  });
+}
