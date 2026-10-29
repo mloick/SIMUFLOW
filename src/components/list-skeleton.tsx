@@ -1,16 +1,44 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** État « chargement » : la forme des cartes, sans spinner (maquette, état 1). */
+/**
+ * État « chargement » : la forme des cartes, sans spinner (maquette, état 1).
+ * Les cartes « respirent » doucement (opacité), sauf si « Réduire les
+ * animations » est activé dans les réglages du téléphone.
+ */
 export function ListSkeleton({ count = 4 }: { count?: number }) {
   const theme = useTheme();
   const bar = { backgroundColor: theme.field };
+  const reduceMotion = useReducedMotion();
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      cancelAnimation(opacity);
+      opacity.value = 1;
+      return;
+    }
+    // Aller-retour infini entre opaque et à moitié transparent.
+    opacity.value = withRepeat(withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, [opacity, reduceMotion]);
+
+  const pulse = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
-    <View
-      style={styles.list}
+    <Animated.View
+      style={[styles.list, pulse]}
       accessible
       accessibilityLabel="Chargement des process"
       accessibilityState={{ busy: true }}>
@@ -21,7 +49,7 @@ export function ListSkeleton({ count = 4 }: { count?: number }) {
           <View style={[styles.bar, styles.badge, bar]} />
         </View>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 

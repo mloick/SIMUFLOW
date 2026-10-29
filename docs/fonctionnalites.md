@@ -44,6 +44,10 @@ Partagez un process avec vos collègues. Vous recevez une notification quand que
 
 L'app suit le réglage de votre téléphone : claire le jour, sombre si vous avez choisi le mode sombre.
 
+## Animations douces · Disponible
+
+Pendant le chargement, la liste « respire » doucement, puis les process apparaissent l'un après l'autre. Si vous avez activé « Réduire les animations » sur votre téléphone, rien ne bouge.
+
 ## Confort · Prévue
 
 - Interface en français et en anglais.
