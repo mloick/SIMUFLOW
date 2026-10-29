@@ -1,0 +1,21 @@
+{
+  "format": "simuflow",
+  "version": 1,
+  "name": "Accueil d’un nouvel arrivant",
+  "steps": [
+    { "id": "debut", "kind": "start", "title": "Arrivée confirmée", "actor": "Responsable" },
+    { "id": "poste", "title": "Préparer le poste de travail", "actor": "Service A", "duration": 2 },
+    { "id": "comptes", "title": "Créer les comptes", "actor": "Service B", "duration": 1 },
+    { "id": "pret", "kind": "decision", "title": "Tout est prêt ?", "actor": "Responsable" },
+    { "id": "relancer", "title": "Relancer les services", "actor": "Responsable", "duration": 0.5 },
+    { "id": "fin", "kind": "end", "title": "Accueillir la personne", "actor": "Responsable" }
+  ],
+  "links": [
+    { "from": "debut", "to": "poste" },
+    { "from": "poste", "to": "comptes" },
+    { "from": "comptes", "to": "pret" },
+    { "from": "pret", "to": "fin", "label": "oui" },
+    { "from": "pret", "to": "relancer", "label": "non" },
+    { "from": "relancer", "to": "poste" }
+  ]
+}

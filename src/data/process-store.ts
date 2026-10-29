@@ -5,9 +5,13 @@
  * Le « scénario de démonstration » force un des états de la liste
  * (chargement, vide, erreur, hors connexion) pour les montrer sans réseau.
  * Il se choisit dans l'onglet Profil, en mode développement.
+ *
+ * Les process importés (écran Importer) sont gardés en mémoire et affichés en
+ * tête de liste. Ils disparaissent quand l'application est fermée : les garder
+ * sur le téléphone est l'étape suivante.
  */
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import type { Process } from '@/domain';
 
@@ -39,6 +43,26 @@ export function useDemoScenario(): DemoScenario {
     },
     () => scenario,
     () => scenario,
+  );
+}
+
+let imported: Process[] = [];
+const importListeners = new Set<() => void>();
+
+/** Ajoute un process importé en tête de liste. */
+export function addImportedProcess(process: Process) {
+  imported = [process, ...imported];
+  importListeners.forEach((listener) => listener());
+}
+
+function useImportedProcesses(): Process[] {
+  return useSyncExternalStore(
+    (listener) => {
+      importListeners.add(listener);
+      return () => importListeners.delete(listener);
+    },
+    () => imported,
+    () => imported,
   );
 }
 
@@ -89,12 +113,18 @@ export function useProcessList(): ProcessListState & { reload: () => void } {
   }, [current, key]);
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
-  const state: ProcessListState = result?.key === key ? result.state : { status: 'loading' };
+  const added = useImportedProcesses();
+  const loaded = result?.key === key ? result.state : null;
+  const state = useMemo<ProcessListState>(() => {
+    if (!loaded) return { status: 'loading' };
+    if (loaded.status !== 'ready' || added.length === 0) return loaded;
+    return { ...loaded, processes: [...added, ...loaded.processes] };
+  }, [loaded, added]);
 
   return { ...state, reload };
 }
 
 /** Un process par son identifiant (écran Détail). */
 export function getProcess(id: string): Process | undefined {
-  return demoProcesses.find((process) => process.id === id);
+  return imported.find((process) => process.id === id) ?? demoProcesses.find((process) => process.id === id);
 }
