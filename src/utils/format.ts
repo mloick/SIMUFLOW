@@ -1,6 +1,11 @@
-/** « 1 étape », « 3 étapes ». Le pluriel par défaut ajoute un « s ». */
+/** Nombre écrit à la française : « 0,5 ». */
+export function formatNumber(value: number): string {
+  return String(Math.round(value * 100) / 100).replace('.', ',');
+}
+
+/** « 1 étape », « 3 étapes », « 0,5 jour ». Le pluriel par défaut ajoute un « s ». */
 export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
-  return `${count} ${count > 1 ? pluralForm : singular}`;
+  return `${formatNumber(count)} ${count > 1 ? pluralForm : singular}`;
 }
 
 /** Texte sans accents ni majuscules, pour une recherche tolérante. */
