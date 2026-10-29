@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
+import { Colors, FamilyColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function useTheme() {
@@ -11,4 +11,10 @@ export function useTheme() {
   const theme = scheme === 'dark' ? 'dark' : 'light';
 
   return Colors[theme];
+}
+
+/** Couleurs des familles de chemins, selon le mode clair ou sombre. */
+export function useFamilyColors() {
+  const scheme = useColorScheme();
+  return FamilyColors[scheme === 'dark' ? 'dark' : 'light'];
 }

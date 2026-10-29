@@ -14,13 +14,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { midpoint, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import { midpoint, offsetPolyline, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const MIN_SCALE = 0.3;
 const MAX_SCALE = 2;
 const READABLE_SCALE = 0.8;
+/** Écart entre les traits de deux familles sur une même flèche. */
+const FAMILY_GAP = 4.5;
 /** Sur le web, le texte SVG serait sinon dans une police à empattements. */
 const FONT = Platform.select({
   web: 'Inter, system-ui, sans-serif',
@@ -38,19 +40,38 @@ export type DiagramProgress = {
   candidateLinks: string[];
 };
 
+/** Trait d'une famille sur une flèche. */
+export type FamilyStroke = { color: string; bold: boolean };
+
+/**
+ * Vue « Tous les cas » : tout le schéma est dessiné. Une flèche empruntée par
+ * plusieurs familles a un trait de chaque couleur, côte à côte, comme un plan
+ * de métro. Les flèches qu'aucun chemin n'emprunte sont en pointillés.
+ */
+export type DiagramOverview = {
+  /** Traits de chaque flèche ; « bold » pour le chemin critique. */
+  strokes: Map<string, FamilyStroke[]>;
+  /** Famille isolée : ce qui n'en fait pas partie est estompé. */
+  dimmedSteps?: Set<string>;
+  dimmedLinks?: Set<string>;
+};
+
 /**
  * Schéma du process qui se construit pendant la simulation : seules les étapes
  * parcourues sont dessinées, et les sorties possibles apparaissent en
  * pointillés. La vue suit l'étape en cours ; les boutons − et + zooment.
+ * Avec `overview`, tout le schéma est dessiné en couleurs (vue « Tous les cas »).
  */
 export function ProcessDiagram({
   layout,
   progress,
+  overview,
   height = 260,
   accessibilityLabel,
 }: {
   layout: DiagramLayout;
-  progress: DiagramProgress;
+  progress?: DiagramProgress;
+  overview?: DiagramOverview;
   height?: number;
   accessibilityLabel: string;
 }) {
@@ -64,11 +85,12 @@ export function ProcessDiagram({
   const fitScale = frameWidth > 0 ? clamp(Math.min(1, (frameWidth - Spacing.two) / layout.width)) : 1;
   // Par défaut, le schéma reste lisible (au moins 80 %) et la vue suit l'étape
   // en cours ; « Tout » le fait tenir en largeur.
-  const [fitAll, setFitAll] = useState(false);
+  // La vue d'ensemble commence en largeur entière.
+  const [fitAll, setFitAll] = useState(overview !== undefined);
   const scale = zoom ?? (fitAll ? fitScale : Math.max(fitScale, READABLE_SCALE));
 
   // La vue se centre sur l'étape en cours.
-  const current = progress.currentId ? layout.nodes.get(progress.currentId) : undefined;
+  const current = progress?.currentId ? layout.nodes.get(progress.currentId) : undefined;
   useEffect(() => {
     if (!current || frameWidth === 0) return;
     const animated = !reduceMotion;
@@ -82,12 +104,18 @@ export function ProcessDiagram({
     });
   }, [current, scale, frameWidth, height, reduceMotion]);
 
-  const candidates = new Set(progress.candidateLinks);
+  const candidates = new Set(progress?.candidateLinks);
   const ghosts = new Set(
     layout.edges
-      .filter((edge) => candidates.has(edge.id) && !progress.visitedSteps.has(edge.to))
+      .filter((edge) => candidates.has(edge.id) && !progress?.visitedSteps.has(edge.to))
       .map((edge) => edge.to),
   );
+  // Une pointe de flèche par couleur utilisée.
+  const arrowColors = new Set([
+    theme.primary,
+    theme.textSecondary,
+    ...[...(overview?.strokes.values() ?? [])].flat().map((item) => item.color),
+  ]);
 
   return (
     <View style={styles.container}>
@@ -117,26 +145,19 @@ export function ProcessDiagram({
                 height={layout.height * scale}
                 viewBox={`0 0 ${layout.width} ${layout.height}`}>
                 <Defs>
-                  <Marker
-                    id="arrow"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="7"
-                    markerHeight="7"
-                    orient="auto">
-                    <Path d="M0 0L10 5L0 10z" fill={theme.primary} />
-                  </Marker>
-                  <Marker
-                    id="arrow-muted"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="7"
-                    markerHeight="7"
-                    orient="auto">
-                    <Path d="M0 0L10 5L0 10z" fill={theme.textSecondary} />
-                  </Marker>
+                  {[...arrowColors].map((color) => (
+                    <Marker
+                      key={color}
+                      id={arrowId(color)}
+                      viewBox="0 0 10 10"
+                      refX="9"
+                      refY="5"
+                      markerWidth="7"
+                      markerHeight="7"
+                      orient="auto">
+                      <Path d="M0 0L10 5L0 10z" fill={color} />
+                    </Marker>
+                  ))}
                 </Defs>
 
                 {layout.lanes.map((lane, index) => (
@@ -161,28 +182,69 @@ export function ProcessDiagram({
                   </G>
                 ))}
 
-                {layout.edges.map((edge) => {
-                  const visited = progress.visitedLinks.has(edge.id);
-                  const candidate = candidates.has(edge.id);
-                  if (!visited && !candidate) return null;
-                  const mid = midpoint(edge.points);
-                  return (
-                    <G key={edge.id}>
-                      <Path
-                        d={pathOf(edge.points)}
-                        fill="none"
-                        stroke={visited ? theme.primary : theme.textSecondary}
-                        strokeWidth={visited ? 2.5 : 1.5}
-                        strokeDasharray={visited ? undefined : '6 5'}
-                        markerEnd={visited ? 'url(#arrow)' : 'url(#arrow-muted)'}
-                      />
-                      {edge.label ? <EdgeLabel point={mid} label={edge.label} /> : null}
-                    </G>
-                  );
-                })}
+                {overview &&
+                  layout.edges.map((edge) => {
+                    const strokes = overview.strokes.get(edge.id) ?? [];
+                    const color = strokes.length === 1 ? strokes[0].color : undefined;
+                    return (
+                      <G key={edge.id} opacity={overview.dimmedLinks?.has(edge.id) ? 0.15 : strokes.length ? 1 : 0.6}>
+                        {strokes.length === 0 && (
+                          <Path
+                            d={pathOf(edge.points)}
+                            fill="none"
+                            stroke={theme.textSecondary}
+                            strokeWidth={1.5}
+                            strokeDasharray="6 5"
+                            markerEnd={`url(#${arrowId(theme.textSecondary)})`}
+                          />
+                        )}
+                        {strokes.map((item, index) => (
+                          <Path
+                            key={item.color}
+                            d={pathOf(offsetPolyline(edge.points, (index - (strokes.length - 1) / 2) * FAMILY_GAP))}
+                            fill="none"
+                            stroke={item.color}
+                            strokeWidth={item.bold ? 4 : 2.5}
+                            markerEnd={`url(#${arrowId(item.color)})`}
+                          />
+                        ))}
+                        {edge.label ? (
+                          <EdgeLabel point={midpoint(edge.points)} label={edge.label} color={color} />
+                        ) : null}
+                      </G>
+                    );
+                  })}
+
+                {progress &&
+                  layout.edges.map((edge) => {
+                    const visited = progress.visitedLinks.has(edge.id);
+                    const candidate = candidates.has(edge.id);
+                    if (!visited && !candidate) return null;
+                    const mid = midpoint(edge.points);
+                    return (
+                      <G key={edge.id}>
+                        <Path
+                          d={pathOf(edge.points)}
+                          fill="none"
+                          stroke={visited ? theme.primary : theme.textSecondary}
+                          strokeWidth={visited ? 2.5 : 1.5}
+                          strokeDasharray={visited ? undefined : '6 5'}
+                          markerEnd={`url(#${arrowId(visited ? theme.primary : theme.textSecondary)})`}
+                        />
+                        {edge.label ? <EdgeLabel point={mid} label={edge.label} /> : null}
+                      </G>
+                    );
+                  })}
 
                 {[...layout.nodes.values()].map((node) => {
-                  if (progress.visitedSteps.has(node.id)) {
+                  if (overview) {
+                    return (
+                      <G key={node.id} opacity={overview.dimmedSteps?.has(node.id) ? 0.25 : 1}>
+                        <NodeShape node={node} neutral />
+                      </G>
+                    );
+                  }
+                  if (progress?.visitedSteps.has(node.id)) {
                     return <NodeShape key={node.id} node={node} current={node.id === progress.currentId} />;
                   }
                   if (ghosts.has(node.id)) return <NodeShape key={node.id} node={node} ghost />;
@@ -199,6 +261,11 @@ export function ProcessDiagram({
 
 function clamp(scale: number) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+}
+
+/** Identifiant de la pointe de flèche d'une couleur, par exemple « arrow-0078bd ». */
+function arrowId(color: string) {
+  return `arrow-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
 }
 
 function pathOf(points: Point[]) {
@@ -222,13 +289,18 @@ function NodeShape({
   node,
   current = false,
   ghost = false,
+  neutral = false,
 }: {
   node: DiagramNode;
   current?: boolean;
   ghost?: boolean;
+  /** Vue « Tous » : les tâches restent claires pour laisser la couleur aux chemins. */
+  neutral?: boolean;
 }) {
   const theme = useTheme();
-  const colors = useNodeColors(node.kind);
+  const kindColors = useNodeColors(node.kind);
+  const colors =
+    neutral && node.kind === 'task' ? { fill: theme.surface, stroke: theme.fieldBorder, text: theme.text } : kindColors;
   const { x, y, width: w, height: h } = node;
   const fill = ghost ? theme.surface : colors.fill;
   const stroke = ghost ? theme.textSecondary : colors.stroke;
@@ -338,7 +410,7 @@ export function wrap(text: string, perLine: number, maxLines: number): string[] 
   return lines;
 }
 
-function EdgeLabel({ point, label }: { point: Point; label: string }) {
+function EdgeLabel({ point, label, color }: { point: Point; label: string; color?: string }) {
   const theme = useTheme();
   const width = Math.max(22, label.length * 6.6 + 12);
   return (
@@ -350,14 +422,15 @@ function EdgeLabel({ point, label }: { point: Point; label: string }) {
         height={18}
         rx={9}
         fill={theme.surface}
-        stroke={theme.border}
+        stroke={color ?? theme.border}
       />
       <SvgText
         x={point.x}
         y={point.y + 4}
         fontSize={12}
         fontFamily={FONT}
-        fill={theme.textSecondary}
+        fontWeight={color ? '600' : undefined}
+        fill={color ?? theme.textSecondary}
         textAnchor="middle">
         {label}
       </SvgText>

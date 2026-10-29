@@ -57,9 +57,13 @@ Le **schéma** du process se construit en haut de l'écran au fil du parcours : 
 
 ![La simulation : une décision, une impasse, un parcours complet, le mode sombre](captures/etape-6-simulation.png)
 
-## Voir tous les cas · Prévue
+## Voir tous les cas · Disponible
 
-Le schéma entier, avec une couleur par famille de chemins (selon la réponse à la première décision). Une légende donne, pour chaque famille, le nombre de chemins et leurs délais ; le chemin le plus long est signalé comme critique. Touchez une famille pour l'isoler.
+Dans la simulation, touchez **Tous** : le schéma entier s'affiche, avec une couleur par famille de chemins (une famille regroupe les chemins qui donnent la même réponse à la première décision). Quand plusieurs familles passent par la même flèche, leurs traits sont côte à côte, comme sur un plan de métro.
+
+En dessous, une légende donne pour chaque famille le nombre de chemins et leurs délais. La famille du chemin le plus long est marquée **critique**, et ce chemin est en trait épais. Touchez une famille pour l'isoler sur le schéma, touchez-la encore pour revoir tout. Une dernière ligne dit quel acteur porte le plus d'étapes.
+
+![Tous les cas : deux familles en couleur, puis une famille isolée](captures/etape-6b-tous.png)
 
 ## Exporter le schéma · Prévue
 

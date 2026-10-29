@@ -6,7 +6,7 @@
 
 SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. Import a draw.io diagram or photograph a process table, see the anomalies, then replay the process step by step by choosing each branch.
 
-> Status: early stage. All screens exist and are linked together (Process, Scanner and Profile tabs; detail, simulation, import, sign-in), but only the Process list, the Process detail, the import screen and the simulation are built so far: they show sample processes with their diagnostic, you can add your own from a draw.io or JSON file (saved on the phone, and deletable), and replay any process step by step while its diagram builds itself on screen. The other screens are still placeholders. The simulator features are being built step by step, following the mockup.
+> Status: early stage. All screens exist and are linked together (Process, Scanner and Profile tabs; detail, simulation, import, sign-in), but only the Process list, the Process detail, the import screen and the simulation are built so far: they show sample processes with their diagnostic, you can add your own from a draw.io or JSON file (saved on the phone, and deletable), replay any process step by step while its diagram builds itself on screen, and see every case at once with one colour per family of paths. The other screens are still placeholders. The simulator features are being built step by step, following the mockup.
 
 ## Who it is for
 
@@ -15,7 +15,7 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 ## Key screens
 
 - **Process**: the list of imported processes with their diagnostic status.
-- **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow.
+- **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path.
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 
 The full mockup is in [`docs/maquette/`](docs/maquette/).

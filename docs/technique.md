@@ -26,7 +26,7 @@ src/
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
-  simulation/   Moteur de simulation pas à pas et mise en page du schéma, en TypeScript pur ; tests dans __tests__/
+  simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
 assets/         Icônes, images, écran de démarrage
@@ -231,7 +231,7 @@ Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorti
 
 Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
 
-- **Trois modes** en onglets : « Pas à pas » ; « Simple », qui rejoue le chemin le plus court (`shortestPath`) ; « Complexe », le plus long sans repasser par une étape (`longestPath`). Ces deux derniers rejouent le chemin étape par étape (une toutes les 450 ms) pour que le schéma se construise sous les yeux ; avec « Réduire les animations », le chemin s'affiche d'un coup.
+- **Quatre modes** en onglets : « Pas à pas » ; « Simple », qui rejoue le chemin le plus court (`shortestPath`) ; « Complexe », le plus long sans repasser par une étape (`longestPath`) ; « Tous », la vue de tous les cas (voir plus bas). « Simple » et « Complexe » rejouent le chemin étape par étape (une toutes les 450 ms) pour que le schéma se construise sous les yeux ; avec « Réduire les animations », le chemin s'affiche d'un coup.
 - **Schéma** en haut de l'écran (voir ci-dessous).
 - **Déroulé** : une ligne par étape parcourue, avec une pastille de couleur selon le rôle (départ, tâche, décision, fin), le délai, l'acteur et la sortie empruntée (« par « oui » »). La ligne en cours est surlignée, le total des jours est dans le titre, et la liste défile jusqu'à la dernière étape. Chaque nouvelle ligne apparaît en glissant (Reanimated `FadeInDown`), sauf avec « Réduire les animations ».
 - **Panneau du bas** : le rôle, l'acteur et le titre de l'étape en cours, puis « Étape suivante » s'il n'y a qu'une sortie, ou un bouton par sortie à une décision. À la fin : « Fin atteinte » avec le nombre d'étapes et de jours. Dans une impasse : « Impasse » et le nom de l'étape. « Revenir en arrière » et « Recommencer pas à pas » selon le cas.
@@ -259,7 +259,17 @@ Huit tests vérifient les niveaux, les couloirs, les boucles, les étapes côte 
 
 **Vue.** Le schéma est dans deux défilements imbriqués (vertical et horizontal), à au moins 80 % de sa taille pour rester lisible. À chaque étape, la vue se recentre sur l'étape en cours. Les boutons « − » et « + » zooment (de 30 à 200 %), « Tout » fait tenir le schéma en largeur. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
 
-Pas encore fait (étape 6b, maquette écrans 11 et 12) : la vue de tous les cas avec une couleur par famille de chemins, et l'export en PDF, draw.io et JSON. « Suivre les deux branches » (écran 4) reste à faire aussi.
+### Tous les cas (`src/simulation/families.ts`, maquette écran 11)
+
+**Calcul.** `allPaths(process)` liste tous les chemins sans boucle, de chaque départ jusqu'à une fin (ou jusqu'à une étape dont toutes les sorties reviennent en arrière), par un parcours en profondeur. Au-delà de 500 chemins, la liste s'arrête et le signale (`capped`). `overviewOf(process)` range ces chemins en **familles** : la famille d'un chemin est la sortie qu'il prend à la première étape qui en a plusieurs, nommée d'après la question et la réponse (« Urgent ? » + « oui » donne « Urgent : oui »). Sans aucune décision, il n'y a qu'une famille, « Chemin unique ». Pour chaque famille : ses chemins, ses délais mini et maxi, ses étapes et ses flèches. Le **chemin critique** est le plus long en jours ouvrés ; sa famille est marquée critique s'il y a plusieurs familles. La **charge** compte les étapes de chaque acteur. Six tests couvrent les chemins, les familles, le critique, la charge, le process sans décision, les boucles et le plafond.
+
+**Dessin.** En mode « Tous », `ProcessDiagram` reçoit `overview` au lieu de `progress` : tout le schéma est dessiné, en largeur entière, dans un cadre plus haut (il n'y a pas de panneau en bas). Chaque famille a sa couleur (`FamilyColors` dans `src/constants/theme.ts`, six couleurs en clair et en sombre, lues par `useFamilyColors()`). Une flèche partagée par plusieurs familles reçoit un trait par famille, côte à côte : `offsetPolyline` (`layout.ts`) décale la ligne brisée sur le côté en gardant ses angles droits. Une flèche qu'aucun chemin n'emprunte reste en pointillés gris. Les tâches sont claires (fond blanc, bordure) pour laisser la couleur aux chemins. Le chemin critique est en trait épais. Une pointe de flèche (`Marker`) est créée par couleur utilisée.
+
+**Légende.** Sous le schéma : le nombre de chemins et de familles, puis une ligne par famille (pastille de couleur, nom, badge « critique », nombre de chemins, délais). Toucher une ligne isole la famille : ses traits restent, le reste est estompé. Une phrase rappelle le chemin critique et l'acteur le plus chargé. Chaque ligne est un bouton qui annonce son état (choisi ou non), ses chiffres et ce que fait le toucher.
+
+![Tous les cas : deux familles en couleur, puis la famille critique isolée](captures/etape-6b-tous.png)
+
+Pas encore fait (étape 6b-3, maquette écran 12) : l'export en PDF, draw.io et JSON. « Suivre les deux branches » (écran 4) reste à faire aussi.
 
 ## Accessibilité : vérifications
 
@@ -306,7 +316,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
 | `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
-| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état (fait) |
+| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
 Backend prévu : Supabase (comptes, process partagés, statuts de validation).

@@ -6,7 +6,7 @@ Français · [English](README.md)
 
 SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. On importe un schéma draw.io ou on photographie un tableau de process, on voit les anomalies, puis on rejoue le process pas à pas en choisissant chaque branche.
 
-> État : début du projet. Tous les écrans existent et sont reliés entre eux (onglets Process, Scanner, Profil ; détail, simulation, import, connexion), mais seuls la liste, le détail des process, l'écran d'import et la simulation sont construits pour l'instant : ils montrent des process d'exemple avec leur diagnostic, on peut ajouter les siens depuis un fichier draw.io ou JSON (enregistrés sur le téléphone, et supprimables), et rejouer chaque process pas à pas pendant que son schéma se construit à l'écran. Les autres écrans sont encore provisoires. Les fonctionnalités du simulateur sont construites étape par étape, d'après la maquette.
+> État : début du projet. Tous les écrans existent et sont reliés entre eux (onglets Process, Scanner, Profil ; détail, simulation, import, connexion), mais seuls la liste, le détail des process, l'écran d'import et la simulation sont construits pour l'instant : ils montrent des process d'exemple avec leur diagnostic, on peut ajouter les siens depuis un fichier draw.io ou JSON (enregistrés sur le téléphone, et supprimables), rejouer chaque process pas à pas pendant que son schéma se construit à l'écran, et voir tous les cas d'un coup, une couleur par famille de chemins. Les autres écrans sont encore provisoires. Les fonctionnalités du simulateur sont construites étape par étape, d'après la maquette.
 
 ## Pour qui
 
@@ -15,7 +15,7 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 ## Écrans clés
 
 - **Process** : la liste des process importés, avec leur état de diagnostic.
-- **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre.
+- **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique.
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
 
 La maquette complète est dans [`docs/maquette/`](docs/maquette/).
