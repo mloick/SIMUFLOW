@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux, mais chacun n'affiche encore qu'un titre, une phrase qui décrit son rôle et des liens vers les écrans suivants. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans ne l'utilisent pas encore.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. L'écran Liste des process suit la maquette et affiche des process fictifs, avec leur diagnostic ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
 
 | Élément | Version |
 | --- | --- |
@@ -20,10 +20,12 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, écran provisoire)
+  components/   Composants réutilisables (texte et vue thémés, carte de process, pastille, bouton, squelette de chargement, message d'état, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
+  data/         Accès aux process : process fictifs et chargement simulé, en attendant le backend
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
+  utils/        Petites fonctions de texte (pluriel, recherche sans accents)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/) et logo (logo/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
@@ -53,7 +55,7 @@ Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il gén�
 Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.ts` :
 
 - `Brand` : les deux couleurs du logo, bleu `#007ec5` et marine `#0b2540`.
-- `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
+- `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `surfaceMuted`, `field`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `primaryBackground`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
 - `Radius` (arrondis), `Spacing` (espacements), `Fonts` (polices système).
 
 Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
@@ -112,7 +114,29 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
 
-Les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Sauf la liste des process, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+
+## Écran Liste des process
+
+`src/app/(tabs)/index.tsx` reprend l'écran 2 de la maquette : titre, champ de recherche, une carte par process et un bouton « + » qui ouvre l'import. Chaque carte (`process-card.tsx`) affiche le nombre d'étapes, de décisions et d'acteurs, une pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie ») et la source (draw.io ou Scan). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
+
+**Données.** `useProcessList()` (`src/data/process-store.ts`) charge les quatre process fictifs de `demo-processes.ts` après un délai simulé de 0,7 s. Deux d'entre eux contiennent des anomalies exprès. Le backend remplacera `fetchProcesses` sans toucher à l'écran.
+
+**Les 5 états** (maquette, écran 10) :
+
+| État | Affichage |
+| --- | --- |
+| Chargement | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
+| Vide | Message et bouton « Ajouter un process » (`state-message.tsx`) |
+| Erreur | Message et bouton « Réessayer », qui relance le chargement |
+| Hors connexion | Bandeau orange au-dessus de la dernière version enregistrée |
+| Contenu | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
+
+En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états. Le choix est gardé en mémoire avec `useSyncExternalStore` et n'existe pas dans l'app publiée (`__DEV__`).
+
+**Recherche.** Elle ignore les accents et les majuscules (`normalizeForSearch`, `src/utils/format.ts`) : « materiel » trouve « Commande de matériel ».
+
+**Accessibilité.** Chaque carte est un bouton dont VoiceOver et TalkBack lisent tout le contenu en une phrase. Le champ de recherche et le bouton « + » ont un libellé. Le squelette est annoncé « Chargement des process », le bandeau hors connexion comme une alerte. Les zones à toucher font au moins 44 points.
 
 ## Build de développement
 

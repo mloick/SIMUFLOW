@@ -4,6 +4,12 @@ SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le
 
 Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**.
 
+## Voir vos process · Disponible (exemples)
+
+L'écran Process liste vos process. Chaque carte indique le nombre d'étapes, de décisions et d'acteurs, et une pastille de couleur : vert s'il n'y a aucune anomalie, orange pour des avertissements, rouge pour des erreurs. Tapez quelques lettres dans la recherche pour retrouver un process, accents ou non.
+
+Pour l'instant, la liste montre quatre process d'exemple. Vos propres process arriveront avec l'import.
+
 ## Ajouter un process · Prévue
 
 - Importez un schéma **draw.io** depuis Fichiers, un mail ou Drive.

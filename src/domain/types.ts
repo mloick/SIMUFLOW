@@ -26,9 +26,13 @@ export type Link = {
   label?: string;
 };
 
+/** D'où vient le process : schéma draw.io, tableau scanné ou fichier JSON. */
+export type ProcessSource = 'drawio' | 'scan' | 'json';
+
 export type Process = {
   id: string;
   name: string;
+  source?: ProcessSource;
   steps: Step[];
   links: Link[];
 };
