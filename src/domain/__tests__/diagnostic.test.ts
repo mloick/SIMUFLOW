@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { describeIssue, diagnose } from '../diagnostic';
+import { describeIssue, diagnose, explainIssue } from '../diagnostic';
 import type { Process } from '../types';
 import { copie, demandeMateriel } from '../exemples';
 
@@ -83,6 +83,21 @@ describe('diagnose', () => {
   it('écrit un message en français', () => {
     expect(describeIssue({ severity: 'warning', code: 'duplicate-label', params: { label: 'oui' } })).toBe(
       'Deux branches portent le même libellé « oui ».',
+    );
+  });
+});
+
+describe('explainIssue', () => {
+  it('nomme l’étape concernée', () => {
+    const p = copie();
+    p.links = p.links.filter((l) => l.id !== 'l6');
+    const issue = diagnose(p).find((i) => i.code === 'dead-end')!;
+    expect(explainIssue(issue, p)).toEqual({ title: 'Impasse', detail: '« Prévenir du refus » n’a aucune sortie.' });
+  });
+
+  it('reprend le message général sans étape', () => {
+    expect(explainIssue({ severity: 'error', code: 'no-end' }, demandeMateriel).detail).toBe(
+      'Aucune étape de fin : le process ne se termine nulle part.',
     );
   });
 });

@@ -15,7 +15,7 @@ Pour l'instant, la liste montre quatre process d'exemple. Vos propres process ar
 - Importez un schéma **draw.io** depuis Fichiers, un mail ou Drive.
 - Ou **scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes, vous confirmez.
 
-## Voir les problèmes · Prévue
+## Voir les problèmes · Disponible (exemples)
 
 L'app liste les anomalies du process, les plus graves en premier :
 
@@ -24,7 +24,9 @@ L'app liste les anomalies du process, les plus graves en premier :
 - une branche sans libellé ;
 - une étape que l'on ne peut jamais atteindre.
 
-Le bouton « Voir » montre l'endroit exact sur le schéma.
+Touchez un process pour ouvrir sa fiche : nombre d'étapes, de décisions et de chemins possibles, les acteurs, le diagnostic et la liste des étapes. Le bouton « Voir » d'une anomalie descend jusqu'à l'étape concernée et la surligne. Les simples informations sont repliées ; touchez-les pour les afficher. Le bouton de partage envoie un résumé du process.
+
+Plus tard, « Voir » montrera aussi l'endroit exact sur le schéma.
 
 ## Rejouer le process · Prévue
 
