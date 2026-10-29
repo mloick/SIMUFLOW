@@ -134,6 +134,11 @@ Sauf la liste et le détail des process, les écrans utilisent pour l'instant `P
 
 En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états. Le choix est gardé en mémoire avec `useSyncExternalStore` et n'existe pas dans l'app publiée (`__DEV__`).
 
+**Animations** (Reanimated). Deux animations, toutes deux coupées quand « Réduire les animations » est activé dans les réglages du téléphone (`useReducedMotion`) :
+
+- le squelette de chargement « respire » : son opacité va et vient entre 1 et 0,5 en boucle (`withRepeat` + `withTiming`, 0,8 s) ;
+- à l'arrivée de la liste, les cartes apparaissent l'une après l'autre en glissant vers le haut (`FadeInDown`, 0,3 s, 60 ms d'écart entre deux cartes).
+
 **Recherche.** Elle ignore les accents et les majuscules (`normalizeForSearch`, `src/utils/format.ts`) : « materiel » trouve « Commande de matériel ».
 
 ![Écran Liste : chargement, contenu, vide, erreur, hors connexion, et l'onglet Profil avec le choix de l'état de démo](captures/etape-4a-liste.png)
@@ -154,6 +159,21 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 ![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
 
 **Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
+
+## Accessibilité : vérifications
+
+À refaire à chaque nouvel écran, et pour l'audit croisé du TP.
+
+| Point vérifié | Comment | État |
+| --- | --- | --- |
+| Contrastes | Chaque couleur de texte sur son fond, en clair et en sombre, calculée selon WCAG : tous au-dessus de 4,5:1 (le plus bas : texte blanc sur bouton bleu, 4,75:1) | OK |
+| Lecteur d'écran | Cartes, tuiles, anomalies et étapes lues d'un bloc ; boutons et champ de recherche nommés ; titres marqués comme en-têtes | OK |
+| Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + ») | OK |
+| Grande taille de texte | Aucune hauteur fixe sur les textes : les cartes et les tuiles s'agrandissent avec la taille de texte du téléphone | À vérifier sur l'iPhone |
+| Animations | Coupées avec « Réduire les animations » | OK |
+| Mode sombre | Toutes les couleurs viennent de `useTheme()` | OK |
+
+Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > Accessibilité > Affichage et taille du texte > Police plus grande ; Réglages > Accessibilité > Mouvement > Réduire les animations.
 
 ## Build de développement
 

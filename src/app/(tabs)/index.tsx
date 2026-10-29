@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListSkeleton } from '@/components/list-skeleton';
@@ -25,6 +26,7 @@ export default function ProcessListScreen() {
   const insets = useSafeAreaInsets();
   const list = useProcessList();
   const [query, setQuery] = useState('');
+  const reduceMotion = useReducedMotion();
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
   const items = useMemo(() => {
@@ -110,7 +112,13 @@ export default function ProcessListScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.process.id}
-        renderItem={({ item }) => <ProcessCard process={item.process} summary={item.summary} />}
+        renderItem={({ item, index }) => (
+          // Les cartes arrivent l'une après l'autre en glissant vers le haut ;
+          // rien ne bouge si « Réduire les animations » est activé.
+          <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 60).duration(300)}>
+            <ProcessCard process={item.process} summary={item.summary} />
+          </Animated.View>
+        )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         contentInsetAdjustmentBehavior="automatic"
