@@ -14,18 +14,19 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | Expo Router | 58 (routes dans `src/app/`) |
 | TypeScript | 6.0, mode `strict` |
 | Jest | 30, préréglage `jest-expo` |
+| react-native-svg | 15 (dessin du schéma) |
 
 ## Structure du dépôt
 
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, pastille, bouton, squelette de chargement, message d'état, écran provisoire)
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
-  simulation/   Moteur de simulation pas à pas, en TypeScript pur ; tests dans __tests__/
+  simulation/   Moteur de simulation pas à pas et mise en page du schéma, en TypeScript pur ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
 assets/         Icônes, images, écran de démarrage
@@ -230,7 +231,8 @@ Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorti
 
 Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
 
-- **Trois modes** en onglets : « Pas à pas » ; « Cas simple », qui rejoue d'un coup le chemin le plus court (`shortestPath`) ; « Cas complexe », le plus long sans repasser par une étape (`longestPath`).
+- **Trois modes** en onglets : « Pas à pas » ; « Simple », qui rejoue le chemin le plus court (`shortestPath`) ; « Complexe », le plus long sans repasser par une étape (`longestPath`). Ces deux derniers rejouent le chemin étape par étape (une toutes les 450 ms) pour que le schéma se construise sous les yeux ; avec « Réduire les animations », le chemin s'affiche d'un coup.
+- **Schéma** en haut de l'écran (voir ci-dessous).
 - **Déroulé** : une ligne par étape parcourue, avec une pastille de couleur selon le rôle (départ, tâche, décision, fin), le délai, l'acteur et la sortie empruntée (« par « oui » »). La ligne en cours est surlignée, le total des jours est dans le titre, et la liste défile jusqu'à la dernière étape. Chaque nouvelle ligne apparaît en glissant (Reanimated `FadeInDown`), sauf avec « Réduire les animations ».
 - **Panneau du bas** : le rôle, l'acteur et le titre de l'étape en cours, puis « Étape suivante » s'il n'y a qu'une sortie, ou un bouton par sortie à une décision. À la fin : « Fin atteinte » avec le nombre d'étapes et de jours. Dans une impasse : « Impasse » et le nom de l'étape. « Revenir en arrière » et « Recommencer pas à pas » selon le cas.
 - Un process sans départ affiche « Rien à simuler ».
@@ -239,9 +241,25 @@ Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber`
 
 ![Écran Simulation : une décision, une impasse, le cas complexe jusqu'à la fin, et le mode sombre](captures/etape-6-simulation.png)
 
+![Le schéma qui se construit : une décision avec ses sorties en pointillés, une impasse, le cas complexe arrivé à la fin, et le mode sombre](captures/etape-6b-schema.png)
+
 **Accessibilité.** Les modes sont des onglets qui annoncent celui qui est choisi. Chaque ligne du déroulé est lue d'un bloc (titre, sortie, acteur, délai, « étape en cours »). À chaque nouvelle étape, le lecteur d'écran l'annonce (`AccessibilityInfo.announceForAccessibility`). Les boutons de sortie disent où ils mènent (« Choisir oui : aller à … »).
 
-Pas encore fait : le schéma animé au-dessus du déroulé et « Suivre les deux branches », prévus dans la maquette.
+### Schéma qui se construit (`src/simulation/layout.ts`, `src/components/process-diagram.tsx`)
+
+**Mise en page.** `layoutProcess(process)` donne la position de chaque étape et le tracé de chaque flèche :
+
+- si toutes les étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original ;
+- sinon (fichier JSON, et plus tard tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
+- Les flèches descendent à angle droit : elles sortent par le côté si l'étape d'arrivée est à gauche ou à droite (les sorties d'une décision ne se superposent pas), sinon par le bas. Une flèche qui remonte (boucle) passe par la droite. Le libellé se pose au milieu de la flèche (`midpoint`).
+
+Huit tests vérifient les niveaux, les couloirs, les boucles, les étapes côte à côte, les positions draw.io et la géométrie.
+
+**Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, pilule pour le départ et la fin. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
+
+**Vue.** Le schéma est dans deux défilements imbriqués (vertical et horizontal), à au moins 80 % de sa taille pour rester lisible. À chaque étape, la vue se recentre sur l'étape en cours. Les boutons « − » et « + » zooment (de 30 à 200 %), « Tout » fait tenir le schéma en largeur. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
+
+Pas encore fait (étape 6b, maquette écrans 11 et 12) : la vue de tous les cas avec une couleur par famille de chemins, et l'export en PDF, draw.io et JSON. « Suivre les deux branches » (écran 4) reste à faire aussi.
 
 ## Accessibilité : vérifications
 

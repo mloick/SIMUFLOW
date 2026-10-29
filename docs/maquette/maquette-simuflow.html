@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>body{margin:0;background:#e9eef4;font-family:Inter,system-ui,sans-serif;color:#0b2540}header{padding:32px 24px 8px}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#4a5b70}
 main{display:flex;flex-wrap:wrap;gap:40px;padding:24px}.frame h2{font-size:15px;margin:0 0 10px;color:#4a5b70}.screen{border-radius:28px;overflow:hidden;box-shadow:0 10px 30px rgba(11,37,64,.15);background:#fff}</style></head>
-<body><header><h1>Maquette SimuFlow</h1><p>10 écrans · exemples fictifs · cliquez sur un bouton pour aller à l’écran lié.</p></header><main><section id="Main" class="frame"><h2>1 · Connexion</h2><div class="screen" style="width:390px;height:844px">
+<body><header><h1>Maquette SimuFlow</h1><p>12 écrans · exemples fictifs · cliquez sur un bouton pour aller à l’écran lié.</p></header><main><section id="Main" class="frame"><h2>1 · Connexion</h2><div class="screen" style="width:390px;height:844px">
 
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; padding: 96px 24px 40px 24px; gap: 32px">
 <div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
@@ -159,14 +159,15 @@ main{display:flex;flex-wrap:wrap;gap:40px;padding:24px}.frame h2{font-size:15px;
 <a href="#Detail" style="display: flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px; font-size: 17px; text-decoration: none">
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Détail</a>
 <h1 style="margin: 0; font-size: 17px; font-weight: 600">Simulation</h1>
-<button type="button" aria-label="Plein écran pour la présentation" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center">
-<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg>
-</button>
+<a href="#Export" aria-label="Exporter le schéma" style="width: 44px; height: 44px; border: none; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"></path><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"></path></svg>
+</a>
 </div>
 <div style="display: flex; gap: 8px; padding: 0 16px 10px 16px">
 <button type="button" style="flex: 1; height: 40px; border: none; border-radius: 10px; background: #007ec5; color: #ffffff; font-size: 14px; font-weight: 600; font-family: inherit">Pas à pas</button>
-<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Cas simple</button>
-<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Cas complexe</button>
+<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Simple</button>
+<button type="button" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; font-family: inherit">Complexe</button>
+<a href="#Ensemble" style="flex: 1; height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #ffffff; color: #0b2540; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; text-decoration: none">Tous</a>
 </div>
 <div role="img" aria-label="Schéma du process, l’étape courante est la décision Résolu ?" style="margin: 0 16px; height: 300px; background: #ffffff; border-radius: 16px; position: relative">
 <div style="position: absolute; left: 179px; top: 36px; width: 2px; height: 210px; background: #007ec5"></div>
@@ -523,4 +524,71 @@ main{display:flex;flex-wrap:wrap;gap:40px;padding:24px}.frame h2{font-size:15px;
 </section>
 
 </div>
-</div></section></main></body></html>
+</div></section><section id="Ensemble" class="frame"><h2>11 · Simulation, tous les cas</h2><div class="screen" style="width:390px;height:844px">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f2f6fa; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 56px 8px 8px 8px">
+<a href="#Detail" style="display: flex; align-items: center; min-height: 44px; padding: 0 8px; font-size: 17px; text-decoration: none; color: #006aa6">‹ Détail</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 600">Simulation</h1>
+<a href="#Export" aria-label="Exporter le schéma" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006aa6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"></path><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"></path></svg></a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 0 16px 10px 16px">
+<a href="#Simulation" style="height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #0b2540">Pas à pas</a>
+<span style="height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center">Simple</span>
+<span style="height: 40px; border: 1px solid #c3d0de; border-radius: 10px; background: #fff; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center">Complexe</span>
+<span style="height: 40px; border-radius: 10px; background: #007ec5; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">Tous</span>
+</div>
+<div role="img" aria-label="Schéma complet : trois familles de chemins, chacune d’une couleur" style="margin: 0 16px; height: 330px; background: #ffffff; border-radius: 16px; position: relative">
+<svg width="358" height="330" viewBox="0 0 358 330" aria-hidden="true" style="position:absolute;inset:0">
+<path d="M179 40 V70" stroke="#5b6b7f" stroke-width="3"/><path d="M179 104 V128" stroke="#5b6b7f" stroke-width="3"/>
+<path d="M179 162 H70 V196" stroke="#007ec5" stroke-width="3.5" fill="none"/>
+<path d="M179 162 H290 V196" stroke="#0b8a5f" stroke-width="3.5" fill="none"/>
+<path d="M290 230 V252" stroke="#0b8a5f" stroke-width="3.5" fill="none"/>
+<path d="M290 286 H210" stroke="#0b8a5f" stroke-width="3.5" fill="none"/>
+<path d="M314 286 H340 V318" stroke="#d97706" stroke-width="3.5" stroke-dasharray="0" fill="none"/>
+<path d="M70 230 V300 H150" stroke="#007ec5" stroke-width="3.5" fill="none"/>
+</svg>
+<div style="position:absolute;left:139px;top:12px;width:80px;height:30px;border-radius:15px;background:#0b2540;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center">Début</div>
+<div style="position:absolute;left:114px;top:70px;width:130px;height:34px;border-radius:9px;background:#007ec5;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center">Qualifier · 1 JO</div>
+<div style="position:absolute;left:157px;top:126px;width:44px;height:44px;transform:rotate(45deg);background:#fdeedf;border:2px solid #9a4510"></div>
+<div style="position:absolute;left:129px;top:140px;width:100px;font-size:10px;font-weight:700;text-align:center;color:#9a4510">Urgent ?</div>
+<div style="position:absolute;left:14px;top:196px;width:112px;height:34px;border-radius:9px;background:#007ec5;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center">Contournement</div>
+<div style="position:absolute;left:234px;top:196px;width:112px;height:34px;border-radius:9px;background:#007ec5;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center">Diagnostiquer · 2 JO</div>
+<div style="position:absolute;left:268px;top:254px;width:44px;height:44px;transform:rotate(45deg);background:#fdeedf;border:2px solid #9a4510"></div>
+<div style="position:absolute;left:240px;top:268px;width:100px;font-size:10px;font-weight:700;text-align:center;color:#9a4510">Résolu ?</div>
+<div style="position:absolute;left:150px;top:284px;width:60px;height:30px;border-radius:15px;background:#0b2540;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center">Clos</div>
+<span style="position:absolute;left:76px;top:168px;font-size:10px;color:#007ec5;font-weight:700">oui</span>
+<span style="position:absolute;left:260px;top:168px;font-size:10px;color:#0b8a5f;font-weight:700">non</span>
+<span style="position:absolute;left:320px;top:300px;font-size:10px;color:#d97706;font-weight:700">N3</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #4a5b70">5 chemins · 3 familles</h2>
+<div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 12px"><span style="width:14px;height:14px;border-radius:4px;background:#007ec5"></span><span style="flex:1;font-size:14px">Urgent : oui</span><span style="font-size:13px;color:#4a5b70">2 chemins · 2 à 3 JO</span></div>
+<div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 12px"><span style="width:14px;height:14px;border-radius:4px;background:#0b8a5f"></span><span style="flex:1;font-size:14px">Urgent : non</span><span style="font-size:13px;color:#4a5b70">2 chemins · 4 à 5 JO</span></div>
+<div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px 12px;box-shadow:inset 0 0 0 2px #d97706"><span style="width:14px;height:14px;border-radius:4px;background:#d97706"></span><span style="flex:1;font-size:14px">Escalade N3 <span style="font-size:12px;font-weight:600;color:#9a4510;background:#fdeedf;border-radius:999px;padding:2px 8px">critique</span></span><span style="font-size:13px;color:#4a5b70">1 chemin · 6 JO</span></div>
+<p style="margin:4px 0 0;font-size:13px;color:#4a5b70">Touchez une famille pour l’isoler sur le schéma. Charge : Support N2 porte 4 étapes sur 9.</p>
+</div>
+</div>
+</div></section><section id="Export" class="frame"><h2>12 · Exporter le schéma</h2><div class="screen" style="width:390px;height:844px">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #8a96a5; font-family: Inter, system-ui, sans-serif; color: #0b2540; display: flex; flex-direction: column; justify-content: flex-end">
+<div style="background: #f2f6fa; border-radius: 22px 22px 0 0; display: flex; flex-direction: column; gap: 14px; padding: 10px 16px 34px 16px">
+<div style="align-self: center; width: 40px; height: 5px; border-radius: 3px; background: #c3d0de"></div>
+<div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+<a href="#Ensemble" style="min-height: 44px; display: flex; align-items: center; font-size: 17px; text-decoration: none; color: #006aa6">Annuler</a>
+<h1 style="margin: 0; font-size: 17px; font-weight: 600">Exporter le schéma</h1><span></span>
+</div>
+<p style="margin: 0; font-size: 14px; color: #4a5b70">Gestion d’un incident · 9 étapes · 5 chemins</p>
+<div style="display:flex;align-items:center;gap:14px;padding:16px;border:2px solid #007ec5;border-radius:14px;background:#fff">
+<span style="width:44px;height:44px;border-radius:12px;background:#dff0fa;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#006aa6">PDF</span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:16px;font-weight:600">PDF</span><span style="font-size:14px;color:#4a5b70">Schéma en couleur, familles de chemins et diagnostic</span></span></div>
+<div style="display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #c3d0de;border-radius:14px;background:#fff">
+<span style="width:44px;height:44px;border-radius:12px;background:#dff0fa;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#006aa6">.drawio</span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:16px;font-weight:600">draw.io</span><span style="font-size:14px;color:#4a5b70">À rouvrir et retoucher dans draw.io, idéal après un scan</span></span></div>
+<div style="display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #c3d0de;border-radius:14px;background:#fff">
+<span style="width:44px;height:44px;border-radius:12px;background:#dff0fa;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#006aa6">{ }</span>
+<span style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:16px;font-weight:600">JSON</span><span style="font-size:14px;color:#4a5b70">Pour l’importer dans un autre SimuFlow</span></span></div>
+<label style="display:flex;align-items:center;gap:10px;font-size:15px;min-height:44px"><span style="width:22px;height:22px;border-radius:6px;background:#007ec5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">✓</span>Colorer les familles de chemins</label>
+<button type="button" style="height: 54px; border: none; border-radius: 14px; background: #007ec5; color: #ffffff; font-size: 17px; font-weight: 600; font-family: inherit">Partager</button>
+</div>
+</div>
+</div></section>
+</main></body></html>
