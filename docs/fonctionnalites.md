@@ -10,6 +10,8 @@ L'écran Process liste vos process. Chaque carte indique le nombre d'étapes, de
 
 Pour l'instant, la liste montre quatre process d'exemple. Vos propres process arriveront avec l'import.
 
+![La liste des process et ses différents états](captures/etape-4a-liste.png)
+
 ## Ajouter un process · Prévue
 
 - Importez un schéma **draw.io** depuis Fichiers, un mail ou Drive.
@@ -27,6 +29,8 @@ L'app liste les anomalies du process, les plus graves en premier :
 Touchez un process pour ouvrir sa fiche : nombre d'étapes, de décisions et de chemins possibles, les acteurs, le diagnostic et la liste des étapes. Le bouton « Voir » d'une anomalie descend jusqu'à l'étape concernée et la surligne. Les simples informations sont repliées ; touchez-les pour les afficher. Le bouton de partage envoie un résumé du process.
 
 Plus tard, « Voir » montrera aussi l'endroit exact sur le schéma.
+
+![La fiche d'un process](captures/etape-4b-detail.png)
 
 ## Rejouer le process · Prévue
 

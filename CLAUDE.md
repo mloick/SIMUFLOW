@@ -14,6 +14,8 @@ Toute modification du code (`src/`, `app.json`, `package.json`, `modules/`) met 
 
 Si une modification ne change rien pour un document, ne pas le toucher.
 
+Chaque étape qui change un écran ajoute ses captures dans `docs/captures/` (nommées `etape-<numéro>-<sujet>.png`, compressées), dans la même pull request, et les affiche dans `docs/technique.md` et `docs/fonctionnalites.md` à l'endroit qui décrit l'écran.
+
 ## Confidentialité
 
 Uniquement des exemples fictifs : aucun nom d'entreprise, de client, de service ou de process réel, dans le code comme dans la documentation.

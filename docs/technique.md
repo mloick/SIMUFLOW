@@ -27,7 +27,7 @@ src/
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions de texte (pluriel, recherche sans accents)
 assets/         Icônes, images, écran de démarrage
-docs/           Documentation, maquette des écrans (maquette/) et logo (logo/)
+docs/           Documentation, maquette des écrans (maquette/), logo (logo/) et captures de chaque étape (captures/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, plugins)
 ```
@@ -136,6 +136,8 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 
 **Recherche.** Elle ignore les accents et les majuscules (`normalizeForSearch`, `src/utils/format.ts`) : « materiel » trouve « Commande de matériel ».
 
+![Écran Liste : chargement, contenu, vide, erreur, hors connexion, et l'onglet Profil avec le choix de l'état de démo](captures/etape-4a-liste.png)
+
 **Accessibilité.** Chaque carte est un bouton dont VoiceOver et TalkBack lisent tout le contenu en une phrase. Le champ de recherche et le bouton « + » ont un libellé. Le squelette est annoncé « Chargement des process », le bandeau hors connexion comme une alerte. Les zones à toucher font au moins 44 points.
 
 ## Écran Détail d'un process
@@ -148,6 +150,8 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 - **Diagnostic** : erreurs et avertissements, avec un titre court et une phrase qui nomme l'étape (`explainIssue`, `src/domain/diagnostic.ts`). Les informations sont repliées sous « N informations repliées ».
 - **Étapes** : la liste dans l'ordre du process, avec rôle, acteur et délai. « Voir » fait défiler jusqu'à l'étape concernée et la surligne : chaque ligne mémorise sa position (`onLayout`), puis `scrollTo` y descend.
 - **Bouton « Lancer la simulation »**, fixé en bas, qui ouvre `/simulation/[id]`.
+
+![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
 
 **Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
 
