@@ -44,7 +44,7 @@ app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simu
 | `npm install` | Installer les dépendances |
 | `npx expo run:ios` | Compiler l'app avec Xcode (build de développement) et l'ouvrir dans le Simulateur iOS |
 | `npx expo run:ios --device` | Installer le build de développement sur un iPhone branché en USB |
-| `npm run ios:simulateur` | Comme `npx expo run:ios`, puis efface les fichiers temporaires de compilation à l'arrêt (Ctrl+C) |
+| `npm run ios:simulateur` | Vérifie les versions des paquets, lance `npx expo run:ios`, puis efface les fichiers temporaires de compilation à l'arrêt (Ctrl+C) |
 | `npm run ios:iphone` | Comme `npx expo run:ios --device`, avec le même nettoyage à l'arrêt |
 | `npm run nettoyer` | Effacer seulement les fichiers temporaires de compilation iOS |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
@@ -309,7 +309,9 @@ L'app se teste avec un build de développement compilé par Xcode, et non avec E
 
 ### Nettoyage après compilation
 
-Une compilation Xcode laisse plusieurs Go de fichiers intermédiaires. `scripts/ios.sh` lance `npx expo run:ios` (avec les options passées, par exemple `--device`) et, quand le serveur s'arrête, appelle `scripts/nettoyer-ios.sh`. Ce script, qui ne fait rien hors de macOS, supprime :
+Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrête si des paquets ne correspondent pas aux versions attendues par le SDK Expo (vérification sautée sans réseau). Sans ce contrôle, la compilation réussit mais l'app plante au lancement : les modules natifs Expo sont précompilés, et un module construit pour une version plus récente d'`ExpoModulesCore` ne trouve pas ses symboles (« Symbol not found … ExpoModulesCore » dans le rapport de crash). Correction : `npx expo install --fix`, puis `cd ios && pod install`.
+
+Une compilation Xcode laisse plusieurs Go de fichiers intermédiaires. `scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`) et, quand le serveur s'arrête, appelle `scripts/nettoyer-ios.sh`. Ce script, qui ne fait rien hors de macOS, supprime :
 
 - `~/Library/Developer/Xcode/DerivedData/SimuFlow-*` : les fichiers compilés par Xcode pour ce projet ;
 - le contenu de `ios/build`, sauf `ios/build/generated` : ce dossier contient le code natif que React Native génère pendant `pod install` (codegen). S'il est effacé, la compilation suivante échoue avec « Build input file cannot be found … ReactCodegen », et il faut relancer `cd ios && pod install` ;
