@@ -6,7 +6,7 @@ Français · [English](README.md)
 
 SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. On importe un schéma draw.io ou on photographie un tableau de process, on voit les anomalies, puis on rejoue le process pas à pas en choisissant chaque branche.
 
-> État : début du projet. Tous les écrans existent et sont reliés entre eux (onglets Process, Scanner, Profil ; détail, simulation, import, connexion), mais seuls la liste, le détail des process, l'écran d'import et la simulation sont construits pour l'instant : ils montrent des process d'exemple avec leur diagnostic, on peut ajouter les siens depuis un fichier draw.io ou JSON (enregistrés sur le téléphone, et supprimables), rejouer chaque process pas à pas pendant que son schéma se construit à l'écran, et voir tous les cas d'un coup, une couleur par famille de chemins. Les autres écrans sont encore provisoires. Les fonctionnalités du simulateur sont construites étape par étape, d'après la maquette.
+> État : début du projet. Tous les écrans existent et sont reliés entre eux (onglets Process, Scanner, Profil ; détail, simulation, import, connexion), mais seuls la liste, le détail des process, l'écran d'import et la simulation sont construits pour l'instant : ils montrent des process d'exemple avec leur diagnostic, on peut ajouter les siens depuis un fichier draw.io ou JSON (enregistrés sur le téléphone, et supprimables), rejouer chaque process pas à pas pendant que son schéma se construit à l'écran, voir tous les cas d'un coup, une couleur par famille de chemins, et exporter le schéma en PDF, en fichier draw.io ou en JSON. Les autres écrans sont encore provisoires. Les fonctionnalités du simulateur sont construites étape par étape, d'après la maquette.
 
 ## Pour qui
 
@@ -15,7 +15,7 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 ## Écrans clés
 
 - **Process** : la liste des process importés, avec leur état de diagnostic.
-- **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique.
+- **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique. Le schéma s'exporte en PDF, en fichier draw.io ou en JSON.
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
 
 La maquette complète est dans [`docs/maquette/`](docs/maquette/).
@@ -40,7 +40,7 @@ npx expo run:ios
 
 L'app est compilée avec Xcode (build de développement) et s'ouvre dans le Simulateur iOS. Pour l'installer sur un iPhone branché en USB : `npx expo run:ios --device`. Le dossier `ios/` est généré automatiquement et n'est pas versionné.
 
-Pour économiser l'espace disque, `npm run ios:simulateur` et `npm run ios:iphone` font la même chose, puis effacent les fichiers temporaires de compilation quand on arrête le serveur (Ctrl+C). `npm run nettoyer` lance le nettoyage seul. La compilation suivante est plus longue, car Xcode recompile tout.
+Pour économiser l'espace disque, `npm run ios:simulateur` et `npm run ios:iphone` font la même chose, puis effacent les fichiers temporaires de compilation quand on arrête le serveur (Ctrl+C). Avant de compiler, ils vérifient que les versions des paquets correspondent au SDK Expo et s'arrêtent sinon (corriger avec `npx expo install --fix`, puis `cd ios && pod install`). `npm run nettoyer` lance le nettoyage seul. La compilation suivante est plus longue, car Xcode recompile tout.
 
 Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Claude Code (`.claude/`) sont exclus du dépôt par le `.gitignore`.
 

@@ -280,3 +280,24 @@ export function offsetPolyline(points: Point[], distance: number): Point[] {
     return { x: p.x + (before.x + after.x) * distance * scale, y: p.y + (before.y + after.y) * distance * scale };
   });
 }
+
+/** Texte coupé en lignes de `perLine` caractères au plus, avec « … » au-delà de `maxLines`. */
+export function wrap(text: string, perLine: number, maxLines: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/)) {
+    if (!line) line = word;
+    else if ((line + ' ' + word).length <= perLine) line += ' ' + word;
+    else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = kept[maxLines - 1].slice(0, Math.max(1, perLine - 1)) + '…';
+    return kept;
+  }
+  return lines;
+}

@@ -16,5 +16,5 @@ export function readSaved(): string | null {
 export function writeSaved(text: string) {
   const saved = file();
   if (!saved.exists) saved.create();
-  saved.write(text);
+  saved.writeSync(text);
 }
