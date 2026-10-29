@@ -285,7 +285,7 @@ L'app se teste avec un build de développement compilé par Xcode, et non avec E
 Une compilation Xcode laisse plusieurs Go de fichiers intermédiaires. `scripts/ios.sh` lance `npx expo run:ios` (avec les options passées, par exemple `--device`) et, quand le serveur s'arrête, appelle `scripts/nettoyer-ios.sh`. Ce script, qui ne fait rien hors de macOS, supprime :
 
 - `~/Library/Developer/Xcode/DerivedData/SimuFlow-*` : les fichiers compilés par Xcode pour ce projet ;
-- `ios/build` ;
+- le contenu de `ios/build`, sauf `ios/build/generated` : ce dossier contient le code natif que React Native génère pendant `pod install` (codegen). S'il est effacé, la compilation suivante échoue avec « Build input file cannot be found … ReactCodegen », et il faut relancer `cd ios && pod install` ;
 - les caches Metro dans le dossier temporaire (`metro-*`, `haste-map-*`) ;
 - les simulateurs iOS devenus inutilisables (`xcrun simctl delete unavailable`).
 
