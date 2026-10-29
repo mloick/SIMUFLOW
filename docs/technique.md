@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux, mais chacun n'affiche encore qu'un titre, une phrase qui décrit son rôle et des liens vers les écrans suivants. Aucune donnée ni logique du simulateur n'est encore codée.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux, mais chacun n'affiche encore qu'un titre, une phrase qui décrit son rôle et des liens vers les écrans suivants. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans ne l'utilisent pas encore.
 
 | Élément | Version |
 | --- | --- |
@@ -13,6 +13,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | React | 19.3 |
 | Expo Router | 58 (routes dans `src/app/`) |
 | TypeScript | 6.0, mode `strict` |
+| Jest | 30, préréglage `jest-expo` |
 
 ## Structure du dépôt
 
@@ -21,6 +22,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
+  domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/) et logo (logo/)
@@ -39,6 +41,7 @@ app.json        Configuration Expo (nom, icônes, plugins)
 | `npm run ios:iphone` | Comme `npx expo run:ios --device`, avec le même nettoyage à l'arrêt |
 | `npm run nettoyer` | Effacer seulement les fichiers temporaires de compilation iOS |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
+| `npm test` | Lancer les tests unitaires (Jest) |
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
@@ -56,6 +59,42 @@ Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.
 Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
 
 Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
+
+## Cœur du simulateur
+
+`src/domain/` ne dépend ni de React Native ni du format d'import : ce sont des fonctions TypeScript qui prennent un process et renvoient un résultat. Les règles sont reprises du prototype web (dossier de référence).
+
+**Modèle** (`types.ts`). Un `Process` est un graphe : des `Step` (étapes) reliées par des `Link` (liens orientés). Une étape a un rôle (`start`, `task`, `decision`, `end`), un titre, un acteur et un délai en jours ouvrés, tous deux facultatifs. Un lien peut porter un libellé (« oui », « non »).
+
+**Index** (`graph.ts`). `buildGraph` range les liens sortants et entrants de chaque étape et repère les départs et les fins. Sans étape `start`, les départs sont les étapes où rien n'arrive mais d'où un lien part. Deux parcours en largeur servent au diagnostic : les étapes atteignables depuis un départ, et celles d'où l'on peut atteindre une fin (parcours à rebours).
+
+**Diagnostic** (`diagnostic.ts`). `diagnose` renvoie la liste des anomalies, triées de la plus grave à la moins grave. `describeIssue` donne le message en français.
+
+| Code | Gravité | Signification |
+| --- | --- | --- |
+| `no-start` | erreur | aucun point de départ |
+| `no-end` | erreur | aucune étape de fin |
+| `decision-single-exit` | erreur | décision avec une seule sortie |
+| `dead-end` | avertissement | impasse : étape sans suite qui n'est pas une fin |
+| `cannot-finish` | avertissement | aucune fin atteignable (boucle sans sortie) |
+| `unreachable` | avertissement | étape jamais atteinte depuis le départ |
+| `unlabeled-branch` | avertissement | branche de décision sans libellé |
+| `duplicate-label` | avertissement | deux branches au même libellé |
+| `isolated-step` | avertissement | étape reliée à aucune autre |
+| `empty-title` | avertissement | étape sans titre |
+| `dangling-link` | avertissement | lien vers une étape qui n'existe pas |
+| `multiple-starts` | info | plusieurs départs : la simulation demandera lequel prendre |
+| `ambiguous-exits` | info | plusieurs sorties sans libellé hors décision : choix ou parallèle ? |
+
+**Chemins** (`paths.ts`). Un chemin va d'un départ à une étape terminale (une fin, ou une étape sans suite) ; son délai est la somme des délais de ses étapes.
+
+- `shortestPath` (cas simple) : parcours en largeur, qui trouve la fin la plus proche en nombre d'étapes.
+- `longestPath` (cas complexe) : parcours en profondeur de tous les chemins sans repasser par une même étape, en gardant le plus long.
+- `countPaths` : nombre de chemins sans boucle, plafonné à 2 000.
+
+Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros schéma plein de boucles ne bloque pas le téléphone.
+
+**Tests** (`__tests__/`). Jest, avec le préréglage `jest-expo`. Les tests partent d'un process fictif, la demande de matériel de bureau (`exemples.ts`), et y créent chaque anomalie une par une.
 
 ## Navigation
 
@@ -99,11 +138,11 @@ Le `.gitignore` exclut, en plus des fichiers générés :
 
 ## Architecture visée
 
-Le cœur du simulateur ne dépend pas de l'écran : il sera écrit en TypeScript pur et testé séparément, à partir du prototype web existant.
+Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript pur et testé séparément (voir « Cœur du simulateur »).
 
 | Dossier prévu | Rôle |
 | --- | --- |
-| `src/domain/` | Types du workflow, règles du diagnostic, calcul des chemins |
+| `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
 | `src/import/` | Lecture des fichiers draw.io et JSON, et des tableaux scannés |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |

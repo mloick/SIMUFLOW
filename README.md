@@ -51,7 +51,7 @@ Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.clau
 
 ## Tech stack
 
-Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict).
+Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict). The simulator core (`src/domain/`) is plain TypeScript, tested with Jest: `npm test`.
 
 ## License
 
