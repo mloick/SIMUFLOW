@@ -46,14 +46,24 @@ Plus tard, « Voir » montrera aussi l'endroit exact sur le schéma.
 Ouvrez un process et touchez **Lancer la simulation**.
 
 - **Pas à pas** : touchez « Étape suivante » pour avancer. À chaque décision, l'app vous demande quelle branche suivre. Vous pouvez revenir en arrière.
-- **Cas simple** : le chemin le plus court jusqu'à la fin.
-- **Cas complexe** : le chemin le plus long.
+- **Simple** : le chemin le plus court jusqu'à la fin.
+- **Complexe** : le chemin le plus long.
 
 Le déroulé affiche chaque étape, son acteur et le délai cumulé en jours ouvrés. Si vous tombez sur une étape sans issue, l'app vous le dit.
 
-Plus tard, le schéma du process s'allumera au fil du parcours.
+Le **schéma** du process se construit en haut de l'écran au fil du parcours : chaque étape apparaît quand vous l'atteignez, et à une décision, les sorties possibles s'affichent en pointillés. La vue suit l'étape en cours ; « − » et « + » zooment, « Tout » montre le schéma entier. Un schéma draw.io garde sa mise en page ; pour un fichier JSON, l'app range les étapes en colonnes, une par acteur.
+
+![Le schéma qui se construit pendant la simulation](captures/etape-6b-schema.png)
 
 ![La simulation : une décision, une impasse, un parcours complet, le mode sombre](captures/etape-6-simulation.png)
+
+## Voir tous les cas · Prévue
+
+Le schéma entier, avec une couleur par famille de chemins (selon la réponse à la première décision). Une légende donne, pour chaque famille, le nombre de chemins et leurs délais ; le chemin le plus long est signalé comme critique. Touchez une famille pour l'isoler.
+
+## Exporter le schéma · Prévue
+
+En **PDF** (schéma en couleur, familles de chemins, diagnostic), en fichier **draw.io** à retoucher (pratique après un scan de tableau), ou en **JSON** pour un autre SimuFlow.
 
 ## Partager et valider · Prévue
 

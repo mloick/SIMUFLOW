@@ -1,26 +1,38 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import {
+  AccessibilityInfo,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { ProcessDiagram } from '@/components/process-diagram';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
-import { longestPath, shortestPath, type Process, type StepKind } from '@/domain';
+import { longestPath, shortestPath, type PathStep, type Process, type StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
+import { layoutProcess } from '@/simulation/layout';
 import { formatNumber, plural } from '@/utils/format';
 
 type Mode = 'pas-a-pas' | 'simple' | 'complexe';
 
 const MODES: { value: Mode; label: string }[] = [
   { value: 'pas-a-pas', label: 'Pas à pas' },
-  { value: 'simple', label: 'Cas simple' },
-  { value: 'complexe', label: 'Cas complexe' },
+  { value: 'simple', label: 'Simple' },
+  { value: 'complexe', label: 'Complexe' },
 ];
+
+const REPLAY_INTERVAL_MS = 450;
 
 const KIND_LABELS: Record<StepKind, string> = { start: 'Départ', task: 'Étape', decision: 'Décision', end: 'Fin' };
 
@@ -58,10 +70,27 @@ function Simulator({ process }: { process: Process }) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const sim = useMemo(() => createSimulation(process), [process]);
   const [mode, setMode] = useState<Mode>('pas-a-pas');
+  const layout = useMemo(() => layoutProcess(process), [process]);
   const [state, setState] = useState<SimulationState>(() => sim.start());
+  // Cas simple et cas complexe : le chemin est rejoué étape par étape, pour
+  // voir le schéma se construire.
+  const [replayTarget, setReplayTarget] = useState<PathStep[] | null>(null);
+  const windowSize = useWindowDimensions();
 
   const current = sim.current(state);
   const choices = sim.choices(state);
+  const replaying = replayTarget !== null && state.trail.length < replayTarget.length;
+
+  useEffect(() => {
+    if (!replayTarget) return;
+    let shown = 1;
+    const timer = setInterval(() => {
+      shown += 1;
+      setState(sim.replay(replayTarget.slice(0, shown)));
+      if (shown >= replayTarget.length) clearInterval(timer);
+    }, REPLAY_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [replayTarget, sim]);
 
   // Le lecteur d'écran annonce chaque nouvelle étape.
   useEffect(() => {
@@ -70,9 +99,13 @@ function Simulator({ process }: { process: Process }) {
 
   const chooseMode = (next: Mode) => {
     setMode(next);
+    setReplayTarget(null);
     if (next === 'pas-a-pas') return setState(sim.start());
     const path = next === 'simple' ? shortestPath(process) : longestPath(process);
-    setState(path ? sim.replay(path.steps) : sim.start());
+    if (!path) return setState(sim.start());
+    // Sans animation, le chemin s'affiche d'un coup.
+    setState(sim.replay(reduceMotion ? path.steps : path.steps.slice(0, 1)));
+    if (!reduceMotion) setReplayTarget(path.steps);
   };
 
   const restart = () => chooseMode('pas-a-pas');
@@ -125,6 +158,20 @@ function Simulator({ process }: { process: Process }) {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={styles.diagram}>
+        <ProcessDiagram
+          layout={layout}
+          height={Math.round(Math.min(340, Math.max(200, windowSize.height * 0.34)))}
+          progress={{
+            visitedSteps: new Set(state.trail.map((item) => item.stepId)),
+            visitedLinks: new Set(state.trail.flatMap((item) => (item.linkId ? [item.linkId] : []))),
+            currentId: current?.id,
+            candidateLinks: mode === 'pas-a-pas' ? choices.map((link) => link.id) : [],
+          }}
+          accessibilityLabel={`Schéma du process : ${plural(new Set(state.trail.map((item) => item.stepId)).size, 'étape affichée', 'étapes affichées')} sur ${process.steps.length}${current ? `. Étape en cours : ${current.title}` : ''}.`}
+        />
       </View>
 
       <ScrollView
@@ -183,7 +230,16 @@ function Simulator({ process }: { process: Process }) {
           styles.panel,
           { backgroundColor: theme.surface, paddingBottom: insets.bottom + Spacing.three, shadowColor: theme.text },
         ]}>
-        {state.status === 'running' && current && (
+        {state.status === 'running' && current && replaying && (
+          <View style={styles.panelTitle}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {mode === 'simple' ? 'Cas simple' : 'Cas complexe'} · lecture du chemin
+            </ThemedText>
+            <ThemedText type="subtitle">{current.title || 'Sans titre'}</ThemedText>
+          </View>
+        )}
+
+        {state.status === 'running' && current && !replaying && (
           <>
             <View style={styles.panelTitle}>
               <ThemedText
@@ -269,6 +325,12 @@ function dotColor(kind: StepKind, theme: ReturnType<typeof useTheme>) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   flex: { flex: 1 },
+  diagram: {
+    paddingHorizontal: Spacing.three,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
   modes: {
     flexDirection: 'row',
     gap: Spacing.two,
