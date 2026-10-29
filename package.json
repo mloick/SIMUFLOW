@@ -38,6 +38,9 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "ios:simulateur": "bash scripts/ios.sh",
+    "ios:iphone": "bash scripts/ios.sh --device",
+    "nettoyer": "bash scripts/nettoyer-ios.sh",
     "web": "expo start --web",
     "lint": "expo lint"
   },

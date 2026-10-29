@@ -24,7 +24,7 @@ src/
   hooks/        Hooks partagés (thème, mode sombre)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/) et logo (logo/)
-scripts/        Script du modèle Expo (reset-project)
+scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, plugins)
 ```
 
@@ -35,6 +35,9 @@ app.json        Configuration Expo (nom, icônes, plugins)
 | `npm install` | Installer les dépendances |
 | `npx expo run:ios` | Compiler l'app avec Xcode (build de développement) et l'ouvrir dans le Simulateur iOS |
 | `npx expo run:ios --device` | Installer le build de développement sur un iPhone branché en USB |
+| `npm run ios:simulateur` | Comme `npx expo run:ios`, puis efface les fichiers temporaires de compilation à l'arrêt (Ctrl+C) |
+| `npm run ios:iphone` | Comme `npx expo run:ios --device`, avec le même nettoyage à l'arrêt |
+| `npm run nettoyer` | Effacer seulement les fichiers temporaires de compilation iOS |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
@@ -75,6 +78,17 @@ Les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeh
 ## Build de développement
 
 L'app se teste avec un build de développement compilé par Xcode, et non avec Expo Go : le futur module natif de lecture de texte (Kotlin et Swift) ne peut pas tourner dans Expo Go. `npx expo run:ios` génère le dossier `ios/` (génération native continue), le compile et lance l'app. Les dossiers `ios/` et `android/` ne sont pas versionnés : la configuration native passe par `app.json` et les plugins de configuration.
+
+### Nettoyage après compilation
+
+Une compilation Xcode laisse plusieurs Go de fichiers intermédiaires. `scripts/ios.sh` lance `npx expo run:ios` (avec les options passées, par exemple `--device`) et, quand le serveur s'arrête, appelle `scripts/nettoyer-ios.sh`. Ce script, qui ne fait rien hors de macOS, supprime :
+
+- `~/Library/Developer/Xcode/DerivedData/SimuFlow-*` : les fichiers compilés par Xcode pour ce projet ;
+- `ios/build` ;
+- les caches Metro dans le dossier temporaire (`metro-*`, `haste-map-*`) ;
+- les simulateurs iOS devenus inutilisables (`xcrun simctl delete unavailable`).
+
+Il affiche ensuite l'espace libéré. Le dossier `ios/` et ses `Pods` sont gardés : `ios/` contient la signature (équipe Apple choisie dans Xcode), et garder les `Pods` évite de les retélécharger. Contrepartie : la compilation suivante repart de zéro et prend quelques minutes de plus.
 
 ## Fichiers exclus du dépôt
 
