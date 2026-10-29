@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process et Importer suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process, Importer et Simulation suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
 
 | Élément | Version |
 | --- | --- |
@@ -25,8 +25,9 @@ src/
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
+  simulation/   Moteur de simulation pas à pas, en TypeScript pur ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
-  utils/        Petites fonctions : texte (pluriel, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
+  utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
@@ -86,7 +87,7 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 | `isolated-step` | avertissement | étape reliée à aucune autre |
 | `empty-title` | avertissement | étape sans titre |
 | `dangling-link` | avertissement | lien vers une étape qui n'existe pas |
-| `multiple-starts` | info | plusieurs départs : la simulation demandera lequel prendre |
+| `multiple-starts` | info | plusieurs départs : la simulation part du premier |
 | `ambiguous-exits` | info | plusieurs sorties sans libellé hors décision : choix ou parallèle ? |
 
 **Chemins** (`paths.ts`). Un chemin va d'un départ à une étape terminale (une fin, ou une étape sans suite) ; son délai est la somme des délais de ses étapes.
@@ -135,7 +136,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
 
-Sauf la liste, le détail des process et l'import, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Sauf la liste, le détail des process, l'import et la simulation, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Écran Liste des process
 
@@ -213,6 +214,35 @@ Ce stockage est local à un téléphone. Le partage entre téléphones passera p
 
 **Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
 
+## Écran Simulation
+
+### Moteur (`src/simulation/engine.ts`)
+
+`createSimulation(process)` prépare le graphe une fois (`buildGraph`) et renvoie des fonctions qui prennent un état et renvoient le nouvel état, sans rien modifier. L'écran garde l'état avec `useState`, le moteur calcule. L'état contient :
+
+- `trail` : les étapes parcourues, dans l'ordre, chacune avec le lien emprunté pour y arriver (même forme que les chemins de `paths.ts`) ;
+- `days` : le délai cumulé, en jours ouvrés ;
+- `status` : `running` (il reste des sorties), `finished` (une fin est atteinte), `stuck` (impasse : une étape sans sortie qui n'est pas une fin) ou `no-start` (aucun départ).
+
+Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorties de l'étape courante ; `step(état, lien)` avance par la sortie choisie (une sortie qui ne part pas de l'étape courante est ignorée) ; `back(état)` revient d'une étape ; `replay(chemin)` rejoue un chemin déjà calculé. Une boucle du schéma peut être parcourue plusieurs fois : c'est l'utilisateur qui choisit. Six tests couvrent le départ, l'avance, le retour, le rejeu, l'impasse et le process sans départ.
+
+### Écran (`src/app/simulation/[id].tsx`)
+
+Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
+
+- **Trois modes** en onglets : « Pas à pas » ; « Cas simple », qui rejoue d'un coup le chemin le plus court (`shortestPath`) ; « Cas complexe », le plus long sans repasser par une étape (`longestPath`).
+- **Déroulé** : une ligne par étape parcourue, avec une pastille de couleur selon le rôle (départ, tâche, décision, fin), le délai, l'acteur et la sortie empruntée (« par « oui » »). La ligne en cours est surlignée, le total des jours est dans le titre, et la liste défile jusqu'à la dernière étape. Chaque nouvelle ligne apparaît en glissant (Reanimated `FadeInDown`), sauf avec « Réduire les animations ».
+- **Panneau du bas** : le rôle, l'acteur et le titre de l'étape en cours, puis « Étape suivante » s'il n'y a qu'une sortie, ou un bouton par sortie à une décision. À la fin : « Fin atteinte » avec le nombre d'étapes et de jours. Dans une impasse : « Impasse » et le nom de l'étape. « Revenir en arrière » et « Recommencer pas à pas » selon le cas.
+- Un process sans départ affiche « Rien à simuler ».
+
+Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber` (`src/utils/format.ts`), aussi utilisé par `plural` : le détail d'un process en profite.
+
+![Écran Simulation : une décision, une impasse, le cas complexe jusqu'à la fin, et le mode sombre](captures/etape-6-simulation.png)
+
+**Accessibilité.** Les modes sont des onglets qui annoncent celui qui est choisi. Chaque ligne du déroulé est lue d'un bloc (titre, sortie, acteur, délai, « étape en cours »). À chaque nouvelle étape, le lecteur d'écran l'annonce (`AccessibilityInfo.announceForAccessibility`). Les boutons de sortie disent où ils mènent (« Choisir oui : aller à … »).
+
+Pas encore fait : le schéma animé au-dessus du déroulé et « Suivre les deux branches », prévus dans la maquette.
+
 ## Accessibilité : vérifications
 
 À refaire à chaque nouvel écran, et pour l'audit croisé du TP.
@@ -221,7 +251,7 @@ Ce stockage est local à un téléphone. Le partage entre téléphones passera p
 | --- | --- | --- |
 | Contrastes | Chaque couleur de texte sur son fond, en clair et en sombre, calculée selon WCAG : tous au-dessus de 4,5:1 (le plus bas : texte blanc sur bouton bleu, 4,75:1) | OK |
 | Lecteur d'écran | Cartes, tuiles, anomalies et étapes lues d'un bloc ; boutons et champ de recherche nommés ; titres marqués comme en-têtes | OK |
-| Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + », sources et pages de l'import) | OK |
+| Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + », sources et pages de l’import, modes et boutons de la simulation) | OK |
 | Grande taille de texte | Aucune hauteur fixe sur les textes : les cartes et les tuiles s'agrandissent avec la taille de texte du téléphone | À vérifier sur l'iPhone |
 | Animations | Coupées avec « Réduire les animations » | OK |
 | Mode sombre | Toutes les couleurs viennent de `useTheme()` | OK |
@@ -258,7 +288,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
 | `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
-| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état |
+| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
 Backend prévu : Supabase (comptes, process partagés, statuts de validation).

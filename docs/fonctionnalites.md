@@ -41,13 +41,19 @@ Plus tard, « Voir » montrera aussi l'endroit exact sur le schéma.
 
 ![La fiche d'un process](captures/etape-4b-detail.png)
 
-## Rejouer le process · Prévue
+## Rejouer le process · Disponible
 
-- **Pas à pas** : à chaque décision, l'app vous demande quelle branche suivre.
+Ouvrez un process et touchez **Lancer la simulation**.
+
+- **Pas à pas** : touchez « Étape suivante » pour avancer. À chaque décision, l'app vous demande quelle branche suivre. Vous pouvez revenir en arrière.
 - **Cas simple** : le chemin le plus court jusqu'à la fin.
 - **Cas complexe** : le chemin le plus long.
 
-Le déroulé affiche chaque étape, son acteur et le délai cumulé en jours ouvrés.
+Le déroulé affiche chaque étape, son acteur et le délai cumulé en jours ouvrés. Si vous tombez sur une étape sans issue, l'app vous le dit.
+
+Plus tard, le schéma du process s'allumera au fil du parcours.
+
+![La simulation : une décision, une impasse, un parcours complet, le mode sombre](captures/etape-6-simulation.png)
 
 ## Partager et valider · Prévue
 
