@@ -65,9 +65,17 @@ En dessous, une légende donne pour chaque famille le nombre de chemins et leurs
 
 ![Tous les cas : deux familles en couleur, puis une famille isolée](captures/etape-6b-tous.png)
 
-## Exporter le schéma · Prévue
+## Exporter le schéma · Disponible
 
-En **PDF** (schéma en couleur, familles de chemins, diagnostic), en fichier **draw.io** à retoucher (pratique après un scan de tableau), ou en **JSON** pour un autre SimuFlow.
+Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez le format :
+
+- **PDF** : le schéma en couleur, les familles de chemins avec leurs délais, et le diagnostic. À envoyer ou à imprimer.
+- **draw.io** : un fichier à rouvrir et à retoucher dans draw.io, rangé en couloirs par acteur. Pratique après un scan de tableau. SimuFlow sait aussi le réimporter.
+- **JSON** : pour l'importer dans un autre SimuFlow.
+
+« Colorer les familles de chemins » met une couleur par famille sur le schéma, comme dans la vue Tous. Touchez **Partager** pour l'envoyer par mail, le ranger dans Fichiers ou l'envoyer par AirDrop.
+
+![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
 
 ## Partager et valider · Prévue
 

@@ -159,3 +159,46 @@ function familyOf(graph: ProcessGraph, path: Path): { id: string; label: string 
   }
   return { id: 'unique', label: 'Chemin unique' };
 }
+
+/** Trait d'une famille sur une flèche du schéma. */
+export type FamilyStroke = { color: string; bold: boolean };
+
+/**
+ * Comment dessiner la vue « Tous » : les traits de chaque flèche (un par
+ * famille qui l'emprunte, épais sur le chemin critique) et, si une famille est
+ * isolée, ce qui est estompé.
+ */
+export type FamilyPaint = {
+  strokes: Map<string, FamilyStroke[]>;
+  dimmedSteps?: Set<string>;
+  dimmedLinks?: Set<string>;
+};
+
+export function paintFamilies(
+  overview: ProcessOverview,
+  colors: readonly string[],
+  isolated: string | null = null,
+): FamilyPaint {
+  const colorOf = (index: number) => colors[index % colors.length];
+  const focus = overview.families.find((family) => family.id === isolated);
+  const critical = new Set(
+    overview.families.length > 1 && overview.critical
+      ? overview.critical.steps.flatMap((step) => (step.linkId ? [step.linkId] : []))
+      : [],
+  );
+  const strokes = new Map<string, FamilyStroke[]>();
+  overview.families.forEach((family, index) => {
+    if (focus && family !== focus) return;
+    for (const linkId of family.links) {
+      const list = strokes.get(linkId) ?? [];
+      list.push({ color: colorOf(index), bold: family.critical && critical.has(linkId) });
+      strokes.set(linkId, list);
+    }
+  });
+  if (!focus) return { strokes };
+  return {
+    strokes,
+    dimmedLinks: new Set(overview.families.flatMap((family) => [...family.links]).filter((id) => !focus.links.has(id))),
+    dimmedSteps: new Set(overview.families.flatMap((family) => [...family.steps]).filter((id) => !focus.steps.has(id))),
+  };
+}

@@ -1,3 +1,4 @@
+import { SymbolView } from 'expo-symbols';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -13,7 +14,7 @@ import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
-import { ProcessDiagram, type DiagramOverview, type FamilyStroke } from '@/components/process-diagram';
+import { ProcessDiagram } from '@/components/process-diagram';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -21,7 +22,7 @@ import { getProcess } from '@/data/process-store';
 import { longestPath, shortestPath, type PathStep, type Process, type StepKind } from '@/domain';
 import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
-import { overviewOf, type PathFamily, type ProcessOverview } from '@/simulation/families';
+import { overviewOf, paintFamilies, type PathFamily, type ProcessOverview } from '@/simulation/families';
 import { layoutProcess } from '@/simulation/layout';
 import { formatNumber, plural } from '@/utils/format';
 
@@ -144,6 +145,20 @@ function Simulator({ process }: { process: Process }) {
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push({ pathname: '/export/[id]', params: { id: process.id } })}
+              accessibilityRole="button"
+              accessibilityLabel="Exporter le schéma"
+              hitSlop={12}
+              style={styles.headerButton}>
+              <SymbolView
+                name={{ ios: 'square.and.arrow.up', android: 'share' }}
+                size={22}
+                tintColor={theme.link}
+              />
+            </Pressable>
+          ),
         }}
       />
 
@@ -177,7 +192,7 @@ function Simulator({ process }: { process: Process }) {
               key="tous"
               layout={layout}
               height={Math.round(Math.min(480, Math.max(240, windowSize.height * 0.5)))}
-              overview={paintOverview(overview, colorOf, isolated)}
+              overview={paintFamilies(overview, familyColors, isolated)}
               accessibilityLabel={`Schéma complet : ${plural(overview.families.length, 'famille')} de chemins, chacune d’une couleur${isolated ? `. Famille isolée : ${overview.families.find((family) => family.id === isolated)?.label}` : ''}.`}
             />
           </View>
@@ -337,35 +352,6 @@ function Simulator({ process }: { process: Process }) {
   );
 }
 
-/** Traits du schéma « Tous » : une couleur par famille, et ce qui n'est pas dans la famille isolée est estompé. */
-function paintOverview(
-  overview: ProcessOverview,
-  colorOf: (index: number) => string,
-  isolated: string | null,
-): DiagramOverview {
-  const focus = overview.families.find((family) => family.id === isolated);
-  const critical = new Set(
-    overview.families.length > 1 && overview.critical
-      ? overview.critical.steps.flatMap((step) => (step.linkId ? [step.linkId] : []))
-      : [],
-  );
-  const strokes = new Map<string, FamilyStroke[]>();
-  overview.families.forEach((family, index) => {
-    if (focus && family !== focus) return;
-    for (const linkId of family.links) {
-      const list = strokes.get(linkId) ?? [];
-      list.push({ color: colorOf(index), bold: family.critical && critical.has(linkId) });
-      strokes.set(linkId, list);
-    }
-  });
-  if (!focus) return { strokes };
-  return {
-    strokes,
-    dimmedLinks: new Set(overview.families.flatMap((family) => [...family.links]).filter((id) => !focus.links.has(id))),
-    dimmedSteps: new Set(overview.families.flatMap((family) => [...family.steps]).filter((id) => !focus.steps.has(id))),
-  };
-}
-
 function OverviewList({
   process,
   overview,
@@ -484,6 +470,7 @@ function dotColor(kind: StepKind, theme: ReturnType<typeof useTheme>) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  headerButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   diagram: {
     paddingHorizontal: Spacing.three,

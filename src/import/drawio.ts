@@ -39,6 +39,8 @@ type Cell = {
   y: number;
   w: number;
   h: number;
+  /** Propriété « acteur » (fichier exporté par SimuFlow), utilisée sans couloir. */
+  actor?: string;
   sourcePoint?: Point;
   targetPoint?: Point;
   points: Point[];
@@ -124,6 +126,7 @@ function readCells(model: Element): Cell[] {
       w: 0,
       h: 0,
       points: [],
+      actor: wrapper?.getAttribute('acteur')?.trim() || undefined,
       ax: 0,
       ay: 0,
       ox: 0,
@@ -306,7 +309,7 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     else if (outs === 0 && ins > 0 && END_TEXT.test(title)) kind = 'end';
 
     const step: Step = { id: node.id, kind, title, layout: { x: node.ax, y: node.ay, width: node.w, height: node.h } };
-    const actor = actorOf(node);
+    const actor = actorOf(node) ?? node.actor;
     const duration = durationOf(node.text);
     if (actor) step.actor = actor;
     if (duration !== undefined) step.duration = duration;

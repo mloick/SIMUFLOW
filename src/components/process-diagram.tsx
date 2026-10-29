@@ -14,7 +14,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { midpoint, offsetPolyline, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import type { FamilyPaint } from '@/simulation/families';
+import { midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -40,21 +41,12 @@ export type DiagramProgress = {
   candidateLinks: string[];
 };
 
-/** Trait d'une famille sur une flèche. */
-export type FamilyStroke = { color: string; bold: boolean };
-
 /**
  * Vue « Tous les cas » : tout le schéma est dessiné. Une flèche empruntée par
  * plusieurs familles a un trait de chaque couleur, côte à côte, comme un plan
  * de métro. Les flèches qu'aucun chemin n'emprunte sont en pointillés.
  */
-export type DiagramOverview = {
-  /** Traits de chaque flèche ; « bold » pour le chemin critique. */
-  strokes: Map<string, FamilyStroke[]>;
-  /** Famille isolée : ce qui n'en fait pas partie est estompé. */
-  dimmedSteps?: Set<string>;
-  dimmedLinks?: Set<string>;
-};
+export type DiagramOverview = FamilyPaint;
 
 /**
  * Schéma du process qui se construit pendant la simulation : seules les étapes
@@ -152,8 +144,9 @@ export function ProcessDiagram({
                       viewBox="0 0 10 10"
                       refX="9"
                       refY="5"
-                      markerWidth="7"
-                      markerHeight="7"
+                      markerWidth="10"
+                      markerHeight="10"
+                      markerUnits="userSpaceOnUse"
                       orient="auto">
                       <Path d="M0 0L10 5L0 10z" fill={color} />
                     </Marker>
@@ -388,26 +381,6 @@ function NodeText({ node, color }: { node: DiagramNode; color: string }) {
       ))}
     </SvgText>
   );
-}
-
-export function wrap(text: string, perLine: number, maxLines: number): string[] {
-  const lines: string[] = [];
-  let line = '';
-  for (const word of text.split(/\s+/)) {
-    if (!line) line = word;
-    else if ((line + ' ' + word).length <= perLine) line += ' ' + word;
-    else {
-      lines.push(line);
-      line = word;
-    }
-  }
-  if (line) lines.push(line);
-  if (lines.length > maxLines) {
-    const kept = lines.slice(0, maxLines);
-    kept[maxLines - 1] = kept[maxLines - 1].slice(0, Math.max(1, perLine - 1)) + '…';
-    return kept;
-  }
-  return lines;
 }
 
 function EdgeLabel({ point, label, color }: { point: Point; label: string; color?: string }) {

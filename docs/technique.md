@@ -15,6 +15,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | TypeScript | 6.0, mode `strict` |
 | Jest | 30, préréglage `jest-expo` |
 | react-native-svg | 15 (dessin du schéma) |
+| expo-print, expo-sharing | 58 (export en PDF, feuille de partage) |
 
 ## Structure du dépôt
 
@@ -26,9 +27,10 @@ src/
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
+  export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   hooks/        Hooks partagés (thème, mode sombre)
-  utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
+  utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
@@ -135,9 +137,10 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
+| `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
 
-Sauf la liste, le détail des process, l'import et la simulation, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Sauf la liste, le détail des process, l'import, la simulation et l'export, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Écran Liste des process
 
@@ -269,7 +272,21 @@ Huit tests vérifient les niveaux, les couloirs, les boucles, les étapes côte 
 
 ![Tous les cas : deux familles en couleur, puis la famille critique isolée](captures/etape-6b-tous.png)
 
-Pas encore fait (étape 6b-3, maquette écran 12) : l'export en PDF, draw.io et JSON. « Suivre les deux branches » (écran 4) reste à faire aussi.
+### Export (`src/export/`, `src/app/export/[id].tsx`, maquette écran 12)
+
+Le bouton de partage en haut à droite de la simulation ouvre la modale « Exporter le schéma ». On choisit un format, on coche ou non « Colorer les familles de chemins », puis « Partager » prépare le fichier et ouvre la feuille de partage du téléphone (Mail, Fichiers, AirDrop…). Les couleurs des familles sont celles du mode clair (`FamilyColors.light`), car le fichier est fait pour une page blanche.
+
+- **PDF** : `processToPdfHtml(process, options)` (`pdf.ts`) écrit une page HTML : le nom et les chiffres du process, le schéma, le tableau des familles (chemins, délais, badge « critique »), le chemin critique et l'acteur le plus chargé, puis le diagnostic (titre et phrase de chaque anomalie, comme dans le détail). Le schéma est une image SVG en texte, produite par `diagramSvg(layout, strokes)` (`svg.ts`) avec la même mise en page et les mêmes traits côte à côte que dans l'app. `expo-print` (`printToFileAsync`, format A4) transforme la page en PDF, que l'on renomme d'après le process.
+- **draw.io** : `processToDrawio(process, layout, options)` (`drawio.ts`) écrit un fichier `.drawio` non compressé. Chaque acteur devient un couloir (`swimlane`) qui contient ses étapes ; un process venu de draw.io garde ses positions. Chaque étape a sa forme (rectangle arrondi, losange, ellipse pour le départ et la fin), son délai dans son texte (« 2 JO ») et son acteur dans une propriété `acteur`. Les flèches gardent leur libellé et les coins du tracé de l'app ; avec les familles, chaque flèche prend la couleur de sa famille (gris si plusieurs familles la partagent, épaisse sur le chemin critique). L'import lit cette propriété `acteur` quand une étape n'est dans aucun couloir : un fichier exporté se réimporte sans perte, ce que vérifient les tests.
+- **JSON** : `processToJson` (`src/import/json.ts`), au format que l'import relit.
+
+`exportFileName` tire le nom du fichier du nom du process (« Gestion d’un incident » → `gestion-d-un-incident.pdf`). `src/utils/share-file.ts` écrit le fichier dans le cache de l'app (`Paths.cache`), puis appelle `Sharing.shareAsync`. Sur iOS, on ne passe pas de type MIME : il ajouterait une seconde extension (`.drawio.xml`). Sur le web, `share-file.web.ts` télécharge le fichier, et le PDF s'ouvre dans une fenêtre d'impression (« Enregistrer en PDF »). Neuf tests couvrent l'aller-retour draw.io (avec et sans couloirs, caractères spéciaux), les couleurs, le contenu du PDF, le nom du fichier et le JSON.
+
+**Accessibilité.** Les formats sont des boutons radio, la case « Colorer » est une case à cocher qui annonce son état, et une erreur de partage s'affiche dans un encadré annoncé (`alert`).
+
+![Export du schéma : choix du format, puis le PDF obtenu](captures/etape-6b-export.png)
+
+Pas encore fait : « Suivre les deux branches » (écran 4).
 
 ## Accessibilité : vérifications
 
@@ -316,6 +333,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
 | `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
+| `src/export/` | Export en PDF, draw.io et JSON (fait) |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
