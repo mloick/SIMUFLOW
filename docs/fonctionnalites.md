@@ -8,16 +8,23 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**.
 
 L'écran Process liste vos process. Chaque carte indique le nombre d'étapes, de décisions et d'acteurs, et une pastille de couleur : vert s'il n'y a aucune anomalie, orange pour des avertissements, rouge pour des erreurs. Tapez quelques lettres dans la recherche pour retrouver un process, accents ou non.
 
-Pour l'instant, la liste montre quatre process d'exemple. Vos propres process arriveront avec l'import.
+La liste montre quatre process d'exemple, et ceux que vous importez apparaissent en premier.
 
 ![La liste des process et ses différents états](captures/etape-4a-liste.png)
 
-## Ajouter un process · Prévue
+## Ajouter un process depuis un fichier · Disponible
 
-- Importez un schéma **draw.io** depuis Fichiers, un mail ou Drive.
-- Ou **scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes, vous confirmez.
+Touchez le bouton **+** de la liste, puis **Fichier draw.io** ou **Fichier JSON**, et choisissez le fichier dans Fichiers, iCloud Drive ou Drive. L'app vous montre ce qu'elle a lu : le nombre d'étapes et d'acteurs, les problèmes éventuels, et ce qu'elle a dû deviner (par exemple une flèche qui n'était accrochée à rien). Si le schéma a plusieurs pages, choisissez celle à importer. Vérifiez le nom, puis touchez **Importer** : le process s'ouvre et rejoint la liste.
 
-## Voir les problèmes · Disponible (exemples)
+Pour l'instant, un process importé disparaît quand vous fermez l'app. Il sera bientôt gardé sur le téléphone.
+
+![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
+
+## Scanner un tableau · Prévue
+
+**Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes, vous confirmez.
+
+## Voir les problèmes · Disponible
 
 L'app liste les anomalies du process, les plus graves en premier :
 

@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process et Détail d'un process suivent la maquette et affichent des process fictifs, avec leur diagnostic ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process et Importer suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON (gardés en mémoire jusqu'à la fermeture de l'app) ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
 
 | Élément | Version |
 | --- | --- |
@@ -26,9 +26,9 @@ src/
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   hooks/        Hooks partagés (thème, mode sombre)
-  utils/        Petites fonctions de texte (pluriel, recherche sans accents)
+  utils/        Petites fonctions : texte (pluriel, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web)
 assets/         Icônes, images, écran de démarrage
-docs/           Documentation, maquette des écrans (maquette/), logo (logo/) et captures de chaque étape (captures/)
+docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, plugins)
 ```
@@ -135,7 +135,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
 
-Sauf la liste et le détail des process, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Sauf la liste, le détail des process et l'import, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Écran Liste des process
 
@@ -166,6 +166,25 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 
 **Accessibilité.** Chaque carte est un bouton dont VoiceOver et TalkBack lisent tout le contenu en une phrase. Le champ de recherche et le bouton « + » ont un libellé. Le squelette est annoncé « Chargement des process », le bandeau hors connexion comme une alerte. Les zones à toucher font au moins 44 points.
 
+## Écran Importer
+
+`src/app/import.tsx` reprend l'écran 5 de la maquette, en fenêtre modale ouverte par le bouton « + » de la liste.
+
+1. **Source** : « Fichier draw.io » et « Fichier JSON » ouvrent le sélecteur de fichiers du téléphone (`expo-document-picker`, qui accède à Fichiers, iCloud Drive, Drive, pièces jointes enregistrées). « Scanner un tableau » ouvre l'onglet Scanner. Le sélecteur copie le fichier dans le cache de l'app ; `readPickedFile` (`src/utils/read-file.ts`) en lit le texte avec `File` d'`expo-file-system`. Un fichier de plus de 5 Mo est refusé.
+2. **Lecture** : `importProcessFile` (voir « Import de fichiers »). Si le fichier est illisible, son message d'erreur s'affiche en rouge sous les sources, et rien n'est ajouté.
+3. **Page à importer** : si le fichier draw.io a plusieurs pages, une liste à choix unique permet d'en garder une.
+4. **Aperçu** : nombre d'étapes, de décisions et d'acteurs, pastille de diagnostic, et remarques de la lecture (par exemple une flèche rattachée).
+5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
+6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
+
+Les process importés sont gardés en mémoire (un petit magasin lu avec `useSyncExternalStore`) : ils disparaissent quand l'app est fermée. Les garder sur le téléphone est l'étape suivante.
+
+`docs/exemples/` contient deux fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+
+![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
+
+**Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
+
 ## Écran Détail d'un process
 
 `src/app/process/[id].tsx` reprend l'écran 3 de la maquette. Il lit le process avec `getProcess(id)` (`src/data/process-store.ts`) ; un identifiant inconnu affiche « Process introuvable » avec un bouton de retour.
@@ -189,7 +208,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 | --- | --- | --- |
 | Contrastes | Chaque couleur de texte sur son fond, en clair et en sombre, calculée selon WCAG : tous au-dessus de 4,5:1 (le plus bas : texte blanc sur bouton bleu, 4,75:1) | OK |
 | Lecteur d'écran | Cartes, tuiles, anomalies et étapes lues d'un bloc ; boutons et champ de recherche nommés ; titres marqués comme en-têtes | OK |
-| Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + ») | OK |
+| Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + », sources et pages de l'import) | OK |
 | Grande taille de texte | Aucune hauteur fixe sur les textes : les cartes et les tuiles s'agrandissent avec la taille de texte du téléphone | À vérifier sur l'iPhone |
 | Animations | Coupées avec « Réduire les animations » | OK |
 | Mode sombre | Toutes les couleurs viennent de `useTheme()` | OK |
