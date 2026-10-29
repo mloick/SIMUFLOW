@@ -15,6 +15,8 @@ export type Step = {
   actor?: string;
   /** Délai de l'étape, en jours ouvrés. */
   duration?: number;
+  /** Position et taille sur le schéma d'origine (import draw.io). */
+  layout?: { x: number; y: number; width: number; height: number };
 };
 
 /** Lien orienté d'une étape vers la suivante. */

@@ -24,6 +24,7 @@ src/
   constants/    Thème : couleurs, espacements, polices
   data/         Accès aux process : process fictifs et chargement simulé, en attendant le backend
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
+  import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions de texte (pluriel, recherche sans accents)
 assets/         Icônes, images, écran de démarrage
@@ -97,6 +98,26 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros schéma plein de boucles ne bloque pas le téléphone.
 
 **Tests** (`__tests__/`). Jest, avec le préréglage `jest-expo`. Les tests partent d'un process fictif, la demande de matériel de bureau (`exemples.ts`), et y créent chaque anomalie une par une.
+
+## Import de fichiers
+
+`src/import/` transforme un fichier en process (`Process` du cœur), sans dépendre de l'écran. `importProcessFile(nomDuFichier, contenu)` choisit le lecteur d'après l'extension ou le premier caractère, et renvoie les process trouvés et une liste de remarques. Un fichier illisible lève une `ImportError` avec un message en français, prêt à afficher.
+
+**draw.io** (`drawio.ts`, repris du prototype web). Un fichier draw.io est du XML : une balise `<diagram>` par page, contenant un `<mxGraphModel>` en clair ou compressé (base64 d'un flux *deflate* du XML encodé en URL). Le XML est lu avec `@xmldom/xmldom` et la décompression faite avec `fflate`, deux bibliothèques en JavaScript pur, sans code natif. Pour chaque page :
+
+- chaque `<mxCell>` est une forme (`vertex`) ou une flèche (`edge`) ; une forme enveloppée dans `<object>` ou `<UserObject>` prend son libellé là ;
+- les coordonnées sont rendues absolues (une forme dans un couloir est placée par rapport à lui) ;
+- les couloirs (style `swimlane`, `pool`, ou grand cadre qui contient des formes) deviennent l'**acteur** des étapes qu'ils contiennent ;
+- les zones de texte non reliées sont des notes, et les formes sans aucune flèche des annotations : elles sont ignorées ;
+- le rôle d'une étape vient de sa forme (losange = décision, ellipse = départ ou fin) ou de son texte (« Début », « Fin », « Close »…) ;
+- le délai est lu dans le texte (« 2 JO », « 1,5 jour ouvré », « 3 BD ») ;
+- le libellé d'une flèche est son texte ou celui de l'étiquette posée dessus ; une flèche dessinée à l'envers est retournée ; une flèche dont un bout n'est accroché à rien est rattachée à l'étape la plus proche, avec une remarque.
+
+Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauche à droite) et gardent leur position (`layout`) pour un futur affichage du schéma. Un fichier de plusieurs pages donne un process par page, nommé « Fichier · Page ».
+
+**JSON** (`json.ts`). Le format SimuFlow : `{ "format": "simuflow", "version": 1, "name", "steps": [{ "id", "kind", "title", "actor", "duration" }], "links": [{ "from", "to", "label" }] }`. Seuls `steps` et les `id` sont obligatoires ; le rôle vaut `task` par défaut. Chaque erreur dit où elle est (« Étape 2 : l'identifiant « a » est déjà utilisé. »). `processToJson` fait l'inverse, pour exporter un process.
+
+**Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé.
 
 ## Navigation
 
@@ -204,7 +225,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | Dossier prévu | Rôle |
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
-| `src/import/` | Lecture des fichiers draw.io et JSON, et des tableaux scannés |
+| `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
