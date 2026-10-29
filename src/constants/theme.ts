@@ -30,6 +30,7 @@ export const Colors = {
     // des boutons reste lisible (contraste 4,75:1, minimum WCAG 4,5:1).
     primary: '#0078bd',
     onPrimary: '#ffffff',
+    primaryBackground: '#e1f0fa',
     // Diagnostic : badges « Aucune anomalie », « avertissement », « erreur »
     success: '#0b6b4b',
     successBackground: '#e2f5ee',
@@ -50,6 +51,7 @@ export const Colors = {
     link: '#4fc3f0',
     primary: '#2ea3e0',
     onPrimary: '#0b1621',
+    primaryBackground: '#12304a',
     success: '#8fe3c4',
     successBackground: '#123a2e',
     warning: '#f6b27a',
