@@ -1,14 +1,14 @@
 import { SymbolView } from 'expo-symbols';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { getProcess } from '@/data/process-store';
+import { getProcess, isImported, removeImportedProcess } from '@/data/process-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
@@ -69,6 +69,19 @@ function ProcessDetail({ process }: { process: Process }) {
     Share.share({
       message: `${process.name} : ${plural(summary.stepCount, 'étape')}, ${plural(toFix, 'point')} à corriger (SimuFlow).`,
     });
+
+  const confirmDelete = () =>
+    Alert.alert('Supprimer ce process ?', `« ${process.name} » sera retiré de ce téléphone.`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: () => {
+          removeImportedProcess(process.id);
+          router.back();
+        },
+      },
+    ]);
 
   const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';
 
@@ -155,6 +168,19 @@ function ProcessDetail({ process }: { process: Process }) {
             </View>
           </Section>
         </View>
+
+        {isImported(process.id) && (
+          <Pressable
+            onPress={confirmDelete}
+            accessibilityRole="button"
+            accessibilityHint="Demande une confirmation"
+            style={({ pressed }) => [styles.delete, { backgroundColor: pressed ? theme.dangerBackground : 'transparent' }]}>
+            <SymbolView name={{ ios: 'trash', android: 'delete' }} size={18} tintColor={theme.danger} />
+            <ThemedText type="smallBold" style={{ color: theme.danger }}>
+              Supprimer ce process
+            </ThemedText>
+          </Pressable>
+        )}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, backgroundColor: theme.background }]}>
@@ -283,6 +309,14 @@ function DiagnosticCard({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  delete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    minHeight: 48,
+    borderRadius: Radius.small,
+  },
   content: {
     gap: Spacing.four,
     padding: Spacing.three,
