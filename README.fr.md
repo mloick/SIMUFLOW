@@ -40,6 +40,8 @@ npx expo run:ios
 
 L'app est compilée avec Xcode (build de développement) et s'ouvre dans le Simulateur iOS. Pour l'installer sur un iPhone branché en USB : `npx expo run:ios --device`. Le dossier `ios/` est généré automatiquement et n'est pas versionné.
 
+Pour économiser l'espace disque, `npm run ios:simulateur` et `npm run ios:iphone` font la même chose, puis effacent les fichiers temporaires de compilation quand on arrête le serveur (Ctrl+C). `npm run nettoyer` lance le nettoyage seul. La compilation suivante est plus longue, car Xcode recompile tout.
+
 Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Claude Code (`.claude/`) sont exclus du dépôt par le `.gitignore`.
 
 ## Documentation
