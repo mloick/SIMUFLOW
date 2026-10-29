@@ -14,7 +14,12 @@ libre_avant=$(df -k / | awk 'NR==2 {print $4}')
 
 # Fichiers compilés par Xcode pour ce projet (plusieurs Go).
 rm -rf "$HOME"/Library/Developer/Xcode/DerivedData/SimuFlow-*
-rm -rf ios/build
+# Dans ios/build, on garde generated/ : le code natif que React Native génère
+# pendant « pod install ». Sans lui, la compilation suivante échoue
+# (« Build input file cannot be found … ReactCodegen »).
+if [ -d ios/build ]; then
+  find ios/build -mindepth 1 -maxdepth 1 ! -name generated -exec rm -rf {} +
+fi
 # Caches du serveur Metro.
 rm -rf "${TMPDIR:-/tmp}"/metro-* "${TMPDIR:-/tmp}"/haste-map-*
 # Simulateurs iOS qui ne correspondent plus à aucune version installée.
