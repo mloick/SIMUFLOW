@@ -123,3 +123,48 @@ const MESSAGES: Record<IssueCode, (params: Issue['params']) => string> = {
 export function describeIssue(issue: Issue): string {
   return MESSAGES[issue.code](issue.params);
 }
+
+const TITLES: Record<IssueCode, string> = {
+  'no-start': 'Pas de départ',
+  'multiple-starts': 'Plusieurs départs',
+  'no-end': 'Pas de fin',
+  'empty-title': 'Étape sans titre',
+  'isolated-step': 'Étape isolée',
+  unreachable: 'Étape inatteignable',
+  'dead-end': 'Impasse',
+  'cannot-finish': 'Boucle sans sortie',
+  'decision-single-exit': 'Décision à une seule sortie',
+  'unlabeled-branch': 'Branche sans étiquette',
+  'duplicate-label': 'Libellés en double',
+  'ambiguous-exits': 'Sorties à préciser',
+  'dangling-link': 'Lien cassé',
+};
+
+export type IssueExplanation = {
+  title: string;
+  /** Phrase qui nomme l'étape concernée, quand il y en a une. */
+  detail: string;
+};
+
+/** Titre court et phrase détaillée d'une anomalie, pour l'écran Détail. */
+export function explainIssue(issue: Issue, process: Process): IssueExplanation {
+  const step = process.steps.find((s) => s.id === issue.stepId);
+  const name = `« ${step?.title.trim() || 'Sans titre'} »`;
+  const title = TITLES[issue.code];
+
+  if (!step) return { title, detail: describeIssue(issue) };
+
+  const details: Partial<Record<IssueCode, string>> = {
+    'dead-end': `${name} n’a aucune sortie.`,
+    'cannot-finish': `Depuis ${name}, aucune fin n’est atteignable.`,
+    unreachable: `On ne peut jamais arriver à ${name} depuis le départ.`,
+    'isolated-step': `${name} n’est reliée à aucune autre étape.`,
+    'decision-single-exit': `Décision ${name} : une seule sortie, il en faut au moins deux.`,
+    'unlabeled-branch': `Décision ${name} : une sortie n’a pas de libellé.`,
+    'duplicate-label': `Décision ${name} : deux sorties s’appellent « ${issue.params?.label} ».`,
+    'ambiguous-exits': `Plusieurs sorties de ${name} sans libellé : choix ou étapes en parallèle ?`,
+    'multiple-starts': `${issue.params?.count} points de départ, dont ${name}.`,
+  };
+
+  return { title, detail: details[issue.code] ?? describeIssue(issue) };
+}
