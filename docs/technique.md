@@ -31,11 +31,12 @@ src/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
-  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), test du serveur (health.ts)
+  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
+supabase/       Base de données : migrations SQL (migrations/) et test des règles de sécurité (tests/)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
 ```
@@ -322,6 +323,27 @@ Supabase fournit le backend : une base PostgreSQL, l'authentification et une API
 
 ![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
 
+### Table des process (`supabase/migrations/20261030150000_processes.sql`)
+
+La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
+
+| Colonne | Type | Rôle |
+| --- | --- | --- |
+| `id` | `uuid` | Identifiant, tiré au hasard par la base (`gen_random_uuid()`) |
+| `owner_id` | `uuid` | Compte propriétaire, rempli tout seul avec le compte connecté (`default auth.uid()`). Supprimer le compte supprime ses process (`on delete cascade`) |
+| `name` | `text` | Nom, de 1 à 200 caractères hors espaces (contrainte `check`) |
+| `source` | `text` | Origine : `drawio`, `scan` ou `json`, ou vide |
+| `content` | `jsonb` | Étapes et liens, au format de l'app : `{ "steps": [...], "links": [...] }` ; la base refuse un contenu sans ces deux listes |
+| `created_at`, `updated_at` | `timestamptz` | Dates de création et de modification ; `updated_at` est tenue à jour par un déclencheur (`set_updated_at`) |
+
+Un index sur `owner_id` accélère la lecture des process d'un compte. Les étapes sont gardées en JSON plutôt qu'en tables séparées : un process se lit et s'écrit toujours en entier, et son format est déjà celui de l'export JSON.
+
+**Sécurité.** La RLS est activée. Le rôle `anon` (sans connexion) n'a aucun droit sur la table ; le rôle `authenticated` (connecté) a `select`, `insert`, `update` et `delete`, chacun limité par une règle : `(select auth.uid()) = owner_id`. Un compte ne voit, ne crée, ne modifie et ne supprime que ses propres process ; il ne peut pas non plus donner un process à un autre compte (`with check` sur la modification). `auth.uid()` est écrit `(select auth.uid())` pour être calculé une fois par requête, et non une fois par ligne.
+
+**Test des règles** (`supabase/tests/processes_rls.sql`). Sur un PostgreSQL vide, le script imite Supabase (rôles, `auth.users`, `auth.uid()`), applique la migration deux fois, puis vérifie avec deux faux comptes : A voit son process et `owner_id` est rempli seul ; A ne peut ni créer au nom de B, ni enregistrer un contenu ou un nom invalide, ni donner son process à B ; B ne voit rien et ses modifications ou suppressions n'ont aucun effet ; sans connexion, la lecture est refusée ; supprimer le compte A supprime ses process. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
+
+**Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; il servira dès la connexion (7c) et à la synchronisation (étape 8).
+
 ## Accessibilité : vérifications
 
 À refaire à chaque nouvel écran, et pour l'audit croisé du TP.
@@ -377,7 +399,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase »). Le client est en place ; à venir : la table des process et ses règles de sécurité, la connexion, la suppression du compte, puis la synchronisation.
+Backend : Supabase (voir « Backend Supabase »). Le client et la table des process avec ses règles de sécurité sont en place ; à venir : la connexion, la suppression du compte, puis la synchronisation.
 
 ## Mise à jour de la documentation
 
