@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import type { Process } from '@/domain';
 import { demandeMateriel } from '@/domain/exemples';
+import { demoProcesses } from '@/data/demo-processes';
 import { importProcessFile } from '@/import';
 import { FICHIER_CONGES } from '@/import/__fixtures__/conges';
 
@@ -89,7 +90,13 @@ describe('géométrie', () => {
   });
 
   it('trouve le milieu d’une ligne brisée', () => {
-    expect(midpoint([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }])).toEqual({ x: 10, y: 0 });
+    expect(
+      midpoint([
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 10, y: 10 },
+      ]),
+    ).toEqual({ x: 10, y: 0 });
   });
 });
 
@@ -107,5 +114,68 @@ describe('traits côte à côte', () => {
       { x: 14, y: 10 },
     ]);
     expect(offsetPolyline(points, 0)).toBe(points);
+  });
+});
+
+describe('tracé des flèches', () => {
+  const traverse = (process: Process) => {
+    const layout = layoutProcess(process);
+    const problems: string[] = [];
+    for (const edge of layout.edges) {
+      edge.points.slice(1).forEach((q, i) => {
+        const p = edge.points[i];
+        for (const node of layout.nodes.values()) {
+          if (node.id === edge.from || node.id === edge.to) continue;
+          const inside =
+            Math.max(p.x, q.x) > node.x &&
+            Math.min(p.x, q.x) < node.x + node.width &&
+            Math.max(p.y, q.y) > node.y &&
+            Math.min(p.y, q.y) < node.y + node.height;
+          if (inside) problems.push(`${edge.from} → ${edge.to} traverse ${node.id}`);
+        }
+      });
+    }
+    return problems;
+  };
+
+  it.each(demoProcesses.map((process) => [process.name, process] as const))(
+    'ne traverse aucune étape : %s',
+    (_, process) => {
+      expect(traverse(process)).toEqual([]);
+    },
+  );
+
+  it('ne traverse aucune étape : exemple de test', () => {
+    expect(traverse(demandeMateriel)).toEqual([]);
+    expect(traverse(boucle)).toEqual([]);
+  });
+
+  it('fait arriver deux flèches sur une même étape en deux points distincts', () => {
+    const acces = demoProcesses.find((process) => process.id === 'demande-acces')!;
+    const edges = layoutProcess(acces).edges.filter((edge) => edge.to === 'fin');
+    expect(edges).toHaveLength(2);
+    const [a, b] = edges.map((edge) => edge.points[edge.points.length - 1]);
+    expect(a.x).not.toBe(b.x);
+  });
+
+  it('écarte deux flèches qui passent dans le même couloir', () => {
+    for (const process of demoProcesses) {
+      // Segments horizontaux de chaque flèche, sauf le dernier (l'arrivée).
+      const rows = layoutProcess(process).edges.flatMap((edge) =>
+        edge.points
+          .slice(0, -2)
+          .map((p, i) => ({ id: edge.id, p, q: edge.points[i + 1] }))
+          .filter(({ p, q }) => Math.abs(p.y - q.y) < 0.5),
+      );
+      for (const s of rows) {
+        for (const t of rows) {
+          if (s.id === t.id || Math.abs(s.p.y - t.p.y) > 0.5) continue;
+          const overlap =
+            Math.min(Math.max(s.p.x, s.q.x), Math.max(t.p.x, t.q.x)) -
+            Math.max(Math.min(s.p.x, s.q.x), Math.min(t.p.x, t.q.x));
+          expect(overlap).toBeLessThanOrEqual(0.5);
+        }
+      }
+    }
   });
 });

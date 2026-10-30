@@ -199,47 +199,206 @@ export function borderPoint(node: DiagramNode, toward: Point): Point {
   return { x: c.x + dx * scale, y: c.y + dy * scale };
 }
 
+type Box = { x: number; y: number; width: number; height: number };
+
+/** Le segment horizontal ou vertical [p, q] touche-t-il la boîte (agrandie de `margin`) ? */
+function crosses(p: Point, q: Point, box: Box, margin = 4): boolean {
+  const left = Math.min(p.x, q.x);
+  const right = Math.max(p.x, q.x);
+  const top = Math.min(p.y, q.y);
+  const bottom = Math.max(p.y, q.y);
+  return (
+    right > box.x - margin &&
+    left < box.x + box.width + margin &&
+    bottom > box.y - margin &&
+    top < box.y + box.height + margin
+  );
+}
+
+/** Points de départ (ou d'arrivée) répartis sur un bord de `width`, dans l'ordre donné. */
+function spread(start: number, width: number, count: number, index: number): number {
+  if (count <= 1) return start + width / 2;
+  // Les points restent dans la moitié centrale du bord : la flèche part bien de la forme.
+  return start + width / 4 + ((width / 2) * index) / (count - 1);
+}
+
 function routeEdges(process: Process, nodes: Map<string, DiagramNode>, orthogonal: boolean): DiagramEdge[] {
-  const edges: DiagramEdge[] = [];
-  for (const link of process.links) {
-    const from = nodes.get(link.from);
-    const to = nodes.get(link.to);
-    if (!from || !to) continue;
-    let points: Point[];
-    if (from.id === to.id || to.y + to.height <= from.y) {
-      // Retour en arrière : la flèche sort à droite, remonte, et rentre à droite.
-      const side = Math.max(from.x + from.width, to.x + to.width) + RETURN_OFFSET;
-      const a = { x: from.x + from.width, y: from.y + from.height / 2 };
-      const b = { x: to.x + to.width, y: to.y + to.height / 2 };
-      points = [a, { x: side, y: a.y }, { x: side, y: b.y }, b];
-    } else if (orthogonal) {
-      // Vers le bas. Si l'étape d'arrivée est bien à gauche ou à droite, la
-      // flèche sort par le côté, puis descend : les sorties d'une décision
-      // ne se superposent pas. Sinon, elle sort par le bas.
-      const fromCenter = center(from);
-      const b = { x: to.x + to.width / 2, y: to.y };
-      if (Math.abs(b.x - fromCenter.x) > from.width / 2) {
-        const side = b.x > fromCenter.x ? from.x + from.width : from.x;
-        points = [{ x: side, y: fromCenter.y }, { x: b.x, y: fromCenter.y }, b];
-      } else {
-        const a = { x: fromCenter.x, y: from.y + from.height };
-        points =
-          Math.abs(a.x - b.x) < 1
-            ? [a, { x: a.x, y: b.y }]
-            : [a, { x: a.x, y: (a.y + b.y) / 2 }, { x: b.x, y: (a.y + b.y) / 2 }, b];
-      }
-    } else {
-      points = [borderPoint(from, center(to)), borderPoint(to, center(from))];
-    }
-    edges.push({
-      id: link.id,
-      from: link.from,
-      to: link.to,
-      label: link.label,
-      points,
+  const links = process.links.filter((link) => nodes.has(link.from) && nodes.has(link.to));
+  const isBack = (link: { from: string; to: string }) => {
+    const from = nodes.get(link.from)!;
+    const to = nodes.get(link.to)!;
+    return from.id === to.id || to.y + to.height <= from.y;
+  };
+
+  if (!orthogonal) {
+    return links.map((link) => {
+      const from = nodes.get(link.from)!;
+      const to = nodes.get(link.to)!;
+      const points = isBack(link)
+        ? backRoute(from, to)
+        : [borderPoint(from, center(to)), borderPoint(to, center(from))];
+      return { id: link.id, from: link.from, to: link.to, label: link.label, points };
     });
   }
+
+  const forward = links.filter((link) => !isBack(link));
+  const others = (link: { from: string; to: string }) =>
+    [...nodes.values()].filter((node) => node.id !== link.from && node.id !== link.to);
+  const clear = (points: Point[], link: { from: string; to: string }) =>
+    points.slice(1).every((q, i) => others(link).every((node) => !crosses(points[i], q, node)));
+
+  // Arrivées : réparties sur le haut de l'étape, dans l'ordre des départs de gauche à droite.
+  const arrival = new Map<string, Point>();
+  const byTarget = groupBy(forward, (link) => link.to);
+  for (const [id, list] of byTarget) {
+    const node = nodes.get(id)!;
+    list.sort((a, b) => center(nodes.get(a.from)!).x - center(nodes.get(b.from)!).x);
+    list.forEach((link, index) =>
+      arrival.set(link.id, { x: spread(node.x, node.width, list.length, index), y: node.y }),
+    );
+  }
+
+  // Départs : par le côté si l'étape d'arrivée est sur la ligne suivante, bien à
+  // gauche ou à droite, et que rien ne gêne (les sorties d'une décision ne se
+  // superposent pas) ; sinon par le bas, répartis dans l'ordre des arrivées.
+  // Un côté ne sert qu'à une flèche ; le côté droit est gardé pour les retours en arrière.
+  const routes = new Map<string, Point[]>();
+  const byBottom = new Map<string, typeof forward>();
+  const usedSides = new Set(links.filter(isBack).flatMap((link) => [`${link.from}|right`, `${link.to}|right`]));
+  for (const link of forward) {
+    const from = nodes.get(link.from)!;
+    const b = arrival.get(link.id)!;
+    const c = center(from);
+    const right = b.x > c.x;
+    const key = `${from.id}|${right ? 'right' : 'left'}`;
+    if (Math.abs(b.x - c.x) > from.width / 2 && !usedSides.has(key)) {
+      const side = { x: right ? from.x + from.width : from.x, y: c.y };
+      const points = [side, { x: b.x, y: c.y }, b];
+      if (clear(points, link)) {
+        routes.set(link.id, points);
+        usedSides.add(key);
+        continue;
+      }
+    }
+    byBottom.set(link.from, [...(byBottom.get(link.from) ?? []), link]);
+  }
+
+  // Couloirs verticaux libres entre les colonnes d'étapes, pour descendre de plusieurs lignes.
+  const channels = verticalChannels(nodes);
+
+  for (const [id, list] of byBottom) {
+    const from = nodes.get(id)!;
+    list.sort((a, b) => arrival.get(a.id)!.x - arrival.get(b.id)!.x);
+    list.forEach((link, index) => {
+      const to = nodes.get(link.to)!;
+      const a = { x: spread(from.x, from.width, list.length, index), y: from.y + from.height };
+      const b = arrival.get(link.id)!;
+      const below = a.y + (to.y - a.y > ROW_HEIGHT ? (ROW_HEIGHT - NODE_HEIGHT) / 2 : (b.y - a.y) / 2);
+      const above = b.y - (ROW_HEIGHT - NODE_HEIGHT) / 2;
+      const candidates: Point[][] = [];
+      if (Math.abs(a.x - b.x) < 1) candidates.push([a, { x: a.x, y: b.y }]);
+      candidates.push(
+        [a, { x: a.x, y: above }, { x: b.x, y: above }, b],
+        [a, { x: a.x, y: below }, { x: b.x, y: below }, b],
+      );
+      // Sinon : sous l'étape de départ, jusqu'au couloir vertical le plus proche, puis on descend.
+      const near = [...channels].sort((p, q) => Math.abs(p - b.x) - Math.abs(q - b.x));
+      for (const x of near) {
+        candidates.push([a, { x: a.x, y: below }, { x, y: below }, { x, y: above }, { x: b.x, y: above }, b]);
+      }
+      routes.set(link.id, candidates.find((points) => clear(points, link)) ?? candidates[0]);
+    });
+  }
+
+  const edges = links.map((link) => ({
+    id: link.id,
+    from: link.from,
+    to: link.to,
+    label: link.label,
+    points: routes.get(link.id) ?? backRoute(nodes.get(link.from)!, nodes.get(link.to)!),
+  }));
+  separateTracks(edges);
   return edges;
+}
+
+/** Retour en arrière : la flèche sort à droite, remonte, et rentre à droite. */
+function backRoute(from: DiagramNode, to: DiagramNode): Point[] {
+  const side = Math.max(from.x + from.width, to.x + to.width) + RETURN_OFFSET;
+  const a = { x: from.x + from.width, y: from.y + from.height / 2 };
+  const b = { x: to.x + to.width, y: to.y + to.height / 2 };
+  return [a, { x: side, y: a.y }, { x: side, y: b.y }, b];
+}
+
+function groupBy<T>(list: T[], key: (item: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const item of list) groups.set(key(item), [...(groups.get(key(item)) ?? []), item]);
+  return groups;
+}
+
+/** Milieux des espaces vides entre les colonnes d'étapes (et à gauche de la première). */
+function verticalChannels(nodes: Map<string, DiagramNode>): number[] {
+  const columns = [...new Set([...nodes.values()].map((node) => node.x))].sort((a, b) => a - b);
+  const right = (x: number) =>
+    Math.max(...[...nodes.values()].filter((node) => node.x === x).map((node) => node.x + node.width));
+  const channels = columns.slice(1).map((x, i) => (right(columns[i]) + x) / 2);
+  if (columns.length) channels.push(columns[0] - COLUMN_GAP / 2);
+  return channels.filter((x) => x > 0);
+}
+
+/** Écart entre deux flèches qui passent dans le même couloir. */
+const TRACK_GAP = 10;
+
+/**
+ * Deux flèches qui passent au même endroit (même hauteur pour un segment
+ * horizontal, même abscisse pour un vertical) prennent chacune leur voie,
+ * côte à côte. Les segments du bout (départ et arrivée) ne bougent pas.
+ */
+function separateTracks(edges: DiagramEdge[]) {
+  for (const horizontal of [true, false]) {
+    type Segment = { edge: DiagramEdge; index: number; at: number; from: number; to: number };
+    const segments: Segment[] = [];
+    for (const edge of edges) {
+      const p = edge.points;
+      for (let i = 1; i < p.length - 2; i++) {
+        const isHorizontal = Math.abs(p[i].y - p[i + 1].y) < 0.5;
+        const isVertical = Math.abs(p[i].x - p[i + 1].x) < 0.5;
+        if (horizontal ? !isHorizontal : !isVertical) continue;
+        const [u, v] = horizontal ? [p[i].x, p[i + 1].x] : [p[i].y, p[i + 1].y];
+        segments.push({
+          edge,
+          index: i,
+          at: horizontal ? p[i].y : p[i].x,
+          from: Math.min(u, v),
+          to: Math.max(u, v),
+        });
+      }
+    }
+    // Segments sur la même ligne qui se chevauchent : une voie chacun.
+    const lines = groupBy(segments, (segment) => String(Math.round(segment.at)));
+    for (const line of lines.values()) {
+      line.sort((a, b) => a.from - b.from);
+      const clusters: Segment[][] = [];
+      for (const segment of line) {
+        const last = clusters[clusters.length - 1];
+        if (last && segment.from < Math.max(...last.map((item) => item.to)) - 0.5) last.push(segment);
+        else clusters.push([segment]);
+      }
+      for (const cluster of clusters) {
+        if (new Set(cluster.map((segment) => segment.edge.id)).size < 2) continue;
+        // Ordre des voies : selon le point de départ de la flèche, pour éviter les croisements.
+        cluster.sort((a, b) =>
+          horizontal ? a.edge.points[0].x - b.edge.points[0].x : a.edge.points[0].y - b.edge.points[0].y,
+        );
+        cluster.forEach((segment, index) => {
+          const shift = (index - (cluster.length - 1) / 2) * TRACK_GAP;
+          const p = segment.edge.points;
+          for (const k of [segment.index, segment.index + 1]) {
+            p[k] = horizontal ? { x: p[k].x, y: p[k].y + shift } : { x: p[k].x + shift, y: p[k].y };
+          }
+        });
+      }
+    }
+  }
 }
 
 /** Milieu d'une ligne brisée, pour y poser le libellé d'une flèche. */
