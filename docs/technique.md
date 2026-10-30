@@ -90,7 +90,7 @@ Les images et le code du modèle Expo (logos Expo et React, `animated-icon`, `sc
 
 **Écran de démarrage.** Le plugin `expo-splash-screen` (dans `app.json`) affiche `splash-icon.png` (120 de large) sur le fond de l'app : `#f2f6fa` en mode clair, `#0b1621` en mode sombre (option `dark`). C'est un écran natif, montré avant que le JavaScript soit chargé. Ensuite `SplashOverlay` (`src/components/splash-overlay.tsx`, monté dans `src/app/_layout.tsx`) affiche le même logo sur le même fond, cache l'écran natif (`SplashScreen.hideAsync()`) et s'efface en fondu de 300 ms. Avec « Réduire les animations », il disparaît sans fondu (`useReducedMotion`). Sur le web, il ne fait rien (`splash-overlay.web.tsx`).
 
-Une modification de ces fichiers ou d'`app.json` demande de recompiler l'app (voir « Build de développement »).
+Une modification de ces fichiers ou d'`app.json` demande de régénérer le dossier `ios/` puis de recompiler l'app (voir « Build de développement »). L'écran de démarrage dure le temps du chargement, sans attente ajoutée : dans un build de développement, Metro charge vite et il ne reste visible qu'un instant.
 
 ![L'icône sur iOS et Android, et l'écran de démarrage en mode clair et sombre](captures/etape-9-identite.png)
 
@@ -450,7 +450,7 @@ Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrêt
 
 `scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`). Les fichiers intermédiaires de Xcode (plusieurs Go) sont gardés : la compilation suivante ne recompile que ce qui a changé, en une minute environ au lieu de plusieurs. Si le disque a moins de 10 Go libres, le script le signale avant de compiler.
 
-**Quand recompiler.** Seulement après l'ajout d'un module natif (une bibliothèque avec du code Swift ou Kotlin) ou un changement d'`app.json`. Pour le reste, l'app déjà installée suffit : `npx expo start`, puis ouvrir l'app, et Metro envoie le nouveau code JavaScript en quelques secondes.
+**Quand recompiler.** Seulement après l'ajout d'un module natif (une bibliothèque avec du code Swift ou Kotlin) ou un changement d'`app.json`. `npx expo run:ios` ne régénère pas un dossier `ios/` qui existe déjà : après un changement d'`app.json` (icône, écran de démarrage, identifiant, permissions), lancer d'abord `npx expo prebuild --clean --platform ios`, puis choisir à nouveau l'équipe de signature dans Xcode. Pour le reste, l'app déjà installée suffit : `npx expo start`, puis ouvrir l'app, et Metro envoie le nouveau code JavaScript en quelques secondes.
 
 **Nettoyage.** `npm run nettoyer` lance `scripts/nettoyer-ios.sh`, qui ne fait rien hors de macOS et supprime :
 
