@@ -109,6 +109,12 @@ Quand vous vous déconnectez, les process de votre compte quittent ce téléphon
 
 ![Profil : le serveur joignable, puis injoignable](captures/etape-7a-serveur.png)
 
+## Mises à jour sans réinstaller · Disponible
+
+Les corrections et nouveautés qui ne touchent pas aux fonctions du téléphone (appareil photo, notifications…) arrivent toutes seules : l'app télécharge la nouvelle version en arrière-plan, et l'utilise au lancement suivant. En bas du **Profil**, la ligne de version indique « version installée », ou la date de la dernière mise à jour reçue.
+
+![La version de l'app en bas du Profil](captures/etape-9-version.png)
+
 ## Partager et valider · Prévue
 
 Partagez un process avec vos collègues. Vous recevez une notification quand quelqu'un valide ou commente une étape.

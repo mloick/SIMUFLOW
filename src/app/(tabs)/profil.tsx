@@ -1,4 +1,6 @@
+import Constants from 'expo-constants';
 import { Link } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
@@ -16,6 +18,7 @@ export default function ProfileScreen() {
     <PlaceholderScreen title="Profil" description="Votre compte, et l'état du serveur SimuFlow.">
       <Account />
       <ServerCheck />
+      <AppVersion />
       {__DEV__ && <DemoScenarioPicker />}
     </PlaceholderScreen>
   );
@@ -289,6 +292,23 @@ function ServerCheck() {
   );
 }
 
+/**
+ * Version de l'app, et date de la mise à jour à distance (EAS Update) en
+ * cours d'utilisation, s'il y en a une.
+ */
+function AppVersion() {
+  const version = Constants.expoConfig?.version ?? '';
+  const update =
+    !Updates.isEmbeddedLaunch && Updates.createdAt
+      ? `mise à jour du ${Updates.createdAt.toLocaleDateString('fr-FR')} à ${Updates.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+      : 'version installée';
+  return (
+    <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+      SimuFlow {version} · {update}
+    </ThemedText>
+  );
+}
+
 /** Mode développement : force un état de la liste des process, pour le montrer. */
 function DemoScenarioPicker() {
   const theme = useTheme();
@@ -328,6 +348,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   flex: { flex: 1 },
+  version: { textAlign: 'center' },
   box: {
     borderRadius: Radius.medium,
     borderWidth: StyleSheet.hairlineWidth,
