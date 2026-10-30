@@ -40,7 +40,9 @@ npx expo run:ios
 
 The app is compiled with Xcode (development build) and opens in the iOS Simulator. To install it on an iPhone plugged in over USB: `npx expo run:ios --device`. The `ios/` folder is generated automatically and is not committed.
 
-To save disk space, `npm run ios:simulateur` and `npm run ios:iphone` do the same, then delete the temporary build files when you stop the server (Ctrl+C). Before building, they check that package versions match the Expo SDK and stop otherwise (fix with `npx expo install --fix`, then `cd ios && pod install`). `npm run nettoyer` runs the cleanup alone. The next build takes longer, since Xcode compiles everything again.
+`npm run ios:simulateur` and `npm run ios:iphone` do the same, after checking that package versions match the Expo SDK (fix with `npx expo install --fix`, then `cd ios && pod install`). Build files are kept, so the next build only recompiles what changed. `npm run nettoyer` deletes them to free disk space (the next build then starts from scratch); the scripts remind you when less than 10 GB is free.
+
+A new build is only needed when a native module is added. Otherwise, once the app is installed, run `npx expo start` and open the app: changes show up in a few seconds.
 
 Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.claude/`) are kept out of the repository by `.gitignore`.
 
