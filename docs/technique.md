@@ -38,8 +38,8 @@ src/
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
-scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh), script du modèle Expo (reset-project)
-app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
+scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh)
+app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, plugins)
 ```
 
 ## Commandes
@@ -71,6 +71,28 @@ Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.
 Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
 
 Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
+
+## Identité de l'app : icône, écran de démarrage, identifiant
+
+**Identifiant.** `fr.simuflow.app`, le même sur iOS (`ios.bundleIdentifier`) et Android (`android.package`), dans `app.json`. C'est le nom unique de l'app pour le téléphone et pour les stores : il ne doit plus changer. Il remplace `com.anonymous.simuflow` du modèle Expo ; le téléphone voit donc une nouvelle app. L'ancienne, et les process gardés seulement sur le téléphone, ne sont pas repris. Les process synchronisés reviennent à la connexion.
+
+**Icônes** (`assets/images/`), tirées du tracé SVG du logo (`docs/logo/`) :
+
+| Fichier | Usage |
+| --- | --- |
+| `icon.png` (1024 px) | Icône iOS et icône par défaut : symbole sur fond blanc, iOS arrondit les coins |
+| `android-icon-foreground.png` | Icône adaptative Android : symbole sur fond transparent, réduit pour tenir dans la zone toujours visible (le téléphone découpe un rond, un carré arrondi…) ; le fond est la couleur `#ffffff` |
+| `android-icon-monochrome.png` | Icônes à thème d'Android 13 et plus : symbole noir, le système le recolore |
+| `splash-icon.png` | Logo de l'écran de démarrage : symbole dans sa tuile blanche arrondie |
+| `favicon.png` | Version web |
+
+Les images et le code du modèle Expo (logos Expo et React, `animated-icon`, `scripts/reset-project.js`) sont supprimés.
+
+**Écran de démarrage.** Le plugin `expo-splash-screen` (dans `app.json`) affiche `splash-icon.png` (120 de large) sur le fond de l'app : `#f2f6fa` en mode clair, `#0b1621` en mode sombre (option `dark`). C'est un écran natif, montré avant que le JavaScript soit chargé. Ensuite `SplashOverlay` (`src/components/splash-overlay.tsx`, monté dans `src/app/_layout.tsx`) affiche le même logo sur le même fond, cache l'écran natif (`SplashScreen.hideAsync()`) et s'efface en fondu de 300 ms. Avec « Réduire les animations », il disparaît sans fondu (`useReducedMotion`). Sur le web, il ne fait rien (`splash-overlay.web.tsx`).
+
+Une modification de ces fichiers ou d'`app.json` demande de régénérer le dossier `ios/` puis de recompiler l'app (voir « Build de développement »). L'écran de démarrage dure le temps du chargement, sans attente ajoutée : dans un build de développement, Metro charge vite et il ne reste visible qu'un instant.
+
+![L'icône sur iOS et Android, et l'écran de démarrage en mode clair et sombre](captures/etape-9-identite.png)
 
 ## Cœur du simulateur
 
@@ -428,7 +450,7 @@ Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrêt
 
 `scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`). Les fichiers intermédiaires de Xcode (plusieurs Go) sont gardés : la compilation suivante ne recompile que ce qui a changé, en une minute environ au lieu de plusieurs. Si le disque a moins de 10 Go libres, le script le signale avant de compiler.
 
-**Quand recompiler.** Seulement après l'ajout d'un module natif (une bibliothèque avec du code Swift ou Kotlin) ou un changement d'`app.json`. Pour le reste, l'app déjà installée suffit : `npx expo start`, puis ouvrir l'app, et Metro envoie le nouveau code JavaScript en quelques secondes.
+**Quand recompiler.** Seulement après l'ajout d'un module natif (une bibliothèque avec du code Swift ou Kotlin) ou un changement d'`app.json`. `npx expo run:ios` ne régénère pas un dossier `ios/` qui existe déjà : après un changement d'`app.json` (icône, écran de démarrage, identifiant, permissions), lancer d'abord `npx expo prebuild --clean --platform ios`, puis choisir à nouveau l'équipe de signature dans Xcode. Pour le reste, l'app déjà installée suffit : `npx expo start`, puis ouvrir l'app, et Metro envoie le nouveau code JavaScript en quelques secondes.
 
 **Nettoyage.** `npm run nettoyer` lance `scripts/nettoyer-ios.sh`, qui ne fait rien hors de macOS et supprime :
 

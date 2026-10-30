@@ -22,7 +22,7 @@ The full mockup is in [`docs/maquette/`](docs/maquette/).
 
 ## Logo
 
-The logo is an S-shaped path: a starting point, two turns and an arrival arrow. It stands for a process walked through step by step, and draws the S of SimuFlow. Its story, colors and files are in [`docs/logo/`](docs/logo/) (French).
+The logo is an S-shaped path: a starting point, two turns and an arrival arrow. It stands for a process walked through step by step, and draws the S of SimuFlow. Its story, colors and files are in [`docs/logo/`](docs/logo/) (French). It is also the app icon and the splash screen.
 
 ## Phone features
 
