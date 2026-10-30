@@ -26,7 +26,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
+  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
@@ -199,13 +199,36 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 - sur iOS et Android, dans le fichier `process-importes.json` du dossier Documents de l'app (`src/data/saved-file.ts`, avec `File` et `Paths.document` d'`expo-file-system`). Le système ne vide pas ce dossier ; le fichier disparaît seulement si l'app est désinstallée ;
 - sur le web, dans le stockage local du navigateur (`saved-file.web.ts`).
 
-Le fichier contient `{ "format": "simuflow-imports", "version": 1, "processes": [...] }`. Il est relu au démarrage de l'app : un fichier abîmé ou d'un autre format donne une liste vide, et une entrée qui n'a pas la forme d'un process est ignorée (`parseSaved`). Si l'écriture échoue, l'app continue et le signale dans la console.
+Le fichier contient `{ "format": "simuflow-imports", "version": 2, "entries": [...] }` : chaque entrée est un process, avec son identifiant sur le serveur (`cloudId`) une fois envoyé, et une marque `deleted` tant que sa suppression n'est pas faite sur le serveur. Un fichier de la version 1 (`processes`, une simple liste) est encore relu. Il est relu au démarrage de l'app : un fichier abîmé ou d'un autre format donne une liste vide, et une entrée qui n'a pas la forme d'un process est ignorée (`parseSaved`). Si l'écriture échoue, l'app continue et le signale dans la console.
 
-Un process importé a un bouton « Supprimer ce process » en bas de son détail. Il demande une confirmation (`Alert`), retire le process de la liste et du fichier, puis revient à la liste. Les process d'exemple n'ont pas ce bouton.
+Un process importé a un bouton « Supprimer ce process » en bas de son détail. Il demande une confirmation (`Alert`, qui précise « et de votre compte » si le process est sur le serveur), retire le process de la liste et du fichier, puis revient à la liste. Les process d'exemple n'ont pas ce bouton.
 
 ![Process importé relu après redémarrage, en tête de liste, et son bouton Supprimer en clair et en sombre](captures/etape-5c-garder.png)
 
-Ce stockage est local à un téléphone. Le partage entre téléphones passera par le backend (étapes 7 et 8).
+### Synchronisation avec le serveur (`src/data/sync.ts`, `src/data/cloud-sync.ts`)
+
+Connecté, les process importés sont aussi enregistrés sur le compte (table `processes`, étape 7) : on les retrouve sur un autre téléphone.
+
+**Le principe** (`syncEntries`, sans dépendance, testé avec un faux serveur). Une synchronisation lit les process du compte, puis :
+
+1. supprime sur le serveur ceux retirés du téléphone (`deleted`) ;
+2. envoie ceux qui n'y sont pas encore (pas de `cloudId`) ;
+3. retire du téléphone ceux supprimés depuis un autre appareil (un `cloudId` absent du serveur) ;
+4. ajoute ceux créés ailleurs (leur identifiant sur le téléphone est celui du serveur).
+
+Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. L'app ne modifie pas un process après l'import, il n'y a donc pas de conflit de versions : la version du serveur fait foi.
+
+**Changements pendant l'envoi.** Si l'on importe ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
+
+**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, après chaque import ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
+
+**Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
+
+**Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ».
+
+**Tests.** Onze tests pour `sync.ts` (envoi, pas de double envoi, suppression, récupération et disparition depuis un autre appareil, serveur injoignable, changements pendant l'envoi) et trois pour le fichier (relecture de la version 1, marque « à supprimer » gardée au redémarrage, oubli immédiat d'un process jamais envoyé).
+
+![Synchronisation : un process venu du compte dans la liste, le Profil synchronisé, hors connexion, le mode sombre](captures/etape-8-synchro.png)
 
 ## Écran Détail d'un process
 
@@ -346,7 +369,7 @@ L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droi
 
 **Test** (`supabase/tests/suppression_compte.sql`) : sans connexion, l'appel est refusé ; un compte connecté ne peut toujours pas effacer `auth.users` directement ; quand A supprime son compte, A et ses process disparaissent, B et son process restent. Lancé avec PostgreSQL 16 : tout passe, et si la fonction efface tous les comptes au lieu du seul appelant, le test échoue bien.
 
-**Côté app.** `deleteAccount()` (`auth.ts`) appelle la fonction (`supabase.rpc('delete_my_account')`), puis efface la session du téléphone (`signOut({ scope: 'local' })`, le compte n'existant plus sur le serveur). Dans le Profil, connecté, « Supprimer mon compte » ouvre un encadré rouge qui dit ce qui sera effacé ; seul « Supprimer » dans cet encadré supprime. La confirmation est dans l'écran plutôt qu'une alerte système : elle est lue par VoiceOver et TalkBack (`accessibilityRole="alert"`). Les process enregistrés sur le téléphone restent.
+**Côté app.** `deleteAccount()` (`auth.ts`) appelle la fonction (`supabase.rpc('delete_my_account')`), puis efface la session du téléphone (`signOut({ scope: 'local' })`, le compte n'existant plus sur le serveur). Dans le Profil, connecté, « Supprimer mon compte » ouvre un encadré rouge qui dit ce qui sera effacé ; seul « Supprimer » dans cet encadré supprime. La confirmation est dans l'écran plutôt qu'une alerte système : elle est lue par VoiceOver et TalkBack (`accessibilityRole="alert"`). Les copies des process sur le téléphone disparaissent aussi (voir « Synchronisation avec le serveur »).
 
 ![Suppression du compte : le bouton, la confirmation, un échec réseau, le Profil après suppression, le mode sombre](captures/etape-7d-suppression.png)
 
@@ -373,7 +396,7 @@ Un index sur `owner_id` accélère la lecture des process d'un compte. Les étap
 
 **Test des règles** (`supabase/tests/processes_rls.sql`). Sur un PostgreSQL vide, le script imite Supabase (rôles, `auth.users`, `auth.uid()`), applique la migration deux fois, puis vérifie avec deux faux comptes : A voit son process et `owner_id` est rempli seul ; A ne peut ni créer au nom de B, ni enregistrer un contenu ou un nom invalide, ni donner son process à B ; B ne voit rien et ses modifications ou suppressions n'ont aucun effet ; sans connexion, la lecture est refusée ; supprimer le compte A supprime ses process. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
-**Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; il servira à la synchronisation (étape 8).
+**Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; la synchronisation (`src/data/cloud-sync.ts`) s'en sert.
 
 ## Accessibilité : vérifications
 
@@ -430,7 +453,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion et la suppression du compte sont en place ; à venir : la synchronisation.
+Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion, la suppression du compte et la synchronisation des process importés sont en place.
 
 ## Mise à jour de la documentation
 

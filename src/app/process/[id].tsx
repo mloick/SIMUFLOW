@@ -8,12 +8,16 @@ import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { getProcess, isImported, removeImportedProcess } from '@/data/process-store';
+import { getProcess, isImported, isInCloud, removeImportedProcess } from '@/data/process-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
 
-const SOURCE_TEXT = { drawio: 'Importé depuis draw.io', scan: 'Créé à partir d’un tableau scanné', json: 'Importé depuis un fichier JSON' };
+const SOURCE_TEXT = {
+  drawio: 'Importé depuis draw.io',
+  scan: 'Créé à partir d’un tableau scanné',
+  json: 'Importé depuis un fichier JSON',
+};
 
 /**
  * Détail d'un process (maquette, écran 3) : chiffres clés, acteurs, diagnostic
@@ -61,7 +65,8 @@ function ProcessDetail({ process }: { process: Process }) {
 
   const showStep = (stepId: string) => {
     const y = stepY.current.get(stepId);
-    if (y !== undefined) scrollRef.current?.scrollTo({ y: sectionY.current + cardY.current + y - Spacing.four, animated: true });
+    if (y !== undefined)
+      scrollRef.current?.scrollTo({ y: sectionY.current + cardY.current + y - Spacing.four, animated: true });
     setHighlighted(stepId);
   };
 
@@ -71,17 +76,23 @@ function ProcessDetail({ process }: { process: Process }) {
     });
 
   const confirmDelete = () =>
-    Alert.alert('Supprimer ce process ?', `« ${process.name} » sera retiré de ce téléphone.`, [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: () => {
-          removeImportedProcess(process.id);
-          router.back();
+    Alert.alert(
+      'Supprimer ce process ?',
+      isInCloud(process.id)
+        ? `« ${process.name} » sera retiré de ce téléphone et de votre compte.`
+        : `« ${process.name} » sera retiré de ce téléphone.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            removeImportedProcess(process.id);
+            router.back();
+          },
         },
-      },
-    ]);
+      ],
+    );
 
   const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';
 
@@ -158,7 +169,11 @@ function ProcessDetail({ process }: { process: Process }) {
                   <View style={styles.stepText}>
                     <ThemedText>{step.title || 'Sans titre'}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {[KIND_LABELS[step.kind], step.actor, step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null]
+                      {[
+                        KIND_LABELS[step.kind],
+                        step.actor,
+                        step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null,
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
                     </ThemedText>
@@ -174,7 +189,10 @@ function ProcessDetail({ process }: { process: Process }) {
             onPress={confirmDelete}
             accessibilityRole="button"
             accessibilityHint="Demande une confirmation"
-            style={({ pressed }) => [styles.delete, { backgroundColor: pressed ? theme.dangerBackground : 'transparent' }]}>
+            style={({ pressed }) => [
+              styles.delete,
+              { backgroundColor: pressed ? theme.dangerBackground : 'transparent' },
+            ]}>
             <SymbolView name={{ ios: 'trash', android: 'delete' }} size={18} tintColor={theme.danger} />
             <ThemedText type="smallBold" style={{ color: theme.danger }}>
               Supprimer ce process
@@ -183,7 +201,8 @@ function ProcessDetail({ process }: { process: Process }) {
         )}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, backgroundColor: theme.background }]}>
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, backgroundColor: theme.background }]}>
         <PrimaryButton
           label="▶  Lancer la simulation"
           accessibilityLabel="Lancer la simulation"
@@ -255,7 +274,12 @@ function DiagnosticCard({
       )}
       {visible.map((issue, index) => {
         const { title, detail } = explainIssue(issue, process);
-        const color = issue.severity === 'error' ? theme.danger : issue.severity === 'warning' ? theme.warning : theme.textSecondary;
+        const color =
+          issue.severity === 'error'
+            ? theme.danger
+            : issue.severity === 'warning'
+              ? theme.warning
+              : theme.textSecondary;
         const icon =
           issue.severity === 'error'
             ? ({ ios: 'xmark.octagon', android: 'cancel' } as const)
@@ -266,7 +290,13 @@ function DiagnosticCard({
         return (
           <View
             key={`${issue.code}-${issue.stepId ?? issue.linkId ?? index}`}
-            style={[styles.issue, (index > 0 || shown.length === 0) && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+            style={[
+              styles.issue,
+              (index > 0 || shown.length === 0) && {
+                borderTopColor: theme.border,
+                borderTopWidth: StyleSheet.hairlineWidth,
+              },
+            ]}>
             <SymbolView name={icon} size={22} tintColor={color} />
             <View style={styles.issueText} accessible>
               <ThemedText type="link" style={{ color: theme.text }}>
@@ -294,10 +324,14 @@ function DiagnosticCard({
           accessibilityState={{ expanded: open }}
           style={[styles.fold, { borderTopColor: theme.border }]}>
           <ThemedText themeColor="textSecondary" style={styles.issueText}>
-            {open ? 'Replier les informations' : `${plural(folded.length, 'information repliée', 'informations repliées')}`}
+            {open
+              ? 'Replier les informations'
+              : `${plural(folded.length, 'information repliée', 'informations repliées')}`}
           </ThemedText>
           <SymbolView
-            name={open ? { ios: 'chevron.up', android: 'expand_less' } : { ios: 'chevron.down', android: 'expand_more' }}
+            name={
+              open ? { ios: 'chevron.up', android: 'expand_less' } : { ios: 'chevron.down', android: 'expand_more' }
+            }
             size={18}
             tintColor={theme.textSecondary}
           />
