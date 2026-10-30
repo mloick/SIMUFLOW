@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visé
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process, Importer et Simulation suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
+Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process, Importer, Simulation et Connexion suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
 
 | Élément | Version |
 | --- | --- |
@@ -24,14 +24,14 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, écran provisoire)
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
-  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
+  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
@@ -144,7 +144,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
 
-Sauf la liste, le détail des process, l'import, la simulation et l'export, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Sauf la liste, le détail des process, l'import, la simulation, l'export et la connexion, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Écran Liste des process
 
@@ -317,11 +317,26 @@ Supabase fournit le backend : une base PostgreSQL, l'authentification et une API
 
 **Clés.** `config.ts` contient l'adresse du projet et la clé **publishable** (`sb_publishable_…`). Elles sont publiques par conception : elles sont dans l'app installée, et n'ouvrent que ce que les règles RLS permettent. La clé secrète (`service_role`), qui passe outre ces règles, et le mot de passe de la base ne sont jamais dans l'app ni dans le dépôt.
 
-**Client.** `client.ts` crée le client Supabase partagé. La session (le jeton de connexion) est gardée dans `localStorage` : le navigateur le fournit sur le web, et `expo-sqlite/localStorage/install` l'ajoute sur iOS et Android, dans une petite base SQLite du téléphone. `react-native-url-polyfill` complète l'objet `URL` de React Native, dont le client a besoin. `expo-sqlite` étant un module natif, l'app compilée par Xcode doit être recompilée une fois (`npm run ios:iphone`) ; Expo Go l'inclut déjà.
+**Client.** `client.ts` crée le client Supabase partagé. La session (le jeton de connexion) est gardée dans `localStorage` : le navigateur le fournit sur le web, et `expo-sqlite/localStorage/install` l'ajoute sur iOS et Android, dans une petite base SQLite du téléphone. Cet import est isolé dans `local-storage.ts`, avec une version web vide (`local-storage.web.ts`) : la version web d'expo-sqlite demanderait une configuration de Metro en plus. Le jeton expire au bout d'une heure ; le client le renouvelle tant que l'app est au premier plan (`startAutoRefresh` / `stopAutoRefresh` selon `AppState`). `react-native-url-polyfill` complète l'objet `URL` de React Native, dont le client a besoin. `expo-sqlite` étant un module natif, l'app compilée par Xcode doit être recompilée une fois (`npm run ios:iphone`) ; Expo Go l'inclut déjà.
 
 **Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Le Profil l'affiche dans une section « Serveur », avec « Réessayer » en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
 
 ![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
+
+### Compte : connexion, création, déconnexion (`auth.ts`, `src/app/connexion.tsx`)
+
+Supabase Auth, par adresse e-mail et mot de passe.
+
+- **Actions.** `signIn`, `signUp` et `signOut` appellent `supabase.auth` et renvoient `{ ok: true }` ou `{ ok: false, message }`, le message étant déjà en français. Après une création de compte sans session (confirmation par e-mail activée sur Supabase), `needsConfirmation` est vrai et l'écran dit d'ouvrir le lien reçu. Si l'adresse a déjà un compte et que la confirmation est active, Supabase ne renvoie pas d'erreur, pour ne pas révéler qui est inscrit, mais un compte sans identité : `signUp` le détecte et répond « Un compte existe déjà ».
+- **Messages** (`auth-messages.ts`, sans dépendance, testé). `checkCredentials` vérifie les champs avant l'envoi : adresse présente et bien formée, mot de passe présent, au moins 6 caractères à la création. `authErrorMessage` traduit les codes d'erreur de Supabase (`invalid_credentials`, `user_already_exists`, `weak_password`, limites d'envoi…) ; une coupure réseau donne « Serveur injoignable » ; tout autre cas un message générique, jamais le texte anglais du serveur.
+- **Session** (`session-store.ts`). `createSessionStore(auth)` garde la session en mémoire et prévient les écrans quand elle change (`onAuthStateChange`). Il ne contacte Supabase qu'au premier écran abonné. `undefined` veut dire « pas encore lu », `null` « personne n'est connecté ». `useSession()` (`auth.ts`) le branche sur React avec `useSyncExternalStore`. Le magasin reçoit `auth` en paramètre : les tests lui donnent un faux client.
+- **Écran Connexion** (maquette écran 1). Logo (`simuflow-logo.tsx`, dessiné en SVG), adresse, mot de passe, bouton principal, et un second bouton pour passer de « Se connecter » à « Créer un compte ». Le clavier propose l'adresse et les mots de passe enregistrés (`textContentType`, `autoComplete`), « Suivant » passe au mot de passe et « OK » envoie. Une erreur est annoncée par VoiceOver et TalkBack (`accessibilityRole="alert"`). Une fois connecté, la fenêtre se ferme.
+- **Profil.** Section « Compte » : pendant la lecture, un indicateur ; sans compte, un lien « Se connecter ou créer un compte » ; connecté, les initiales, l'adresse et « Se déconnecter ».
+- **Tests.** Dix tests : vérification des champs, traduction des erreurs, et la session (lecture au démarrage, connexion puis déconnexion, pas de retour en arrière si la connexion arrive avant la lecture).
+
+« Mot de passe oublié » n'est pas encore là : il demande d'ouvrir l'app depuis le lien reçu par e-mail (lien profond).
+
+![Connexion : l'écran vide, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
 
 ### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
@@ -342,7 +357,7 @@ Un index sur `owner_id` accélère la lecture des process d'un compte. Les étap
 
 **Test des règles** (`supabase/tests/processes_rls.sql`). Sur un PostgreSQL vide, le script imite Supabase (rôles, `auth.users`, `auth.uid()`), applique la migration deux fois, puis vérifie avec deux faux comptes : A voit son process et `owner_id` est rempli seul ; A ne peut ni créer au nom de B, ni enregistrer un contenu ou un nom invalide, ni donner son process à B ; B ne voit rien et ses modifications ou suppressions n'ont aucun effet ; sans connexion, la lecture est refusée ; supprimer le compte A supprime ses process. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
-**Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; il servira dès la connexion (7c) et à la synchronisation (étape 8).
+**Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; il servira à la synchronisation (étape 8).
 
 ## Accessibilité : vérifications
 
@@ -399,7 +414,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase »). Le client et la table des process avec ses règles de sécurité sont en place ; à venir : la connexion, la suppression du compte, puis la synchronisation.
+Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité et la connexion sont en place ; à venir : la suppression du compte, puis la synchronisation.
 
 ## Mise à jour de la documentation
 

@@ -1,6 +1,8 @@
+import { Link } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { signOut, useSession } from '@/backend/auth';
 import { checkServer, type ServerStatus } from '@/backend/health';
 import { PlaceholderScreen } from '@/components/placeholder-screen';
 import { ThemedText } from '@/components/themed-text';
@@ -10,14 +12,94 @@ import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfileScreen() {
   return (
-    <PlaceholderScreen
-      title="Profil"
-      description="Le compte, les préférences et la suppression du compte."
-      links={[{ label: 'Se connecter', href: '/connexion' }]}>
+    <PlaceholderScreen title="Profil" description="Votre compte, et l'état du serveur SimuFlow.">
+      <Account />
       <ServerCheck />
       {__DEV__ && <DemoScenarioPicker />}
     </PlaceholderScreen>
   );
+}
+
+/** Le compte connecté et le bouton de déconnexion, ou l'invitation à se connecter. */
+function Account() {
+  const theme = useTheme();
+  const session = useSession();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const leave = async () => {
+    setBusy(true);
+    const result = await signOut();
+    setBusy(false);
+    setError(result.ok ? null : result.message);
+  };
+
+  const box = [styles.box, { backgroundColor: theme.surface, borderColor: theme.border }];
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Compte
+      </ThemedText>
+      {session === undefined ? (
+        <View style={[box, styles.row]}>
+          <ActivityIndicator color={theme.textSecondary} />
+        </View>
+      ) : session === null ? (
+        <View style={box}>
+          <ThemedText themeColor="textSecondary" style={styles.boxText}>
+            Connectez-vous pour retrouver vos process sur tous vos appareils.
+          </ThemedText>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <Link href="/connexion" style={styles.row} accessibilityRole="link">
+            <ThemedText type="link">Se connecter ou créer un compte →</ThemedText>
+          </Link>
+        </View>
+      ) : (
+        <View style={box}>
+          <View
+            style={[styles.row, styles.identity]}
+            accessible
+            accessibilityLabel={`Connecté : ${session.user.email}`}>
+            <View style={[styles.avatar, { backgroundColor: theme.primaryBackground }]}>
+              <ThemedText type="smallBold" style={{ color: theme.link }}>
+                {initials(session.user.email)}
+              </ThemedText>
+            </View>
+            <View style={styles.flex}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Connecté
+              </ThemedText>
+              <ThemedText numberOfLines={1}>{session.user.email}</ThemedText>
+            </View>
+          </View>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <Pressable onPress={leave} disabled={busy} accessibilityRole="button" style={styles.row}>
+            {busy ? (
+              <ActivityIndicator color={theme.danger} />
+            ) : (
+              <ThemedText type="link" style={{ color: theme.danger }}>
+                Se déconnecter
+              </ThemedText>
+            )}
+          </Pressable>
+        </View>
+      )}
+      {error && (
+        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
+          {error}
+        </ThemedText>
+      )}
+    </View>
+  );
+}
+
+/** « camille.martin@exemple.fr » → « CM ». */
+function initials(email = '') {
+  const parts = email
+    .split('@')[0]
+    .split(/[._-]+/)
+    .filter(Boolean);
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : email.slice(0, 2)).toUpperCase();
 }
 
 const STATUS_TEXT: Record<ServerStatus | 'checking', string> = {
@@ -117,6 +199,16 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   flex: { flex: 1 },
+  box: {
+    borderRadius: Radius.medium,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: Spacing.three,
+  },
+  boxText: { paddingVertical: Spacing.three },
+  row: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two },
+  identity: { gap: Spacing.three },
+  divider: { height: StyleSheet.hairlineWidth },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   server: {
     flexDirection: 'row',
     alignItems: 'center',

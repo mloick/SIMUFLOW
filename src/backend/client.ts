@@ -6,19 +6,30 @@
  * on reste connecté d'un lancement à l'autre.
  */
 
-import 'expo-sqlite/localStorage/install';
+import './local-storage';
 import 'react-native-url-polyfill/auto';
 
 import { createClient } from '@supabase/supabase-js';
+import { AppState, Platform } from 'react-native';
 
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './config';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    // Absent seulement pendant le rendu des pages web sur le serveur de développement.
+    storage: typeof localStorage === 'undefined' ? undefined : localStorage,
     persistSession: true,
     autoRefreshToken: true,
     // Pas de lien de connexion à lire dans une URL de page web.
     detectSessionInUrl: false,
   },
 });
+
+// Le jeton de connexion expire au bout d'une heure : Supabase le renouvelle
+// tant que l'app est au premier plan, et s'arrête quand elle passe en arrière-plan.
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') supabase.auth.startAutoRefresh();
+    else supabase.auth.stopAutoRefresh();
+  });
+}
