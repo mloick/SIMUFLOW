@@ -85,7 +85,15 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ## Compte et serveur · En cours
 
-SimuFlow a maintenant son serveur, hébergé à Paris. Dans **Profil**, la section **Serveur** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**. La création de compte et la connexion arrivent ensuite.
+SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **Serveur** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
+
+**Créer un compte** (Disponible) : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
+
+**Se connecter et se déconnecter** (Disponible) : vous restez connecté d'un lancement à l'autre. Le Profil affiche votre adresse et le bouton **Se déconnecter**. Si un champ est mal rempli, l'app le dit en clair.
+
+Prévus ensuite : supprimer son compte, et retrouver ses process sur tous ses appareils.
+
+![Connexion : l'écran, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
 
 ![Profil : le serveur joignable, puis injoignable](captures/etape-7a-serveur.png)
 
