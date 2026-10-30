@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { GestureDetector, usePanGesture, usePinchGesture, useSimultaneousGestures } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
+  Easing,
+  runOnJS,
   useAnimatedProps,
+  useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withRepeat,
@@ -18,10 +22,19 @@ import type { FamilyPaint } from '@/simulation/families';
 import { midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedG = Animated.createAnimatedComponent(G);
 
 const MIN_SCALE = 0.3;
 const MAX_SCALE = 2;
-const READABLE_SCALE = 0.8;
+/** Le cadrage automatique ne grossit pas au-delà de la taille réelle… */
+const FRAME_MAX_SCALE = 1;
+/** … ni ne rapetisse en dessous de ce seuil (le texte resterait illisible). */
+const FRAME_MIN_SCALE = 0.55;
+/** Seuil pour montrer tout un chemin parcouru (fin du pas à pas, cas simple et complexe). */
+const PATH_MIN_SCALE = 0.4;
+/** Marge autour de ce que le cadrage montre. */
+const FRAME_PADDING = 20;
+const MOVE = { duration: 450, easing: Easing.out(Easing.cubic) };
 /** Écart entre les traits de deux familles sur une même flèche. */
 const FAMILY_GAP = 4.5;
 /** Sur le web, le texte SVG serait sinon dans une police à empattements. */
@@ -51,8 +64,10 @@ export type DiagramOverview = FamilyPaint;
 /**
  * Schéma du process qui se construit pendant la simulation : seules les étapes
  * parcourues sont dessinées, et les sorties possibles apparaissent en
- * pointillés. La vue suit l'étape en cours ; les boutons − et + zooment.
- * Avec `overview`, tout le schéma est dessiné en couleurs (vue « Tous les cas »).
+ * pointillés, en fondu. À chaque étape, la vue se recadre toute seule sur
+ * l'étape en cours et ses sorties. On zoome en pinçant ou avec − et +, on se
+ * déplace au doigt. Avec `overview`, tout le schéma est dessiné en couleurs
+ * (vue « Tous les cas »).
  */
 export function ProcessDiagram({
   layout,
@@ -69,39 +84,126 @@ export function ProcessDiagram({
 }) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
-  const vertical = useRef<ScrollViewInstance>(null);
-  const horizontal = useRef<ScrollViewInstance>(null);
   const [frameWidth, setFrameWidth] = useState(0);
-  const [zoom, setZoom] = useState<number | null>(null);
 
-  const fitScale = frameWidth > 0 ? clamp(Math.min(1, (frameWidth - Spacing.two) / layout.width)) : 1;
-  // Par défaut, le schéma reste lisible (au moins 80 %) et la vue suit l'étape
-  // en cours ; « Tout » le fait tenir en largeur.
-  // La vue d'ensemble commence en largeur entière.
-  const [fitAll, setFitAll] = useState(overview !== undefined);
-  const scale = zoom ?? (fitAll ? fitScale : Math.max(fitScale, READABLE_SCALE));
+  // Position de la vue : le schéma est agrandi de `scale`, et son coin haut
+  // gauche est en (x, y) dans le cadre. Tout bouge sur le fil d'interface
+  // (Reanimated), sans repasser par React.
+  const scale = useSharedValue(1);
+  const x = useSharedValue(0);
+  const y = useSharedValue(0);
+  // Taille à laquelle le SVG est vraiment dessiné. Pendant un geste, on étire
+  // l'image ; à la fin, on redessine à la bonne taille pour que le texte reste net.
+  const [renderScale, setRenderScale] = useState(1);
+  const width = layout.width;
+  const layoutHeight = layout.height;
 
-  // La vue se centre sur l'étape en cours.
-  const current = progress?.currentId ? layout.nodes.get(progress.currentId) : undefined;
-  useEffect(() => {
-    if (!current || frameWidth === 0) return;
-    const animated = !reduceMotion;
-    horizontal.current?.scrollTo({
-      x: Math.max(0, (current.x + current.width / 2) * scale - frameWidth / 2),
-      animated,
-    });
-    vertical.current?.scrollTo({
-      y: Math.max(0, (current.y + current.height / 2) * scale - height / 2),
-      animated,
-    });
-  }, [current, scale, frameWidth, height, reduceMotion]);
+  /** Fait glisser la vue jusqu'au coin (nx, ny) et à l'échelle k, puis redessine net. */
+  const moveTo = useCallback(
+    (nx: number, ny: number, k: number) => {
+      const timing = reduceMotion ? { duration: 0 } : MOVE;
+      x.set(withTiming(bound(nx, width * k, frameWidth), timing));
+      y.set(withTiming(bound(ny, layoutHeight * k, height), timing));
+      scale.set(
+        withTiming(k, timing, (finished) => {
+          if (finished) runOnJS(setRenderScale)(k);
+        }),
+      );
+    },
+    [reduceMotion, x, y, scale, width, layoutHeight, frameWidth, height],
+  );
 
+  /**
+   * Amène la vue sur la zone `box` (coordonnées du schéma). Si elle ne tient
+   * pas sans passer sous `minScale`, la vue garde au moins `anchor` (l'étape
+   * en cours) dans le cadre.
+   */
+  const showBox = useCallback(
+    (box: Box, minScale: number, anchor?: Box) => {
+      if (frameWidth === 0) return;
+      const fit = Math.min((frameWidth - FRAME_PADDING * 2) / box.width, (height - FRAME_PADDING * 2) / box.height);
+      const k = clamp(Math.min(FRAME_MAX_SCALE, Math.max(minScale, fit)));
+      let nx = frameWidth / 2 - (box.x + box.width / 2) * k;
+      let ny = height / 2 - (box.y + box.height / 2) * k;
+      if (anchor) {
+        nx = keepInside(nx, anchor.x * k, (anchor.x + anchor.width) * k, frameWidth);
+        ny = keepInside(ny, anchor.y * k, (anchor.y + anchor.height) * k, height);
+      }
+      moveTo(nx, ny, k);
+    },
+    [frameWidth, height, moveTo],
+  );
+
+  /** Zoom des boutons − et +, autour du centre du cadre. */
+  const zoomBy = (factor: number) => {
+    const k = clamp(scale.get() * factor);
+    const ratio = k / scale.get();
+    moveTo(frameWidth / 2 - (frameWidth / 2 - x.get()) * ratio, height / 2 - (height / 2 - y.get()) * ratio, k);
+  };
+
+  const whole: Box = { x: 0, y: 0, width, height: layoutHeight };
+  const showAll = () => showBox(whole, MIN_SCALE);
+
+  // Cadrage automatique : à chaque étape, l'étape en cours et ses sorties
+  // possibles ; à la fin du parcours, tout le chemin ; en vue « Tous », tout le schéma.
   const candidates = new Set(progress?.candidateLinks);
   const ghosts = new Set(
     layout.edges
       .filter((edge) => candidates.has(edge.id) && !progress?.visitedSteps.has(edge.to))
       .map((edge) => edge.to),
   );
+  const choosing = candidates.size > 0;
+  const focusIds = !progress
+    ? []
+    : choosing && progress.currentId
+      ? [progress.currentId, ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
+      : [...progress.visitedSteps];
+  const focusKey = overview ? 'tous' : `${progress?.currentId}|${focusIds.join('|')}`;
+  useEffect(() => {
+    if (overview) {
+      showBox(whole, MIN_SCALE);
+      return;
+    }
+    const box = boxOf(focusIds.map((id) => layout.nodes.get(id)).filter((node) => node !== undefined));
+    const current = progress?.currentId ? layout.nodes.get(progress.currentId) : undefined;
+    // Pendant le choix, on reste lisible ; à la fin, on montre le chemin entier, plus petit.
+    if (box) showBox(box, choosing ? FRAME_MIN_SCALE : PATH_MIN_SCALE, current);
+    // focusKey résume focusIds ; whole dépend de la taille du schéma.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey, showBox, overview]);
+
+  // Gestes : glisser d'un doigt pour se déplacer, pincer pour zoomer autour des doigts.
+  const commit = () => {
+    'worklet';
+    runOnJS(setRenderScale)(scale.get());
+  };
+  const pan = usePanGesture({
+    onUpdate: (event) => {
+      'worklet';
+      x.set(bound(x.get() + event.changeX, width * scale.get(), frameWidth));
+      y.set(bound(y.get() + event.changeY, layoutHeight * scale.get(), height));
+    },
+  });
+  const pinch = usePinchGesture({
+    onUpdate: (event) => {
+      'worklet';
+      const k = clamp(scale.get() * event.scaleChange);
+      const ratio = k / scale.get();
+      scale.set(k);
+      x.set(bound(event.focalX - (event.focalX - x.get()) * ratio, width * k, frameWidth));
+      y.set(bound(event.focalY - (event.focalY - y.get()) * ratio, layoutHeight * k, height));
+    },
+    onDeactivate: commit,
+  });
+  const gesture = useSimultaneousGestures(pan, pinch);
+
+  const contentStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateX: x.get() }, { translateY: y.get() }, { scale: scale.get() / renderScale }],
+    }),
+    [renderScale],
+  );
+
   // Une pointe de flèche par couleur utilisée.
   const arrowColors = new Set([
     theme.primary,
@@ -115,26 +217,23 @@ export function ProcessDiagram({
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
           Schéma
         </ThemedText>
-        <ToolButton label="−" hint="Dézoomer" onPress={() => setZoom(clamp(scale / 1.25))} />
-        <ToolButton label="+" hint="Zoomer" onPress={() => setZoom(clamp(scale * 1.25))} />
-        <ToolButton
-          label="Tout"
-          hint="Afficher tout le schéma en largeur"
-          onPress={() => {
-            setZoom(null);
-            setFitAll(true);
-          }}
-        />
+        <ToolButton label="−" hint="Dézoomer" onPress={() => zoomBy(1 / 1.25)} />
+        <ToolButton label="+" hint="Zoomer" onPress={() => zoomBy(1.25)} />
+        <ToolButton label="Tout" hint="Afficher tout le schéma" onPress={showAll} />
       </View>
       <View
         style={[styles.frame, { height, backgroundColor: theme.surface, borderColor: theme.border }]}
         onLayout={(event) => setFrameWidth(event.nativeEvent.layout.width)}>
-        <ScrollView ref={vertical} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-          <ScrollView ref={horizontal} horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}>
-            <View accessible accessibilityRole="image" accessibilityLabel={accessibilityLabel}>
+        <GestureDetector gesture={gesture}>
+          <View style={StyleSheet.absoluteFill} collapsable={false}>
+            <Animated.View
+              style={[styles.content, contentStyle]}
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={accessibilityLabel}>
               <Svg
-                width={layout.width * scale}
-                height={layout.height * scale}
+                width={layout.width * renderScale}
+                height={layout.height * renderScale}
                 viewBox={`0 0 ${layout.width} ${layout.height}`}>
                 <Defs>
                   {[...arrowColors].map((color) => (
@@ -215,7 +314,7 @@ export function ProcessDiagram({
                     if (!visited && !candidate) return null;
                     const mid = midpoint(edge.points);
                     return (
-                      <G key={edge.id}>
+                      <FadeIn key={edge.id}>
                         <Path
                           d={pathOf(edge.points)}
                           fill="none"
@@ -225,7 +324,7 @@ export function ProcessDiagram({
                           markerEnd={`url(#${arrowId(visited ? theme.primary : theme.textSecondary)})`}
                         />
                         {edge.label ? <EdgeLabel point={mid} label={edge.label} /> : null}
-                      </G>
+                      </FadeIn>
                     );
                   })}
 
@@ -237,22 +336,63 @@ export function ProcessDiagram({
                       </G>
                     );
                   }
-                  if (progress?.visitedSteps.has(node.id)) {
-                    return <NodeShape key={node.id} node={node} current={node.id === progress.currentId} />;
-                  }
-                  if (ghosts.has(node.id)) return <NodeShape key={node.id} node={node} ghost />;
-                  return null;
+                  // Même clé pour une étape fantôme puis parcourue : le fondu ne joue qu'à son apparition.
+                  const visited = progress?.visitedSteps.has(node.id);
+                  if (!visited && !ghosts.has(node.id)) return null;
+                  return (
+                    <FadeIn key={node.id}>
+                      <NodeShape node={node} current={node.id === progress?.currentId} ghost={!visited} />
+                    </FadeIn>
+                  );
                 })}
               </Svg>
-            </View>
-          </ScrollView>
-        </ScrollView>
+            </Animated.View>
+          </View>
+        </GestureDetector>
       </View>
     </View>
   );
 }
 
+type Box = { x: number; y: number; width: number; height: number };
+
+/** Décale `offset` pour que le segment [start, end] (déjà à l'échelle) reste dans le cadre, avec une marge. */
+function keepInside(offset: number, start: number, end: number, frame: number) {
+  if (offset + start < FRAME_PADDING) return FRAME_PADDING - start;
+  if (offset + end > frame - FRAME_PADDING) return frame - FRAME_PADDING - end;
+  return offset;
+}
+
+/** Coin haut gauche permis : le schéma ne sort pas du cadre ; plus petit que le cadre, il y est centré. */
+function bound(value: number, size: number, frame: number) {
+  'worklet';
+  if (size <= frame) return (frame - size) / 2;
+  return Math.min(0, Math.max(frame - size, value));
+}
+
+/** Plus petite zone qui contient toutes ces étapes. */
+function boxOf(nodes: DiagramNode[]): Box | undefined {
+  if (nodes.length === 0) return undefined;
+  const left = Math.min(...nodes.map((node) => node.x));
+  const top = Math.min(...nodes.map((node) => node.y));
+  const right = Math.max(...nodes.map((node) => node.x + node.width));
+  const bottom = Math.max(...nodes.map((node) => node.y + node.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/** Fait apparaître son contenu en fondu, sauf avec « Réduire les animations ». */
+function FadeIn({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+  useEffect(() => {
+    if (!reduceMotion) opacity.set(withTiming(1, { duration: 350 }));
+  }, [opacity, reduceMotion]);
+  const animatedProps = useAnimatedProps(() => ({ opacity: opacity.get() }));
+  return <AnimatedG animatedProps={animatedProps}>{children}</AnimatedG>;
+}
+
 function clamp(scale: number) {
+  'worklet';
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
 }
 
@@ -440,6 +580,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   container: { gap: Spacing.one },
+  content: { position: 'absolute', left: 0, top: 0, transformOrigin: 'left top' },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   title: { flex: 1 },
   tool: {
