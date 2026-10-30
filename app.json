@@ -2,6 +2,7 @@
   "expo": {
     "name": "SimuFlow",
     "slug": "simuflow",
+    "owner": "milock",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

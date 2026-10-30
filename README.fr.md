@@ -44,6 +44,8 @@ L'app est compilée avec Xcode (build de développement) et s'ouvre dans le Simu
 
 Une nouvelle compilation n'est utile que si l'on ajoute un module natif. Sinon, une fois l'app installée, `npx expo start` puis ouvrir l'app : les modifications arrivent en quelques secondes.
 
+**Build installable (sans Mac).** EAS Build compile l'app sur les serveurs d'Expo. `npx eas-cli@latest build --platform android --profile preview` produit un APK Android qui s'installe depuis un lien ou un QR code et fonctionne sans serveur de développement. Installer un build EAS sur un iPhone demande un compte Apple Developer payant ; avec un compte gratuit, utiliser le build de développement Xcode ci-dessus. Détails dans `docs/technique.md`.
+
 Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Claude Code (`.claude/`) sont exclus du dépôt par le `.gitignore`.
 
 ## Documentation

@@ -39,6 +39,7 @@ assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh)
+eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, plugins)
 ```
 
@@ -463,6 +464,29 @@ Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrêt
 - les simulateurs iOS devenus inutilisables (`xcrun simctl delete unavailable`).
 
 Il affiche ensuite l'espace libéré. Le dossier `ios/` et ses `Pods` sont gardés : `ios/` contient la signature (équipe Apple choisie dans Xcode), et garder les `Pods` évite de les retélécharger. Contrepartie : la compilation suivante repart de zéro et prend quelques minutes.
+
+## Build installable (EAS Build)
+
+EAS Build compile l'app sur les serveurs d'Expo, sans Xcode ni Android Studio. Le projet appartient au compte Expo `milock` (`owner` dans `app.json`) ; `npx eas-cli@latest init` le relie à un projet EAS et ajoute son identifiant (`extra.eas.projectId`) dans `app.json`.
+
+`eas.json` définit deux profils :
+
+| Profil | Pour quoi | Résultat |
+| --- | --- | --- |
+| `preview` | Tester l'app sans câble, la faire essayer à d'autres | Android : un fichier APK à installer directement ; iOS : build interne (voir limite ci-dessous) |
+| `production` | Stores, plus tard | AAB Android, IPA iOS ; numéro de build augmenté à chaque fois (`autoIncrement`, version gardée par EAS : `appVersionSource: remote`) |
+
+Contrairement au build de développement, un build `preview` contient le JavaScript : il s'ouvre sans Metro ni Mac allumé.
+
+```bash
+npx eas-cli@latest login                                   # une fois
+npx eas-cli@latest init                                    # une fois : relie le projet
+npx eas-cli@latest build --platform android --profile preview
+```
+
+À la fin, EAS affiche un lien et un QR code : ouvert sur un téléphone Android, il télécharge l'APK à installer (autoriser l'installation depuis le navigateur). La clé de signature Android est créée et gardée par EAS, pas dans le dépôt.
+
+**Limite iOS.** Installer un build EAS sur un iPhone (distribution interne ou TestFlight) demande un compte Apple Developer payant (99 $ par an). Avec le compte Apple gratuit, l'iPhone garde le build de développement compilé par Xcode, valable 7 jours.
 
 ## Fichiers exclus du dépôt
 

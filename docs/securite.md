@@ -6,6 +6,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 
 - Seules l'adresse du projet Supabase et sa clé **publishable** sont dans l'app (`src/backend/config.ts`). Elles sont publiques par conception et n'ouvrent que ce que les règles d'accès autorisent.
 - La clé secrète (`service_role`) et le mot de passe de la base ne sont ni dans l'app ni dans le dépôt, et ne sont jamais transmis en dehors du compte Supabase.
+- Les clés de signature de l'app (Android, et iOS plus tard) sont créées et gardées par EAS (Expo), jamais dans le dépôt.
 - `.gitignore` exclut `.env`, les clés et certificats, et les fichiers locaux de Claude Code (`.claude/`, `CLAUDE.local.md`).
 
 ## Données et règles d'accès (Supabase)
