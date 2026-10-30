@@ -2,6 +2,7 @@
   "expo": {
     "name": "SimuFlow",
     "slug": "simuflow",
+    "owner": "milock",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -45,6 +46,16 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "f6556dd2-a0ce-400c-9efa-56cab7b0df3a"
+      }
     }
   }
 }

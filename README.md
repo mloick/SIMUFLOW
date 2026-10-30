@@ -44,6 +44,8 @@ The app is compiled with Xcode (development build) and opens in the iOS Simulato
 
 A new build is only needed when a native module is added. Otherwise, once the app is installed, run `npx expo start` and open the app: changes show up in a few seconds.
 
+**Installable build (no Mac needed).** EAS Build compiles the app on Expo's servers. `npx eas-cli@latest build --platform android --profile preview` produces an Android APK that installs from a link or QR code and runs without a dev server. Installing an EAS build on an iPhone requires a paid Apple Developer account; with a free account, use the Xcode development build above. Details in `docs/technique.md` (French).
+
 Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.claude/`) are kept out of the repository by `.gitignore`.
 
 ## Documentation
