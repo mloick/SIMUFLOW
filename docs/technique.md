@@ -33,7 +33,7 @@ src/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
-scripts/        Lancement iOS avec nettoyage (ios.sh, nettoyer-ios.sh), script du modèle Expo (reset-project)
+scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
 ```
 
@@ -44,9 +44,9 @@ app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simu
 | `npm install` | Installer les dépendances |
 | `npx expo run:ios` | Compiler l'app avec Xcode (build de développement) et l'ouvrir dans le Simulateur iOS |
 | `npx expo run:ios --device` | Installer le build de développement sur un iPhone branché en USB |
-| `npm run ios:simulateur` | Vérifie les versions des paquets, lance `npx expo run:ios`, puis efface les fichiers temporaires de compilation à l'arrêt (Ctrl+C) |
-| `npm run ios:iphone` | Comme `npx expo run:ios --device`, avec le même nettoyage à l'arrêt |
-| `npm run nettoyer` | Effacer seulement les fichiers temporaires de compilation iOS |
+| `npm run ios:simulateur` | Vérifie les versions des paquets, puis lance `npx expo run:ios` |
+| `npm run ios:iphone` | Pareil, avec `--device` (iPhone branché en USB) |
+| `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
 | `npm test` | Lancer les tests unitaires (Jest) |
 | `npx tsc --noEmit` | Vérifier les types |
@@ -320,18 +320,22 @@ Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > 
 
 L'app se teste avec un build de développement compilé par Xcode, et non avec Expo Go : le futur module natif de lecture de texte (Kotlin et Swift) ne peut pas tourner dans Expo Go. `npx expo run:ios` génère le dossier `ios/` (génération native continue), le compile et lance l'app. Les dossiers `ios/` et `android/` ne sont pas versionnés : la configuration native passe par `app.json` et les plugins de configuration.
 
-### Nettoyage après compilation
+### Compilation et nettoyage
 
 Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrête si des paquets ne correspondent pas aux versions attendues par le SDK Expo (vérification sautée sans réseau). Sans ce contrôle, la compilation réussit mais l'app plante au lancement : les modules natifs Expo sont précompilés, et un module construit pour une version plus récente d'`ExpoModulesCore` ne trouve pas ses symboles (« Symbol not found … ExpoModulesCore » dans le rapport de crash). Correction : `npx expo install --fix`, puis `cd ios && pod install`.
 
-Une compilation Xcode laisse plusieurs Go de fichiers intermédiaires. `scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`) et, quand le serveur s'arrête, appelle `scripts/nettoyer-ios.sh`. Ce script, qui ne fait rien hors de macOS, supprime :
+`scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`). Les fichiers intermédiaires de Xcode (plusieurs Go) sont gardés : la compilation suivante ne recompile que ce qui a changé, en une minute environ au lieu de plusieurs. Si le disque a moins de 10 Go libres, le script le signale avant de compiler.
+
+**Quand recompiler.** Seulement après l'ajout d'un module natif (une bibliothèque avec du code Swift ou Kotlin) ou un changement d'`app.json`. Pour le reste, l'app déjà installée suffit : `npx expo start`, puis ouvrir l'app, et Metro envoie le nouveau code JavaScript en quelques secondes.
+
+**Nettoyage.** `npm run nettoyer` lance `scripts/nettoyer-ios.sh`, qui ne fait rien hors de macOS et supprime :
 
 - `~/Library/Developer/Xcode/DerivedData/SimuFlow-*` : les fichiers compilés par Xcode pour ce projet ;
 - le contenu de `ios/build`, sauf `ios/build/generated` : ce dossier contient le code natif que React Native génère pendant `pod install` (codegen). S'il est effacé, la compilation suivante échoue avec « Build input file cannot be found … ReactCodegen », et il faut relancer `cd ios && pod install` ;
 - les caches Metro dans le dossier temporaire (`metro-*`, `haste-map-*`) ;
 - les simulateurs iOS devenus inutilisables (`xcrun simctl delete unavailable`).
 
-Il affiche ensuite l'espace libéré. Le dossier `ios/` et ses `Pods` sont gardés : `ios/` contient la signature (équipe Apple choisie dans Xcode), et garder les `Pods` évite de les retélécharger. Contrepartie : la compilation suivante repart de zéro et prend quelques minutes de plus.
+Il affiche ensuite l'espace libéré. Le dossier `ios/` et ses `Pods` sont gardés : `ios/` contient la signature (équipe Apple choisie dans Xcode), et garder les `Pods` évite de les retélécharger. Contrepartie : la compilation suivante repart de zéro et prend quelques minutes.
 
 ## Fichiers exclus du dépôt
 
