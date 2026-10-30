@@ -1,13 +1,17 @@
 /**
- * Accès aux process. Pour l'instant, les données sont fictives et chargées
- * avec un délai simulé ; le backend (Supabase) remplacera fetchProcesses.
+ * Accès aux process : les process d'exemple (demo-processes.ts) et ceux importés.
+ * La liste affichée, avec ses états réels, est construite dans process-list.ts.
  *
  * Le « scénario de démonstration » force un des états de la liste
- * (chargement, vide, erreur, hors connexion) pour les montrer sans réseau.
- * Il se choisit dans l'onglet Profil, en mode développement.
+ * (chargement, vide, erreur, hors connexion) pour les montrer à la demande.
+ * Il se choisit dans l'onglet Profil, en mode développement ; « Contenu »
+ * revient à la liste réelle.
  *
  * Les process importés (écran Importer) sont affichés en tête de liste et
  * enregistrés sur le téléphone (saved-file.ts) : ils sont relus au démarrage.
+ * Connecté, ils sont aussi synchronisés avec le serveur (sync.ts, cloud-sync.ts) ;
+ * chaque entrée garde donc son identifiant sur le serveur et une marque
+ * « à supprimer » tant que la suppression n'y est pas faite.
  */
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -16,6 +20,7 @@ import type { Process } from '@/domain';
 
 import { demoProcesses } from './demo-processes';
 import { readSaved, writeSaved } from './saved-file';
+import type { SyncEntry } from './sync';
 
 export type DemoScenario = 'contenu' | 'chargement' | 'vide' | 'erreur' | 'hors-ligne';
 
@@ -58,19 +63,29 @@ function isProcess(value: unknown): value is Process {
   );
 }
 
-/** Relit les process enregistrés. Un fichier abîmé ou inconnu donne une liste vide. */
-export function parseSaved(text: string | null): Process[] {
+function isEntry(value: unknown): value is SyncEntry {
+  const entry = value as SyncEntry;
+  return isProcess(entry?.process) && (entry.cloudId === undefined || typeof entry.cloudId === 'string');
+}
+
+/**
+ * Relit les process enregistrés. Un fichier abîmé ou inconnu donne une liste vide.
+ * Version 1 : une liste de process ; version 2 : des entrées avec leur état de synchronisation.
+ */
+export function parseSaved(text: string | null): SyncEntry[] {
   if (!text) return [];
   try {
     const data = JSON.parse(text);
-    if (data?.format !== SAVED_FORMAT || !Array.isArray(data.processes)) return [];
-    return data.processes.filter(isProcess);
+    if (data?.format !== SAVED_FORMAT) return [];
+    if (Array.isArray(data.entries)) return data.entries.filter(isEntry);
+    if (Array.isArray(data.processes)) return data.processes.filter(isProcess).map((process: Process) => ({ process }));
+    return [];
   } catch {
     return [];
   }
 }
 
-function loadImported(): Process[] {
+function loadImported(): SyncEntry[] {
   try {
     return parseSaved(readSaved());
   } catch {
@@ -78,39 +93,68 @@ function loadImported(): Process[] {
   }
 }
 
-let imported: Process[] = loadImported();
+let entries: SyncEntry[] = loadImported();
+/** Les process à afficher : les entrées non supprimées. Recalculé à chaque changement. */
+let imported: Process[] = visible(entries);
 const importListeners = new Set<() => void>();
 
-function setImported(next: Process[]) {
-  imported = next;
+function visible(list: SyncEntry[]): Process[] {
+  return list.filter((entry) => !entry.deleted).map((entry) => entry.process);
+}
+
+/** Remplace les entrées, prévient les écrans et la synchronisation, et enregistre sur le téléphone. */
+export function setImportEntries(next: SyncEntry[]) {
+  entries = next;
+  imported = visible(next);
   importListeners.forEach((listener) => listener());
   try {
-    writeSaved(JSON.stringify({ format: SAVED_FORMAT, version: 1, processes: next }));
+    writeSaved(JSON.stringify({ format: SAVED_FORMAT, version: 2, entries: next }));
   } catch (error) {
     console.warn('Les process importés n’ont pas pu être enregistrés.', error);
   }
 }
 
-/** Ajoute un process importé en tête de liste et l'enregistre. */
-export function addImportedProcess(process: Process) {
-  setImported([process, ...imported]);
+export function getImportEntries(): SyncEntry[] {
+  return entries;
 }
 
-/** Supprime un process importé (les process d'exemple ne se suppriment pas). */
+export function subscribeImports(listener: () => void) {
+  importListeners.add(listener);
+  return () => {
+    importListeners.delete(listener);
+  };
+}
+
+/** Ajoute un process importé en tête de liste et l'enregistre. */
+export function addImportedProcess(process: Process) {
+  setImportEntries([{ process }, ...entries]);
+}
+
+/**
+ * Supprime un process importé (les process d'exemple ne se suppriment pas).
+ * Déjà sur le serveur, il reste marqué « à supprimer » jusqu'à la prochaine synchronisation.
+ */
 export function removeImportedProcess(id: string) {
-  setImported(imported.filter((process) => process.id !== id));
+  setImportEntries(
+    entries.flatMap((entry): SyncEntry[] => {
+      if (entry.process.id !== id) return [entry];
+      return entry.cloudId ? [{ ...entry, deleted: true }] : [];
+    }),
+  );
 }
 
 export function isImported(id: string): boolean {
   return imported.some((process) => process.id === id);
 }
 
-function useImportedProcesses(): Process[] {
+/** Le process est-il enregistré sur le serveur ? */
+export function isInCloud(id: string): boolean {
+  return entries.some((entry) => entry.process.id === id && entry.cloudId !== undefined && !entry.deleted);
+}
+
+export function useImportedProcesses(): Process[] {
   return useSyncExternalStore(
-    (listener) => {
-      importListeners.add(listener);
-      return () => importListeners.delete(listener);
-    },
+    subscribeImports,
     () => imported,
     () => imported,
   );
@@ -142,8 +186,8 @@ export type ProcessListState =
   | { status: 'error' }
   | { status: 'ready'; processes: Process[]; offline: boolean };
 
-/** Liste des process et fonction pour la recharger (bouton « Réessayer »). */
-export function useProcessList(): ProcessListState & { reload: () => void } {
+/** Liste simulée d'après le scénario de démonstration (utilisée hors « Contenu »). */
+export function useSimulatedProcessList(): ProcessListState & { reload: () => void } {
   const current = useDemoScenario();
   const [attempt, setAttempt] = useState(0);
   // Chaque chargement a sa clé : tant que le résultat de la clé en cours n'est

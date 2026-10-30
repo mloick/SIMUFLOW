@@ -55,6 +55,38 @@ describe('process importés', () => {
     const { parseSaved } = loadStore();
     expect(parseSaved('{pas du json')).toEqual([]);
     expect(parseSaved('{"format":"autre","processes":[]}')).toEqual([]);
-    expect(parseSaved(JSON.stringify({ format: 'simuflow-imports', processes: [exemple(), { id: 3 }] }))).toHaveLength(1);
+    expect(parseSaved(JSON.stringify({ format: 'simuflow-imports', processes: [exemple(), { id: 3 }] }))).toHaveLength(
+      1,
+    );
+  });
+});
+
+describe('process importés et serveur', () => {
+  beforeEach(() => {
+    mockSaved = null;
+  });
+
+  it('relit un fichier de la version 1 (liste de process)', () => {
+    const { parseSaved } = loadStore();
+    const entries = parseSaved(JSON.stringify({ format: 'simuflow-imports', version: 1, processes: [exemple()] }));
+    expect(entries).toEqual([{ process: exemple() }]);
+  });
+
+  it('garde un process déjà envoyé marqué « à supprimer », et le cache', () => {
+    const store = loadStore();
+    store.setImportEntries([{ process: exemple(), cloudId: 'serveur-1' }]);
+    expect(store.isInCloud('import-1-1')).toBe(true);
+    store.removeImportedProcess('import-1-1');
+    expect(store.getProcess('import-1-1')).toBeUndefined();
+    expect(store.getImportEntries()).toEqual([{ process: exemple(), cloudId: 'serveur-1', deleted: true }]);
+    // Et la marque survit au redémarrage.
+    expect(loadStore().getImportEntries()[0].deleted).toBe(true);
+  });
+
+  it('oublie tout de suite un process qui n’a jamais été envoyé', () => {
+    const store = loadStore();
+    store.addImportedProcess(exemple());
+    store.removeImportedProcess('import-1-1');
+    expect(store.getImportEntries()).toEqual([]);
   });
 });

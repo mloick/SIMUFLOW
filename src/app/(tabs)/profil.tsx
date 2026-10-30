@@ -7,6 +7,7 @@ import { checkServer, type ServerStatus } from '@/backend/health';
 import { PlaceholderScreen } from '@/components/placeholder-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -73,6 +74,8 @@ function Account() {
             </View>
           </View>
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <SyncRow />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <Pressable onPress={leave} disabled={busy} accessibilityRole="button" style={styles.row}>
             {busy ? (
               <ActivityIndicator color={theme.danger} />
@@ -90,6 +93,48 @@ function Account() {
         </ThemedText>
       )}
       {session && <DeleteAccount />}
+    </View>
+  );
+}
+
+function syncText(status: SyncStatus): string {
+  switch (status.state) {
+    case 'syncing':
+      return 'Synchronisation…';
+    case 'done':
+      return `Process synchronisés à ${status.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+    case 'error':
+      return status.message;
+    default:
+      return 'Vos process importés sont gardés sur votre compte.';
+  }
+}
+
+/** État de la synchronisation des process importés, et bouton pour la relancer. */
+function SyncRow() {
+  const theme = useTheme();
+  const status = useSyncStatus();
+  const syncing = status.state === 'syncing';
+  return (
+    <View style={[styles.row, styles.identity]} accessible={false}>
+      {syncing ? (
+        <ActivityIndicator color={theme.textSecondary} />
+      ) : (
+        <View style={[styles.dot, { backgroundColor: status.state === 'error' ? theme.warning : theme.success }]} />
+      )}
+      <ThemedText
+        type="small"
+        style={[styles.flex, { color: status.state === 'error' ? theme.warning : theme.textSecondary }]}
+        accessibilityLiveRegion="polite">
+        {syncText(status)}
+      </ThemedText>
+      {!syncing && (
+        <Pressable onPress={syncNow} accessibilityRole="button" hitSlop={8}>
+          <ThemedText type="smallBold" style={{ color: theme.link }}>
+            Synchroniser
+          </ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -124,8 +169,8 @@ function DeleteAccount() {
           </ThemedText>
         </Pressable>
         <ThemedText type="small" themeColor="textSecondary">
-          La suppression efface votre compte et vos process enregistrés sur le serveur. Elle vous sera demandée une
-          seconde fois pour confirmer.
+          La suppression efface votre compte et vos process, sur le serveur et sur ce téléphone. Elle vous sera demandée
+          une seconde fois pour confirmer.
         </ThemedText>
       </View>
     );
@@ -139,8 +184,8 @@ function DeleteAccount() {
         Supprimer définitivement votre compte ?
       </ThemedText>
       <ThemedText type="small" style={{ color: theme.text }}>
-        Votre compte et tous vos process enregistrés sur le serveur seront effacés. Impossible de revenir en arrière.
-        Les process gardés sur ce téléphone restent.
+        Votre compte et tous vos process seront effacés, sur le serveur et sur ce téléphone. Impossible de revenir en
+        arrière.
       </ThemedText>
       {error && (
         <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">

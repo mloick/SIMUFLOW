@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { Colors } from '@/constants/theme';
+import { useCloudSync } from '@/data/cloud-sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,6 +28,8 @@ function navigationTheme(scheme: 'light' | 'dark') {
 
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  // Process importés synchronisés avec le compte connecté.
+  useCloudSync();
   return (
     // Racine des gestes (pincer et glisser sur le schéma).
     <GestureHandlerRootView style={styles.root}>

@@ -16,7 +16,7 @@ La liste montre quatre process d'exemple, et ceux que vous importez apparaissent
 
 Touchez le bouton **+** de la liste, puis **Fichier draw.io** ou **Fichier JSON**, et choisissez le fichier dans Fichiers, iCloud Drive ou Drive. L'app vous montre ce qu'elle a lu : le nombre d'étapes et d'acteurs, les problèmes éventuels, et ce qu'elle a dû deviner (par exemple une flèche qui n'était accrochée à rien). Si le schéma a plusieurs pages, choisissez celle à importer. Vérifiez le nom, puis touchez **Importer** : le process s'ouvre et rejoint la liste.
 
-Vos process importés sont enregistrés sur le téléphone : vous les retrouvez à chaque ouverture de l'app. Pour en retirer un, ouvrez-le et touchez **Supprimer ce process**, tout en bas.
+Vos process importés sont enregistrés sur le téléphone : vous les retrouvez à chaque ouverture de l'app. Si vous êtes connecté, ils sont aussi gardés sur votre compte (voir « Compte et serveur »). Pour en retirer un, ouvrez-le et touchez **Supprimer ce process**, tout en bas.
 
 ![Un process importé retrouvé après redémarrage, et le bouton pour le supprimer](captures/etape-5c-garder.png)
 
@@ -83,17 +83,21 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
 
-## Compte et serveur · En cours
+## Compte et serveur · Disponible
 
 SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **Serveur** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
 
-**Créer un compte** (Disponible) : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
+**Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
 
-**Se connecter et se déconnecter** (Disponible) : vous restez connecté d'un lancement à l'autre. Le Profil affiche votre adresse et le bouton **Se déconnecter**. Si un champ est mal rempli, l'app le dit en clair.
+**Se connecter et se déconnecter** : vous restez connecté d'un lancement à l'autre. Le Profil affiche votre adresse et le bouton **Se déconnecter**. Si un champ est mal rempli, l'app le dit en clair.
 
-**Supprimer son compte** (Disponible) : dans **Profil**, touchez **Supprimer mon compte**. L'app vous redemande de confirmer et dit ce qui sera effacé : votre compte et vos process enregistrés sur le serveur. Les process gardés sur le téléphone restent.
+**Supprimer son compte** : dans **Profil**, touchez **Supprimer mon compte**. L'app vous redemande de confirmer et dit ce qui sera effacé : votre compte et vos process, sur le serveur et sur ce téléphone.
 
-Prévu ensuite : retrouver ses process sur tous ses appareils.
+**Retrouver ses process sur tous ses appareils** : connecté, chaque process importé est aussi enregistré sur votre compte. Connectez-vous sur un autre téléphone : il y apparaît. Supprimez-le d'un côté : il disparaît de l'autre. Sans réseau, rien n'est perdu : la liste affiche « Hors connexion » et vos process restent consultables ; l'app envoie les changements toute seule dès que le réseau revient. Le Profil indique l'heure de la dernière synchronisation, et **Synchroniser** la relance.
+
+Quand vous vous déconnectez, les process de votre compte quittent ce téléphone ; ils vous attendent sur le serveur.
+
+![Synchronisation : un process venu du compte, le Profil synchronisé, puis hors connexion](captures/etape-8-synchro.png)
 
 ![Connexion : l'écran, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
 
