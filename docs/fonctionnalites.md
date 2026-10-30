@@ -113,6 +113,12 @@ Partagez un process avec vos collègues. Vous recevez une notification quand que
 
 L'app suit le réglage de votre téléphone : claire le jour, sombre si vous avez choisi le mode sombre.
 
+## Icône et écran de démarrage · Disponible
+
+Sur l'écran d'accueil du téléphone, SimuFlow a l'icône du logo, le chemin en S. À l'ouverture, le logo s'affiche sur un fond clair ou sombre selon votre téléphone, puis l'app apparaît en fondu (sans fondu si vous avez activé « Réduire les animations »).
+
+![L'icône sur iOS et Android, et l'écran de démarrage en mode clair et sombre](captures/etape-9-identite.png)
+
 ## Animations douces · Disponible
 
 Pendant le chargement, la liste « respire » doucement, puis les process apparaissent l'un après l'autre. Si vous avez activé « Réduire les animations » sur votre téléphone, rien ne bouge.

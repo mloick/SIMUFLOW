@@ -23,3 +23,4 @@ SimuFlow est développé avec Claude Code (Anthropic). Ce document dit ce qui gu
 - Le comportement sur le téléphone (iPhone, mode sombre, VoiceOver).
 - Les données dans Supabase (comptes, table `processes`).
 - Les captures et la documentation avant chaque fusion.
+- L'icône et l'écran de démarrage sur l'écran d'accueil : Claude les produit à partir du tracé du logo que j'ai choisi, sans IA générative d'images.

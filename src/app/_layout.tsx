@@ -3,7 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors } from '@/constants/theme';
 import { useCloudSync } from '@/data/cloud-sync';
 
@@ -34,7 +34,7 @@ export default function RootLayout() {
     // Racine des gestes (pincer et glisser sur le schéma).
     <GestureHandlerRootView style={styles.root}>
       <ThemeProvider value={navigationTheme(scheme)}>
-        <AnimatedSplashOverlay />
+        <SplashOverlay />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="connexion" options={{ title: 'Connexion', presentation: 'modal' }} />

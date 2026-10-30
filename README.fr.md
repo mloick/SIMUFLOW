@@ -22,7 +22,7 @@ La maquette complète est dans [`docs/maquette/`](docs/maquette/).
 
 ## Logo
 
-Le logo est un chemin en S : un point de départ, deux virages, une flèche d'arrivée. Il représente un process que l'on parcourt pas à pas, et forme le S de SimuFlow. Son histoire, ses couleurs et ses fichiers sont dans [`docs/logo/`](docs/logo/).
+Le logo est un chemin en S : un point de départ, deux virages, une flèche d'arrivée. Il représente un process que l'on parcourt pas à pas, et forme le S de SimuFlow. Son histoire, ses couleurs et ses fichiers sont dans [`docs/logo/`](docs/logo/). C'est aussi l'icône de l'app et son écran de démarrage.
 
 ## Fonctionnalités du téléphone
 
