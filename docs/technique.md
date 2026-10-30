@@ -48,6 +48,8 @@ app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simu
 | `npm install` | Installer les dépendances |
 | `npx expo run:ios` | Compiler l'app avec Xcode (build de développement) et l'ouvrir dans le Simulateur iOS |
 | `npx expo run:ios --device` | Installer le build de développement sur un iPhone branché en USB |
+| `npm run ios` | Raccourci de `npx expo run:ios` |
+| `npm run android` | Raccourci de `npx expo run:android` : compiler l'app native et l'ouvrir sur Android |
 | `npm run ios:simulateur` | Vérifie les versions des paquets, puis lance `npx expo run:ios` |
 | `npm run ios:iphone` | Pareil, avec `--device` (iPhone branché en USB) |
 | `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
