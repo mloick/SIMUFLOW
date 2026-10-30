@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { signOut, useSession } from '@/backend/auth';
+import { deleteAccount, signOut, useSession } from '@/backend/auth';
 import { checkServer, type ServerStatus } from '@/backend/health';
 import { PlaceholderScreen } from '@/components/placeholder-screen';
 import { ThemedText } from '@/components/themed-text';
@@ -89,6 +89,90 @@ function Account() {
           {error}
         </ThemedText>
       )}
+      {session && <DeleteAccount />}
+    </View>
+  );
+}
+
+/**
+ * Supprimer son compte : demandé deux fois. Le premier bouton ouvre un encadré
+ * qui dit ce qui sera effacé ; seul le second supprime.
+ */
+function DeleteAccount() {
+  const theme = useTheme();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = async () => {
+    setBusy(true);
+    const result = await deleteAccount();
+    // Réussi : la session disparaît et le Profil repasse à « Se connecter ».
+    setBusy(false);
+    if (!result.ok) setError(result.message);
+  };
+
+  if (!confirming) {
+    return (
+      <View style={styles.deleteBlock}>
+        <Pressable
+          onPress={() => setConfirming(true)}
+          accessibilityRole="button"
+          style={[styles.box, styles.row, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <ThemedText type="link" style={{ color: theme.danger }}>
+            Supprimer mon compte
+          </ThemedText>
+        </Pressable>
+        <ThemedText type="small" themeColor="textSecondary">
+          La suppression efface votre compte et vos process enregistrés sur le serveur. Elle vous sera demandée une
+          seconde fois pour confirmer.
+        </ThemedText>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={[styles.confirm, { backgroundColor: theme.dangerBackground, borderColor: theme.danger }]}
+      accessibilityRole="alert">
+      <ThemedText type="smallBold" style={{ color: theme.danger }}>
+        Supprimer définitivement votre compte ?
+      </ThemedText>
+      <ThemedText type="small" style={{ color: theme.text }}>
+        Votre compte et tous vos process enregistrés sur le serveur seront effacés. Impossible de revenir en arrière.
+        Les process gardés sur ce téléphone restent.
+      </ThemedText>
+      {error && (
+        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
+          {error}
+        </ThemedText>
+      )}
+      <View style={styles.confirmButtons}>
+        <Pressable
+          onPress={() => {
+            setConfirming(false);
+            setError(null);
+          }}
+          disabled={busy}
+          accessibilityRole="button"
+          style={[styles.confirmButton, { borderColor: theme.fieldBorder, backgroundColor: theme.surface }]}>
+          <ThemedText type="smallBold">Annuler</ThemedText>
+        </Pressable>
+        <Pressable
+          onPress={confirm}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Supprimer définitivement mon compte"
+          style={[styles.confirmButton, { borderColor: theme.danger, backgroundColor: theme.danger }]}>
+          {busy ? (
+            <ActivityIndicator color={theme.background} />
+          ) : (
+            <ThemedText type="smallBold" style={{ color: theme.background }}>
+              Supprimer
+            </ThemedText>
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -208,6 +292,23 @@ const styles = StyleSheet.create({
   row: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two },
   identity: { gap: Spacing.three },
   divider: { height: StyleSheet.hairlineWidth },
+  deleteBlock: { gap: Spacing.two, marginTop: Spacing.two },
+  confirm: {
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
+  confirmButtons: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
+  confirmButton: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.small,
+    borderWidth: 1,
+  },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   server: {
     flexDirection: 'row',
