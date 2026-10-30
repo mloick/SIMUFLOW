@@ -91,9 +91,13 @@ SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **Serveu
 
 **Se connecter et se déconnecter** (Disponible) : vous restez connecté d'un lancement à l'autre. Le Profil affiche votre adresse et le bouton **Se déconnecter**. Si un champ est mal rempli, l'app le dit en clair.
 
-Prévus ensuite : supprimer son compte, et retrouver ses process sur tous ses appareils.
+**Supprimer son compte** (Disponible) : dans **Profil**, touchez **Supprimer mon compte**. L'app vous redemande de confirmer et dit ce qui sera effacé : votre compte et vos process enregistrés sur le serveur. Les process gardés sur le téléphone restent.
+
+Prévu ensuite : retrouver ses process sur tous ses appareils.
 
 ![Connexion : l'écran, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
+
+![Supprimer son compte : le bouton, la confirmation, un problème de connexion, puis le Profil sans compte](captures/etape-7d-suppression.png)
 
 ![Profil : le serveur joignable, puis injoignable](captures/etape-7a-serveur.png)
 

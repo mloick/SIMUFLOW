@@ -36,7 +36,7 @@ src/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
-supabase/       Base de données : migrations SQL (migrations/) et test des règles de sécurité (tests/)
+supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
 ```
@@ -334,6 +334,22 @@ Supabase Auth, par adresse e-mail et mot de passe.
 - **Profil.** Section « Compte » : pendant la lecture, un indicateur ; sans compte, un lien « Se connecter ou créer un compte » ; connecté, les initiales, l'adresse et « Se déconnecter ».
 - **Tests.** Dix tests : vérification des champs, traduction des erreurs, et la session (lecture au démarrage, connexion puis déconnexion, pas de retour en arrière si la connexion arrive avant la lecture).
 
+### Suppression du compte (`supabase/migrations/20261030170000_suppression_compte.sql`)
+
+L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droit de toucher à `auth.users`, et sa clé secrète ne doit jamais être dans l'app. La fonction SQL `delete_my_account()` le fait à sa place :
+
+- `security definer` : elle s'exécute avec les droits de son créateur (l'administrateur), pas ceux de l'appelant ;
+- elle n'efface que le compte qui l'appelle (`auth.uid()`), et refuse si personne n'est connecté ;
+- `search_path = ''` : chaque nom est écrit en entier (`auth.users`), on ne peut pas lui faire utiliser une autre table du même nom ;
+- seul le rôle `authenticated` peut l'appeler (`revoke` pour `public` et `anon`, puis `grant`) ;
+- les process du compte partent avec lui (`on delete cascade` de la table `processes`).
+
+**Test** (`supabase/tests/suppression_compte.sql`) : sans connexion, l'appel est refusé ; un compte connecté ne peut toujours pas effacer `auth.users` directement ; quand A supprime son compte, A et ses process disparaissent, B et son process restent. Lancé avec PostgreSQL 16 : tout passe, et si la fonction efface tous les comptes au lieu du seul appelant, le test échoue bien.
+
+**Côté app.** `deleteAccount()` (`auth.ts`) appelle la fonction (`supabase.rpc('delete_my_account')`), puis efface la session du téléphone (`signOut({ scope: 'local' })`, le compte n'existant plus sur le serveur). Dans le Profil, connecté, « Supprimer mon compte » ouvre un encadré rouge qui dit ce qui sera effacé ; seul « Supprimer » dans cet encadré supprime. La confirmation est dans l'écran plutôt qu'une alerte système : elle est lue par VoiceOver et TalkBack (`accessibilityRole="alert"`). Les process enregistrés sur le téléphone restent.
+
+![Suppression du compte : le bouton, la confirmation, un échec réseau, le Profil après suppression, le mode sombre](captures/etape-7d-suppression.png)
+
 « Mot de passe oublié » n'est pas encore là : il demande d'ouvrir l'app depuis le lien reçu par e-mail (lien profond).
 
 ![Connexion : l'écran vide, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
@@ -414,7 +430,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité et la connexion sont en place ; à venir : la suppression du compte, puis la synchronisation.
+Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion et la suppression du compte sont en place ; à venir : la synchronisation.
 
 ## Mise à jour de la documentation
 
