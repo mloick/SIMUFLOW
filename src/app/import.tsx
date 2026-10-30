@@ -48,7 +48,8 @@ export default function ImportScreen() {
     if (selection.canceled) return;
     const asset = selection.assets[0];
     try {
-      if (asset.size && asset.size > MAX_FILE_SIZE) throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
+      if (asset.size && asset.size > MAX_FILE_SIZE)
+        throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
       const content = await readPickedFile(asset);
       const result = importProcessFile(asset.name, content, `import-${Date.now()}`);
       setPicked({ fileName: asset.name, result });
@@ -68,7 +69,8 @@ export default function ImportScreen() {
     setNameMissing(false);
   };
 
-  const submit = () => {
+  /** Importe le process ; avec `correct`, ouvre ensuite l'éditeur par-dessus sa fiche. */
+  const submit = (correct = false) => {
     if (!chosen) return;
     const trimmed = name.trim();
     if (!trimmed) {
@@ -77,6 +79,7 @@ export default function ImportScreen() {
     }
     addImportedProcess({ ...chosen, name: trimmed });
     router.replace({ pathname: '/process/[id]', params: { id: chosen.id } });
+    if (correct) router.push({ pathname: '/process/modifier/[id]', params: { id: chosen.id } });
   };
 
   const pageCount = picked?.result.processes.length ?? 0;
@@ -170,7 +173,9 @@ export default function ImportScreen() {
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
               Page à importer
             </ThemedText>
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} accessibilityRole="radiogroup">
+            <View
+              style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              accessibilityRole="radiogroup">
               {picked.result.processes.map((process, index) => (
                 <Pressable
                   key={process.id}
@@ -255,10 +260,21 @@ export default function ImportScreen() {
         )}
         <PrimaryButton
           label="Importer"
-          onPress={submit}
+          onPress={() => submit()}
           disabled={!chosen}
           accessibilityLabel={chosen ? 'Importer le process' : 'Importer, choisissez d’abord un fichier'}
         />
+        {chosen && (
+          <Pressable
+            onPress={() => submit(true)}
+            accessibilityRole="button"
+            accessibilityHint="Importe le process puis ouvre l’éditeur pour corriger la lecture"
+            style={styles.secondary}>
+            <ThemedText type="link" style={{ color: theme.link }}>
+              Importer et corriger
+            </ThemedText>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -366,4 +382,5 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  secondary: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
 });

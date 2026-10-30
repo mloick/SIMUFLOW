@@ -221,6 +221,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 4. **Aperçu** : nombre d'étapes, de décisions et d'acteurs, pastille de diagnostic, et remarques de la lecture (par exemple une flèche rattachée).
 5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
+7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
 
 `docs/exemples/` contient quatre fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
@@ -291,16 +292,22 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 - **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai en jours ouvrés (vide = aucun).
 - **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
 - **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
+- **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
+- **Ajouter un cas** (`addBranch`, sur une décision) : un nom et une cible, une nouvelle étape (qui porte le nom du cas) ou une étape existante.
+- **Retirer** une branche (`removeLink`).
+- **Supprimer l'étape** (`removeStep`, après confirmation) : ses liens partent avec elle ; une étape de simple passage (une entrée, une sortie) laisse l'étape d'avant reliée à celle d'après. Les nouveaux identifiants (`etape-1`, `lien-1`…) ne reprennent jamais un identifiant pris.
 - En haut, le nombre d'étapes, de décisions et de points à corriger suit le brouillon en direct (`summarize`).
 - Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
 
 « Enregistrer » remplace le process (`updateImportedProcess`) et le marque `modified` : il part au serveur à la prochaine synchronisation. Les process d'exemple ne se modifient pas.
 
-**Tests.** Cinq tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi).
+**Tests.** Dix tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs, étape insérée ou ajoutée en suite, cas vers une étape nouvelle ou existante, étape de passage supprimée avec pont, décision supprimée avec ses branches) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi).
 
 **Web (développement).** Avec le chargement des écrans à la demande (`asyncRoutes`), la fiche n'affiche la modification qu'après rechargement de la page ; l'app iOS et Android, en un seul paquet, n'est pas concernée.
 
 ![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
+![« Importer et corriger », un cas ajouté à une décision, puis une étape ajoutée après](captures/etape-L2b-ajout.png)
 
 ## Écran Simulation
 

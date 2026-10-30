@@ -38,9 +38,19 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 Un process importé se corrige directement dans l'app, par exemple pendant sa validation. Ouvrez-le, touchez **Modifier le process**, puis touchez une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur (tapez-le ou choisissez un acteur déjà présent) et son délai. Pour une étape qui mène à plusieurs suites, nommez chaque branche (« oui », « refus »…). Si une étape à plusieurs sorties est en fait un choix, touchez **C'est un choix** : elle devient une décision et ses branches sont nommées d'après l'étape suivante. En haut, le nombre de points à corriger change à mesure. Touchez **Enregistrer** : si vous êtes connecté, la version corrigée part aussi sur votre compte.
 
-Bientôt : ajouter ou supprimer des étapes et des cas de décision, et exporter la version corrigée en draw.io.
+Vous pouvez aussi changer la forme du process :
+
+- **Ajouter une étape après** une autre : elle se glisse entre l'étape et sa suite.
+- **Ajouter un cas** à une décision : donnez-lui un nom et choisissez où il mène, une nouvelle étape ou une étape existante.
+- **Retirer** une branche, ou **Supprimer l'étape** (l'app demande confirmation ; une étape de passage laisse ses voisines reliées).
+
+Pour corriger dès l'import, touchez **Importer et corriger** au lieu d'**Importer** : l'éditeur s'ouvre tout de suite.
+
+Bientôt : exporter la version corrigée en draw.io.
 
 ![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
+![Importer et corriger, ajouter un cas à une décision, puis une étape](captures/etape-L2b-ajout.png)
 
 ## Voir les problèmes · Disponible
 
