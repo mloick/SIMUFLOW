@@ -4,9 +4,10 @@ import { diagnose } from '@/domain';
 
 import { parseDrawio } from '../drawio';
 import { ImportError } from '../errors';
-import { cellText, durationOf } from '../text';
+import { actorFromText, cellText, durationOf } from '../text';
 import { FICHIER_CONGES, fichierCompresse, MODELE_CONGES } from '../__fixtures__/conges';
 import { MODELE_LEGENDE } from '../__fixtures__/legende';
+import { ACTEURS_DANS_LE_TEXTE, QUE_DES_CERCLES, SANS_FORME } from '../__fixtures__/varies';
 
 describe('parseDrawio', () => {
   const { processes, warnings } = parseDrawio(FICHIER_CONGES, 'Demande de congés.drawio');
@@ -100,5 +101,63 @@ describe('cellText et durationOf', () => {
     expect(durationOf('Traiter\n1,5 jour ouvré')).toBe(1.5);
     expect(durationOf('Traiter 3 BD')).toBe(3);
     expect(durationOf('Traiter vite')).toBeUndefined();
+  });
+});
+
+describe('lecture de schémas dessinés autrement', () => {
+  const lire = (modele: string) => {
+    const [process] = parseDrawio(modele, 'Essai.drawio').processes;
+    return (id: string) => process.steps.find((step) => step.id === id);
+  };
+
+  it('trouve départ, décision et fin par les flèches, sans losange ni couleur', () => {
+    const step = lire(SANS_FORME);
+    expect(step('recevoir')?.kind).toBe('start');
+    expect(step('montant')?.kind).toBe('decision');
+    expect(step('viser')?.kind).toBe('task');
+    expect(step('archiver')?.kind).toBe('end');
+  });
+
+  it('lit les acteurs et les délais écrits dans le texte', () => {
+    const step = lire(SANS_FORME);
+    expect(step('recevoir')?.actor).toBe('Comptabilité');
+    expect(step('payer')).toMatchObject({ actor: 'Comptabilité', duration: 2 });
+    expect(step('viser')?.actor).toBe('Direction financière');
+  });
+
+  it('lit un schéma fait uniquement de cercles', () => {
+    const step = lire(QUE_DES_CERCLES);
+    expect(step('demande')?.kind).toBe('start');
+    expect(step('dispo')?.kind).toBe('decision');
+    expect(step('preter')?.kind).toBe('end');
+    expect(step('attendre')?.kind).toBe('end');
+  });
+
+  it('garde le service plutôt que les personnes', () => {
+    const step = lire(ACTEURS_DANS_LE_TEXTE);
+    expect(step('ouvrir')?.actor).toBe('Service Support');
+    expect(step('analyser')?.actor).toBe('Équipe Réseau');
+    expect(step('clore')?.actor).toBe('Service Support'); // même acteur, autres majuscules
+  });
+
+  it('ne fait pas une décision de sorties sans nom', () => {
+    const step = lire(
+      SANS_FORME.replace('value="non"', 'value=""').replace('value="oui"', 'value=""').replace(' ?', ''),
+    );
+    expect(step('montant')?.kind).toBe('task');
+  });
+});
+
+describe('cellText (blocs HTML)', () => {
+  it('passe à la ligne à l’ouverture d’un bloc', () => {
+    expect(cellText('<b>Clore</b><div><b>Assignment group :</b> Équipe A</div>')).toBe(
+      'Clore\nAssignment group : Équipe A',
+    );
+  });
+});
+
+describe('actorFromText', () => {
+  it('ignore un texte sans acteur annoncé', () => {
+    expect(actorFromText('Valider la demande\n2 JO')).toBeUndefined();
   });
 });
