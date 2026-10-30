@@ -11,8 +11,12 @@
  *   sans couloir, une légende par couleur (pastille colorée suivie d'un texte)
  *   donne l'acteur des étapes de cette couleur ;
  * - les zones de texte non reliées sont des notes, ignorées ;
- * - un losange est une décision ; un départ et une fin se reconnaissent à leur
- *   forme (ellipse) ou à leur texte (« Début », « Fin », « Clôturé »…) ;
+ * - le texte peut annoncer l'acteur (« Responsable : … », « Assignee : … ») ;
+ * - les flèches priment sur les formes : une étape d'où partent au moins deux
+ *   flèches nommées (« oui », « non »…) est une décision, quelle que soit sa
+ *   forme, comme un losange ; un départ et une fin se reconnaissent à leur
+ *   forme (ellipse), à leur texte (« Début », « Fin », « Clôturé »…) ou, si le
+ *   schéma n'en marque aucun, à leurs flèches (rien n'arrive / rien ne part) ;
  * - une flèche dont un bout n'est pas accroché est rattachée à l'étape la plus
  *   proche, avec une remarque.
  */
@@ -23,7 +27,7 @@ import { inflateSync, strFromU8 } from 'fflate';
 import type { Link, Process, Step, StepKind } from '@/domain';
 
 import { ImportError, type ImportResult } from './errors';
-import { cellText, durationOf } from './text';
+import { actorFromText, cellText, durationOf } from './text';
 
 type Style = Record<string, string>;
 
@@ -322,9 +326,11 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
 
   const incoming = new Map<string, number>();
   const outgoing = new Map<string, number>();
+  const namedExits = new Map<string, number>();
   for (const link of links) {
     outgoing.set(link.from, (outgoing.get(link.from) ?? 0) + 1);
     incoming.set(link.to, (incoming.get(link.to) ?? 0) + 1);
+    if (link.label) namedExits.set(link.from, (namedExits.get(link.from) ?? 0) + 1);
   }
 
   const steps: Step[] = nodes.map((node) => {
@@ -334,18 +340,39 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     const ellipse = node.st.ellipse !== undefined || /terminator|startState|endState|flowchart\.start/.test(node.style);
     let kind: StepKind = 'task';
     if (node.st.rhombus !== undefined || /decision/.test(node.style)) kind = 'decision';
+    else if (outs >= 2 && ((namedExits.get(node.id) ?? 0) >= 2 || /\?\s*$/.test(title))) kind = 'decision';
     else if (ellipse && ins === 0 && outs > 0) kind = 'start';
     else if (ellipse && outs === 0 && ins > 0) kind = 'end';
     else if (ins === 0 && outs > 0 && START_TEXT.test(node.text)) kind = 'start';
     else if (outs === 0 && ins > 0 && END_TEXT.test(title)) kind = 'end';
 
     const step: Step = { id: node.id, kind, title, layout: { x: node.ax, y: node.ay, width: node.w, height: node.h } };
-    const actor = actorOf(node) ?? node.actor ?? legend.get(colorKey(node.st.fillColor));
+    const actor = actorOf(node) ?? node.actor ?? actorFromText(node.text) ?? legend.get(colorKey(node.st.fillColor));
     const duration = durationOf(node.text);
     if (actor) step.actor = actor;
     if (duration !== undefined) step.duration = duration;
     return step;
   });
+
+  // Un même acteur écrit avec d'autres majuscules (« service Achats ») prend
+  // l'orthographe rencontrée en premier.
+  const spelling = new Map<string, string>();
+  for (const step of steps) {
+    if (!step.actor) continue;
+    const key = step.actor.toLocaleLowerCase('fr');
+    if (!spelling.has(key)) spelling.set(key, step.actor);
+    step.actor = spelling.get(key);
+  }
+
+  // Sans départ ni fin marqués, les flèches les donnent : une étape où rien
+  // n'arrive est un départ, une étape d'où rien ne part est une fin.
+  const degree = (step: Step) => [incoming.get(step.id) ?? 0, outgoing.get(step.id) ?? 0];
+  if (!steps.some((step) => step.kind === 'start')) {
+    for (const step of steps) if (step.kind === 'task' && degree(step)[0] === 0 && degree(step)[1] > 0) step.kind = 'start';
+  }
+  if (!steps.some((step) => step.kind === 'end')) {
+    for (const step of steps) if (step.kind === 'task' && degree(step)[1] === 0 && degree(step)[0] > 0) step.kind = 'end';
+  }
 
   if (fixedCount) warnings.push(`${pageName} : ${fixedCount} flèche(s) rattachée(s) à l’étape la plus proche, à relier dans draw.io.`);
   if (ignored) warnings.push(`${pageName} : ${ignored} forme(s) sans flèche ignorée(s) (légende, titre…).`);
