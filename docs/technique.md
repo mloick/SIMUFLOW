@@ -294,20 +294,23 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 - **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
 - **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
 - **Ajouter un cas** (`addBranch`, sur une décision) : un nom et une cible, une nouvelle étape (qui porte le nom du cas) ou une étape existante.
+- **Relier à une autre étape** (`addBranch` sans nom, sur une tâche ou un départ) : une suite de plus vers une étape existante, par exemple un retour en arrière.
 - **Retirer** une branche (`removeLink`).
 - **Supprimer l'étape** (`removeStep`, après confirmation) : ses liens partent avec elle ; une étape de simple passage (une entrée, une sortie) laisse l'étape d'avant reliée à celle d'après. Les nouveaux identifiants (`etape-1`, `lien-1`…) ne reprennent jamais un identifiant pris.
 - En haut, le nombre d'étapes, de décisions et de points à corriger suit le brouillon en direct (`summarize`).
 - Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
 
-« Enregistrer » remplace le process (`updateImportedProcess`) et le marque `modified` : il part au serveur à la prochaine synchronisation. Les process d'exemple ne se modifient pas.
+« Enregistrer » remplace le process (`updateImportedProcess`), le date (`editedAt`, date ISO) et le marque `modified` : il part au serveur à la prochaine synchronisation, la date dans la colonne `content` avec les étapes. La fiche affiche « Corrigé dans l'app le … », le PDF le reprend dans son pied de page, et le fichier draw.io l'écrit dans l'attribut `modified` de `<mxfile>`. L'export draw.io de la version corrigée reprend les positions d'origine et celles des étapes ajoutées (voir **Mise en page**). Les process d'exemple ne se modifient pas.
 
-**Tests.** Dix tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs, étape insérée ou ajoutée en suite, cas vers une étape nouvelle ou existante, étape de passage supprimée avec pont, décision supprimée avec ses branches) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi).
+**Tests.** Dix tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs, étape insérée ou ajoutée en suite, cas vers une étape nouvelle ou existante, étape de passage supprimée avec pont, décision supprimée avec ses branches) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi). Trois de plus pour la version corrigée : positions d'origine gardées et étapes ajoutées sans chevauchement, nouvelle étape sous celle qui y mène (`layout.test.ts`), export draw.io d'un process corrigé qui se réimporte avec sa date (`drawio.test.ts`) ; et un pour la date gardée par le serveur (`process-row.test.ts`).
 
 **Web (développement).** Avec le chargement des écrans à la demande (`asyncRoutes`), la fiche n'affiche la modification qu'après rechargement de la page ; l'app iOS et Android, en un seul paquet, n'est pas concernée.
 
 ![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
 
 ![« Importer et corriger », un cas ajouté à une décision, puis une étape ajoutée après](captures/etape-L2b-ajout.png)
+
+![Une tâche reliée à une étape existante, la fiche datée de la correction, puis le schéma avec les étapes ajoutées à leur place](captures/etape-L2c-corrige.png)
 
 ## Écran Simulation
 
@@ -343,7 +346,7 @@ Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber`
 
 **Mise en page.** `layoutProcess(process)` donne la position de chaque étape et le tracé de chaque flèche :
 
-- si toutes les étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original ;
+- si des étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original. Une étape ajoutée dans l'éditeur n'en a pas : `placeMissing` la pose sous l'étape qui y mène (sinon au-dessus de celle qui suit, sinon sous tout le schéma), puis la décale vers la droite tant qu'elle chevauche une autre forme. Les positions d'origine ne bougent pas ;
 - sinon (fichier JSON, et plus tard tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
 - Les flèches descendent à angle droit et **ne traversent jamais une étape**. Pour chaque flèche, plusieurs tracés sont essayés dans l'ordre, et le premier qui ne touche aucune autre étape est gardé (`crosses`) : tout droit si les deux étapes sont alignées ; par le côté si l'étape d'arrivée est sur la ligne suivante, à gauche ou à droite (un côté ne sert qu'à une flèche, et le côté droit est gardé pour les boucles) ; par le bas puis dans l'espace vide au-dessus de l'étape d'arrivée ou sous l'étape de départ ; sinon en descendant par un couloir vertical libre entre deux colonnes (`verticalChannels`).
 - Plusieurs flèches qui arrivent sur une même étape (ou partent par son bas) ont chacune leur point, répartis sur le bord dans l'ordre de gauche à droite (`spread`) : elles ne se confondent pas.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import type { Process } from '@/domain';
+import { addStepAfter, type Process } from '@/domain';
 import { demandeMateriel } from '@/domain/exemples';
 import { parseDrawio } from '@/import';
 import { FICHIER_CONGES } from '@/import/__fixtures__/conges';
@@ -60,5 +60,14 @@ describe('export draw.io', () => {
     expect(xml).toMatch(/id="lien-l2"[^>]*strokeColor=#111111;strokeWidth=4/);
     expect(xml).toMatch(/id="lien-l3"[^>]*strokeColor=#222222;strokeWidth=2/);
     expect(xml).toMatch(/id="lien-l1"[^>]*strokeColor=#4a5b70/);
+  });
+
+  it('exporte un process corrigé : étapes ajoutées comprises, avec la date de correction', () => {
+    const imported = parseDrawio(FICHIER_CONGES, 'conges.drawio').processes[0];
+    const { process: added } = addStepAfter(imported, imported.steps[0].id, 'Vérifier le solde');
+    const edited = { ...added, editedAt: '2026-10-30T21:00:00.000Z' };
+    const xml = processToDrawio(edited, layoutProcess(edited));
+    expect(xml).toContain('modified="2026-10-30T21:00:00.000Z"');
+    expect(essentials(parseDrawio(xml, 'conges.drawio').processes[0])).toEqual(essentials(edited));
   });
 });

@@ -1,13 +1,14 @@
 /**
  * Mise en page du schéma d'un process, pour le dessiner pendant la simulation.
  *
- * - Un process importé de draw.io garde la position de ses formes.
+ * - Un process importé de draw.io garde la position de ses formes ; une étape
+ *   ajoutée dans l'éditeur se place sous l'étape qui y mène (voir `placeMissing`).
  * - Sinon (JSON, tableau scanné), la mise en page est calculée : une colonne
  *   par acteur (comme les couloirs d'un schéma) et une ligne par niveau, le
  *   niveau d'une étape étant la longueur du plus long chemin qui y mène.
  */
 
-import { buildGraph, type Process, type StepKind } from '@/domain';
+import { buildGraph, type Process, type Step, type StepKind } from '@/domain';
 
 export type Point = { x: number; y: number };
 
@@ -52,8 +53,8 @@ const MARGIN = 24;
 const RETURN_OFFSET = 18;
 
 export function layoutProcess(process: Process): DiagramLayout {
-  const fromFile = process.steps.length > 0 && process.steps.every((step) => step.layout);
-  const placed = fromFile ? placeFromFile(process) : placeAutomatically(process);
+  const fromFile = process.steps.some((step) => step.layout);
+  const placed = fromFile ? placeFromFile(placeMissing(process)) : placeAutomatically(process);
   return {
     ...placed,
     edges: routeEdges(process, placed.nodes, !fromFile),
@@ -62,6 +63,63 @@ export function layoutProcess(process: Process): DiagramLayout {
 }
 
 type Placement = Omit<DiagramLayout, 'edges' | 'source'>;
+
+const NEW_STEP_GAP = 40;
+
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.width + NEW_STEP_GAP / 2 &&
+  b.x < a.x + a.width + NEW_STEP_GAP / 2 &&
+  a.y < b.y + b.height + NEW_STEP_GAP / 2 &&
+  b.y < a.y + a.height + NEW_STEP_GAP / 2;
+
+/**
+ * Donne une position aux étapes qui n'en ont pas (ajoutées dans l'éditeur) :
+ * sous l'étape qui y mène, sinon au-dessus de celle qui suit, sinon sous tout
+ * le schéma ; décalée vers la droite tant qu'elle chevauche une autre forme.
+ */
+export function placeMissing(process: Process): Process {
+  if (process.steps.every((step) => step.layout)) return process;
+  const boxes = new Map<string, Box>();
+  for (const step of process.steps) if (step.layout) boxes.set(step.id, step.layout);
+  const bottom = () => Math.max(...[...boxes.values()].map((box) => box.y + box.height));
+  const left = () => Math.min(...[...boxes.values()].map((box) => box.x));
+
+  const place = (step: Step, anchor: Box | undefined, below: boolean) => {
+    const width = step.kind === 'decision' ? 120 : NODE_WIDTH;
+    const height = step.kind === 'decision' ? 80 : NODE_HEIGHT;
+    const box: Box = anchor
+      ? {
+          x: anchor.x + (anchor.width - width) / 2,
+          y: below ? anchor.y + anchor.height + NEW_STEP_GAP : anchor.y - height - NEW_STEP_GAP,
+          width,
+          height,
+        }
+      : { x: left(), y: bottom() + NEW_STEP_GAP, width, height };
+    while ([...boxes.values()].some((other) => overlaps(box, other))) box.x += width + NEW_STEP_GAP;
+    boxes.set(step.id, box);
+  };
+
+  // Les étapes nouvelles peuvent s'enchaîner : on place d'abord celles qui touchent une étape placée.
+  let missing = process.steps.filter((step) => !step.layout);
+  while (missing.length) {
+    const before = missing.length;
+    missing = missing.filter((step) => {
+      const from = process.links.find((link) => link.to === step.id && boxes.has(link.from));
+      const to = process.links.find((link) => link.from === step.id && boxes.has(link.to));
+      if (!from && !to) return true;
+      place(step, boxes.get(from ? from.from : to!.to), Boolean(from));
+      return false;
+    });
+    if (missing.length === before) {
+      place(missing[0], undefined, true);
+      missing = missing.slice(1);
+    }
+  }
+  return {
+    ...process,
+    steps: process.steps.map((step) => (step.layout ? step : { ...step, layout: boxes.get(step.id) })),
+  };
+}
 
 function placeFromFile(process: Process): Placement {
   const minX = Math.min(...process.steps.map((step) => step.layout!.x));

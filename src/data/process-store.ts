@@ -144,9 +144,11 @@ export function removeImportedProcess(id: string) {
 }
 
 /** Remplace un process importé par sa version modifiée ; elle partira à la prochaine synchronisation. */
+/** Remplace un process corrigé dans l'éditeur, daté de la correction. */
 export function updateImportedProcess(process: Process) {
+  const edited = { ...process, editedAt: new Date().toISOString() };
   setImportEntries(
-    entries.map((entry) => (entry.process.id === process.id ? { ...entry, process, modified: true } : entry)),
+    entries.map((entry) => (entry.process.id === process.id ? { ...entry, process: edited, modified: true } : entry)),
   );
 }
 

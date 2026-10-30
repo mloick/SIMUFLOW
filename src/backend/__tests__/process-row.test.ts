@@ -19,6 +19,11 @@ describe('process ↔ ligne de la table', () => {
     expect(back).toEqual({ ...demandeMateriel, id: 'serveur-1' });
   });
 
+  it('garde la date de la dernière correction', () => {
+    const edited = { ...demandeMateriel, editedAt: '2026-10-30T21:00:00.000Z' };
+    expect(fromRow(row({ ...toRow(edited) })).editedAt).toBe('2026-10-30T21:00:00.000Z');
+  });
+
   it('n’envoie ni identifiant ni propriétaire : la base les remplit', () => {
     expect(Object.keys(toRow(demandeMateriel)).sort()).toEqual(['content', 'name', 'source']);
   });

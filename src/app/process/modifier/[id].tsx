@@ -172,6 +172,11 @@ function StepEditor({
   const unnamed = exits.filter((link) => !link.label?.trim()).length;
   const kindLabel = KINDS.find((kind) => kind.value === step.kind)?.label;
   const others = process.steps.filter((other) => other.id !== step.id);
+  const isDecision = step.kind === 'decision';
+  const targets: { id: string | undefined; title: string }[] = isDecision
+    ? [{ id: undefined, title: 'Une nouvelle étape' }, ...others]
+    : others.filter((other) => !exits.some((link) => link.to === other.id));
+  const canAdd = isDecision ? caseName.trim() !== '' : caseTarget !== undefined;
 
   const addAfter = () => {
     const { process: next, stepId } = addStepAfter(process, step.id, '');
@@ -328,20 +333,23 @@ function StepEditor({
             </Pressable>
           )}
 
-          {step.kind === 'decision' && (
+          {/* Une décision gagne un cas nommé ; une tâche se relie à une étape existante (un retour, par exemple). */}
+          {step.kind !== 'end' && (
             <View style={[styles.newCase, { borderColor: theme.border }]}>
-              <Label text="Ajouter un cas" />
-              <Field
-                value={caseName}
-                placeholder="Nom du cas (à compléter, urgent…)"
-                onCommit={setCaseName}
-                accessibilityLabel="Nom du nouveau cas"
-              />
+              <Label text={isDecision ? 'Ajouter un cas' : 'Relier à une autre étape'} />
+              {isDecision && (
+                <Field
+                  value={caseName}
+                  placeholder="Nom du cas (à compléter, urgent…)"
+                  onCommit={setCaseName}
+                  accessibilityLabel="Nom du nouveau cas"
+                />
+              )}
               <ThemedText type="small" themeColor="textSecondary">
                 Mène vers :
               </ThemedText>
               <View style={styles.options} accessibilityRole="radiogroup">
-                {[{ id: undefined, title: 'Une nouvelle étape' }, ...others].map((target) => {
+                {targets.map((target) => {
                   const selected = caseTarget === target.id;
                   return (
                     <Pressable
@@ -365,12 +373,12 @@ function StepEditor({
               </View>
               <Pressable
                 onPress={addCase}
-                disabled={!caseName.trim()}
+                disabled={!canAdd}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: !caseName.trim() }}
-                style={[styles.action, { borderColor: theme.link, opacity: caseName.trim() ? 1 : 0.5 }]}>
+                accessibilityState={{ disabled: !canAdd }}
+                style={[styles.action, { borderColor: theme.link, opacity: canAdd ? 1 : 0.5 }]}>
                 <ThemedText type="smallBold" style={{ color: theme.link }}>
-                  Ajouter ce cas
+                  {isDecision ? 'Ajouter ce cas' : 'Relier'}
                 </ThemedText>
               </Pressable>
             </View>

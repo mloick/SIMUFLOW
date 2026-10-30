@@ -80,6 +80,10 @@ export function processToPdfHtml(process: Process, options: PdfOptions): string 
     year: 'numeric',
   });
 
+  const edited = process.editedAt
+    ? new Date(process.editedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
 <title>${escape(process.name)}</title>
@@ -114,6 +118,6 @@ export function processToPdfHtml(process: Process, options: PdfOptions): string 
   ${notes ? `<p class="note">${notes}</p>` : ''}
   <h2>Diagnostic</h2>
   ${issues}
-  <footer>Exporté avec SimuFlow le ${date}. Délais en jours ouvrés (JO).</footer>
+  <footer>Exporté avec SimuFlow le ${date}.${edited ? ` Corrigé dans l’app le ${edited}.` : ''} Délais en jours ouvrés (JO).</footer>
 </body></html>`;
 }
