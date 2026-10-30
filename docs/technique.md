@@ -265,7 +265,15 @@ Quinze tests vérifient les niveaux, les couloirs, les boucles, les étapes côt
 
 **Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, pilule pour le départ et la fin. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
 
-**Vue.** Le schéma est dans deux défilements imbriqués (vertical et horizontal), à au moins 80 % de sa taille pour rester lisible. À chaque étape, la vue se recentre sur l'étape en cours. Les boutons « − » et « + » zooment (de 30 à 200 %), « Tout » fait tenir le schéma en largeur. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
+**Vue.** Le schéma n'est pas dans des défilements : il est posé dans un cadre et déplacé par une transformation (décalage `x`, `y` et échelle `scale`), trois valeurs partagées Reanimated qui bougent sur le fil d'interface, sans repasser par React.
+
+- **Cadrage automatique.** À chaque étape (`focusKey` change), la vue glisse en 450 ms (`withTiming`) pour montrer l'étape en cours et toutes ses sorties possibles (`boxOf`), entre 55 % et 100 % de la taille réelle. Si tout ne tient pas, l'étape en cours reste dans le cadre (`keepInside`). À la fin du parcours, et dans les cas simple et complexe, la vue montre tout le chemin parcouru (jusqu'à 40 %). En vue « Tous », tout le schéma. Avec « Réduire les animations », la vue saute sans glisser.
+- **Gestes** (`react-native-gesture-handler` 3, inclus dans Expo Go) : glisser d'un doigt déplace le schéma (`usePanGesture`), pincer zoome autour des doigts (`usePinchGesture`), les deux en même temps (`useSimultaneousGestures`). Le schéma ne sort jamais du cadre (`bound`) ; plus petit que le cadre, il y est centré. L'app est enveloppée dans `GestureHandlerRootView` (`src/app/_layout.tsx`).
+- **Netteté.** Pendant un geste ou un glissement, l'image est étirée ; à la fin, le SVG est redessiné à la nouvelle taille (`renderScale`) pour que le texte reste net.
+- **Apparition.** Chaque étape et chaque flèche qui apparaît passe de transparente à visible en 350 ms (`FadeIn`, un `G` animé). Une étape fantôme qui devient parcourue garde la même clé : le fondu ne rejoue pas.
+- Les boutons « − » et « + » zooment autour du centre (de 30 à 200 %), « Tout » montre le schéma entier. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
+
+![Le schéma qui se construit : la vue se recadre à chaque étape, puis montre tout le chemin à la fin](captures/etape-6c-construction.png)
 
 ### Tous les cas (`src/simulation/families.ts`, maquette écran 11)
 
