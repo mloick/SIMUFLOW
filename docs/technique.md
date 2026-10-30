@@ -139,6 +139,7 @@ Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros s
 - chaque `<mxCell>` est une forme (`vertex`) ou une flèche (`edge`) ; une forme enveloppée dans `<object>` ou `<UserObject>` prend son libellé là ;
 - les coordonnées sont rendues absolues (une forme dans un couloir est placée par rapport à lui) ;
 - les couloirs (style `swimlane`, `pool`, ou grand cadre qui contient des formes) deviennent l'**acteur** des étapes qu'ils contiennent ;
+- sans couloir, une **légende par couleur** donne l'acteur (`colorLegend`) : une petite pastille colorée (60 px au plus, sans texte ni flèche) suivie, sur la même ligne et à moins de 40 px, d'un texte (« ■ Demandeur »). Chaque étape de cette couleur de fond prend cet acteur (couleurs comparées sans tenir compte des majuscules). Il faut au moins deux entrées : une pastille isolée n'est pas une légende. Une étape dans un couloir garde l'acteur du couloir ;
 - les zones de texte non reliées sont des notes, et les formes sans aucune flèche des annotations : elles sont ignorées ;
 - le rôle d'une étape vient de sa forme (losange = décision, ellipse = départ ou fin) ou de son texte (« Début », « Fin », « Close »…) ;
 - le délai est lu dans le texte (« 2 JO », « 1,5 jour ouvré », « 3 BD ») ;
@@ -148,7 +149,9 @@ Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauch
 
 **JSON** (`json.ts`). Le format SimuFlow : `{ "format": "simuflow", "version": 1, "name", "steps": [{ "id", "kind", "title", "actor", "duration" }], "links": [{ "from", "to", "label" }] }`. Seuls `steps` et les `id` sont obligatoires ; le rôle vaut `task` par défaut. Chaque erreur dit où elle est (« Étape 2 : l'identifiant « a » est déjà utilisé. »). `processToJson` fait l'inverse, pour exporter un process.
 
-**Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé.
+**Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé. Un schéma fictif d'achat de fournitures sans couloir (`__fixtures__/legende.ts`, aussi dans `docs/exemples/achats-fournitures.drawio`) teste la légende par couleur : acteurs lus, étape d'une couleur absente de la légende sans acteur, pastille isolée ignorée.
+
+![Import d'un schéma dont les acteurs sont donnés par une légende de couleurs](captures/etape-9-acteurs-legende.png)
 
 ## Navigation
 
@@ -213,7 +216,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
 
-`docs/exemples/` contient deux fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+`docs/exemples/` contient trois fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
 

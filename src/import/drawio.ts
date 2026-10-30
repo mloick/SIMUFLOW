@@ -8,6 +8,8 @@
  *
  * On en tire un Process par page :
  * - les couloirs (swimlanes) donnent l'acteur des étapes qu'ils contiennent ;
+ *   sans couloir, une légende par couleur (pastille colorée suivie d'un texte)
+ *   donne l'acteur des étapes de cette couleur ;
  * - les zones de texte non reliées sont des notes, ignorées ;
  * - un losange est une décision ; un départ et une fin se reconnaissent à leur
  *   forme (ellipse) ou à leur texte (« Début », « Fin », « Clôturé »…) ;
@@ -66,6 +68,34 @@ function parseStyle(style: string): Style {
     else result[part.slice(0, i)] = part.slice(i + 1);
   }
   return result;
+}
+
+const colorKey = (color: string | undefined) => (color ?? '').trim().toLowerCase();
+
+/**
+ * Légende par couleur : une petite pastille colorée, sans texte ni flèche,
+ * suivie à droite d'un texte sur la même ligne (« ■ Demandeur »). Renvoie
+ * couleur → acteur, seulement s'il y a au moins deux entrées : une pastille
+ * isolée n'est pas une légende.
+ */
+function colorLegend(shapes: Cell[], attached: Set<string>): Map<string, string> {
+  const isText = (cell: Cell) =>
+    cell.st.text !== undefined || cell.st.shape === 'text' || (cell.st.strokeColor === 'none' && (!cell.st.fillColor || cell.st.fillColor === 'none'));
+  const labels = shapes.filter((cell) => cell.text && isText(cell) && !attached.has(cell.id));
+  const legend = new Map<string, string>();
+  for (const swatch of shapes) {
+    const color = colorKey(swatch.st.fillColor);
+    if (swatch.text || attached.has(swatch.id) || isText(swatch) || ['', 'none', '#ffffff', 'default'].includes(color)) continue;
+    if (swatch.w > 60 || swatch.h > 60) continue;
+    const middle = swatch.ay + swatch.h / 2;
+    const label = labels.find((cell) => {
+      const gap = cell.ax - (swatch.ax + swatch.w);
+      return gap >= -2 && gap <= 40 && middle >= cell.ay - 4 && middle <= cell.ay + cell.h + 4;
+    });
+    const actor = label?.text.split('\n')[0]?.trim();
+    if (actor && !legend.has(color)) legend.set(color, actor);
+  }
+  return legend.size >= 2 ? legend : new Map();
 }
 
 function parseXml(text: string) {
@@ -218,6 +248,7 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     nodes.push(cell);
   }
 
+  const legend = colorLegend(shapes, attached);
   const center = (cell: Cell) => ({ x: cell.ax + cell.w / 2, y: cell.ay + cell.h / 2 });
   const actorOf = (cell: Cell) => {
     const { x, y } = center(cell);
@@ -309,7 +340,7 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     else if (outs === 0 && ins > 0 && END_TEXT.test(title)) kind = 'end';
 
     const step: Step = { id: node.id, kind, title, layout: { x: node.ax, y: node.ay, width: node.w, height: node.h } };
-    const actor = actorOf(node) ?? node.actor;
+    const actor = actorOf(node) ?? node.actor ?? legend.get(colorKey(node.st.fillColor));
     const duration = durationOf(node.text);
     if (actor) step.actor = actor;
     if (duration !== undefined) step.duration = duration;

@@ -1,0 +1,45 @@
+/**
+ * Schéma draw.io fictif sans couloir : l'acteur est donné par la couleur des
+ * étapes, avec une légende en bas (pastille colorée + texte).
+ */
+
+export const MODELE_LEGENDE = `<mxGraphModel><root>
+  <mxCell id="0"/>
+  <mxCell id="1" parent="0"/>
+  <mxCell id="debut" value="Début" style="ellipse;fillColor=#0E1B2C;" vertex="1" parent="1">
+    <mxGeometry x="40" y="40" width="40" height="40" as="geometry"/>
+  </mxCell>
+  <mxCell id="demander" value="Demander des fournitures" style="rounded=1;fillColor=#F1EFE8;strokeColor=#5F5E5A;" vertex="1" parent="1">
+    <mxGeometry x="120" y="30" width="140" height="60" as="geometry"/>
+  </mxCell>
+  <mxCell id="stock" value="En stock ?" style="rhombus;fillColor=#E1F5EE;" vertex="1" parent="1">
+    <mxGeometry x="300" y="20" width="80" height="80" as="geometry"/>
+  </mxCell>
+  <mxCell id="livrer" value="Livrer" style="rounded=1;fillColor=#e1f5ee;" vertex="1" parent="1">
+    <mxGeometry x="420" y="30" width="120" height="60" as="geometry"/>
+  </mxCell>
+  <mxCell id="commander" value="Commander" style="rounded=1;fillColor=#FFF2CC;" vertex="1" parent="1">
+    <mxGeometry x="420" y="130" width="120" height="60" as="geometry"/>
+  </mxCell>
+  <mxCell id="fin" value="Fin" style="ellipse;fillColor=#0E1B2C;" vertex="1" parent="1">
+    <mxGeometry x="600" y="40" width="40" height="40" as="geometry"/>
+  </mxCell>
+  <mxCell id="e1" edge="1" parent="1" source="debut" target="demander"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="e2" edge="1" parent="1" source="demander" target="stock"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="e3" value="oui" edge="1" parent="1" source="stock" target="livrer"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="e4" value="non" edge="1" parent="1" source="stock" target="commander"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="e5" edge="1" parent="1" source="commander" target="livrer"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="e6" edge="1" parent="1" source="livrer" target="fin"><mxGeometry relative="1" as="geometry"/></mxCell>
+  <mxCell id="pastille-1" value="" style="rounded=1;fillColor=#F1EFE8;strokeColor=#5F5E5A;" vertex="1" parent="1">
+    <mxGeometry x="40" y="260" width="14" height="14" as="geometry"/>
+  </mxCell>
+  <mxCell id="legende-1" value="Demandeur" style="text;align=left;" vertex="1" parent="1">
+    <mxGeometry x="60" y="257" width="80" height="20" as="geometry"/>
+  </mxCell>
+  <mxCell id="pastille-2" value="" style="rounded=1;fillColor=#E1F5EE;strokeColor=#0F6E56;" vertex="1" parent="1">
+    <mxGeometry x="180" y="260" width="14" height="14" as="geometry"/>
+  </mxCell>
+  <mxCell id="legende-2" value="Service Achats" style="text;align=left;" vertex="1" parent="1">
+    <mxGeometry x="200" y="257" width="100" height="20" as="geometry"/>
+  </mxCell>
+</root></mxGraphModel>`;
