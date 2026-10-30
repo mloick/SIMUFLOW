@@ -48,6 +48,8 @@ export async function signOut(): Promise<AuthResult> {
 export async function deleteAccount(): Promise<AuthResult> {
   const { error } = await supabase.rpc('delete_my_account');
   if (error) {
+    // En développement, le détail (code et message du serveur) s'affiche dans le terminal de Metro.
+    if (__DEV__) console.warn('Suppression du compte refusée :', error.code, error.message);
     // Erreur de réseau : le client renvoie un message « Failed to fetch » / « Network request failed ».
     const offline = /fetch|network/i.test(error.message);
     return {
