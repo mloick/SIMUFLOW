@@ -10,7 +10,7 @@ import { ProcessCard } from '@/components/process-card';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useProcessList } from '@/data/process-store';
+import { useProcessList } from '@/data/process-list';
 import { summarize, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';

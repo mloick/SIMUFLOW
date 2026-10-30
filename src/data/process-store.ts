@@ -1,10 +1,11 @@
 /**
- * Accès aux process. Pour l'instant, les données sont fictives et chargées
- * avec un délai simulé ; le backend (Supabase) remplacera fetchProcesses.
+ * Accès aux process : les process d'exemple (demo-processes.ts) et ceux importés.
+ * La liste affichée, avec ses états réels, est construite dans process-list.ts.
  *
  * Le « scénario de démonstration » force un des états de la liste
- * (chargement, vide, erreur, hors connexion) pour les montrer sans réseau.
- * Il se choisit dans l'onglet Profil, en mode développement.
+ * (chargement, vide, erreur, hors connexion) pour les montrer à la demande.
+ * Il se choisit dans l'onglet Profil, en mode développement ; « Contenu »
+ * revient à la liste réelle.
  *
  * Les process importés (écran Importer) sont affichés en tête de liste et
  * enregistrés sur le téléphone (saved-file.ts) : ils sont relus au démarrage.
@@ -151,7 +152,7 @@ export function isInCloud(id: string): boolean {
   return entries.some((entry) => entry.process.id === id && entry.cloudId !== undefined && !entry.deleted);
 }
 
-function useImportedProcesses(): Process[] {
+export function useImportedProcesses(): Process[] {
   return useSyncExternalStore(
     subscribeImports,
     () => imported,
@@ -185,8 +186,8 @@ export type ProcessListState =
   | { status: 'error' }
   | { status: 'ready'; processes: Process[]; offline: boolean };
 
-/** Liste des process et fonction pour la recharger (bouton « Réessayer »). */
-export function useProcessList(): ProcessListState & { reload: () => void } {
+/** Liste simulée d'après le scénario de démonstration (utilisée hors « Contenu »). */
+export function useSimulatedProcessList(): ProcessListState & { reload: () => void } {
   const current = useDemoScenario();
   const [attempt, setAttempt] = useState(0);
   // Chaque chargement a sa clé : tant que le résultat de la clé en cours n'est

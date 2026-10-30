@@ -18,6 +18,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | expo-print, expo-sharing | 58 (export en PDF, feuille de partage) |
 | @supabase/supabase-js | 2 (client du backend) |
 | expo-sqlite | 58 (`localStorage` pour garder la session Supabase) |
+| expo-network | 58 (état du réseau : hors connexion réel, synchronisation au retour du réseau ; module natif, l'app compilée par Xcode doit être recompilée) |
 
 ## Structure du dépôt
 
@@ -35,7 +36,7 @@ src/
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
-docs/           Documentation, maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
+docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh), script du modèle Expo (reset-project)
 app.json        Configuration Expo (nom, icônes, identifiant com.anonymous.simuflow sur iOS et Android, plugins)
@@ -150,19 +151,23 @@ Sauf la liste, le détail des process, l'import, la simulation, l'export et la c
 
 `src/app/(tabs)/index.tsx` reprend l'écran 2 de la maquette : titre, champ de recherche, une carte par process et un bouton « + » qui ouvre l'import. Chaque carte (`process-card.tsx`) affiche le nombre d'étapes, de décisions et d'acteurs, une pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie ») et la source (draw.io ou Scan). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
 
-**Données.** `useProcessList()` (`src/data/process-store.ts`) charge les quatre process fictifs de `demo-processes.ts` après un délai simulé de 0,7 s. Deux d'entre eux contiennent des anomalies exprès. Le backend remplacera `fetchProcesses` sans toucher à l'écran.
+**Données.** `useProcessList()` (`src/data/process-list.ts`) affiche les process importés (et ceux du compte, voir « Synchronisation avec le serveur »), puis les quatre process d'exemple de `demo-processes.ts`. Deux exemples contiennent des anomalies exprès.
 
-**Les 5 états** (maquette, écran 10) :
+**Les 5 états** (maquette, écran 10), calculés à partir de l'état réel de l'app par `listState` (`src/data/list-state.ts`, testé) :
 
-| État | Affichage |
-| --- | --- |
-| Chargement | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
-| Vide | Message et bouton « Ajouter un process » (`state-message.tsx`) |
-| Erreur | Message et bouton « Réessayer », qui relance le chargement |
-| Hors connexion | Bandeau orange au-dessus de la dernière version enregistrée |
-| Contenu | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
+| État | Quand | Affichage |
+| --- | --- | --- |
+| Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
+| Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
+| Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
+| Vide | Aucun process | Message et bouton « Ajouter un process » (`state-message.tsx`) ; aujourd'hui les exemples sont toujours affichés, cet état ne se voit donc qu'avec le scénario de démo |
+| Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
 
-En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états. Le choix est gardé en mémoire avec `useSyncExternalStore` et n'existe pas dans l'app publiée (`__DEV__`).
+Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.
+
+En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états (`useSimulatedProcessList`, `src/data/process-store.ts`) ; « Contenu » revient à la liste réelle. Ce choix n'existe pas dans l'app publiée (`__DEV__`).
+
+![États réels : chargement du compte, erreur du serveur, contenu, hors connexion](captures/etape-8-etats.png)
 
 **Animations** (Reanimated). Deux animations, toutes deux coupées quand « Réduire les animations » est activé dans les réglages du téléphone (`useReducedMotion`) :
 
@@ -220,13 +225,13 @@ Un process envoyé garde son identifiant local : un écran ouvert pendant l'envo
 
 **Changements pendant l'envoi.** Si l'on importe ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
 
-**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, après chaque import ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
+**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, quand le réseau revient (`addNetworkStateListener` d'`expo-network`), après chaque import ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
 
 **Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
 
 **Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ».
 
-**Tests.** Onze tests pour `sync.ts` (envoi, pas de double envoi, suppression, récupération et disparition depuis un autre appareil, serveur injoignable, changements pendant l'envoi) et trois pour le fichier (relecture de la version 1, marque « à supprimer » gardée au redémarrage, oubli immédiat d'un process jamais envoyé).
+**Tests.** Quatre tests pour l'état de la liste (`list-state.ts`), onze pour `sync.ts` (envoi, pas de double envoi, suppression, récupération et disparition depuis un autre appareil, serveur injoignable, changements pendant l'envoi) et trois pour le fichier (relecture de la version 1, marque « à supprimer » gardée au redémarrage, oubli immédiat d'un process jamais envoyé).
 
 ![Synchronisation : un process venu du compte dans la liste, le Profil synchronisé, hors connexion, le mode sombre](captures/etape-8-synchro.png)
 

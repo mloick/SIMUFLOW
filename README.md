@@ -50,6 +50,8 @@ Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.clau
 
 - [Technical documentation](docs/technique.md) (French): architecture, structure, commands.
 - [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
+- [Security](docs/securite.md) (French): keys, access rules, accounts, data on the phone.
+- [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
 
 ## Tech stack
 
