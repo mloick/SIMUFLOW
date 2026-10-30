@@ -9,7 +9,11 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, updateImportedProcess } from '@/data/process-store';
 import {
   actorsOf,
+  addBranch,
+  addStepAfter,
   makeDecision,
+  removeLink,
+  removeStep,
   renameLink,
   summarize,
   updateStep,
@@ -29,7 +33,7 @@ const KINDS: { value: StepKind; label: string }[] = [
 
 /**
  * Éditeur d'un process importé : titre, rôle, acteur et délai de chaque étape,
- * et noms des branches. Les changements restent un brouillon jusqu'à
+ * noms des branches, étapes et cas ajoutés ou retirés. Les changements restent un brouillon jusqu'à
  * « Enregistrer » ; le diagnostic suit en direct.
  */
 export default function EditProcessScreen() {
@@ -130,6 +134,7 @@ function Editor({ original }: { original: Process }) {
               actors={actors}
               open={open === step.id}
               onToggle={() => setOpen((current) => (current === step.id ? null : step.id))}
+              onOpen={setOpen}
               onChange={setDraft}
             />
           ))}
@@ -146,6 +151,7 @@ function StepEditor({
   actors,
   open,
   onToggle,
+  onOpen,
   onChange,
 }: {
   step: Step;
@@ -154,13 +160,40 @@ function StepEditor({
   actors: string[];
   open: boolean;
   onToggle: () => void;
+  onOpen: (stepId: string) => void;
   onChange: (next: Process) => void;
 }) {
   const theme = useTheme();
+  const [caseName, setCaseName] = useState('');
+  // Cible du nouveau cas : une étape existante, ou une nouvelle étape (undefined).
+  const [caseTarget, setCaseTarget] = useState<string | undefined>();
   const exits = process.links.filter((link) => link.from === step.id);
   const titleOf = (id: string) => process.steps.find((other) => other.id === id)?.title || 'Sans titre';
   const unnamed = exits.filter((link) => !link.label?.trim()).length;
   const kindLabel = KINDS.find((kind) => kind.value === step.kind)?.label;
+  const others = process.steps.filter((other) => other.id !== step.id);
+
+  const addAfter = () => {
+    const { process: next, stepId } = addStepAfter(process, step.id, '');
+    onChange(next);
+    onOpen(stepId);
+  };
+  const addCase = () => {
+    onChange(addBranch(process, step.id, caseName, caseTarget));
+    setCaseName('');
+    setCaseTarget(undefined);
+  };
+  const remove = () => {
+    const links = process.links.filter((link) => link.from === step.id || link.to === step.id).length;
+    Alert.alert(
+      `Supprimer « ${step.title || 'Sans titre'} » ?`,
+      links > 0 ? `Ses ${plural(links, 'lien')} partent avec elle.` : 'Elle n’a aucun lien.',
+      [
+        { text: 'Garder', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: () => onChange(removeStep(process, step.id)) },
+      ],
+    );
+  };
 
   return (
     <View style={index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }}>
@@ -259,9 +292,20 @@ function StepEditor({
           {exits.length > 0 && <Label text={exits.length > 1 ? 'Branches' : 'Étape suivante'} />}
           {exits.map((link) => (
             <View key={link.id} style={styles.branch}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Vers « {titleOf(link.to)} »
-              </ThemedText>
+              <View style={styles.branchHead}>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                  Vers « {titleOf(link.to)} »
+                </ThemedText>
+                <Pressable
+                  onPress={() => onChange(removeLink(process, link.id))}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Retirer la branche vers ${titleOf(link.to)}`}
+                  hitSlop={8}>
+                  <ThemedText type="small" style={{ color: theme.danger }}>
+                    Retirer
+                  </ThemedText>
+                </Pressable>
+              </View>
               {exits.length > 1 && (
                 <Field
                   value={link.label ?? ''}
@@ -283,6 +327,77 @@ function StepEditor({
               </ThemedText>
             </Pressable>
           )}
+
+          {step.kind === 'decision' && (
+            <View style={[styles.newCase, { borderColor: theme.border }]}>
+              <Label text="Ajouter un cas" />
+              <Field
+                value={caseName}
+                placeholder="Nom du cas (à compléter, urgent…)"
+                onCommit={setCaseName}
+                accessibilityLabel="Nom du nouveau cas"
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                Mène vers :
+              </ThemedText>
+              <View style={styles.options} accessibilityRole="radiogroup">
+                {[{ id: undefined, title: 'Une nouvelle étape' }, ...others].map((target) => {
+                  const selected = caseTarget === target.id;
+                  return (
+                    <Pressable
+                      key={target.id ?? 'nouvelle'}
+                      onPress={() => setCaseTarget(target.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      style={[
+                        styles.option,
+                        {
+                          backgroundColor: selected ? theme.primary : theme.background,
+                          borderColor: selected ? theme.primary : theme.border,
+                        },
+                      ]}>
+                      <ThemedText type="small" style={{ color: selected ? theme.onPrimary : theme.text }}>
+                        {target.title || 'Sans titre'}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Pressable
+                onPress={addCase}
+                disabled={!caseName.trim()}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !caseName.trim() }}
+                style={[styles.action, { borderColor: theme.link, opacity: caseName.trim() ? 1 : 0.5 }]}>
+                <ThemedText type="smallBold" style={{ color: theme.link }}>
+                  Ajouter ce cas
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+
+          <View style={styles.footer}>
+            {/* Après une décision, on ajoute un cas (nommé) plutôt qu'une suite anonyme. */}
+            {step.kind !== 'decision' && (
+              <Pressable
+                onPress={addAfter}
+                accessibilityRole="button"
+                accessibilityHint="Crée une étape juste après celle-ci"
+                style={[styles.action, styles.flex, { borderColor: theme.link }]}>
+                <ThemedText type="smallBold" style={{ color: theme.link }}>
+                  Ajouter une étape après
+                </ThemedText>
+              </Pressable>
+            )}
+            <Pressable
+              onPress={remove}
+              accessibilityRole="button"
+              style={[styles.action, { borderColor: theme.danger }]}>
+              <ThemedText type="smallBold" style={{ color: theme.danger }}>
+                Supprimer l’étape
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
       )}
     </View>
@@ -381,6 +496,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   branch: { gap: Spacing.one },
+  branchHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  newCase: {
+    gap: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: Spacing.two,
+    marginTop: Spacing.one,
+  },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   action: {
     minHeight: 44,
     justifyContent: 'center',

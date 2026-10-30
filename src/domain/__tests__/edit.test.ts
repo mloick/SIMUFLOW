@@ -1,6 +1,15 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { actorsOf, makeDecision, renameLink, updateStep } from '../edit';
+import {
+  actorsOf,
+  addBranch,
+  addStepAfter,
+  makeDecision,
+  removeLink,
+  removeStep,
+  renameLink,
+  updateStep,
+} from '../edit';
 import type { Process } from '../types';
 
 const process: Process = {
@@ -44,5 +53,49 @@ describe('éditeur de process', () => {
 
   it('liste les acteurs une seule fois', () => {
     expect(actorsOf(updateStep(process, 'b', { actor: 'Comptabilité' }))).toEqual(['Comptabilité', 'Direction']);
+  });
+});
+
+describe('ajouter et retirer', () => {
+  it('insère une étape entre une étape et son unique suite', () => {
+    const { process: next, stepId } = addStepAfter(process, 'a', 'Enregistrer');
+    expect(next.steps.map((step) => step.id)).toEqual(['a', stepId, 'b', 'c', 'd']);
+    expect(next.links.find((link) => link.id === 'l1')).toMatchObject({ from: 'a', to: stepId });
+    expect(next.links.find((link) => link.from === stepId)).toMatchObject({ to: 'b' });
+  });
+
+  it('ajoute une suite de plus après une étape qui en a déjà plusieurs', () => {
+    const { process: next, stepId } = addStepAfter(process, 'b', '');
+    expect(next.steps.find((step) => step.id === stepId)).toMatchObject({ kind: 'task', title: 'Nouvelle étape' });
+    expect(next.links.filter((link) => link.from === 'b')).toHaveLength(3);
+  });
+
+  it('ajoute un cas vers une nouvelle étape, ou vers une étape existante', () => {
+    const versNouvelle = addBranch(process, 'b', 'à compléter');
+    const cas = versNouvelle.links.at(-1);
+    expect(cas).toMatchObject({ from: 'b', label: 'à compléter' });
+    expect(versNouvelle.steps.find((step) => step.id === cas?.to)?.title).toBe('à compléter');
+    const versExistante = addBranch(process, 'b', 'retour', 'a');
+    expect(versExistante.steps).toHaveLength(4);
+    expect(versExistante.links.at(-1)).toMatchObject({ from: 'b', to: 'a', label: 'retour' });
+  });
+
+  it('supprime une étape de passage en reliant l’avant et l’après', () => {
+    const chain: Process = {
+      ...process,
+      links: [
+        { id: 'l1', from: 'a', to: 'b', label: 'go' },
+        { id: 'l2', from: 'b', to: 'c' },
+      ],
+    };
+    const next = removeStep(chain, 'b');
+    expect(next.steps.map((step) => step.id)).toEqual(['a', 'c', 'd']);
+    expect(next.links).toEqual([{ id: 'l1', from: 'a', to: 'c', label: 'go' }]);
+  });
+
+  it('supprime une décision et toutes ses branches', () => {
+    const next = removeStep(process, 'b');
+    expect(next.links).toEqual([]);
+    expect(removeLink(process, 'l3').links.map((link) => link.id)).toEqual(['l1', 'l2']);
   });
 });
