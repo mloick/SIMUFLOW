@@ -8,7 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { getProcess, isImported, isInCloud, removeImportedProcess } from '@/data/process-store';
+import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
@@ -25,6 +25,7 @@ const SOURCE_TEXT = {
  */
 export default function ProcessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  useImportedProcesses(); // relit le process après une modification
   const process = getProcess(id);
   const theme = useTheme();
 
@@ -120,6 +121,19 @@ function ProcessDetail({ process }: { process: Process }) {
             {process.name}
           </ThemedText>
           {process.source && <ThemedText themeColor="textSecondary">{SOURCE_TEXT[process.source]}</ThemedText>}
+          {isImported(process.id) && (
+            <Pressable
+              onPress={() => router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } })}
+              accessibilityRole="button"
+              accessibilityHint="Modifier les étapes, les acteurs, les délais et les branches"
+              hitSlop={8}
+              style={styles.edit}>
+              <SymbolView name={{ ios: 'pencil', android: 'edit' }} size={18} tintColor={theme.link} />
+              <ThemedText type="link" style={{ color: theme.link }}>
+                Modifier le process
+              </ThemedText>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.stats}>
@@ -342,6 +356,7 @@ function DiagnosticCard({
 }
 
 const styles = StyleSheet.create({
+  edit: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 44, alignSelf: 'flex-start' },
   screen: { flex: 1 },
   delete: {
     flexDirection: 'row',

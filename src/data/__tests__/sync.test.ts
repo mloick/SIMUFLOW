@@ -19,6 +19,10 @@ function fakeServer(initial: Process[] = []) {
       rows.set(id, { ...process, id });
       return { ...process, id };
     },
+    update: async (id, process) => {
+      calls.push(`update ${id} ${process.name}`);
+      rows.set(id, { ...process, id });
+    },
     remove: async (id) => {
       calls.push(`remove ${id}`);
       rows.delete(id);
@@ -28,6 +32,21 @@ function fakeServer(initial: Process[] = []) {
 }
 
 describe('syncEntries', () => {
+  it('envoie un process modifié sur le téléphone, puis le marque à jour', async () => {
+    const { api, rows, calls } = fakeServer([proc('s1', 'Avant')]);
+    const result = await syncEntries([{ process: proc('a', 'Après'), cloudId: 's1', modified: true }], api);
+    expect(calls).toEqual(['update s1 Après']);
+    expect(rows.get('s1')?.name).toBe('Après');
+    expect(result).toEqual([{ process: proc('a', 'Après'), cloudId: 's1' }]);
+  });
+
+  it('reprend la version du serveur d’un process modifié ailleurs, sous l’identifiant du téléphone', async () => {
+    const { api, calls } = fakeServer([proc('s1', 'Modifié ailleurs')]);
+    const result = await syncEntries([{ process: proc('a', 'Ancien'), cloudId: 's1' }], api);
+    expect(calls).toEqual([]);
+    expect(result).toEqual([{ process: proc('a', 'Modifié ailleurs'), cloudId: 's1' }]);
+  });
+
   it('envoie les process qui ne sont que sur le téléphone et garde leur identifiant local', async () => {
     const { api, rows, calls } = fakeServer();
     const result = await syncEntries([{ process: proc('import-1', 'Accueil') }], api);
@@ -37,8 +56,8 @@ describe('syncEntries', () => {
   });
 
   it('ne renvoie pas un process déjà sur le serveur', async () => {
-    const { api, calls } = fakeServer([proc('s1')]);
-    const local: SyncEntry[] = [{ process: proc('import-1'), cloudId: 's1' }];
+    const { api, calls } = fakeServer([proc('s1', 'Accueil')]);
+    const local: SyncEntry[] = [{ process: proc('import-1', 'Accueil'), cloudId: 's1' }];
     expect(await syncEntries(local, api)).toEqual(local);
     expect(calls).toEqual([]);
   });
@@ -79,6 +98,7 @@ describe('syncEntries', () => {
       list: async () => {
         throw new TypeError('Network request failed');
       },
+      update: async () => {},
       create: async (process) => process,
       remove: async () => {},
     };
@@ -87,6 +107,20 @@ describe('syncEntries', () => {
 });
 
 describe('mergeAfterSync', () => {
+  it('garde une modification faite pendant la synchronisation', () => {
+    const before: SyncEntry[] = [{ process: proc('a', 'V1'), cloudId: 's1' }];
+    const result: SyncEntry[] = [{ process: proc('a', 'V1'), cloudId: 's1' }];
+    const now: SyncEntry[] = [{ process: proc('a', 'V2'), cloudId: 's1', modified: true }];
+    expect(mergeAfterSync(before, result, now)).toEqual([{ process: proc('a', 'V2'), cloudId: 's1', modified: true }]);
+  });
+
+  it('efface la marque « modifié » une fois la version envoyée', () => {
+    const sent = proc('a', 'V2');
+    const before: SyncEntry[] = [{ process: sent, cloudId: 's1', modified: true }];
+    const result: SyncEntry[] = [{ process: sent, cloudId: 's1' }];
+    expect(mergeAfterSync(before, result, before)).toEqual(result);
+  });
+
   const before: SyncEntry[] = [{ process: proc('a') }, { process: proc('b'), cloudId: 's2' }];
   const result: SyncEntry[] = [
     { process: proc('s9'), cloudId: 's9' },

@@ -7,11 +7,13 @@
  * 1. lit les process du compte sur le serveur ;
  * 2. supprime sur le serveur ceux retirés sur le téléphone (`deleted`) ;
  * 3. envoie ceux qui ne sont pas encore sur le serveur ;
- * 4. retire du téléphone ceux supprimés depuis un autre appareil ;
- * 5. ajoute ceux créés depuis un autre appareil.
+ * 4. envoie les modifications faites sur le téléphone (`modified`) ;
+ * 5. reprend la version du serveur des autres (modifiés depuis un autre appareil) ;
+ * 6. retire du téléphone ceux supprimés depuis un autre appareil ;
+ * 7. ajoute ceux créés depuis un autre appareil.
  *
- * L'app ne modifie pas un process après l'import : il n'y a pas de conflit de
- * versions à arbitrer, la version du serveur fait foi.
+ * Un process modifié des deux côtés entre deux synchronisations : la dernière
+ * version envoyée l'emporte.
  *
  * Écrit sans dépendre de Supabase : `api` est passé en paramètre, et les tests
  * lui donnent un faux serveur.
@@ -25,17 +27,21 @@ export type SyncEntry = {
   cloudId?: string;
   /** Retiré sur le téléphone, à supprimer sur le serveur. */
   deleted?: true;
+  /** Modifié sur le téléphone depuis le dernier envoi. */
+  modified?: true;
 };
 
 export type CloudApi = {
   list(): Promise<Process[]>;
   create(process: Process): Promise<Process>;
+  update(cloudId: string, process: Process): Promise<void>;
   remove(cloudId: string): Promise<void>;
 };
 
 export async function syncEntries(local: SyncEntry[], api: CloudApi): Promise<SyncEntry[]> {
   const remote = await api.list();
-  const remoteIds = new Set(remote.map((process) => process.id));
+  const remoteById = new Map(remote.map((process) => [process.id, process]));
+  const remoteIds = new Set(remoteById.keys());
   const next: SyncEntry[] = [];
 
   for (const entry of local) {
@@ -53,7 +59,15 @@ export async function syncEntries(local: SyncEntry[], api: CloudApi): Promise<Sy
       continue;
     }
     // Envoyé autrefois, absent aujourd'hui : supprimé depuis un autre appareil.
-    if (remoteIds.has(entry.cloudId)) next.push(entry);
+    const onServer = remoteById.get(entry.cloudId);
+    if (!onServer) continue;
+    if (entry.modified) {
+      await api.update(entry.cloudId, entry.process);
+      next.push({ process: entry.process, cloudId: entry.cloudId });
+    } else {
+      // Version du serveur, sous l'identifiant du téléphone (un écran ouvert le garde).
+      next.push({ process: { ...onServer, id: entry.process.id }, cloudId: entry.cloudId });
+    }
   }
 
   // Créés ailleurs : leur identifiant sur le téléphone est celui du serveur.
@@ -81,6 +95,9 @@ export function mergeAfterSync(before: SyncEntry[], result: SyncEntry[], now: Sy
     // Retiré pendant la synchro : à supprimer au prochain passage.
     if (!current) return entry.cloudId ? [{ ...entry, deleted: true }] : [];
     if (current.deleted) return [{ ...entry, deleted: true }];
+    // Modifié pendant la synchro : la version du téléphone partira la prochaine fois.
+    if (current.modified && current.process !== before.find((b) => b.process.id === entry.process.id)?.process)
+      return [{ ...entry, process: current.process, modified: true }];
     return [entry];
   });
   return [...addedMeanwhile, ...merged];
