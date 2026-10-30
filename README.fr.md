@@ -53,7 +53,7 @@ Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Cl
 
 ## Technologies
 
-Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict). Le cœur du simulateur (`src/domain/`) est en TypeScript pur, testé avec Jest : `npm test`.
+Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict), backend Supabase (`@supabase/supabase-js`). Le cœur du simulateur (`src/domain/`) est en TypeScript pur, testé avec Jest : `npm test`.
 
 ## Licence
 

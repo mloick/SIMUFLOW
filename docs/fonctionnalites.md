@@ -83,6 +83,12 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
 
+## Compte et serveur · En cours
+
+SimuFlow a maintenant son serveur, hébergé à Paris. Dans **Profil**, la section **Serveur** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**. La création de compte et la connexion arrivent ensuite.
+
+![Profil : le serveur joignable, puis injoignable](captures/etape-7a-serveur.png)
+
 ## Partager et valider · Prévue
 
 Partagez un process avec vos collègues. Vous recevez une notification quand quelqu'un valide ou commente une étape.
