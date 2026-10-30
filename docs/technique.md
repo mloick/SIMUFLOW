@@ -473,8 +473,8 @@ EAS Build compile l'app sur les serveurs d'Expo, sans Xcode ni Android Studio. L
 
 | Profil | Pour quoi | Résultat |
 | --- | --- | --- |
-| `preview` | Tester l'app sans câble, la faire essayer à d'autres | Android : un fichier APK à installer directement ; iOS : build interne (voir limite ci-dessous) |
-| `production` | Stores, plus tard | AAB Android, IPA iOS ; numéro de build augmenté à chaque fois (`autoIncrement`, version gardée par EAS : `appVersionSource: remote`) |
+| `preview` (canal `preview`) | Tester l'app sans câble, la faire essayer à d'autres | Android : un fichier APK à installer directement ; iOS : build interne (voir limite ci-dessous) |
+| `production` (canal `production`) | Stores, plus tard | AAB Android, IPA iOS ; numéro de build augmenté à chaque fois (`autoIncrement`, version gardée par EAS : `appVersionSource: remote`) |
 
 Contrairement au build de développement, un build `preview` contient le JavaScript : il s'ouvre sans Metro ni Mac allumé.
 
@@ -485,6 +485,23 @@ npx eas-cli@latest build --platform android --profile preview
 ```
 
 À la fin, EAS affiche un lien et un QR code : ouvert sur un téléphone Android, il télécharge l'APK à installer (autoriser l'installation depuis le navigateur). La clé de signature Android est créée et gardée par EAS, pas dans le dépôt.
+
+### Mises à jour à distance (EAS Update)
+
+`expo-updates` permet d'envoyer un nouveau JavaScript (code et images) à l'app déjà installée, sans nouveau build. Dans `app.json` :
+
+- `updates.url` : l'adresse du service de mises à jour du projet EAS (`https://u.expo.dev/<projectId>`) ;
+- `runtimeVersion` avec la règle `appVersion` : une mise à jour n'est proposée qu'aux builds de la même `version` (1.0.0). Après l'ajout d'un module natif, il faut changer `version` et refaire un build : une mise à jour JavaScript ne peut pas ajouter de code natif.
+
+Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `production`. Un build écoute son canal.
+
+```bash
+npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
+```
+
+Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. En bas du Profil, `AppVersion` (`src/app/(tabs)/profil.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
+
+![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
 **Limite iOS.** Installer un build EAS sur un iPhone (distribution interne ou TestFlight) demande un compte Apple Developer payant (99 $ par an). Avec le compte Apple gratuit, l'iPhone garde le build de développement compilé par Xcode, valable 7 jours.
 

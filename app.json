@@ -4,6 +4,12 @@
     "slug": "simuflow",
     "owner": "milock",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f6556dd2-a0ce-400c-9efa-56cab7b0df3a"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "simuflow",
