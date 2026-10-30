@@ -6,6 +6,7 @@ import { parseDrawio } from '../drawio';
 import { ImportError } from '../errors';
 import { cellText, durationOf } from '../text';
 import { FICHIER_CONGES, fichierCompresse, MODELE_CONGES } from '../__fixtures__/conges';
+import { MODELE_LEGENDE } from '../__fixtures__/legende';
 
 describe('parseDrawio', () => {
   const { processes, warnings } = parseDrawio(FICHIER_CONGES, 'Demande de congés.drawio');
@@ -26,8 +27,29 @@ describe('parseDrawio', () => {
 
   it('lit le titre, le délai et l’acteur (couloir)', () => {
     expect(step('saisir')).toMatchObject({ title: 'Saisir la demande', duration: 1, actor: 'Salarié' });
-    expect(step('valider')).toMatchObject({ title: 'Valider dans l\'outil', duration: 2, actor: 'Manager' });
+    expect(step('valider')).toMatchObject({ title: "Valider dans l'outil", duration: 2, actor: 'Manager' });
     expect(step('accord')?.title).toBe('Accord ?');
+  });
+
+  it('lit l’acteur depuis une légende par couleur, sans couloir', () => {
+    const [process] = parseDrawio(MODELE_LEGENDE, 'Achats.drawio').processes;
+    const actor = (id: string) => process.steps.find((step) => step.id === id)?.actor;
+    expect(actor('demander')).toBe('Demandeur');
+    expect(actor('stock')).toBe('Service Achats');
+    expect(actor('livrer')).toBe('Service Achats'); // couleur en minuscules
+    expect(actor('commander')).toBeUndefined(); // couleur absente de la légende
+    expect(process.steps.map((step) => step.id)).not.toContain('pastille-1');
+  });
+
+  it('ne prend pas une pastille isolée pour une légende', () => {
+    const seule = MODELE_LEGENDE.replace(/<mxCell id="pastille-2"[\s\S]*?<\/mxCell>/, '');
+    const [process] = parseDrawio(seule, 'Achats.drawio').processes;
+    expect(process.steps.find((step) => step.id === 'demander')?.actor).toBeUndefined();
+  });
+
+  it('donne la priorité aux couloirs sur la légende', () => {
+    const [process] = parseDrawio(MODELE_CONGES, 'Congés.drawio').processes;
+    expect(process.steps.find((step) => step.id === 'saisir')?.actor).toBe('Salarié');
   });
 
   it('ignore les couloirs et les notes', () => {
@@ -63,9 +85,9 @@ describe('parseDrawio', () => {
 
   it('refuse un fichier sans page ni étape', () => {
     expect(() => parseDrawio('<html></html>', 'x.xml')).toThrow(ImportError);
-    expect(() => parseDrawio('<mxfile><diagram name="A"><mxGraphModel><root/></mxGraphModel></diagram></mxfile>', 'x')).toThrow(
-      'Aucune étape reliée',
-    );
+    expect(() =>
+      parseDrawio('<mxfile><diagram name="A"><mxGraphModel><root/></mxGraphModel></diagram></mxfile>', 'x'),
+    ).toThrow('Aucune étape reliée');
   });
 });
 
