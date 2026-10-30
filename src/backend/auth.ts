@@ -1,5 +1,5 @@
 /**
- * Compte SimuFlow : connexion, création de compte, déconnexion (Supabase Auth,
+ * Compte SimuFlow : connexion, création de compte, déconnexion, suppression (Supabase Auth,
  * par adresse e-mail et mot de passe).
  */
 
@@ -39,4 +39,23 @@ export async function signUp({ email, password }: Credentials): Promise<AuthResu
 export async function signOut(): Promise<AuthResult> {
   const { error } = await supabase.auth.signOut();
   return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
+}
+
+/**
+ * Supprime le compte connecté et tous ses process, par la fonction SQL
+ * `delete_my_account` (voir supabase/migrations/), puis oublie la session.
+ */
+export async function deleteAccount(): Promise<AuthResult> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) {
+    // Erreur de réseau : le client renvoie un message « Failed to fetch » / « Network request failed ».
+    const offline = /fetch|network/i.test(error.message);
+    return {
+      ok: false,
+      message: offline ? authErrorMessage({ status: 0 }) : 'La suppression a échoué. Réessayez plus tard.',
+    };
+  }
+  // Le compte n'existe plus côté serveur : on efface seulement la session du téléphone.
+  await supabase.auth.signOut({ scope: 'local' });
+  return { ok: true };
 }
