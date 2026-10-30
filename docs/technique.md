@@ -16,6 +16,8 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | Jest | 30, préréglage `jest-expo` |
 | react-native-svg | 15 (dessin du schéma) |
 | expo-print, expo-sharing | 58 (export en PDF, feuille de partage) |
+| @supabase/supabase-js | 2 (client du backend) |
+| expo-sqlite | 58 (`localStorage` pour garder la session Supabase) |
 
 ## Structure du dépôt
 
@@ -29,6 +31,7 @@ src/
   import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
+  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), test du serveur (health.ts)
   hooks/        Hooks partagés (thème, mode sombre)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 assets/         Icônes, images, écran de démarrage
@@ -301,6 +304,24 @@ Le bouton de partage en haut à droite de la simulation ouvre la modale « Expor
 
 Pas encore fait : « Suivre les deux branches » (écran 4).
 
+## Backend Supabase (`src/backend/`)
+
+Supabase fournit le backend : une base PostgreSQL, l'authentification et une API générée automatiquement à partir des tables. Le projet est hébergé dans la région West EU (Paris), sur l'offre gratuite.
+
+**Réglages de sécurité choisis à la création du projet.**
+
+- **Data API activée** : l'app lit et écrit les tables par l'API REST de Supabase, via `@supabase/supabase-js`.
+- **Pas d'exposition automatique des nouvelles tables** : une table créée n'est pas accessible par l'API tant qu'on ne lui donne pas les droits explicitement (`grant`). Rien n'est ouvert par oubli.
+- **Row Level Security automatique** : chaque nouvelle table a la RLS activée. Sans règle (`policy`), personne ne lit ni n'écrit rien ; les règles diront, par exemple, qu'un utilisateur ne voit que ses propres process.
+
+**Clés.** `config.ts` contient l'adresse du projet et la clé **publishable** (`sb_publishable_…`). Elles sont publiques par conception : elles sont dans l'app installée, et n'ouvrent que ce que les règles RLS permettent. La clé secrète (`service_role`), qui passe outre ces règles, et le mot de passe de la base ne sont jamais dans l'app ni dans le dépôt.
+
+**Client.** `client.ts` crée le client Supabase partagé. La session (le jeton de connexion) est gardée dans `localStorage` : le navigateur le fournit sur le web, et `expo-sqlite/localStorage/install` l'ajoute sur iOS et Android, dans une petite base SQLite du téléphone. `react-native-url-polyfill` complète l'objet `URL` de React Native, dont le client a besoin. `expo-sqlite` étant un module natif, l'app compilée par Xcode doit être recompilée une fois (`npm run ios:iphone`) ; Expo Go l'inclut déjà.
+
+**Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Le Profil l'affiche dans une section « Serveur », avec « Réessayer » en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
+
+![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
+
 ## Accessibilité : vérifications
 
 À refaire à chaque nouvel écran, et pour l'audit croisé du TP.
@@ -356,7 +377,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
 
-Backend prévu : Supabase (comptes, process partagés, statuts de validation).
+Backend : Supabase (voir « Backend Supabase »). Le client est en place ; à venir : la table des process et ses règles de sécurité, la connexion, la suppression du compte, puis la synchronisation.
 
 ## Mise à jour de la documentation
 
