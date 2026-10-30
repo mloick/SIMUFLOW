@@ -249,14 +249,16 @@ Connecté, les process importés sont aussi enregistrés sur le compte (table `p
 
 1. supprime sur le serveur ceux retirés du téléphone (`deleted`) ;
 2. envoie ceux qui n'y sont pas encore (pas de `cloudId`) ;
-3. retire du téléphone ceux supprimés depuis un autre appareil (un `cloudId` absent du serveur) ;
-4. ajoute ceux créés ailleurs (leur identifiant sur le téléphone est celui du serveur).
+3. envoie les modifications faites sur le téléphone (`modified`, posé par l'éditeur) avec `updateCloudProcess` ;
+4. reprend la version du serveur des autres, modifiés peut-être depuis un autre appareil ;
+5. retire du téléphone ceux supprimés depuis un autre appareil (un `cloudId` absent du serveur) ;
+6. ajoute ceux créés ailleurs (leur identifiant sur le téléphone est celui du serveur).
 
-Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. L'app ne modifie pas un process après l'import, il n'y a donc pas de conflit de versions : la version du serveur fait foi.
+Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. Modifié sur deux téléphones entre deux synchronisations, la dernière version envoyée l'emporte.
 
-**Changements pendant l'envoi.** Si l'on importe ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
+**Changements pendant l'envoi.** Si l'on importe, modifie ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
 
-**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, quand le réseau revient (`addNetworkStateListener` d'`expo-network`), après chaque import ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
+**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, quand le réseau revient (`addNetworkStateListener` d'`expo-network`), après chaque import, modification ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
 
 **Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
 
@@ -276,10 +278,29 @@ Un process envoyé garde son identifiant local : un écran ouvert pendant l'envo
 - **Diagnostic** : erreurs et avertissements, avec un titre court et une phrase qui nomme l'étape (`explainIssue`, `src/domain/diagnostic.ts`). Les informations sont repliées sous « N informations repliées ».
 - **Étapes** : la liste dans l'ordre du process, avec rôle, acteur et délai. « Voir » fait défiler jusqu'à l'étape concernée et la surligne : chaque ligne mémorise sa position (`onLayout`), puis `scrollTo` y descend.
 - **Bouton « Lancer la simulation »**, fixé en bas, qui ouvre `/simulation/[id]`.
+- **« Modifier le process »** (process importés seulement) ouvre l'éditeur. L'écran relit le process à chaque changement (`useImportedProcesses`).
 
 ![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
 
 **Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
+
+## Éditeur de process (`src/app/process/modifier/[id].tsx`)
+
+Pour corriger un process pendant sa validation, sans retoucher le fichier d'origine. Les modifications sont des fonctions pures (`src/domain/edit.ts`) qui renvoient un nouveau process : l'écran garde un brouillon, et « Annuler » l'abandonne (avec confirmation s'il a changé).
+
+- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai en jours ouvrés (vide = aucun).
+- **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
+- **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
+- En haut, le nombre d'étapes, de décisions et de points à corriger suit le brouillon en direct (`summarize`).
+- Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
+
+« Enregistrer » remplace le process (`updateImportedProcess`) et le marque `modified` : il part au serveur à la prochaine synchronisation. Les process d'exemple ne se modifient pas.
+
+**Tests.** Cinq tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi).
+
+**Web (développement).** Avec le chargement des écrans à la demande (`asyncRoutes`), la fiche n'affiche la modification qu'après rechargement de la page ; l'app iOS et Android, en un seul paquet, n'est pas concernée.
+
+![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
 
 ## Écran Simulation
 

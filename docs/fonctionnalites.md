@@ -34,6 +34,14 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 **Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes, vous confirmez.
 
+## Corriger un process · Disponible
+
+Un process importé se corrige directement dans l'app, par exemple pendant sa validation. Ouvrez-le, touchez **Modifier le process**, puis touchez une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur (tapez-le ou choisissez un acteur déjà présent) et son délai. Pour une étape qui mène à plusieurs suites, nommez chaque branche (« oui », « refus »…). Si une étape à plusieurs sorties est en fait un choix, touchez **C'est un choix** : elle devient une décision et ses branches sont nommées d'après l'étape suivante. En haut, le nombre de points à corriger change à mesure. Touchez **Enregistrer** : si vous êtes connecté, la version corrigée part aussi sur votre compte.
+
+Bientôt : ajouter ou supprimer des étapes et des cas de décision, et exporter la version corrigée en draw.io.
+
+![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
 ## Voir les problèmes · Disponible
 
 L'app liste les anomalies du process, les plus graves en premier :

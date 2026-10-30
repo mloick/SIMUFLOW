@@ -14,7 +14,7 @@ import { addNetworkStateListener } from 'expo-network';
 import { AppState } from 'react-native';
 
 import { useSession } from '@/backend/auth';
-import { createCloudProcess, deleteCloudProcess, listCloudProcesses } from '@/backend/processes';
+import { createCloudProcess, deleteCloudProcess, listCloudProcesses, updateCloudProcess } from '@/backend/processes';
 
 import { getImportEntries, setImportEntries, subscribeImports } from './process-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
@@ -29,7 +29,12 @@ export type SyncStatus = (
   synced: boolean;
 };
 
-const api: CloudApi = { list: listCloudProcesses, create: createCloudProcess, remove: deleteCloudProcess };
+const api: CloudApi = {
+  list: listCloudProcesses,
+  create: createCloudProcess,
+  update: updateCloudProcess,
+  remove: deleteCloudProcess,
+};
 
 let status: SyncStatus = { state: 'idle', synced: false };
 const statusListeners = new Set<() => void>();
