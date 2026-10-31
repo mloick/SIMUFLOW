@@ -57,7 +57,7 @@ Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.clau
 
 ## Tech stack
 
-Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict), Supabase backend (`@supabase/supabase-js`). The simulator core (`src/domain/`) is plain TypeScript, tested with Jest, and key components are tested with React Native Testing Library: `npm test`. On every pull request and every push to `main`, GitHub Actions checks types, lint and tests (`.github/workflows/verifications.yml`).
+Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict), Supabase backend (`@supabase/supabase-js`). The simulator core (`src/domain/`) is plain TypeScript, tested with Jest, and key components are tested with React Native Testing Library: `npm test`. An end-to-end test (Maestro, `.maestro/`) simulates a process step by step in the real app on the iOS Simulator: `npm run e2e`. On every pull request and every push to `main`, GitHub Actions checks types, lint and tests (`.github/workflows/verifications.yml`).
 
 ## License
 
