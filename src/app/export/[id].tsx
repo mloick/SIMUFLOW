@@ -121,7 +121,8 @@ function Exporter({ process }: { process: Process }) {
                 <View style={[styles.badge, { backgroundColor: theme.primaryBackground }]}>
                   <ThemedText
                     type="smallBold"
-                    style={{ color: theme.link, fontSize: option.badge.length > 4 ? 12 : 14 }}>
+                    style={{ color: theme.link, fontSize: option.badge.length > 4 ? 12 : 14 }}
+                    maxFontSizeMultiplier={1.2}>
                     {option.badge}
                   </ThemedText>
                 </View>
@@ -152,7 +153,10 @@ function Exporter({ process }: { process: Process }) {
                   : { borderColor: theme.fieldBorder, backgroundColor: theme.surface },
               ]}>
               {colorFamilies && (
-                <ThemedText type="smallBold" style={{ color: theme.onPrimary, lineHeight: 16 }}>
+                <ThemedText
+                  type="smallBold"
+                  style={{ color: theme.onPrimary, lineHeight: 16 }}
+                  maxFontSizeMultiplier={1}>
                   ✓
                 </ThemedText>
               )}

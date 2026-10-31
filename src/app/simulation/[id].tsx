@@ -20,6 +20,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
 import { longestPath, shortestPath, type PathStep, type Process, type StepKind } from '@/domain';
+import { useLargeText } from '@/hooks/use-large-text';
 import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
 import { overviewOf, paintFamilies, type PathFamily, type ProcessOverview } from '@/simulation/families';
@@ -80,6 +81,7 @@ function Simulator({ process }: { process: Process }) {
   // voir le schéma se construire.
   const [replayTarget, setReplayTarget] = useState<PathStep[] | null>(null);
   const windowSize = useWindowDimensions();
+  const largeText = useLargeText();
   const overview = useMemo(() => overviewOf(process), [process]);
   const familyColors = useFamilyColors();
   // Famille isolée sur le schéma (vue « Tous »).
@@ -119,7 +121,8 @@ function Simulator({ process }: { process: Process }) {
 
   const restart = () => chooseMode('pas-a-pas');
   const colorOf = (index: number) => familyColors[index % familyColors.length];
-  const diagramHeight = Math.round(Math.min(340, Math.max(200, windowSize.height * 0.34)));
+  // Grands textes : schéma plus bas, pour laisser la place au texte de l'étape.
+  const diagramHeight = Math.round(Math.min(340, Math.max(200, windowSize.height * (largeText ? 0.26 : 0.34))));
 
   if (state.status === 'no-start') {
     return (
@@ -152,17 +155,13 @@ function Simulator({ process }: { process: Process }) {
               accessibilityLabel="Exporter le schéma"
               hitSlop={12}
               style={styles.headerButton}>
-              <SymbolView
-                name={{ ios: 'square.and.arrow.up', android: 'share' }}
-                size={22}
-                tintColor={theme.link}
-              />
+              <SymbolView name={{ ios: 'square.and.arrow.up', android: 'share' }} size={22} tintColor={theme.link} />
             </Pressable>
           ),
         }}
       />
 
-      <View style={styles.modes} accessibilityRole="tablist">
+      <View style={[styles.modes, largeText && styles.modesWrap]} accessibilityRole="tablist">
         {MODES.map((option) => {
           const selected = option.value === mode;
           return (
@@ -173,6 +172,7 @@ function Simulator({ process }: { process: Process }) {
               accessibilityState={{ selected }}
               style={[
                 styles.mode,
+                largeText && styles.modeWide,
                 selected
                   ? { backgroundColor: theme.primary }
                   : { backgroundColor: theme.surface, borderColor: theme.fieldBorder, borderWidth: 1 },
@@ -494,6 +494,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Grands textes : les quatre modes sur deux lignes.
+  modesWrap: { flexWrap: 'wrap' },
+  modeWide: { flex: 0, flexGrow: 1, flexBasis: '45%' },
   content: {
     gap: Spacing.two,
     padding: Spacing.three,

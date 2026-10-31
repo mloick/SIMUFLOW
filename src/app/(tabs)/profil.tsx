@@ -2,13 +2,12 @@ import Constants from 'expo-constants';
 import { Link } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, signOut, useSession } from '@/backend/auth';
 import { checkServer, type ServerStatus } from '@/backend/health';
-import { PlaceholderScreen } from '@/components/placeholder-screen';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
 import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
@@ -25,17 +24,25 @@ import {
 import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
 import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
 
+/** Le Profil : le compte, les réglages, puis les informations sur l'app. */
 export default function ProfileScreen() {
+  const theme = useTheme();
   return (
-    <PlaceholderScreen title="Profil" description="Votre compte, et l'état du serveur SimuFlow.">
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}>
+      <ThemedText type="title" accessibilityRole="header">
+        Profil
+      </ThemedText>
+      <ThemedText themeColor="textSecondary">Votre compte, vos réglages et les informations sur l’app.</ThemedText>
       <Account />
-      <ReadingRules />
       <NotificationSettings />
       <ExamplesSetting />
-      <ServerCheck />
-      <AppVersion />
+      <ReadingRules />
+      <About />
       {__DEV__ && <DemoScenarioPicker />}
-    </PlaceholderScreen>
+    </ScrollView>
   );
 }
 
@@ -80,7 +87,7 @@ function Account() {
             accessible
             accessibilityLabel={`Connecté : ${session.user.email}`}>
             <View style={[styles.avatar, { backgroundColor: theme.primaryBackground }]}>
-              <ThemedText type="smallBold" style={{ color: theme.link }}>
+              <ThemedText type="smallBold" style={{ color: theme.link }} maxFontSizeMultiplier={1.4}>
                 {initials(session.user.email)}
               </ThemedText>
             </View>
@@ -163,7 +170,6 @@ function ReadingRules() {
   );
 }
 
-/** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
 /** Afficher ou masquer les process d'exemple dans la liste. */
 function ExamplesSetting() {
   const theme = useTheme();
@@ -193,6 +199,7 @@ function ExamplesSetting() {
   );
 }
 
+/** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
 function NotificationSettings() {
   const theme = useTheme();
   const enabled = useRemindersEnabled();
@@ -418,7 +425,7 @@ const STATUS_TEXT: Record<ServerStatus | 'checking', string> = {
 };
 
 /** Le serveur Supabase répond-il ? Vérifié à l'ouverture de l'écran, et à la demande. */
-function ServerCheck() {
+function ServerRow() {
   const theme = useTheme();
   const [status, setStatus] = useState<ServerStatus | 'checking'>('checking');
 
@@ -439,15 +446,8 @@ function ServerCheck() {
 
   const color = status === 'ok' ? theme.success : status === 'checking' ? theme.textSecondary : theme.danger;
   return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Serveur
-      </ThemedText>
-      <View
-        style={[styles.server, { backgroundColor: theme.surface, borderColor: theme.border }]}
-        accessible
-        accessibilityLiveRegion="polite"
-        accessibilityLabel={STATUS_TEXT[status]}>
+    <View style={[styles.row, styles.identity]}>
+      <View style={[styles.row, styles.identity, styles.flex]} accessible accessibilityLiveRegion="polite">
         {status === 'checking' ? (
           <ActivityIndicator color={theme.textSecondary} />
         ) : (
@@ -456,36 +456,47 @@ function ServerCheck() {
         <ThemedText style={[styles.flex, { color: status === 'checking' ? theme.textSecondary : theme.text }]}>
           {STATUS_TEXT[status]}
         </ThemedText>
-        {status !== 'checking' && status !== 'ok' && (
-          <Pressable onPress={check} accessibilityRole="button" hitSlop={8}>
-            <ThemedText type="smallBold" style={{ color: theme.link }}>
-              Réessayer
-            </ThemedText>
-          </Pressable>
-        )}
       </View>
+      {status !== 'checking' && status !== 'ok' && (
+        <Pressable onPress={check} accessibilityRole="button" hitSlop={8}>
+          <ThemedText type="smallBold" style={{ color: theme.link }}>
+            Réessayer
+          </ThemedText>
+        </Pressable>
+      )}
     </View>
   );
 }
 
 /**
- * Version de l'app, et date de la mise à jour à distance (EAS Update) en
- * cours d'utilisation, s'il y en a une.
+ * À propos : l'état du serveur, la présentation à revoir, et la version de l'app
+ * avec la date de la mise à jour à distance (EAS Update) en cours, s'il y en a une.
  */
-function AppVersion() {
+function About() {
+  const theme = useTheme();
   const version = Constants.expoConfig?.version ?? '';
   const update =
     !Updates.isEmbeddedLaunch && Updates.createdAt
       ? `mise à jour du ${Updates.createdAt.toLocaleDateString('fr-FR')} à ${Updates.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
       : 'version installée';
   return (
-    <View style={styles.version}>
-      <Link href="/bienvenue" accessibilityRole="button" style={styles.replay}>
-        <ThemedText type="link">Revoir la présentation</ThemedText>
-      </Link>
-      <ThemedText type="small" themeColor="textSecondary">
-        SimuFlow {version} · {update}
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        À propos
       </ThemedText>
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <ServerRow />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <Link href="/bienvenue" accessibilityRole="button" style={styles.row}>
+          <ThemedText type="link">Revoir la présentation →</ThemedText>
+        </Link>
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.row}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+            SimuFlow {version} · {update}
+          </ThemedText>
+        </View>
+      </View>
     </View>
   );
 }
@@ -525,12 +536,18 @@ function DemoScenarioPicker() {
 }
 
 const styles = StyleSheet.create({
+  content: {
+    gap: Spacing.four,
+    padding: Spacing.four,
+    paddingBottom: Spacing.five,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
   section: {
     gap: Spacing.two,
   },
   flex: { flex: 1 },
-  version: { alignItems: 'center', gap: Spacing.two },
-  replay: { minHeight: 44, paddingVertical: Spacing.two },
   box: {
     borderRadius: Radius.medium,
     borderWidth: StyleSheet.hairlineWidth,
@@ -557,16 +574,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.small,
     borderWidth: 1,
   },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  server: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    minHeight: 48,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
+  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   options: {
     flexDirection: 'row',

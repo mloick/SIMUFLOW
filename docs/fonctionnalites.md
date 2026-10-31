@@ -141,7 +141,7 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ## Compte et serveur · Disponible
 
-SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **Serveur** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
+SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **À propos** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
 
 **Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
 
@@ -207,7 +207,19 @@ Sur l'écran d'accueil du téléphone, SimuFlow a l'icône du logo, le chemin en
 
 Pendant le chargement, la liste « respire » doucement, puis les process apparaissent l'un après l'autre. Si vous avez activé « Réduire les animations » sur votre téléphone, rien ne bouge.
 
+## Le Profil · Disponible
+
+L'onglet **Profil** rassemble, de haut en bas : votre **compte** (connexion, synchronisation, suppression), les **notifications** (rappels d'échéance), la **liste des process** (afficher ou non les exemples), les **règles de lecture apprises**, et **À propos** : l'état du serveur, **Revoir la présentation** et la version de l'app.
+
+![Le Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
+
+## Grands textes · Disponible
+
+Si vous avez agrandi le texte de votre téléphone (Réglages > Accessibilité > Affichage et taille du texte > Police plus grande), l'app suit : les textes grandissent, et ce qui ne tient plus côte à côte passe l'un sous l'autre. Les chiffres du détail d'un process s'empilent, les quatre modes de la simulation passent sur deux lignes et le schéma se fait plus petit pour laisser la place au texte.
+
+![Texte agrandi : le détail d'un process et la simulation](captures/etape-13d-grands-textes.png)
+
 ## Confort · Prévue
 
 - Interface en français et en anglais.
-- Lisible avec VoiceOver et TalkBack, et avec une grande taille de texte.
+- Lisible avec VoiceOver et TalkBack.
