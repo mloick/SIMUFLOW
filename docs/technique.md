@@ -319,13 +319,17 @@ SimuFlow apprend des corrections faites dans l'éditeur, pour ne pas les redeman
 - **acteur** : toutes les étapes lues avec l'acteur A ont reçu le même acteur B (majuscules ignorées). Changer l'acteur d'une seule étape parmi d'autres du même acteur reste une correction ponctuelle ;
 - **rôle** : toutes les étapes d'une même forme ont changé de rôle, toutes pour le même. La forme est lue à l'import (`shapeOf` dans `drawio.ts` : `shape=…`, sinon `rhombus`, `ellipse`, `hexagon`…, sinon rectangle arrondi ou non) et gardée dans `Step.shape`. Pour un rectangle, forme la plus courante, il faut au moins deux étapes corrigées pareil ; une forme particulière (hexagone…) suffit une fois.
 
-Les règles sont enregistrées sur le téléphone dans `regles-lecture.json` (même mécanisme que les process, `saved-file.ts` prend désormais un nom de fichier ; sur le web, `simuflow.regles-lecture` dans le stockage local), au format `{ "format": "simuflow-regles", "version": 1, "rules": [...] }` relu par `parseRules`. Une nouvelle règle sur le même acteur ou la même forme remplace l'ancienne (`mergeRules`).
+Les règles sont enregistrées sur le téléphone dans `regles-lecture.json` (même mécanisme que les process, `saved-file.ts` prend désormais un nom de fichier ; sur le web, `simuflow.regles-lecture` dans le stockage local), au format `{ "format": "simuflow-regles", "version": 2, "rules": [...], "pending": false, "forgotten": [] }` (la version 1, sans `pending` ni `forgotten`, est relue comme « tout reste à envoyer »), les règles étant relues par `parseRules`. Une nouvelle règle sur le même acteur ou la même forme remplace l'ancienne (`mergeRules`).
+
+**Sur le compte.** Connecté, les règles suivent la synchronisation des process (`syncReadingRules`, appelée par `cloud-sync.ts` après les process, et dès qu'une règle est apprise ou oubliée). Le magasin garde `pending` (un changement pas encore envoyé) et `forgotten` (les règles oubliées ici). `reconcileRules` décide : sans changement local, les règles du compte remplacent celles du téléphone ; sinon, celles du compte, moins les oubliées, plus celles apprises ici (qui gagnent sur le même acteur ou la même forme), et le résultat est envoyé. Un échec (réseau, table pas encore créée) n'empêche pas la synchronisation des process : les règles restent marquées et repartent la fois suivante. À la déconnexion, les règles déjà sur le compte quittent le téléphone ; celles pas encore envoyées restent et partiront avec le prochain compte connecté, comme les process.
 
 À l'import, `applyReadingRules` applique les règles à chaque page lue (`applyRules`) avant l'aperçu, qui affiche « Corrigé d'après vos corrections précédentes » avec la phrase de chaque règle qui a servi (`describeRule`). L'onglet Profil liste les règles, chacune avec « Oublier ». L'export JSON n'écrit pas `shape`.
 
-**Tests.** Neuf tests (`rules.test.ts`) : acteur renommé partout, acteur changé sur une seule étape (rien d'appris), forme particulière vue une fois, rectangles (deux exigés), étapes supprimées, application et phrases, process rendu tel quel sans règle utile, remplacement d'une règle, relecture d'un fichier abîmé.
+**Tests.** Dix tests dans `rules.test.ts` : acteur renommé partout, acteur changé sur une seule étape (rien d'appris), forme particulière vue une fois, rectangles (deux exigés), étapes supprimées, application et phrases, process rendu tel quel sans règle utile, remplacement d'une règle, relecture d'un fichier abîmé, accord téléphone-compte. Six dans `rules-store.test.ts` : relecture au démarrage, envoi et reprise des règles du compte, rien d'envoyé sans changement, oubli propagé au compte, déconnexion, application à un import.
 
 ![Import corrigé d'après les règles apprises, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
+
+![Profil : les règles, gardées sur le téléphone tant qu'on n'est pas connecté](captures/etape-L3b-compte.png)
 
 ## Écran Simulation
 
@@ -458,6 +462,12 @@ L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droi
 « Mot de passe oublié » n'est pas encore là : il demande d'ouvrir l'app depuis le lien reçu par e-mail (lien profond).
 
 ![Connexion : l'écran vide, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
+
+### Table des règles de lecture (`supabase/migrations/20261031120000_regles_lecture.sql`)
+
+Une ligne par compte : `owner_id` (clé, rempli avec le compte connecté, `on delete cascade`), `rules` (`jsonb`, une liste d'au plus 500 règles, au format de l'app) et `updated_at` (tenue à jour par le même déclencheur `set_updated_at` que les process : appliquer d'abord la migration des process). Mêmes règles de sécurité que les process : RLS, rien pour `anon`, et pour `authenticated` une règle par action limitée à `(select auth.uid()) = owner_id`. L'app lit la ligne (`getCloudRules`, une liste vide s'il n'y en a pas) et la remplace en entier (`saveCloudRules`, `upsert`) : `src/backend/reading-rules.ts`.
+
+**Test** (`supabase/tests/regles_lecture_rls.sql`), même méthode que pour les process : A crée puis remplace sa ligne, ne peut ni écrire au nom de B, ni enregistrer autre chose qu'une liste, ni donner sa ligne à B ; B ne voit ni ne change rien ; sans connexion, refusé ; supprimer A supprime ses règles. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
 ### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
