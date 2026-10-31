@@ -3,6 +3,8 @@
  * navigateur. L'écran Profil le dit.
  */
 
+import type { Reminder } from '@/tracking/reminders';
+
 export type NotificationPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
 export const DEADLINE_CHANNEL = 'echeances';
@@ -21,3 +23,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 export async function sendTestNotification() {}
 
 export async function cancelAllNotifications() {}
+
+export async function scheduleReminders(_reminders: Reminder[]) {}
+
+export function useReminderTaps(_open: (trackingId: string) => void) {}

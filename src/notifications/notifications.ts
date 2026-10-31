@@ -10,7 +10,10 @@
 
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance, IosAuthorizationStatus } from 'expo-notifications';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
+
+import type { Reminder } from '@/tracking/reminders';
 
 export type NotificationPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
@@ -72,4 +75,43 @@ export async function sendTestNotification() {
 /** Retire toutes les notifications programmées (quand l'utilisateur coupe les rappels). */
 export async function cancelAllNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+/** Marque des rappels d'échéance, pour les retrouver parmi les notifications programmées. */
+const REMINDER_KIND = 'echeance';
+
+/** Remplace les rappels d'échéance programmés par `reminders` (les autres notifications restent). */
+export async function scheduleReminders(reminders: Reminder[]) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((item) => item.content.data?.kind === REMINDER_KIND)
+      .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)),
+  );
+  await Promise.all(
+    reminders.map((reminder) =>
+      Notifications.scheduleNotificationAsync({
+        identifier: reminder.id,
+        content: {
+          title: reminder.title,
+          body: reminder.body,
+          data: { kind: REMINDER_KIND, trackingId: reminder.trackingId },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: reminder.date,
+          channelId: DEADLINE_CHANNEL,
+        },
+      }),
+    ),
+  );
+}
+
+/** Appelle `open(trackingId)` quand l'utilisateur touche un rappel (aussi au lancement de l'app par un rappel). */
+export function useReminderTaps(open: (trackingId: string) => void) {
+  const response = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    const trackingId = response?.notification.request.content.data?.trackingId;
+    if (typeof trackingId === 'string') open(trackingId);
+  }, [response, open]);
 }

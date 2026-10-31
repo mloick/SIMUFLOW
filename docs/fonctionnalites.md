@@ -171,9 +171,9 @@ Une vraie demande commence ? Sur la fiche du process, section **Suivi en vrai**,
 
 ![Suivi en vrai : les demandes d'un process, une demande en cours, puis l'étape suivante](captures/etape-11b-suivi.png)
 
-## Notifications · En cours
+## Notifications · Disponible
 
-Dans le **Profil**, la section **Notifications** a un interrupteur **Rappels d'échéance**. La première fois, le téléphone demande l'autorisation. Touchez **Envoyer une notification d'essai** : elle arrive 5 secondes plus tard, même téléphone verrouillé. Les notifications sont programmées par le téléphone lui-même, sans serveur. Bientôt : être prévenu avant et après l'échéance de chaque étape d'une demande suivie.
+Dans le **Profil**, la section **Notifications** a un interrupteur **Rappels d'échéance**. La première fois, le téléphone demande l'autorisation. Touchez **Envoyer une notification d'essai** : elle arrive 5 secondes plus tard, même téléphone verrouillé. Les notifications sont programmées par le téléphone lui-même, sans serveur. Pour chaque demande suivie, SimuFlow vous prévient **le matin du jour de l'échéance** (« Aujourd'hui : Commander, échéance à 14:00 ») et **à l'échéance** si l'étape n'est pas terminée (« En retard : Commander »). Quand vous touchez **Étape terminée**, les rappels passent à l'étape suivante. Touchez un rappel pour ouvrir la demande. Coupez **Rappels d'échéance** dans le Profil pour ne plus rien recevoir.
 
 ![Profil : la section Notifications, en clair et en sombre](captures/etape-11a-notifications.png)
 
