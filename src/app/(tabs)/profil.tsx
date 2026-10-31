@@ -23,6 +23,7 @@ import {
   type NotificationPermission,
 } from '@/notifications/notifications';
 import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
+import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
 
 export default function ProfileScreen() {
   return (
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
       <Account />
       <ReadingRules />
       <NotificationSettings />
+      <ExamplesSetting />
       <ServerCheck />
       <AppVersion />
       {__DEV__ && <DemoScenarioPicker />}
@@ -162,6 +164,35 @@ function ReadingRules() {
 }
 
 /** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
+/** Afficher ou masquer les process d'exemple dans la liste. */
+function ExamplesSetting() {
+  const theme = useTheme();
+  const shown = useExamplesShown();
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Liste des process
+      </ThemedText>
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <View style={[styles.row, styles.identity]}>
+          <View style={styles.flex}>
+            <ThemedText>Afficher les exemples</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Quatre process fictifs fournis avec l’app, en bas de la liste.
+            </ThemedText>
+          </View>
+          <Switch
+            value={shown}
+            onValueChange={setExamplesShown}
+            trackColor={{ true: theme.link }}
+            accessibilityLabel="Afficher les exemples"
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function NotificationSettings() {
   const theme = useTheme();
   const enabled = useRemindersEnabled();
@@ -200,7 +231,7 @@ function NotificationSettings() {
           <View style={styles.flex}>
             <ThemedText>Rappels d’échéance</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Avant et après l’échéance de chaque étape d’un process suivi.
+              Le matin de l’échéance de chaque étape d’une demande suivie, puis en cas de retard.
             </ThemedText>
           </View>
           <Switch
