@@ -57,7 +57,7 @@ Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Cl
 
 ## Technologies
 
-Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict), backend Supabase (`@supabase/supabase-js`). Le cœur du simulateur (`src/domain/`) est en TypeScript pur, testé avec Jest, et les composants principaux avec React Native Testing Library : `npm test`. À chaque pull request et à chaque push sur `main`, GitHub Actions vérifie les types, l'analyse du code et les tests (`.github/workflows/verifications.yml`).
+Expo SDK 58, React Native 0.88, Expo Router, TypeScript (strict), backend Supabase (`@supabase/supabase-js`). Le cœur du simulateur (`src/domain/`) est en TypeScript pur, testé avec Jest, et les composants principaux avec React Native Testing Library : `npm test`. Un test de bout en bout (Maestro, `.maestro/`) simule un process pas à pas dans la vraie app, sur le Simulateur iOS : `npm run e2e`. À chaque pull request et à chaque push sur `main`, GitHub Actions vérifie les types, l'analyse du code et les tests (`.github/workflows/verifications.yml`).
 
 ## Licence
 

@@ -61,7 +61,8 @@
     "nettoyer": "bash scripts/nettoyer-ios.sh",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "maestro test .maestro"
   },
   "private": true,
   "jest": {

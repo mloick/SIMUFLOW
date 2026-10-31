@@ -1,0 +1,32 @@
+# Test de bout en bout : un utilisateur ouvre un process de démonstration
+# et le simule pas à pas jusqu'à la fin, dans la vraie app.
+#
+# Lancer : npm run e2e (app installée dans le Simulateur iOS, et
+# « npx expo start » en marche pour un build de développement).
+# Les textes sont des expressions régulières : « . » remplace l'apostrophe
+# typographique de « d’accès ».
+appId: fr.simuflow.app
+name: Simuler un process pas à pas
+---
+- launchApp
+# Liste des process : attendre la fin du chargement (et de l'écran de démarrage).
+- extendedWaitUntil:
+    visible: '.*Demande d.accès.*'
+    timeout: 60000
+- tapOn: '.*Demande d.accès.*'
+
+# Détail du process
+- scrollUntilVisible:
+    element: 'Lancer la simulation'
+- tapOn: 'Lancer la simulation'
+
+# Simulation pas à pas : Demande d'accès reçue → Vérifier la demande → Accès justifié ?
+- tapOn: 'Étape suivante.*'
+- tapOn: 'Étape suivante.*'
+# Décision : on choisit « oui », vers Ouvrir l'accès, puis la fin.
+- tapOn: 'Choisir oui.*'
+- tapOn: 'Étape suivante.*'
+
+# Fin : 5 étapes parcourues, 2 jours ouvrés (1 JO pour vérifier, 1 pour ouvrir).
+- assertVisible: 'Fin atteinte'
+- assertVisible: '5 étapes · 2 JO'

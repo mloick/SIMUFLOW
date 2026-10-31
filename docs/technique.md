@@ -44,6 +44,7 @@ modules/        Modules natifs locaux de l'app : text-recognition (lecture du te
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
+.maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
@@ -62,6 +63,7 @@ app.json        Configuration Expo (nom, icônes, écran de démarrage, identifi
 | `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
 | `npm test` | Lancer les tests unitaires et de composants (Jest) |
+| `npm run e2e` | Lancer le test de bout en bout (Maestro) sur l'app installée dans le Simulateur iOS |
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
@@ -717,6 +719,24 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 - **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (trois tests).
 
 `theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). Ces tests tournent avec les autres : `npm test`, et dans la CI.
+
+## Test de bout en bout (`.maestro/`)
+
+Un test de bout en bout pilote la vraie app, installée dans le Simulateur iOS, comme le ferait un utilisateur : il touche l'écran et vérifie ce qui s'affiche. Outil : [Maestro](https://maestro.dev), qui lit un fichier YAML d'actions et trouve les éléments par leur texte ou leur libellé d'accessibilité.
+
+**`simuler-un-process.yaml`** : ouvrir l'app, attendre la liste, toucher « Demande d’accès », descendre jusqu'à « Lancer la simulation », avancer deux fois (« Étape suivante »), choisir « oui » à « Accès justifié ? », avancer encore, puis vérifier « Fin atteinte » et « 5 étapes · 2 JO ». Le parcours traverse trois écrans (Liste, Détail, Simulation), la navigation, le moteur de simulation et le calcul des délais. Il ne vide pas les données de l'app : les process de démonstration sont toujours dans la liste.
+
+**Lancer sur le Mac** (une fois : Java et Maestro, avec Homebrew) :
+
+```bash
+brew install openjdk@17
+brew tap mobile-dev-inc/tap
+brew install mobile-dev-inc/tap/maestro
+```
+
+Puis, l'app installée dans le Simulateur (`npm run ios:simulateur`) et `npx expo start` en marche dans un terminal, dans un autre terminal : `npm run e2e`. Maestro affiche chaque action en vert ou en rouge.
+
+Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`. Le parcours avait d'abord été rejoué dans la version web avec Playwright (mêmes libellés). Un disque presque plein empêche de compiler pour le Simulateur (« No space left on device ») : il faut environ 10 Go libres. Maestro ne tourne pas dans la CI GitHub, qui n'a pas de Simulateur iOS.
 
 ## Vérifications automatiques (CI)
 
