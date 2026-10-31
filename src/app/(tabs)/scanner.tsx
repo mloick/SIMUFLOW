@@ -3,20 +3,25 @@ import { Image } from 'expo-image';
 import { useIsFocused } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { groupRows, tableSize, type TableRow } from '@/scan/rows';
+import { plural } from '@/utils/format';
+
+import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text-recognition';
 
 /**
  * Écran Scanner (maquette, écran 6) : on cadre un tableau de process (une
  * colonne par information : étape, acteur, délai) et on le photographie.
  * L'écran reste sombre, comme une app photo, quel que soit le thème.
  *
- * Étape 10a : l'appareil photo, son autorisation et la photo. La lecture du
- * texte de la photo (module natif) viendra ensuite.
+ * Après la photo, le texte est lu sur le téléphone par le module natif
+ * modules/text-recognition (Vision sur iOS) et rangé en lignes de tableau
+ * (src/scan/rows.ts). La transformation en process viendra ensuite.
  */
 
 /** Couleurs fixes de l'écran photo (sombre dans les deux thèmes). */
@@ -39,6 +44,24 @@ export default function ScannerScreen() {
   const [busy, setBusy] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reading, setReading] = useState<Reading>({ state: 'idle' });
+
+  /** Lit le texte de la photo et le range en lignes de tableau. */
+  const read = async (uri: string) => {
+    if (!isTextRecognitionAvailable) return setReading({ state: 'unavailable' });
+    setReading({ state: 'reading' });
+    try {
+      setReading({ state: 'done', rows: groupRows(await recognizeText(uri)) });
+    } catch {
+      setReading({ state: 'error' });
+    }
+  };
+
+  const retake = () => {
+    setPhoto(null);
+    setReady(false);
+    setReading({ state: 'idle' });
+  };
 
   const shoot = async () => {
     if (!camera.current || busy) return;
@@ -47,6 +70,7 @@ export default function ScannerScreen() {
     try {
       const picture = await camera.current.takePictureAsync({ quality: 0.8 });
       setPhoto(picture.uri);
+      read(picture.uri);
     } catch {
       setError('La photo n’a pas pu être prise. Réessayez.');
     } finally {
@@ -78,6 +102,7 @@ export default function ScannerScreen() {
       </View>
     );
   } else if (photo) {
+    const size = reading.state === 'done' ? tableSize(reading.rows) : null;
     body = (
       <>
         <View style={styles.frame}>
@@ -87,12 +112,28 @@ export default function ScannerScreen() {
             contentFit="cover"
             accessibilityLabel="Photo du tableau"
           />
+          {reading.state === 'reading' && (
+            <View style={styles.veil}>
+              <ActivityIndicator color={SCAN.text} />
+            </View>
+          )}
         </View>
-        <ThemedText style={styles.status} accessibilityLiveRegion="polite">
-          Photo prise. La lecture du texte arrive à l’étape suivante.
+        <ThemedText
+          style={[styles.status, (reading.state === 'error' || size?.rows === 0) && styles.error]}
+          accessibilityLiveRegion="polite">
+          {readingText(reading, size)}
         </ThemedText>
+        {reading.state === 'done' && reading.rows.length > 0 && (
+          <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel="Texte lu">
+            {reading.rows.map((row, index) => (
+              <ThemedText key={index} type="small" style={styles.light} numberOfLines={2}>
+                {row.cells.join('  ·  ')}
+              </ThemedText>
+            ))}
+          </ScrollView>
+        )}
         <View style={styles.full}>
-          <PrimaryButton label="Reprendre la photo" onPress={() => setPhoto(null)} />
+          <PrimaryButton label="Reprendre la photo" onPress={retake} />
         </View>
       </>
     );
@@ -166,6 +207,25 @@ export default function ScannerScreen() {
   );
 }
 
+type Reading = { state: 'idle' | 'reading' | 'error' | 'unavailable' } | { state: 'done'; rows: TableRow[] };
+
+function readingText(reading: Reading, size: { rows: number; columns: number } | null): string {
+  switch (reading.state) {
+    case 'reading':
+      return 'Lecture du tableau…';
+    case 'error':
+      return 'Le texte n’a pas pu être lu. Reprenez la photo, bien de face et nette.';
+    case 'unavailable':
+      return 'Photo prise. La lecture du texte n’est pas encore disponible sur cet appareil.';
+    case 'done':
+      return size && size.rows > 0
+        ? `Tableau lu : ${plural(size.rows, 'ligne')}, ${plural(size.columns, 'colonne')}.`
+        : 'Aucun texte trouvé. Rapprochez-vous du tableau et reprenez la photo.';
+    default:
+      return 'Photo prise.';
+  }
+}
+
 /** Les quatre coins du viseur, comme dans la maquette. */
 function Corners() {
   return (
@@ -209,6 +269,14 @@ const styles = StyleSheet.create({
   error: { color: '#f4a49c' },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three },
   full: { alignSelf: 'stretch' },
+  veil: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(11,22,33,0.5)',
+  },
+  rows: { maxHeight: 180, borderRadius: Radius.small, backgroundColor: SCAN.frame },
+  rowsContent: { gap: Spacing.one, padding: Spacing.three },
   side: { width: 48, height: 48 },
   sideButton: {
     borderRadius: Radius.medium,

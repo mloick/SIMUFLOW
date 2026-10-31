@@ -34,9 +34,11 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 **Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaîtra les colonnes, vous confirmerez.
 
-Disponible : l'onglet **Scanner** ouvre l'appareil photo. La première fois, l'app demande l'autorisation et explique pourquoi. Cadrez le tableau entre les quatre coins, allumez la lampe si besoin, et touchez le gros bouton rond. Touchez **Reprendre la photo** pour recommencer. Pour essayer, le fichier `docs/exemples/tableaux-a-scanner.html` contient six tableaux fictifs à afficher sur un écran ou à imprimer. Bientôt : la lecture du texte de la photo, puis le process créé à partir du tableau.
+Disponible : l'onglet **Scanner** ouvre l'appareil photo. La première fois, l'app demande l'autorisation et explique pourquoi. Cadrez le tableau entre les quatre coins, allumez la lampe si besoin, et touchez le gros bouton rond. Touchez **Reprendre la photo** pour recommencer. Pour essayer, le fichier `docs/exemples/tableaux-a-scanner.html` contient six tableaux fictifs à afficher sur un écran ou à imprimer. Juste après la photo, l'app lit le texte du tableau, sur le téléphone, sans Internet, et l'affiche ligne par ligne sous la photo (« Tableau lu : 5 lignes, 3 colonnes »). Pour l'instant, la lecture marche sur iPhone ; elle arrive bientôt sur Android. Bientôt aussi : le process créé à partir du tableau.
 
 ![Scanner : l'autorisation, le viseur, puis la photo prise](captures/etape-10a-scanner.png)
+
+![Scanner : un tableau photographié, puis le texte lu ligne par ligne](captures/etape-10b-lecture.png)
 
 ## Corriger un process · Disponible
 
