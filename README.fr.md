@@ -53,7 +53,7 @@ Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Cl
 
 - [Documentation technique](docs/technique.md) : architecture, structure, commandes.
 - [Guide des fonctionnalités](docs/fonctionnalites.md) : ce que fait l'application, en termes simples.
-- [Sécurité](docs/securite.md) : clés, règles d'accès, comptes, données sur le téléphone.
+- [Sécurité](docs/securite.md) : la checklist sécurité remplie (catégories OWASP MASVS), puis clés, règles d'accès, comptes, données sur le téléphone.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, MCP) et comment nous travaillons avec.
 - [Site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/` et publiés par GitHub Pages.
 

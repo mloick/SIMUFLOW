@@ -757,7 +757,7 @@ Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`
 
 ## Vérifications automatiques (CI)
 
-`.github/workflows/verifications.yml` lance, à chaque pull request et à chaque push sur `main`, sur un serveur GitHub (Ubuntu, Node 22) :
+`.github/workflows/verifications.yml` lance, à chaque pull request et à chaque push sur `main`, sur un serveur GitHub (Ubuntu, Node 22), avec un accès en lecture seule au dépôt (`permissions: contents: read`) :
 
 1. `npm ci` : installe exactement les versions de `package-lock.json` ;
 2. crée `expo-env.d.ts`, qui n'est pas versionné (en local, `npx expo start` le crée) ;

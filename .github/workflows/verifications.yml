@@ -8,6 +8,10 @@ on:
   push:
     branches: [main]
 
+# Lecture du code seulement : ce workflow ne modifie rien dans le dépôt.
+permissions:
+  contents: read
+
 concurrency:
   group: verifications-${{ github.ref }}
   cancel-in-progress: true
