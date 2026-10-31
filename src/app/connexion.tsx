@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { type ComponentRef, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +18,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { ResetPasswordForm } from '@/components/reset-password-form';
 import { SimuflowLogo } from '@/components/simuflow-logo';
 import { ThemedText } from '@/components/themed-text';
+import { PRIVACY_URL } from '@/constants/links';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -179,6 +181,19 @@ export default function SignInScreen() {
           <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel="Envoi en cours" />
         ) : (
           <PrimaryButton label={creating ? 'Créer mon compte' : 'Se connecter'} onPress={submit} />
+        )}
+
+        {creating && (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+            Votre adresse et vos process sont gardés sur un serveur en Union européenne, visibles par vous seul.{' '}
+            <ThemedText
+              type="small"
+              style={{ color: theme.link, textDecorationLine: 'underline' }}
+              accessibilityRole="link"
+              onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>
+              Politique de confidentialité
+            </ThemedText>
+          </ThemedText>
         )}
 
         <View style={[styles.switch, { borderColor: theme.border }]}>

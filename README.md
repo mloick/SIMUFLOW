@@ -17,7 +17,7 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 - **Process**: the list of imported processes with their diagnostic status.
 - **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path. The diagram can be exported as a PDF, a draw.io file or JSON.
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
-- **Profile**: your account and sync, deadline reminders, the examples switch, learned reading rules, and an "About" section (server status, replay the welcome tour, app version).
+- **Profile**: your account and sync, deadline reminders, the examples switch, learned reading rules, and an "About" section (server status, replay the welcome tour, privacy policy, app version).
 
 The full mockup is in [`docs/maquette/`](docs/maquette/).
 
@@ -55,6 +55,7 @@ Sensitive files (`.env`, keys, certificates) and local Claude Code files (`.clau
 - [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
 - [Security](docs/securite.md) (French): keys, access rules, accounts, data on the phone.
 - [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
+- [Website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
 
 ## Tech stack
 

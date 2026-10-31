@@ -1,0 +1,43 @@
+name: Site
+
+# Publie le site de SimuFlow (accueil et politique de confidentialité) sur
+# GitHub Pages à chaque push sur main qui touche docs/site/. Le site reprend
+# le logo (docs/logo) et quelques captures (docs/captures).
+# À activer une fois : Settings > Pages > Source : « GitHub Actions ».
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assembler le site
+        run: |
+          mkdir -p _site/captures
+          cp docs/site/* _site/
+          cp -r docs/logo _site/logo
+          cp docs/captures/etape-6-simulation.png _site/captures/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploiement
+        uses: actions/deploy-pages@v4

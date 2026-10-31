@@ -1,0 +1,56 @@
+:root {
+  --bleu: #007ec5;
+  --nuit: #0b2540;
+  --fond: #f4f7fa;
+  --surface: #ffffff;
+  --texte: #0b2540;
+  --texte-2: #4a5d70;
+  --bord: #dbe3ea;
+  --lien: #006ba8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #0b1420;
+    --surface: #132131;
+    --texte: #e8eef4;
+    --texte-2: #a9b8c6;
+    --bord: #24364a;
+    --lien: #5cb8ec;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--lien); }
+.page { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+header.haut { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0 24px; }
+header.haut img { width: 40px; height: 40px; padding: 4px; border-radius: 10px; background: #ffffff; }
+header.haut a { color: var(--texte); text-decoration: none; font-weight: 700; font-size: 20px; }
+nav.liens { margin-left: auto; display: flex; gap: 16px; font-size: 15px; }
+nav.liens a { color: var(--lien); font-weight: 400; font-size: 15px; }
+h1 { font-size: clamp(30px, 7vw, 44px); line-height: 1.15; margin: 8px 0 12px; }
+h2 { font-size: 22px; margin: 40px 0 8px; }
+h3 { font-size: 18px; margin: 24px 0 4px; }
+.accroche { font-size: 19px; color: var(--texte-2); margin: 0 0 24px; }
+.bouton {
+  display: inline-block; background: var(--bleu); color: #fff; text-decoration: none;
+  font-weight: 600; padding: 12px 20px; border-radius: 10px; min-height: 44px;
+}
+.bouton.second { background: transparent; color: var(--lien); border: 1.5px solid var(--bleu); margin-left: 8px; }
+.cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 16px; }
+.carte { background: var(--surface); border: 1px solid var(--bord); border-radius: 14px; padding: 16px; }
+.carte h3 { margin-top: 0; }
+.carte p { margin: 0; color: var(--texte-2); font-size: 15px; }
+figure { margin: 24px 0; }
+figure img { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--bord); }
+figcaption { font-size: 14px; color: var(--texte-2); margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 12px 0; }
+th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--bord); }
+th { color: var(--texte-2); font-weight: 600; }
+.tableau { overflow-x: auto; }
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--bord); font-size: 14px; color: var(--texte-2); }
+.petit { font-size: 14px; color: var(--texte-2); }

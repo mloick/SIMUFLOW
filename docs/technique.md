@@ -27,22 +27,22 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire) ; tests de composants dans __tests__/
-  constants/    Thème : couleurs, espacements, polices
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo) ; tests de composants dans __tests__/
+  constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
-  hooks/        Hooks partagés (thème, mode sombre)
+  hooks/        Hooks partagés (thème, mode sombre, grands textes)
   scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   tracking/     Suivre un process en vrai : calendrier des jours ouvrés français (calendar.ts), suivi d'une demande étape par étape (tracking.ts), textes des échéances (format.ts), rappels à programmer (reminders.ts) ; tests dans __tests__/
   notifications/ Notifications locales : autorisation, canal Android, notification d'essai et rappels programmés (notifications.ts, et notifications.web.ts pour le web), réglage « Rappels d'échéance » (settings.ts), mise à jour des rappels (use-deadline-reminders.ts)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
-docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
+docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js)
@@ -766,6 +766,18 @@ Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`
 5. `npx jest --ci` : les tests.
 
 Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : vert, on peut fusionner ; rouge, le journal du job dit quelle étape a échoué. Les types des routes (`.expo/types/`) ne sont pas générés en CI ; sans eux, les liens sont vérifiés comme du texte simple.
+
+## Site et politique de confidentialité (`docs/site/`)
+
+Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
+
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) et le publie sur GitHub Pages à chaque push sur `main` qui touche `docs/site/`, ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ».
+
+**Dans l'app.** `src/constants/links.ts` donne `SITE_URL` et `PRIVACY_URL`. Le Profil (« À propos ») et l'écran de création de compte ouvrent la politique dans le navigateur intégré (`WebBrowser.openBrowserAsync`, `expo-web-browser`). À la création du compte, une phrase dit où sont gardées les données avant l'envoi.
+
+![Le site : accueil et politique de confidentialité en clair, accueil en sombre](captures/etape-14a-site.png)
+
+![Dans l'app : le lien du Profil, et la phrase sous « Créer mon compte »](captures/etape-14a-liens-app.png)
 
 ## Mise à jour de la documentation
 
