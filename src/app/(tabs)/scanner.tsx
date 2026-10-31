@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { groupRows, tableSize, type TableRow } from '@/scan/rows';
+import { groupRows, type TableRow } from '@/scan/rows';
+import { findTable, type ScannedTable } from '@/scan/table';
 import { plural } from '@/utils/format';
 
 import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text-recognition';
@@ -19,9 +20,11 @@ import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text
  * colonne par information : étape, acteur, délai) et on le photographie.
  * L'écran reste sombre, comme une app photo, quel que soit le thème.
  *
- * Après la photo, le texte est lu sur le téléphone par le module natif
- * modules/text-recognition (Vision sur iOS) et rangé en lignes de tableau
- * (src/scan/rows.ts). La transformation en process viendra ensuite.
+ * Après la photo, le module natif modules/text-recognition (Vision sur iOS)
+ * recadre la photo sur le document et en lit le texte, sur le téléphone. Le
+ * texte est rangé en lignes (src/scan/rows.ts), puis seul le tableau est gardé,
+ * à partir de sa ligne d'en-tête (src/scan/table.ts). La transformation en
+ * process viendra ensuite.
  */
 
 /** Couleurs fixes de l'écran photo (sombre dans les deux thèmes). */
@@ -51,7 +54,9 @@ export default function ScannerScreen() {
     if (!isTextRecognitionAvailable) return setReading({ state: 'unavailable' });
     setReading({ state: 'reading' });
     try {
-      setReading({ state: 'done', rows: groupRows(await recognizeText(uri)) });
+      const { lines, uri: cropped } = await recognizeText(uri);
+      const rows = groupRows(lines);
+      setReading({ state: 'done', rows, table: findTable(rows), cropped });
     } catch {
       setReading({ state: 'error' });
     }
@@ -102,15 +107,15 @@ export default function ScannerScreen() {
       </View>
     );
   } else if (photo) {
-    const size = reading.state === 'done' ? tableSize(reading.rows) : null;
+    const done = reading.state === 'done' ? reading : null;
     body = (
       <>
         <View style={styles.frame}>
           <Image
-            source={{ uri: photo }}
+            source={{ uri: done?.cropped ?? photo }}
             style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            accessibilityLabel="Photo du tableau"
+            contentFit={done?.cropped ? 'contain' : 'cover'}
+            accessibilityLabel={done?.cropped ? 'Photo recadrée sur le document' : 'Photo du tableau'}
           />
           {reading.state === 'reading' && (
             <View style={styles.veil}>
@@ -119,13 +124,14 @@ export default function ScannerScreen() {
           )}
         </View>
         <ThemedText
-          style={[styles.status, (reading.state === 'error' || size?.rows === 0) && styles.error]}
+          style={[styles.status, (reading.state === 'error' || done?.rows.length === 0) && styles.error]}
           accessibilityLiveRegion="polite">
-          {readingText(reading, size)}
+          {readingText(reading)}
         </ThemedText>
-        {reading.state === 'done' && reading.rows.length > 0 && (
+        {done?.table && done.table.rows.length > 0 && <TablePreview table={done.table} />}
+        {done && !done.table && done.rows.length > 0 && (
           <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel="Texte lu">
-            {reading.rows.map((row, index) => (
+            {done.rows.map((row, index) => (
               <ThemedText key={index} type="small" style={styles.light} numberOfLines={2}>
                 {row.cells.join('  ·  ')}
               </ThemedText>
@@ -207,9 +213,11 @@ export default function ScannerScreen() {
   );
 }
 
-type Reading = { state: 'idle' | 'reading' | 'error' | 'unavailable' } | { state: 'done'; rows: TableRow[] };
+type Reading =
+  | { state: 'idle' | 'reading' | 'error' | 'unavailable' }
+  | { state: 'done'; rows: TableRow[]; table: ScannedTable | null; cropped?: string };
 
-function readingText(reading: Reading, size: { rows: number; columns: number } | null): string {
+function readingText(reading: Reading): string {
   switch (reading.state) {
     case 'reading':
       return 'Lecture du tableau…';
@@ -217,13 +225,43 @@ function readingText(reading: Reading, size: { rows: number; columns: number } |
       return 'Le texte n’a pas pu être lu. Reprenez la photo, bien de face et nette.';
     case 'unavailable':
       return 'Photo prise. La lecture du texte n’est pas encore disponible sur cet appareil.';
-    case 'done':
-      return size && size.rows > 0
-        ? `Tableau lu : ${plural(size.rows, 'ligne')}, ${plural(size.columns, 'colonne')}.`
-        : 'Aucun texte trouvé. Rapprochez-vous du tableau et reprenez la photo.';
+    case 'done': {
+      const { table, rows } = reading;
+      if (rows.length === 0) return 'Aucun texte trouvé. Rapprochez-vous du tableau et reprenez la photo.';
+      if (!table) return 'Pas de ligne de titres trouvée (Étape, Acteur, Délai…). Voici tout le texte lu :';
+      if (table.rows.length === 0) return 'Titres trouvés, mais aucune ligne en dessous. Reprenez la photo.';
+      const around = table.ignored > 0 ? ` Texte autour ignoré : ${plural(table.ignored, 'ligne')}.` : '';
+      return `Tableau trouvé : ${plural(table.rows.length, 'étape')}.${around}`;
+    }
     default:
       return 'Photo prise.';
   }
+}
+
+/** Le tableau trouvé : les titres de colonnes, puis une ligne par étape. */
+function TablePreview({ table }: { table: ScannedTable }) {
+  const flex = (index: number) =>
+    table.columns[index].kind === 'step' ? 2.2 : table.columns[index].kind === 'number' ? 0.5 : 1;
+  return (
+    <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel="Tableau trouvé">
+      <View style={styles.tableRow}>
+        {table.columns.map((column, index) => (
+          <ThemedText key={index} type="smallBold" style={[styles.accent, { flex: flex(index) }]} numberOfLines={1}>
+            {column.label}
+          </ThemedText>
+        ))}
+      </View>
+      {table.rows.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.tableRow}>
+          {row.map((cell, index) => (
+            <ThemedText key={index} type="small" style={[cell ? styles.light : styles.muted, { flex: flex(index) }]}>
+              {cell || '–'}
+            </ThemedText>
+          ))}
+        </View>
+      ))}
+    </ScrollView>
+  );
 }
 
 /** Les quatre coins du viseur, comme dans la maquette. */
@@ -275,8 +313,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(11,22,33,0.5)',
   },
-  rows: { maxHeight: 180, borderRadius: Radius.small, backgroundColor: SCAN.frame },
+  rows: { maxHeight: 220, borderRadius: Radius.small, backgroundColor: SCAN.frame },
   rowsContent: { gap: Spacing.one, padding: Spacing.three },
+  tableRow: { flexDirection: 'row', gap: Spacing.two },
+  accent: { color: SCAN.accent },
   side: { width: 48, height: 48 },
   sideButton: {
     borderRadius: Radius.medium,

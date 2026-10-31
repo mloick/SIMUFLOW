@@ -35,7 +35,7 @@ src/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
-  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes et en cellules (rows.ts) ; tests dans __tests__/
+  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), puis tableau seul retrouvé grâce à sa ligne de titres (table.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo, Swift avec Vision ; Kotlin à venir)
 assets/         Icônes, images, écran de démarrage
@@ -343,13 +343,15 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Le texte lu est rangé en lignes de tableau par `groupRows` (`src/scan/rows.ts`) et affiché sous la photo, une ligne par rangée, cellules séparées par « · », avec « Tableau lu : 5 lignes, 3 colonnes. ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (Android pour l'instant, web), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (Android pour l'instant, web), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
 
 ![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
 
 ![Scanner : le tableau 1 des exemples photographié, puis le texte lu rangé en lignes et en colonnes](captures/etape-10b-lecture.png)
+
+![Scanner : la photo recadrée sur le document, puis le tableau seul, sans le texte autour](captures/etape-10b-plus-cadrage.png)
 
 ### Module natif de lecture du texte (`modules/text-recognition/`)
 
@@ -364,15 +366,25 @@ Un module Expo local (Expo Modules API), écrit pour l'app. Expo le trouve seul 
 
 **Côté Swift.** Le module s'appelle `TextRecognition` et expose une fonction asynchrone `recognizeTextAsync(uri)`, exécutée hors du fil principal (l'interface ne gèle pas). Elle :
 
-1. ouvre la photo à partir de son adresse de fichier (`UIImage(contentsOfFile:)`), sinon lève `ImageNotReadableException` (« La photo n'a pas pu être lue », avec son chemin) ;
-2. lance une requête Vision `VNRecognizeTextRequest` en mode précis (`.accurate`), avec correction de la langue, pour le français puis l'anglais, en tenant compte du sens de la photo (orientation EXIF convertie en `CGImagePropertyOrientation`) ;
-3. renvoie, pour chaque morceau de texte trouvé, le texte le plus probable, sa confiance (0 à 1) et sa boîte en fraction de l'image. Vision compte la hauteur depuis le bas : le module la retourne (`y = 1 - maxY`) pour que l'origine soit en haut à gauche, comme à l'écran.
+1. ouvre la photo à partir de son adresse de fichier (`UIImage(contentsOfFile:)`), sinon lève `ImageNotReadableException` (« La photo n'a pas pu être lue », avec son chemin), et la remet droite (orientation EXIF convertie en `CGImagePropertyOrientation`, image Core Image `oriented`) ;
+2. **recadre** : `VNDetectDocumentSegmentationRequest` cherche le document dans la photo (feuille, écran, tableau). S'il est trouvé avec une confiance d'au moins 0,5 et qu'il occupe entre 15 % et 90 % de la photo, le filtre Core Image `CIPerspectiveCorrection` le découpe selon ses quatre coins et le redresse, comme l'appareil photo de l'iPhone avec un document. Le recadrage est un plus : s'il échoue, la photo entière est lue ;
+3. lance une requête Vision `VNRecognizeTextRequest` en mode précis (`.accurate`), avec correction de la langue, pour le français puis l'anglais, sur l'image recadrée (ou la photo) ;
+4. renvoie `lines` : pour chaque morceau de texte trouvé, le texte le plus probable, sa confiance (0 à 1) et sa boîte en fraction de l'image lue. Vision compte la hauteur depuis le bas : le module la retourne (`y = 1 - maxY`) pour que l'origine soit en haut à gauche, comme à l'écran. Si la photo a été recadrée, il renvoie aussi `uri`, l'image recadrée enregistrée en JPEG dans le dossier temporaire de l'app, pour l'afficher.
 
 Tout se passe sur le téléphone : aucun envoi réseau, aucun service extérieur.
 
 **Côté JavaScript.** `index.ts` charge le module avec `requireOptionalNativeModule('TextRecognition')`, qui renvoie `null` au lieu de planter là où il n'existe pas. `isTextRecognitionAvailable` permet à l'écran de le dire.
 
 **Ranger en tableau** (`src/scan/rows.ts`, TypeScript pur, testé). Vision rend des morceaux de texte en vrac, chacun avec sa boîte. `groupRows` les regroupe en lignes : deux morceaux sont sur la même ligne si leurs centres verticaux sont à moins de 0,6 fois la hauteur du plus petit. Chaque ligne est ensuite triée de gauche à droite (une cellule par morceau), et les lignes de haut en bas. `tableSize` donne le nombre de lignes et de colonnes (la ligne la plus remplie). Trois tests : un tableau en désordre, une photo légèrement penchée, et un texte vide.
+
+**Garder le tableau seul** (`src/scan/table.ts`, TypeScript pur, testé). Même recadrée, une photo contient souvent autre chose que le tableau : onglets du navigateur, titre de la page, notes. `findTable` :
+
+1. cherche la **ligne de titres** : la première qui nomme au moins deux colonnes connues, dont l'étape. `headerKind` compare sans accents ni majuscules : étape (« Étape », « Tâche », « Activité », « Action »…), acteur (« Acteur », « Responsable », « Qui », « Service », « Rôle », « Équipe »…), délai (« Délai », « Durée », « Temps »…), numéro (« N° », « No », « # »), suite (« Suite », « Suivant », « Après »…). Sans ligne de titres, il renvoie `null` ;
+2. place chaque **colonne** là où commence son titre ; un texte va dans la colonne dont le titre commence juste avant lui (avec une marge de 3 % de la largeur, pour un « 1 » centré sous « N° ») ;
+3. garde les lignes suivantes **tant qu'elles appartiennent au tableau** : pas plus de 1,8 fois l'écart entre les titres et la première ligne, un texte au moins 70 % aussi haut que les titres (la note « Attendu » en dessous est plus petite), et aucun texte qui déborde d'une colonne sur la suivante (une phrase déborde, une cellule jamais). La première ligne qui échoue termine le tableau ;
+4. recolle une **cellule écrite sur deux lignes** : une ligne serrée contre la précédente (moins de 0,7 fois l'écart habituel) avec du texte dans une seule colonne complète la cellule du dessus.
+
+Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), et le nombre de lignes de texte ignorées. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
 
 ## Écran Simulation
 

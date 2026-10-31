@@ -6,7 +6,10 @@
 
 import type { TextLine } from '../../modules/text-recognition';
 
-export type TableRow = { cells: string[]; y: number };
+/** Un morceau de texte d'une ligne, avec sa position horizontale (fraction de l'image). */
+export type RowItem = { text: string; x: number; width: number };
+
+export type TableRow = { cells: string[]; items: RowItem[]; y: number; height: number };
 
 const centerY = (line: TextLine) => line.y + line.height / 2;
 
@@ -28,10 +31,12 @@ export function groupRows(lines: TextLine[]): TableRow[] {
       rows.push({ items: [line], center: centerY(line), height: line.height });
     }
   }
-  return rows.map((row) => ({
-    cells: row.items.sort((a, b) => a.x - b.x).map((item) => item.text.trim()),
-    y: row.center,
-  }));
+  return rows.map((row) => {
+    const items = row.items
+      .sort((a, b) => a.x - b.x)
+      .map((item) => ({ text: item.text.trim(), x: item.x, width: item.width }));
+    return { cells: items.map((item) => item.text), items, y: row.center, height: row.height };
+  });
 }
 
 /** « 5 lignes, 3 colonnes » : le nombre de colonnes est celui de la ligne la plus remplie. */
