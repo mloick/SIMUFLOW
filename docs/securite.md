@@ -1,6 +1,105 @@
 # Sécurité
 
-Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété à chaque étape ; il sera remis en forme selon la checklist sécurité du cours.
+Ce document rassemble les mesures de sécurité de SimuFlow : d'abord la checklist remplie, point par point, puis le détail de chaque mesure.
+
+## Checklist sécurité
+
+La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité des apps mobiles), complétées par le backend et le dépôt. État au 31 octobre 2026.
+
+✅ fait et vérifié · ⚠️ à améliorer (voir plus bas) · ➖ sans objet pour SimuFlow
+
+### Données sur le téléphone (MASVS-STORAGE)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Aucun secret dans l'app : seulement l'adresse Supabase et la clé publishable | ✅ | `src/backend/config.ts` ; la clé `service_role` n'existe ni dans l'app ni dans le dépôt |
+| Données de l'app dans son espace privé, inaccessible aux autres apps | ✅ | Process dans le dossier Documents de l'app (`saved-file.ts`), réglages et demandes suivies dans sa base SQLite |
+| Jeton de session gardé de façon chiffrée (Keychain iOS, Keystore Android) | ⚠️ | Aujourd'hui dans la base SQLite de l'app (`localStorage` d'expo-sqlite), privée mais non chiffrée |
+| Données du compte retirées du téléphone à la déconnexion et à la suppression du compte | ✅ | `cloud-sync.ts` vide les copies du compte ; testé avec deux comptes sur le même téléphone |
+| Sauvegarde Android (`allowBackup`) exclue pour les données sensibles | ⚠️ | Valeur par défaut d'Expo : la sauvegarde Google peut copier les données de l'app, jeton compris |
+| Pas de données personnelles dans les journaux | ✅ | Les `console.warn` ne montrent que des codes d'erreur, et la plupart seulement en développement (`__DEV__`) |
+| Photos du Scanner jamais envoyées | ✅ | Lecture sur le téléphone (Vision, ML Kit), image dans le dossier temporaire |
+
+### Chiffrement (MASVS-CRYPTO)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Aucun algorithme de chiffrement écrit à la main | ✅ | Le chiffrement est fait par HTTPS (système) et par Supabase (mots de passe hachés) |
+| Aucune clé de chiffrement dans le code | ✅ | Clés de signature gardées par EAS, jamais dans le dépôt |
+
+### Comptes et connexion (MASVS-AUTH)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Authentification par un service éprouvé, pas maison | ✅ | Supabase Auth (e-mail et mot de passe), mots de passe hachés côté serveur |
+| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes` et `reading_rules` : `(select auth.uid()) = owner_id` |
+| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
+| Aucun droit sans connexion | ✅ | Rôle `anon` sans aucun droit sur les tables |
+| Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
+| Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
+| Mot de passe oublié sans révéler si une adresse a un compte | ✅ | Même réponse dans les deux cas ; lien à usage unique valable une heure |
+| Longueur minimale du mot de passe | ⚠️ | 6 caractères (minimum de Supabase par défaut) ; 8 serait mieux |
+| Limitation des tentatives (force brute) | ✅ | Limites de Supabase Auth sur la connexion et l'envoi d'e-mails |
+
+### Réseau (MASVS-NETWORK)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Toutes les connexions en HTTPS | ✅ | Supabase et EAS Update en `https://` ; App Transport Security (iOS) et blocage du HTTP en clair (Android) laissés actifs par défaut |
+| Aucun autre serveur contacté | ✅ | Ni publicité, ni mesure d'audience, ni service de notifications push (`enableRemoteNotifications: false`) |
+
+### Plateforme (MASVS-PLATFORM)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Autorisations au minimum, demandées au bon moment avec une explication | ✅ | Appareil photo à l'ouverture du Scanner (micro et codes-barres non demandés) ; notifications au premier rappel |
+| Liens entrants (`simuflow://`) traités comme des données non fiables | ✅ | Seul `nouveau-mot-de-passe` lit l'adresse ; `parseRecoveryLink` n'accepte qu'un jeton de récupération ou une erreur connue (testé) |
+| Lien de récupération réservé à SimuFlow | ⚠️ | Un schéma `simuflow://` peut être déclaré par une autre app sur Android ; des liens universels (domaine vérifié) le réserveraient. Risque limité : lien à usage unique, valable une heure |
+| Pages web ouvertes dans le navigateur du système, sans accès à l'app | ✅ | `WebBrowser.openBrowserAsync` (politique de confidentialité) ; aucune WebView qui exécute du code |
+
+### Code et dépendances (MASVS-CODE)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Fichiers importés lus comme des données, refusés proprement s'ils sont abîmés | ✅ | Lecteurs draw.io et JSON testés avec des fichiers invalides ; jamais d'`eval` |
+| Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, listes d'étapes et de liens, au plus 500 règles |
+| Dépendances à jour, installées depuis le fichier verrou | ✅ | `npx expo install --check` avant chaque build iOS ; `npm ci` en CI |
+| Failles connues dans les dépendances | ✅ | `npm audit --omit=dev` (31 oct.) : 0 critique, 0 haute ; 14 modérées, toutes dans les outils de build d'Expo (`glob`, `minimatch`), qui ne sont pas embarqués dans l'app |
+| Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 210 tests |
+
+### Résistance (MASVS-RESILIENCE)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Protection contre la rétro-ingénierie, détection du jailbreak | ➖ | Pas de secret ni de logique sensible dans l'app : tout ce qui protège les données est sur le serveur (RLS) |
+| Mises à jour à distance signées par le compte du projet | ✅ | EAS Update : publication réservée au compte Expo du projet, limitée aux builds de même version |
+
+### Vie privée (MASVS-PRIVACY)
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Politique de confidentialité publiée et accessible depuis l'app | ✅ | [Site](https://mloick.github.io/SIMUFLOW/confidentialite.html), lien dans Profil et à la création du compte |
+| Données réduites au nécessaire | ✅ | Compte : e-mail et mot de passe ; aucune donnée sur le serveur sans compte |
+| Hébergement en Union européenne | ✅ | Supabase, région Paris |
+| Exemples uniquement fictifs | ✅ | Règle de `CLAUDE.md`, appliquée au code et à la documentation |
+
+### Dépôt et secrets
+
+| Point | État | Preuve |
+| --- | --- | --- |
+| Aucun secret dans le dépôt public | ✅ | `.gitignore` exclut `.env`, clés, certificats, `.claude/` ; seul le secret `CLAUDE_CODE_OAUTH_TOKEN` existe, dans les réglages GitHub |
+| Droits des workflows GitHub limités | ✅ | `permissions` déclarées dans chaque workflow : vérifications en lecture seule, site avec `pages: write` et `id-token: write`, robot de documentation avec `contents: write` (pour committer la documentation) |
+| Mots de passe et clés du projet Supabase hors de l'app et du dépôt | ✅ | Mot de passe de la base et clé `service_role` restent dans le compte Supabase |
+
+### Points à améliorer
+
+1. **Jeton de session chiffré.** Le garder dans le trousseau du téléphone (`expo-secure-store` : Keychain sur iOS, Keystore sur Android) au lieu de la base SQLite. Demande un module natif, donc une recompilation.
+2. **Sauvegarde Android.** Exclure les données de l'app de la sauvegarde Google (`android.allowBackup: false` dans `app.json`), pour qu'un jeton ne soit pas restauré sur un autre téléphone.
+3. **Mot de passe de 8 caractères au moins.** Réglage Supabase (Authentication > Providers > Email) et message de l'app.
+4. **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app sort des stores de test.
+
+Les points 1 à 3 sont prévus juste après cette checklist.
+
 
 ## Secrets et clés
 
@@ -24,7 +123,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 - Connexion par e-mail et mot de passe (Supabase Auth). Les mots de passe sont stockés chiffrés par Supabase ; l'app ne les garde pas.
 - Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe d'au moins 6 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
 - Mot de passe d'au moins 6 caractères à la création. Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
-- La session (jeton) est gardée sur le téléphone et renouvelée seulement tant que l'app est ouverte.
+- La session (jeton) est gardée sur le téléphone, dans la base SQLite privée de l'app (non chiffrée, voir « Points à améliorer »), et renouvelée seulement tant que l'app est ouverte.
 - Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).
 
 ## Sur le téléphone
