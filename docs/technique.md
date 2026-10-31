@@ -29,7 +29,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
+  data/         Accès aux process : process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
@@ -194,6 +194,10 @@ Sauf la liste, le détail des process, l'import, la simulation, l'export et la c
 
 **Données.** `useProcessList()` (`src/data/process-list.ts`) affiche les process importés (et ceux du compte, voir « Synchronisation avec le serveur »), puis les quatre process d'exemple de `demo-processes.ts`. Deux exemples contiennent des anomalies exprès.
 
+**Exemples à part** (`src/data/examples.ts`, testé ; `examples-setting.ts`). `splitExamples` sépare vos process des exemples (reconnus à leur identifiant). L'écran affiche d'abord vos process, puis un titre repliable « Exemples · 4 » (`accessibilityState.expanded`) et les exemples dessous. Sans aucun process à vous, une invitation en pointillés dit où ils apparaîtront. Le réglage « Afficher les exemples » du Profil (gardé sur le téléphone, clé `simuflow.exemples`, activé par défaut) les retire de la liste ; leur lien direct (`/process/demande-acces`) marche toujours. Le test de bout en bout (Maestro) touche « Demande d’accès » : il faut que les exemples soient affichés.
+
+![Liste : sans process à vous (invitation et exemples), avec vos process et les exemples repliés, puis le réglage du Profil](captures/etape-13b-exemples.png)
+
 **Les 5 états** (maquette, écran 10), calculés à partir de l'état réel de l'app par `listState` (`src/data/list-state.ts`, testé) :
 
 | État | Quand | Affichage |
@@ -201,7 +205,7 @@ Sauf la liste, le détail des process, l'import, la simulation, l'export et la c
 | Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
 | Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
 | Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
-| Vide | Aucun process | Message et bouton « Ajouter un process » (`state-message.tsx`) ; aujourd'hui les exemples sont toujours affichés, cet état ne se voit donc qu'avec le scénario de démo |
+| Vide | Aucun process : rien d'importé, et les exemples masqués dans le Profil | Message et bouton « Ajouter un process » (`state-message.tsx`) |
 | Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
 
 Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.

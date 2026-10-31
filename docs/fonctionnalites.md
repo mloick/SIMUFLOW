@@ -4,11 +4,13 @@ SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le
 
 Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**.
 
-## Voir vos process · Disponible (exemples)
+## Voir vos process · Disponible
 
 L'écran Process liste vos process. Chaque carte indique le nombre d'étapes, de décisions et d'acteurs, et une pastille de couleur : vert s'il n'y a aucune anomalie, orange pour des avertissements, rouge pour des erreurs. Tapez quelques lettres dans la recherche pour retrouver un process, accents ou non.
 
-La liste montre quatre process d'exemple, et ceux que vous importez apparaissent en premier.
+Vos process apparaissent en premier. Dessous, la section **Exemples** contient quatre process fictifs fournis avec l'app, pour essayer : touchez son titre pour la replier ou la déplier. Quand vous n'avez encore rien importé, un cadre vous indique où vos process apparaîtront. Vous n'en voulez plus ? Dans **Profil**, coupez **Afficher les exemples**.
+
+![La liste sans process à vous, puis avec vos process et les exemples repliés, et le réglage du Profil](captures/etape-13b-exemples.png)
 
 ![La liste des process et ses différents états](captures/etape-4a-liste.png)
 

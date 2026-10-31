@@ -10,12 +10,19 @@ import { ProcessCard } from '@/components/process-card';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { splitExamples } from '@/data/examples';
 import { useProcessList } from '@/data/process-list';
-import { summarize, type Process } from '@/domain';
+import { summarize, type Process, type ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';
 
 const NO_PROCESSES: Process[] = [];
+
+/** Une ligne de la liste : une carte, le titre repliable « Exemples », ou l'invitation à ajouter un process. */
+type Row =
+  | { kind: 'card'; process: Process; summary: ProcessSummary }
+  | { kind: 'examples'; count: number }
+  | { kind: 'hint' };
 
 /**
  * Liste des process (maquette, écran 2) et ses 5 états : chargement, vide,
@@ -26,15 +33,24 @@ export default function ProcessListScreen() {
   const insets = useSafeAreaInsets();
   const list = useProcessList();
   const [query, setQuery] = useState('');
+  const [examplesOpen, setExamplesOpen] = useState(true);
   const reduceMotion = useReducedMotion();
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
-  const items = useMemo(() => {
+  // Vos process d'abord, puis les exemples fournis avec l'app, dans une section repliable.
+  const rows = useMemo(() => {
     const search = normalizeForSearch(query);
-    return processes
-      .filter((process) => normalizeForSearch(process.name).includes(search))
-      .map((process) => ({ process, summary: summarize(process) }));
-  }, [processes, query]);
+    const card = (process: Process): Row => ({ kind: 'card', process, summary: summarize(process) });
+    const matches = processes.filter((process) => normalizeForSearch(process.name).includes(search));
+    const { own, examples } = splitExamples(matches);
+    const result: Row[] = own.map(card);
+    if (own.length === 0 && !search && examples.length > 0) result.push({ kind: 'hint' });
+    if (examples.length > 0) {
+      result.push({ kind: 'examples', count: examples.length });
+      if (examplesOpen) result.push(...examples.map(card));
+    }
+    return result;
+  }, [processes, query, examplesOpen]);
 
   const openImport = () => router.push('/import');
   const hasProcesses = processes.length > 0;
@@ -47,11 +63,7 @@ export default function ProcessListScreen() {
       {list.status === 'loading' && <View style={[styles.search, { backgroundColor: theme.field }]} />}
       {list.status === 'ready' && hasProcesses && (
         <View style={[styles.search, { backgroundColor: theme.field }]}>
-          <SymbolView
-            name={{ ios: 'magnifyingglass', android: 'search' }}
-            size={20}
-            tintColor={theme.textSecondary}
-          />
+          <SymbolView name={{ ios: 'magnifyingglass', android: 'search' }} size={20} tintColor={theme.textSecondary} />
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -110,15 +122,56 @@ export default function ProcessListScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <FlatList
-        data={items}
-        keyExtractor={(item) => item.process.id}
-        renderItem={({ item, index }) => (
-          // Les cartes arrivent l'une après l'autre en glissant vers le haut ;
-          // rien ne bouge si « Réduire les animations » est activé.
-          <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 60).duration(300)}>
-            <ProcessCard process={item.process} summary={item.summary} />
-          </Animated.View>
-        )}
+        data={rows}
+        keyExtractor={(row) => (row.kind === 'card' ? row.process.id : row.kind)}
+        renderItem={({ item: row, index }) => {
+          if (row.kind === 'hint') {
+            return (
+              <View style={[styles.hint, { borderColor: theme.fieldBorder }]}>
+                <ThemedText themeColor="textSecondary">
+                  Vos process apparaîtront ici. Touchez + pour en importer un ou scanner un tableau, ou essayez d’abord
+                  les exemples ci-dessous.
+                </ThemedText>
+              </View>
+            );
+          }
+          if (row.kind === 'examples') {
+            return (
+              <Pressable
+                onPress={() => setExamplesOpen((open) => !open)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: examplesOpen }}
+                accessibilityLabel={`Exemples, ${row.count} process`}
+                accessibilityHint={examplesOpen ? 'Replie les exemples' : 'Affiche les exemples'}
+                style={styles.examplesHeader}>
+                <View style={styles.flex}>
+                  <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+                    Exemples · {row.count}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Fournis avec l’app, pour essayer. Masquez-les dans le Profil.
+                  </ThemedText>
+                </View>
+                <SymbolView
+                  name={
+                    examplesOpen
+                      ? { ios: 'chevron.up', android: 'expand_less' }
+                      : { ios: 'chevron.down', android: 'expand_more' }
+                  }
+                  size={18}
+                  tintColor={theme.textSecondary}
+                />
+              </Pressable>
+            );
+          }
+          return (
+            // Les cartes arrivent l'une après l'autre en glissant vers le haut ;
+            // rien ne bouge si « Réduire les animations » est activé.
+            <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 60).duration(300)}>
+              <ProcessCard process={row.process} summary={row.summary} />
+            </Animated.View>
+          );
+        }}
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         contentInsetAdjustmentBehavior="automatic"
@@ -181,6 +234,22 @@ const styles = StyleSheet.create({
   },
   offlineText: {
     flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  hint: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: Radius.medium,
+    padding: Spacing.three,
+  },
+  examplesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 48,
+    marginTop: Spacing.two,
   },
   noResult: {
     textAlign: 'center',
