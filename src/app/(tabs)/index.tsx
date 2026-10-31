@@ -1,6 +1,6 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { splitExamples } from '@/data/examples';
 import { useProcessList } from '@/data/process-list';
+import { useWelcomeSeen } from '@/data/welcome-setting';
 import { summarize, type Process, type ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';
@@ -35,6 +36,12 @@ export default function ProcessListScreen() {
   const [query, setQuery] = useState('');
   const [examplesOpen, setExamplesOpen] = useState(true);
   const reduceMotion = useReducedMotion();
+  const welcomeSeen = useWelcomeSeen();
+
+  // Premier lancement : la présentation s'ouvre par-dessus la liste.
+  useEffect(() => {
+    if (!welcomeSeen) router.push('/bienvenue');
+  }, [welcomeSeen]);
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
   // Vos process d'abord, puis les exemples fournis avec l'app, dans une section repliable.

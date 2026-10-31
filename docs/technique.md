@@ -29,7 +29,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
+  data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
@@ -184,7 +184,13 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
-| `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
+| `connexion.tsx` | `/connexion` | Connexion (fenêtre modale), avec « Mot de passe oublié » |
+| `nouveau-mot-de-passe.tsx` | `/nouveau-mot-de-passe` | Nouveau mot de passe, ouvert par le lien de l'e-mail |
+| `bienvenue.tsx` | `/bienvenue` | Présentation du premier lancement (plein écran) |
+
+**Premier lancement** (`bienvenue.tsx`, `src/data/welcome-setting.ts`). Tant que la présentation n'a pas été vue (clé `simuflow.bienvenue` sur le téléphone), la liste l'ouvre par-dessus elle (`router.push('/bienvenue')`, `presentation: 'fullScreenModal'`). Quatre pages : bienvenue (logo), ajouter ses process, rejouer et corriger, suivre une vraie demande. « Suivant », « Précédent » (toujours à sa place, invisible sur la première page, pour que les boutons ne bougent pas), « Passer » et, à la fin, « Commencer » ; les points annoncent « Page 2 sur 4 » ; chaque page arrive en fondu, sauf avec « Réduire les animations ». « Commencer » ou « Passer » la marquent vue. Le Profil propose « Revoir la présentation ». Le test Maestro passe la présentation si elle s'affiche (`runFlow` avec `when: visible`).
+
+![Premier lancement : la bienvenue, ajouter ses process, suivre une vraie demande, puis « Revoir la présentation » dans le Profil](captures/etape-13c-bienvenue.png)
 
 Sauf la liste, le détail des process, l'import, la simulation, l'export et la connexion, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
@@ -729,7 +735,7 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 
 Un test de bout en bout pilote la vraie app, installée dans le Simulateur iOS, comme le ferait un utilisateur : il touche l'écran et vérifie ce qui s'affiche. Outil : [Maestro](https://maestro.dev), qui lit un fichier YAML d'actions et trouve les éléments par leur texte ou leur libellé d'accessibilité.
 
-**`simuler-un-process.yaml`** : ouvrir l'app, attendre la liste, toucher « Demande d’accès », descendre jusqu'à « Lancer la simulation », avancer deux fois (« Étape suivante »), choisir « oui » à « Accès justifié ? », avancer encore, puis vérifier « Fin atteinte » et « 5 étapes · 2 JO ». Le parcours traverse trois écrans (Liste, Détail, Simulation), la navigation, le moteur de simulation et le calcul des délais. Il ne vide pas les données de l'app : les process de démonstration sont toujours dans la liste.
+**`simuler-un-process.yaml`** : ouvrir l'app, passer la présentation du premier lancement si elle s'affiche, attendre la liste, toucher « Demande d’accès », descendre jusqu'à « Lancer la simulation », avancer deux fois (« Étape suivante »), choisir « oui » à « Accès justifié ? », avancer encore, puis vérifier « Fin atteinte » et « 5 étapes · 2 JO ». Le parcours traverse trois écrans (Liste, Détail, Simulation), la navigation, le moteur de simulation et le calcul des délais. Il ne vide pas les données de l'app : les process de démonstration sont toujours dans la liste.
 
 **Lancer sur le Mac** (une fois : Java et Maestro, avec Homebrew) :
 

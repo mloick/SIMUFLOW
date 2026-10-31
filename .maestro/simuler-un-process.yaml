@@ -9,6 +9,15 @@ appId: fr.simuflow.app
 name: Simuler un process pas à pas
 ---
 - launchApp
+# Premier lancement : la présentation s'ouvre d'abord. On attend elle ou la liste, puis on la passe.
+- extendedWaitUntil:
+    visible: 'Passer|.*Demande d.accès.*'
+    timeout: 60000
+- runFlow:
+    when:
+      visible: 'Passer'
+    commands:
+      - tapOn: 'Passer'
 # Liste des process : attendre la fin du chargement (et de l'écran de démarrage).
 - extendedWaitUntil:
     visible: '.*Demande d.accès.*'

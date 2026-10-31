@@ -479,9 +479,14 @@ function AppVersion() {
       ? `mise à jour du ${Updates.createdAt.toLocaleDateString('fr-FR')} à ${Updates.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
       : 'version installée';
   return (
-    <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
-      SimuFlow {version} · {update}
-    </ThemedText>
+    <View style={styles.version}>
+      <Link href="/bienvenue" accessibilityRole="button" style={styles.replay}>
+        <ThemedText type="link">Revoir la présentation</ThemedText>
+      </Link>
+      <ThemedText type="small" themeColor="textSecondary">
+        SimuFlow {version} · {update}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -524,7 +529,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   flex: { flex: 1 },
-  version: { textAlign: 'center' },
+  version: { alignItems: 'center', gap: Spacing.two },
+  replay: { minHeight: 44, paddingVertical: Spacing.two },
   box: {
     borderRadius: Radius.medium,
     borderWidth: StyleSheet.hairlineWidth,

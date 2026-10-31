@@ -191,6 +191,12 @@ Partagez un process avec vos collègues. Vous recevez une notification quand que
 
 L'app suit le réglage de votre téléphone : claire le jour, sombre si vous avez choisi le mode sombre.
 
+## Présentation au premier lancement · Disponible
+
+À la première ouverture, quatre pages présentent SimuFlow : ce qu'elle fait, comment ajouter vos process, les rejouer et les corriger, et suivre une vraie demande. Touchez **Suivant**, ou **Passer** pour aller directement à la liste. Pour la revoir : **Profil**, puis **Revoir la présentation**, tout en bas.
+
+![La présentation : bienvenue, ajouter ses process, suivre une vraie demande, et le lien dans le Profil](captures/etape-13c-bienvenue.png)
+
 ## Icône et écran de démarrage · Disponible
 
 Sur l'écran d'accueil du téléphone, SimuFlow a l'icône du logo, le chemin en S. À l'ouverture, le logo s'affiche sur un fond clair ou sombre selon votre téléphone, puis l'app apparaît en fondu (sans fondu si vous avez activé « Réduire les animations »).
