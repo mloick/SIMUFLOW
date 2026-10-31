@@ -147,7 +147,6 @@ SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **À pro
 
 ![Création de compte : 8 caractères au moins](captures/etape-14c-mot-de-passe.png)
 
-
 **Mot de passe oublié** : sur l'écran de connexion, touchez **Mot de passe oublié ?**, saisissez votre adresse et touchez **Recevoir un lien**. Ouvrez l'e-mail reçu **sur le téléphone** et touchez son lien : SimuFlow s'ouvre sur **Nouveau mot de passe**. Choisissez-en un et touchez **Enregistrer le mot de passe** : vous êtes connecté. Le lien est valable une heure et ne sert qu'une fois.
 
 ![Mot de passe oublié : l'adresse, l'e-mail envoyé, le nouveau mot de passe, la confirmation, puis un lien expiré](captures/etape-13a-mot-de-passe-oublie.png)
