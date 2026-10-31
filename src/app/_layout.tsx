@@ -9,6 +9,9 @@ import { useCloudSync } from '@/data/cloud-sync';
 import { configureNotifications } from '@/notifications/notifications';
 import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
 
+// Les onglets restent toujours sous les écrans modaux (présentation du premier lancement).
+export const unstable_settings = { anchor: '(tabs)' };
+
 SplashScreen.preventAutoHideAsync();
 // Notifications locales : affichées même quand l'app est ouverte.
 configureNotifications();
@@ -44,6 +47,10 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="connexion" options={{ title: 'Connexion', presentation: 'modal' }} />
+          <Stack.Screen
+            name="bienvenue"
+            options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
+          />
           <Stack.Screen name="nouveau-mot-de-passe" options={{ title: 'Nouveau mot de passe' }} />
           <Stack.Screen name="process/[id]" options={{ title: 'Process' }} />
           <Stack.Screen name="process/modifier/[id]" options={{ title: 'Modifier' }} />
