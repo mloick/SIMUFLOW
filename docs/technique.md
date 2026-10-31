@@ -35,7 +35,7 @@ src/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
-  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), puis tableau seul retrouvé grâce à sa ligne de titres (table.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
+  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
@@ -343,7 +343,8 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (web, Expo Go), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (web, Expo Go), l'écran dit que la lecture n'est pas encore disponible.
+- **Créer le process** : sous un tableau trouvé, « Créer le process » le transforme en process (`tableToProcess`, voir plus bas), applique les règles de lecture apprises (`applyReadingRules`, comme à l'import d'un fichier), l'ajoute à la liste (`addImportedProcess` : enregistré sur le téléphone et synchronisé avec le compte) et ouvre sa fiche. « Créer et corriger » ouvre en plus l'éditeur par-dessus la fiche. Le nom est le titre écrit au-dessus du tableau, sinon « Tableau scanné du 31/10/2026 ». Le Scanner revient ensuite au viseur. « Reprendre la photo » reste à côté.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
 
@@ -352,6 +353,19 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 ![Scanner : le tableau 1 des exemples photographié, puis le texte lu rangé en lignes et en colonnes](captures/etape-10b-lecture.png)
 
 ![Scanner : la photo recadrée sur le document, puis le tableau seul, sans le texte autour](captures/etape-10b-plus-cadrage.png)
+
+### Du tableau au process (`src/scan/to-process.ts`)
+
+TypeScript pur, testé. `tableToProcess(tableau, nom, préfixe)` rend le même résultat qu'un import de fichier (`ImportResult` : le process et des remarques), avec `source: 'scan'` :
+
+- **Étapes** : une par ligne qui a un intitulé (une ligne sans intitulé est ignorée, avec une remarque). Le numéro de la colonne « N° », ou à défaut le rang de la ligne, sert à relier les étapes. Acteur : la case de la colonne acteur ; vide, une remarque dit de le compléter dans l'éditeur.
+- **Délai** (`delayOf`), en jours ouvrés : « 2 JO », « 3 jours » (lecture des fichiers, `durationOf`), « 4 h » (journée de 8 h, donc 0,5), « 1 sem. » ou « 2 semaines » (5 jours ouvrés par semaine), ou un nombre seul. « — » ou une case vide : pas de délai. Un délai illisible donne une remarque.
+- **Liens** : avec une colonne « Suite » (`nextOf`), un numéro (« 2 »), plusieurs (« 3, 4 »), des cas (« oui → 3 ; non → 4 », aussi « oui -> 3 », « oui : 3 », ou sans « ; » quand la lecture l'a perdu), ou « fin ». Une case vide mène à la ligne suivante, comme l'absence de colonne Suite. Une suite vers un numéro absent du tableau, ou illisible, donne une remarque.
+- **Rôles**, d'après les liens : plusieurs sorties, décision ; rien n'arrive, départ ; rien ne part, fin ; sinon tâche. Sans aucun départ (le premier pas est dans une boucle), la première étape le devient.
+
+Neuf tests : les délais, la colonne Suite, une suite vers une ligne absente, puis les six tableaux d'exemple, de la photo (positions relevées) jusqu'au process. On retrouve ce que chaque tableau annonce dans « Attendu » : 6,5 JO pour le tableau 1, 4,5 JO pour le 2, une décision et deux chemins pour le 3, les délais du 4, la boucle et l'acteur manquant du 5, deux décisions, deux fins et trois chemins pour le 6.
+
+![Scanner : le tableau trouvé, « Créer le process », puis la fiche du process créé](captures/etape-10d-process.png)
 
 ### Module natif de lecture du texte (`modules/text-recognition/`)
 
@@ -394,7 +408,7 @@ Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de 
 3. garde les lignes suivantes **tant qu'elles appartiennent au tableau** : pas plus de 1,8 fois l'écart entre les titres et la première ligne, un texte au moins 70 % aussi haut que les titres (la note « Attendu » en dessous est plus petite), et aucun texte qui déborde d'une colonne sur la suivante (une phrase déborde, une cellule jamais). La première ligne qui échoue termine le tableau ;
 4. recolle une **cellule écrite sur deux lignes** : une ligne serrée contre la précédente (moins de 0,7 fois l'écart habituel) avec du texte dans une seule colonne complète la cellule du dessus.
 
-Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), et le nombre de lignes de texte ignorées. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
+Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), le nombre de lignes de texte ignorées, et le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes (au plus 3 fois la hauteur du texte), qui n'est pas lui-même un titre de colonne. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
 
 ## Écran Simulation
 
