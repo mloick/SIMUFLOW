@@ -12,6 +12,7 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
+import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
@@ -332,11 +333,14 @@ function StatTile({
   tone?: 'success' | 'warning' | 'danger';
 }) {
   const theme = useTheme();
+  const largeText = useLargeText();
   const color = tone ? theme[tone] : theme.text;
   const background = tone ? theme[`${tone}Background`] : theme.surface;
 
   return (
-    <View style={[styles.tile, { backgroundColor: background, borderColor: theme.border }]} accessible>
+    <View
+      style={[styles.tile, largeText && styles.tileWide, { backgroundColor: background, borderColor: theme.border }]}
+      accessible>
       <ThemedText type="title" style={{ color }}>
         {value}
       </ThemedText>
@@ -465,6 +469,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.medium,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  // Grands textes : une case par ligne, pour ne pas couper les mots.
+  tileWide: { flexBasis: '100%' },
   section: { gap: Spacing.two },
   trackingIntro: { padding: Spacing.three },
   trackingText: { alignItems: 'flex-start' },

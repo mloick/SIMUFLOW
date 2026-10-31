@@ -178,7 +178,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Profil |
 | `(tabs)/index.tsx` | `/` | Liste des process |
 | `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
-| `(tabs)/profil.tsx` | `/profil` | Profil et compte |
+| `(tabs)/profil.tsx` | `/profil` | Profil : compte, réglages, à propos |
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
@@ -192,7 +192,11 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 
 ![Premier lancement : la bienvenue, ajouter ses process, suivre une vraie demande, puis « Revoir la présentation » dans le Profil](captures/etape-13c-bienvenue.png)
 
-Sauf la liste, le détail des process, l'import, la simulation, l'export et la connexion, les écrans utilisent pour l'instant `PlaceholderScreen` (`src/components/placeholder-screen.tsx`) : un titre, une description et des liens. Ils seront remplacés un par un par les écrans de la maquette. Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis cinq sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, synchronisation, suppression), **Notifications** (rappels d'échéance), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
+
+![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
+
+Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
 
 ## Écran Liste des process
 
@@ -562,7 +566,7 @@ Supabase fournit le backend : une base PostgreSQL, l'authentification et une API
 
 **Client.** `client.ts` crée le client Supabase partagé. La session (le jeton de connexion) est gardée dans `localStorage` : le navigateur le fournit sur le web, et `expo-sqlite/localStorage/install` l'ajoute sur iOS et Android, dans une petite base SQLite du téléphone. Cet import est isolé dans `local-storage.ts`, avec une version web vide (`local-storage.web.ts`) : la version web d'expo-sqlite demanderait une configuration de Metro en plus. Le jeton expire au bout d'une heure ; le client le renouvelle tant que l'app est au premier plan (`startAutoRefresh` / `stopAutoRefresh` selon `AppState`). `react-native-url-polyfill` complète l'objet `URL` de React Native, dont le client a besoin. `expo-sqlite` étant un module natif, l'app compilée par Xcode doit être recompilée une fois (`npm run ios:iphone`) ; Expo Go l'inclut déjà.
 
-**Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Le Profil l'affiche dans une section « Serveur », avec « Réessayer » en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
+**Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Le Profil l'affiche en tête de la section « À propos », avec « Réessayer » en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
 
 ![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
 
@@ -577,7 +581,7 @@ Supabase Auth, par adresse e-mail et mot de passe.
 - **Mot de passe oublié** (`requestPasswordReset`, `openRecoveryLink`, `updatePassword` ; `src/components/reset-password-form.tsx`, `src/app/nouveau-mot-de-passe.tsx`). Sous le mot de passe, « Mot de passe oublié ? » demande l'adresse. `resetPasswordForEmail(adresse, { redirectTo })` fait envoyer par Supabase l'e-mail par défaut, avec un lien. La réponse est la même que l'adresse ait un compte ou non (« Si un compte existe… »). Le lien passe par Supabase, qui le vérifie, puis rouvre l'app sur `redirectTo` = `Linking.createURL('nouveau-mot-de-passe')`, soit `simuflow://nouveau-mot-de-passe#access_token=…&refresh_token=…&type=recovery`. L'écran « Nouveau mot de passe » lit cette adresse (`useLinkingURL`), `parseRecoveryLink` en tire la session (ou l'erreur `otp_expired` d'un lien expiré ou déjà servi), `setSession` l'ouvre, puis `updateUser({ password })` enregistre le nouveau mot de passe : on reste connecté. Le lien doit être ouvert sur le téléphone où l'app est installée ; il est valable une heure. **Réglage Supabase** : Authentication > URL Configuration > Redirect URLs doit contenir `simuflow://**`, sinon le lien renvoie vers l'adresse du site (Site URL) au lieu de l'app. Un code à taper dans l'app serait plus souple (e-mail lu sur un autre appareil), mais il faut modifier le modèle d'e-mail, ce que Supabase n'autorise qu'avec un serveur d'e-mails personnel (SMTP). Avec le serveur intégré (offre gratuite), les envois sont limités à quelques-uns par heure.
 
   ![Mot de passe oublié : l'adresse, l'e-mail envoyé, le nouveau mot de passe, la confirmation, puis un lien expiré](captures/etape-13a-mot-de-passe-oublie.png)
-- **Profil.** Section « Compte » : pendant la lecture, un indicateur ; sans compte, un lien « Se connecter ou créer un compte » ; connecté, les initiales, l'adresse et « Se déconnecter ».
+- **Profil.** Section « Compte » : pendant la lecture, un indicateur ; sans compte, un lien « Se connecter ou créer un compte » ; connecté, les initiales (pastille de 48 points, texte limité à ×1,4 pour qu'il y tienne), l'adresse et « Se déconnecter ».
 - **Tests.** Quatorze tests : vérification des champs (dont le nouveau mot de passe et la lecture du lien « Mot de passe oublié »), traduction des erreurs, et la session (lecture au démarrage, connexion puis déconnexion, pas de retour en arrière si la connexion arrive avant la lecture).
 
 ### Suppression du compte (`supabase/migrations/20261030170000_suppression_compte.sql`)
@@ -634,9 +638,11 @@ Un index sur `owner_id` accélère la lecture des process d'un compte. Les étap
 | Contrastes | Chaque couleur de texte sur son fond, en clair et en sombre, calculée selon WCAG : tous au-dessus de 4,5:1 (le plus bas : texte blanc sur bouton bleu, 4,75:1) | OK |
 | Lecteur d'écran | Cartes, tuiles, anomalies et étapes lues d'un bloc ; boutons et champ de recherche nommés ; titres marqués comme en-têtes | OK |
 | Zones à toucher | Au moins 44 × 44 points (boutons, « Voir », options de démo, bouton « + », sources et pages de l’import, modes et boutons de la simulation) | OK |
-| Grande taille de texte | Aucune hauteur fixe sur les textes : les cartes et les tuiles s'agrandissent avec la taille de texte du téléphone | À vérifier sur l'iPhone |
+| Grande taille de texte | Aucune hauteur fixe sur les textes. À partir de ×1,5 (`useLargeText`, `src/hooks/use-large-text.ts`, d'après `fontScale`), les tuiles du détail passent une par ligne, les modes de la simulation sur deux lignes et son schéma rapetisse. Les textes dans une case de taille fixe sont plafonnés (`maxFontSizeMultiplier` : initiales du Profil, formats de l'export, coche) | Vérifié sur le web avec un texte ×2 ; à vérifier sur l'iPhone |
 | Animations | Coupées avec « Réduire les animations » | OK |
 | Mode sombre | Toutes les couleurs viennent de `useTheme()` | OK |
+
+![Texte agrandi (×2) : le détail d'un process, tuiles empilées, et la simulation, modes sur deux lignes](captures/etape-13d-grands-textes.png)
 
 Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > Accessibilité > Affichage et taille du texte > Police plus grande ; Réglages > Accessibilité > Mouvement > Réduire les animations.
 
@@ -695,7 +701,7 @@ Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `
 npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
 ```
 
-Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. En bas du Profil, `AppVersion` (`src/app/(tabs)/profil.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
+Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » du Profil, `About` (`src/app/(tabs)/profil.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
