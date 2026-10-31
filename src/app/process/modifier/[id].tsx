@@ -7,6 +7,7 @@ import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, updateImportedProcess } from '@/data/process-store';
+import { learnFromCorrection } from '@/data/rules-store';
 import {
   actorsOf,
   addBranch,
@@ -74,7 +75,11 @@ function Editor({ original }: { original: Process }) {
   const toFix = summary.errorCount + summary.warningCount;
 
   const save = () => {
-    if (latest.current !== original) updateImportedProcess(latest.current);
+    if (latest.current !== original) {
+      updateImportedProcess(latest.current);
+      // Ce qui vaut pour tout le schéma (un acteur renommé partout, une forme = un rôle) sert aux imports suivants.
+      learnFromCorrection(original, latest.current);
+    }
     router.back();
   };
   const cancel = () => {

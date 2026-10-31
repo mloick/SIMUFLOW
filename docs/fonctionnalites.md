@@ -55,6 +55,17 @@ Le process corrigé garde la trace de la correction : sa fiche affiche « Corrig
 
 ![Relier une étape, la fiche datée de la correction, puis le schéma avec les nouvelles étapes](captures/etape-L2c-corrige.png)
 
+## L'app apprend de vos corrections · Disponible
+
+Quand vous corrigez un process importé, SimuFlow retient ce qui vaut pour tout le schéma et le refait seul aux imports suivants :
+
+- un **acteur renommé partout** (par exemple « Serv. compta » devient « Comptabilité » sur toutes ses étapes) ;
+- une **forme qui a un sens chez vous** (par exemple, tous vos hexagones sont des décisions).
+
+Une correction faite sur une seule étape reste ponctuelle : elle n'apprend rien. À l'import, l'aperçu indique **Corrigé d'après vos corrections précédentes** et dit ce qui a été appliqué. Retrouvez ces règles dans l'onglet **Profil**, et touchez **Oublier** pour en retirer une. Elles sont gardées sur le téléphone ; bientôt, aussi sur votre compte.
+
+![Un import corrigé d'après les règles, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
+
 ## Voir les problèmes · Disponible
 
 L'app liste les anomalies du process, les plus graves en premier :

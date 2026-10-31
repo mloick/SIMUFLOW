@@ -1,11 +1,9 @@
 /** Version web : le navigateur garde le texte dans son stockage local. */
 
-const KEY = 'simuflow.process-importes';
-
-export function readSaved(): string | null {
-  return globalThis.localStorage?.getItem(KEY) ?? null;
+export function readSaved(name = 'process-importes'): string | null {
+  return globalThis.localStorage?.getItem(`simuflow.${name}`) ?? null;
 }
 
-export function writeSaved(text: string) {
-  globalThis.localStorage?.setItem(KEY, text);
+export function writeSaved(text: string, name = 'process-importes') {
+  globalThis.localStorage?.setItem(`simuflow.${name}`, text);
 }

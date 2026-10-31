@@ -74,6 +74,15 @@ function parseStyle(style: string): Style {
   return result;
 }
 
+/** Forme d'une cellule : « shape=… », sinon le mot-clé de forme du style, sinon rectangle (arrondi ou non). */
+const SHAPE_WORDS = ['rhombus', 'ellipse', 'triangle', 'hexagon', 'cloud', 'cylinder', 'parallelogram', 'trapezoid', 'text'];
+export function shapeOf(st: Style): string {
+  if (st.shape) return st.shape;
+  const word = SHAPE_WORDS.find((name) => st[name] !== undefined);
+  if (word) return word;
+  return st.rounded === '1' ? 'rounded' : 'rectangle';
+}
+
 const colorKey = (color: string | undefined) => (color ?? '').trim().toLowerCase();
 
 /**
@@ -346,7 +355,13 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     else if (ins === 0 && outs > 0 && START_TEXT.test(node.text)) kind = 'start';
     else if (outs === 0 && ins > 0 && END_TEXT.test(title)) kind = 'end';
 
-    const step: Step = { id: node.id, kind, title, layout: { x: node.ax, y: node.ay, width: node.w, height: node.h } };
+    const step: Step = {
+      id: node.id,
+      kind,
+      title,
+      shape: shapeOf(node.st),
+      layout: { x: node.ax, y: node.ay, width: node.w, height: node.h },
+    };
     const actor = actorOf(node) ?? node.actor ?? actorFromText(node.text) ?? legend.get(colorKey(node.st.fillColor));
     const duration = durationOf(node.text);
     if (actor) step.actor = actor;
