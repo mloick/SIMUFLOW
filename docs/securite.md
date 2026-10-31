@@ -31,6 +31,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 - Les process importés sont enregistrés dans le dossier Documents de l'app, inaccessible aux autres apps.
 - À la déconnexion ou à la suppression du compte, les copies des process et des règles de lecture du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
 - Appareil photo : demandé seulement à l'ouverture du Scanner, avec un message qui dit à quoi il sert. Pas de micro ni de lecture de codes-barres (autorisations non demandées). Les photos restent dans le cache de l'app et ne sont envoyées nulle part. La lecture du texte se fait sur le téléphone (module natif : Vision sur iOS, ML Kit avec son modèle inclus dans l'app sur Android) : aucun service en ligne, aucun envoi de la photo ni du texte lu. L'image recadrée sur le document reste dans le dossier temporaire de l'app.
+- Notifications : uniquement locales, programmées par le téléphone ; aucun jeton push, aucun serveur de notifications (`enableRemoteNotifications: false`). L'autorisation n'est demandée qu'en activant les rappels, et peut être coupée dans le Profil.
 - Les fichiers importés (draw.io, JSON) sont lus comme des données : un fichier abîmé ou inattendu est refusé avec un message, sans planter l'app.
 
 ## Confidentialité

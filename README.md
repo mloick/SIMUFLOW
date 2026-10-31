@@ -27,7 +27,7 @@ The logo is an S-shaped path: a starting point, two turns and an arrival arrow. 
 ## Phone features
 
 - Camera with on-device text recognition (native module in Kotlin and Swift).
-- Notifications when a shared process is validated or commented.
+- Local notifications (no server): deadline reminders for each step of a process you follow for real. The switch and a test notification are in the Profile tab.
 
 ## Getting started
 

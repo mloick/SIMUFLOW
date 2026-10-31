@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Link } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, signOut, useSession } from '@/backend/auth';
 import { checkServer, type ServerStatus } from '@/backend/health';
@@ -14,12 +14,22 @@ import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process
 import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
 import { describeRule } from '@/import';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  cancelAllNotifications,
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  TEST_DELAY_SECONDS,
+  type NotificationPermission,
+} from '@/notifications/notifications';
+import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
 
 export default function ProfileScreen() {
   return (
     <PlaceholderScreen title="Profil" description="Votre compte, et l'état du serveur SimuFlow.">
       <Account />
       <ReadingRules />
+      <NotificationSettings />
       <ServerCheck />
       <AppVersion />
       {__DEV__ && <DemoScenarioPicker />}
@@ -149,6 +159,90 @@ function ReadingRules() {
       </ThemedText>
     </View>
   );
+}
+
+/** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
+function NotificationSettings() {
+  const theme = useTheme();
+  const enabled = useRemindersEnabled();
+  const [permission, setPermission] = useState<NotificationPermission | null>(null);
+  const [sent, setSent] = useState(false);
+
+  // L'autorisation peut changer dans les réglages du téléphone : on la relit au retour dans l'app.
+  useEffect(() => {
+    const refresh = () => getNotificationPermission().then(setPermission);
+    refresh();
+    const subscription = AppState.addEventListener('change', (state) => state === 'active' && refresh());
+    return () => subscription.remove();
+  }, []);
+
+  const toggle = async (next: boolean) => {
+    setRemindersEnabled(next);
+    setSent(false);
+    if (!next) return cancelAllNotifications();
+    if (permission === 'undetermined') setPermission(await requestNotificationPermission());
+  };
+
+  const test = async () => {
+    await sendTestNotification();
+    setSent(true);
+  };
+
+  const unavailable = permission === 'unavailable';
+  const active = enabled && permission === 'granted';
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Notifications
+      </ThemedText>
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <View style={[styles.row, styles.identity]}>
+          <View style={styles.flex}>
+            <ThemedText>Rappels d’échéance</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Avant et après l’échéance de chaque étape d’un process suivi.
+            </ThemedText>
+          </View>
+          <Switch
+            value={enabled && !unavailable}
+            onValueChange={toggle}
+            disabled={unavailable || permission === null}
+            trackColor={{ true: theme.link }}
+            accessibilityLabel="Rappels d’échéance"
+          />
+        </View>
+        {active && (
+          <>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <Pressable onPress={test} accessibilityRole="button" style={styles.row}>
+              <ThemedText type="link" style={{ color: theme.link }}>
+                Envoyer une notification d’essai
+              </ThemedText>
+            </Pressable>
+          </>
+        )}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite">
+        {notificationText(enabled, permission, sent)}
+      </ThemedText>
+      {enabled && permission === 'denied' && (
+        <Pressable onPress={() => Linking.openSettings()} accessibilityRole="button" hitSlop={8}>
+          <ThemedText type="link" style={{ color: theme.link }}>
+            Ouvrir les réglages
+          </ThemedText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function notificationText(enabled: boolean, permission: NotificationPermission | null, sent: boolean): string {
+  if (permission === 'unavailable') return 'Les notifications ne sont pas disponibles dans le navigateur.';
+  if (!enabled) return 'Rappels coupés : aucune notification ne sera envoyée.';
+  if (permission === 'denied') return 'Les notifications sont refusées pour SimuFlow dans les réglages du téléphone.';
+  if (permission === 'undetermined') return 'Le téléphone vous demandera l’autorisation au premier rappel.';
+  if (sent) return `Notification envoyée : elle arrive dans ${TEST_DELAY_SECONDS} secondes, même téléphone verrouillé.`;
+  return 'Les notifications sont programmées sur ce téléphone, sans serveur.';
 }
 
 function syncText(status: SyncStatus): string {

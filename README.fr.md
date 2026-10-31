@@ -27,7 +27,7 @@ Le logo est un chemin en S : un point de départ, deux virages, une flèche d'ar
 ## Fonctionnalités du téléphone
 
 - Caméra avec lecture de texte sur le téléphone (module natif en Kotlin et en Swift).
-- Notifications quand un process partagé est validé ou commenté.
+- Notifications locales (sans serveur) : rappels d'échéance de chaque étape d'un process suivi en vrai. L'interrupteur et une notification d'essai sont dans l'onglet Profil.
 
 ## Démarrer
 
