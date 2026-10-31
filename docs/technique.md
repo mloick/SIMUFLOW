@@ -27,9 +27,9 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts)
+  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
-  import/       Lecture des fichiers draw.io et JSON en process ; schémas d'exemple dans __fixtures__/
+  import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
@@ -311,6 +311,21 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 ![« Importer et corriger », un cas ajouté à une décision, puis une étape ajoutée après](captures/etape-L2b-ajout.png)
 
 ![Une tâche reliée à une étape existante, la fiche datée de la correction, puis le schéma avec les étapes ajoutées à leur place](captures/etape-L2c-corrige.png)
+
+## Règles de lecture apprises (`src/import/rules.ts`, `src/data/rules-store.ts`)
+
+SimuFlow apprend des corrections faites dans l'éditeur, pour ne pas les redemander au prochain import. À l'enregistrement, `learnRules(avant, après)` compare chaque étape à elle-même (par identifiant ; une étape supprimée ne compte pas) et ne garde que ce qui vaut pour **tout** le schéma :
+
+- **acteur** : toutes les étapes lues avec l'acteur A ont reçu le même acteur B (majuscules ignorées). Changer l'acteur d'une seule étape parmi d'autres du même acteur reste une correction ponctuelle ;
+- **rôle** : toutes les étapes d'une même forme ont changé de rôle, toutes pour le même. La forme est lue à l'import (`shapeOf` dans `drawio.ts` : `shape=…`, sinon `rhombus`, `ellipse`, `hexagon`…, sinon rectangle arrondi ou non) et gardée dans `Step.shape`. Pour un rectangle, forme la plus courante, il faut au moins deux étapes corrigées pareil ; une forme particulière (hexagone…) suffit une fois.
+
+Les règles sont enregistrées sur le téléphone dans `regles-lecture.json` (même mécanisme que les process, `saved-file.ts` prend désormais un nom de fichier ; sur le web, `simuflow.regles-lecture` dans le stockage local), au format `{ "format": "simuflow-regles", "version": 1, "rules": [...] }` relu par `parseRules`. Une nouvelle règle sur le même acteur ou la même forme remplace l'ancienne (`mergeRules`).
+
+À l'import, `applyReadingRules` applique les règles à chaque page lue (`applyRules`) avant l'aperçu, qui affiche « Corrigé d'après vos corrections précédentes » avec la phrase de chaque règle qui a servi (`describeRule`). L'onglet Profil liste les règles, chacune avec « Oublier ». L'export JSON n'écrit pas `shape`.
+
+**Tests.** Neuf tests (`rules.test.ts`) : acteur renommé partout, acteur changé sur une seule étape (rien d'appris), forme particulière vue une fois, rectangles (deux exigés), étapes supprimées, application et phrases, process rendu tel quel sans règle utile, remplacement d'une règle, relecture d'un fichier abîmé.
+
+![Import corrigé d'après les règles apprises, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
 
 ## Écran Simulation
 

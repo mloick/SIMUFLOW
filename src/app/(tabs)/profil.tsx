@@ -11,12 +11,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
+import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
+import { describeRule } from '@/import';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfileScreen() {
   return (
     <PlaceholderScreen title="Profil" description="Votre compte, et l'état du serveur SimuFlow.">
       <Account />
+      <ReadingRules />
       <ServerCheck />
       <AppVersion />
       {__DEV__ && <DemoScenarioPicker />}
@@ -96,6 +99,48 @@ function Account() {
         </ThemedText>
       )}
       {session && <DeleteAccount />}
+    </View>
+  );
+}
+
+/** Les règles de lecture apprises des corrections, chacune avec « Oublier ». */
+function ReadingRules() {
+  const theme = useTheme();
+  const rules = useReadingRules();
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Règles de lecture apprises
+      </ThemedText>
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        {rules.length === 0 ? (
+          <ThemedText themeColor="textSecondary" style={styles.boxText}>
+            Aucune pour l’instant. Quand vous corrigez un process importé (un acteur renommé partout, une forme qui veut
+            dire « décision »), SimuFlow le retient et le refait aux imports suivants.
+          </ThemedText>
+        ) : (
+          rules.map((rule, index) => {
+            const text = describeRule(rule);
+            return (
+              <View key={text}>
+                {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
+                <View style={[styles.row, styles.identity]}>
+                  <ThemedText style={styles.flex}>{text}</ThemedText>
+                  <Pressable
+                    onPress={() => forgetReadingRule(rule)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Oublier la règle : ${text}`}
+                    hitSlop={8}>
+                    <ThemedText type="link" style={{ color: theme.danger }}>
+                      Oublier
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
     </View>
   );
 }

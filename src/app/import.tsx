@@ -11,6 +11,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { addImportedProcess } from '@/data/process-store';
+import { applyReadingRules } from '@/data/rules-store';
 import { summarize } from '@/domain';
 import { ImportError, importProcessFile, type ImportResult } from '@/import';
 import { useTheme } from '@/hooks/use-theme';
@@ -20,7 +21,8 @@ import { readPickedFile } from '@/utils/read-file';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 type FileKind = 'drawio' | 'json';
-type Picked = { fileName: string; result: ImportResult };
+/** `applied` : les règles de lecture apprises qui ont corrigé la lecture. */
+type Picked = { fileName: string; result: ImportResult; applied: string[] };
 
 /**
  * Modale « Nouveau process » (maquette, écran 5) : choisir un fichier draw.io
@@ -51,8 +53,8 @@ export default function ImportScreen() {
       if (asset.size && asset.size > MAX_FILE_SIZE)
         throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
       const content = await readPickedFile(asset);
-      const result = importProcessFile(asset.name, content, `import-${Date.now()}`);
-      setPicked({ fileName: asset.name, result });
+      const { result, applied } = applyReadingRules(importProcessFile(asset.name, content, `import-${Date.now()}`));
+      setPicked({ fileName: asset.name, result, applied });
       setPage(0);
       setName(result.processes[0].name);
       setNameMissing(false);
@@ -228,6 +230,28 @@ export default function ImportScreen() {
                 <Badge {...diagnosticBadge(summary)} />
               </View>
             </View>
+            {picked && picked.applied.length > 0 && (
+              <View
+                style={[styles.notice, { backgroundColor: theme.primaryBackground }]}
+                accessible
+                accessibilityLabel={`Corrigé d’après vos corrections précédentes : ${picked.applied.join(', ')}`}>
+                <SymbolView
+                  name={{ ios: 'wand.and.stars', android: 'auto_fix_high' }}
+                  size={20}
+                  tintColor={theme.link}
+                />
+                <View style={styles.noticeText}>
+                  <ThemedText type="smallBold" style={{ color: theme.link }}>
+                    Corrigé d’après vos corrections précédentes
+                  </ThemedText>
+                  {picked.applied.map((line) => (
+                    <ThemedText key={line} type="small">
+                      {line}
+                    </ThemedText>
+                  ))}
+                </View>
+              </View>
+            )}
             {picked && picked.result.warnings.length > 0 && (
               <View style={[styles.notice, { backgroundColor: theme.warningBackground }]}>
                 <SymbolView

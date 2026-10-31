@@ -1,20 +1,20 @@
 /**
- * Fichier où sont enregistrés les process importés, dans le dossier Documents
- * de l'application : le système ne le supprime pas, il disparaît seulement
- * quand l'app est désinstallée.
+ * Fichiers où l'app enregistre ses données (process importés, règles de
+ * lecture), dans le dossier Documents de l'application : le système ne les
+ * supprime pas, ils disparaissent seulement quand l'app est désinstallée.
  */
 
 import { File, Paths } from 'expo-file-system';
 
-const file = () => new File(Paths.document, 'process-importes.json');
+const file = (name: string) => new File(Paths.document, `${name}.json`);
 
-export function readSaved(): string | null {
-  const saved = file();
+export function readSaved(name = 'process-importes'): string | null {
+  const saved = file(name);
   return saved.exists ? saved.textSync() : null;
 }
 
-export function writeSaved(text: string) {
-  const saved = file();
+export function writeSaved(text: string, name = 'process-importes') {
+  const saved = file(name);
   if (!saved.exists) saved.create();
   saved.writeSync(text);
 }

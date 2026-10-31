@@ -75,7 +75,7 @@ export function processToJson(process: Process): string {
       format: 'simuflow',
       version: 1,
       name: process.name,
-      steps: process.steps.map(({ layout: _layout, ...step }) => step),
+      steps: process.steps.map(({ layout: _layout, shape: _shape, ...step }) => step),
       links: process.links,
     },
     null,

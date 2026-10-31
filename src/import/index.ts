@@ -9,6 +9,7 @@ import { parseProcessJson } from './json';
 export { parseDrawio } from './drawio';
 export { ImportError, type ImportResult } from './errors';
 export { parseProcessJson, processToJson } from './json';
+export { applyRules, describeRule, learnRules, mergeRules, parseRules, shapeName, type ReadingRule } from './rules';
 
 export function importProcessFile(fileName: string, content: string, idPrefix?: string): ImportResult {
   const text = content.replace(/^﻿/, '').trim();
