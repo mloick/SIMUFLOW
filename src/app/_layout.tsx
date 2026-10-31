@@ -44,6 +44,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="connexion" options={{ title: 'Connexion', presentation: 'modal' }} />
+          <Stack.Screen name="nouveau-mot-de-passe" options={{ title: 'Nouveau mot de passe' }} />
           <Stack.Screen name="process/[id]" options={{ title: 'Process' }} />
           <Stack.Screen name="process/modifier/[id]" options={{ title: 'Modifier' }} />
           <Stack.Screen name="simulation/[id]" options={{ title: 'Simulation' }} />

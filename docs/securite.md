@@ -22,7 +22,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 ## Comptes
 
 - Connexion par e-mail et mot de passe (Supabase Auth). Les mots de passe sont stockés chiffrés par Supabase ; l'app ne les garde pas.
-- Mot de passe oublié : code à usage unique envoyé par e-mail, valable une heure, puis nouveau mot de passe d'au moins 6 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
+- Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe d'au moins 6 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
 - Mot de passe d'au moins 6 caractères à la création. Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
 - La session (jeton) est gardée sur le téléphone et renouvelée seulement tant que l'app est ouverte.
 - Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).

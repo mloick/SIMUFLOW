@@ -5,7 +5,7 @@
 
 import { useSyncExternalStore } from 'react';
 
-import { authErrorMessage, cleanCode, type Credentials, type PasswordReset } from './auth-messages';
+import { authErrorMessage, type Credentials, type RecoveryLink } from './auth-messages';
 import { supabase } from './client';
 import { createSessionStore, type SessionState } from './session-store';
 
@@ -37,22 +37,27 @@ export async function signUp({ email, password }: Credentials): Promise<AuthResu
 }
 
 /**
- * Mot de passe oublié, étape 1 : Supabase envoie un e-mail avec un code à 6 chiffres
- * (modèle « Reset password » du projet, qui doit contenir {{ .Token }}).
- * Pour ne pas révéler qui a un compte, la réponse est la même que l'adresse existe ou non.
+ * Mot de passe oublié, étape 1 : Supabase envoie un e-mail avec un lien (modèle par défaut).
+ * Le lien passe par Supabase, puis rouvre l'app sur `redirectTo` (à autoriser dans
+ * Authentication > URL Configuration > Redirect URLs). Pour ne pas révéler qui a un compte,
+ * la réponse est la même que l'adresse existe ou non.
  */
-export async function requestPasswordReset(email: string): Promise<AuthResult> {
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+export async function requestPasswordReset(email: string, redirectTo: string): Promise<AuthResult> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
   return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
 }
 
-/**
- * Mot de passe oublié, étape 2 : le code vérifié ouvre une session sur le compte,
- * puis le nouveau mot de passe remplace l'ancien. On reste connecté.
- */
-export async function resetPassword({ email, code, password }: PasswordReset): Promise<AuthResult> {
-  const verified = await supabase.auth.verifyOtp({ email: email.trim(), token: cleanCode(code), type: 'recovery' });
-  if (verified.error) return { ok: false, message: authErrorMessage(verified.error) };
+/** Étape 2 : le lien ouvert sur le téléphone porte une session temporaire sur le compte. */
+export async function openRecoveryLink(link: Extract<RecoveryLink, { kind: 'session' }>): Promise<AuthResult> {
+  const { error } = await supabase.auth.setSession({
+    access_token: link.accessToken,
+    refresh_token: link.refreshToken,
+  });
+  return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
+}
+
+/** Étape 3 : le nouveau mot de passe remplace l'ancien. On reste connecté. */
+export async function updatePassword(password: string): Promise<AuthResult> {
   const { error } = await supabase.auth.updateUser({ password });
   return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
 }

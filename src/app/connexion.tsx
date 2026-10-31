@@ -65,7 +65,6 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled">
           <ResetPasswordForm
             initialEmail={email}
-            onDone={() => router.back()}
             onCancel={() => {
               setMode('connexion');
               setError(null);

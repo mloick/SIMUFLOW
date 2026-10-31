@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { authErrorMessage, checkCredentials, checkPasswordReset, cleanCode } from '../auth-messages';
+import { authErrorMessage, checkCredentials, checkNewPassword, parseRecoveryLink } from '../auth-messages';
 
 describe('checkCredentials', () => {
   const ok = { email: 'camille@exemple.fr', password: 'secret1' };
@@ -37,27 +37,25 @@ describe('authErrorMessage', () => {
   });
 });
 
-describe('checkPasswordReset', () => {
-  const ok = { email: 'camille@exemple.fr', code: '123456', password: 'nouveau1' };
-
-  it('accepte un code à 6 chiffres, même tapé avec des espaces', () => {
-    expect(checkPasswordReset(ok)).toBeNull();
-    expect(checkPasswordReset({ ...ok, code: ' 123 456 ' })).toBeNull();
-    expect(cleanCode(' 123 456 ')).toBe('123456');
+describe('mot de passe oublié', () => {
+  it('demande un nouveau mot de passe de 6 caractères', () => {
+    expect(checkNewPassword('abc')).toMatch(/au moins 6/);
+    expect(checkNewPassword('nouveau1')).toBeNull();
   });
 
-  it('refuse un code vide, trop court ou avec des lettres', () => {
-    expect(checkPasswordReset({ ...ok, code: '' })).toMatch(/Saisissez le code/);
-    expect(checkPasswordReset({ ...ok, code: '1234' })).toMatch(/6 chiffres/);
-    expect(checkPasswordReset({ ...ok, code: '12a456' })).toMatch(/6 chiffres/);
+  it('lit la session dans le lien qui rouvre l’app', () => {
+    const url = 'simuflow://nouveau-mot-de-passe#access_token=aaa&expires_in=3600&refresh_token=bbb&type=recovery';
+    expect(parseRecoveryLink(url)).toEqual({ kind: 'session', accessToken: 'aaa', refreshToken: 'bbb' });
   });
 
-  it('demande un nouveau mot de passe de 6 caractères et une adresse valide', () => {
-    expect(checkPasswordReset({ ...ok, password: 'abc' })).toMatch(/au moins 6/);
-    expect(checkPasswordReset({ ...ok, email: 'camille' })).toMatch(/pas valide/);
+  it('traduit un lien expiré ou déjà utilisé', () => {
+    const url =
+      'simuflow://nouveau-mot-de-passe#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid';
+    expect(parseRecoveryLink(url)).toEqual({ kind: 'error', message: expect.stringMatching(/expiré/) });
   });
 
-  it('traduit un code expiré', () => {
-    expect(authErrorMessage({ code: 'otp_expired' })).toMatch(/nouveau code/);
+  it('ignore une adresse sans session', () => {
+    expect(parseRecoveryLink('simuflow://nouveau-mot-de-passe')).toBeNull();
+    expect(parseRecoveryLink(null)).toBeNull();
   });
 });

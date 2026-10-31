@@ -26,23 +26,35 @@ export function checkCredentials({ email, password }: Credentials, mode: 'connex
   return null;
 }
 
-/** Mot de passe oublié : le code reçu par e-mail et le nouveau mot de passe. */
-export type PasswordReset = { email: string; code: string; password: string };
-
-/** Le code reçu par e-mail : des chiffres seulement (6 par défaut chez Supabase), espaces tolérés. */
-export function cleanCode(code: string): string {
-  return code.replace(/\s/g, '');
-}
-
-/** Un problème dans le formulaire « Mot de passe oublié », ou `null`. */
-export function checkPasswordReset({ email, code, password }: PasswordReset): string | null {
-  const emailProblem = checkEmail(email);
-  if (emailProblem) return emailProblem;
-  if (!cleanCode(code)) return 'Saisissez le code reçu par e-mail.';
-  if (!/^\d{6,10}$/.test(cleanCode(code))) return 'Le code est fait de 6 chiffres, sans lettres.';
+/** Un problème dans le nouveau mot de passe (mot de passe oublié), ou `null`. */
+export function checkNewPassword(password: string): string | null {
   if (password.length < PASSWORD_MIN_LENGTH) {
     return `Le nouveau mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
   }
+  return null;
+}
+
+/** Ce que contient le lien « Mot de passe oublié » qui rouvre l'app. */
+export type RecoveryLink =
+  | { kind: 'session'; accessToken: string; refreshToken: string }
+  | { kind: 'error'; message: string };
+
+/**
+ * Lit le lien de l'e-mail « Mot de passe oublié », après son passage chez Supabase :
+ * `simuflow://nouveau-mot-de-passe#access_token=…&refresh_token=…&type=recovery`,
+ * ou `#error=…&error_code=otp_expired` si le lien a expiré. `null` si ce n'en est pas un.
+ */
+export function parseRecoveryLink(url: string | null): RecoveryLink | null {
+  if (!url) return null;
+  const hash = url.indexOf('#');
+  const query = url.indexOf('?');
+  const raw = hash >= 0 ? url.slice(hash + 1) : query >= 0 ? url.slice(query + 1) : '';
+  const params = new URLSearchParams(raw);
+  const errorCode = params.get('error_code') ?? params.get('error');
+  if (errorCode) return { kind: 'error', message: authErrorMessage({ code: errorCode }) };
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) return { kind: 'session', accessToken, refreshToken };
   return null;
 }
 
@@ -59,7 +71,8 @@ const MESSAGES: Record<string, string> = {
   over_email_send_rate_limit: "Trop d'e-mails envoyés. Réessayez dans une heure.",
   over_request_rate_limit: 'Trop de tentatives. Patientez quelques minutes.',
   signup_disabled: 'La création de compte est fermée pour le moment.',
-  otp_expired: 'Code incorrect ou expiré. Demandez un nouveau code.',
+  otp_expired: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
+  access_denied: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
   same_password: "Choisissez un mot de passe différent de l'ancien.",
 };
 
