@@ -143,9 +143,9 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **À propos** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
 
-**Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 8 caractères. Sous le bouton, une phrase rappelle où vos données sont gardées, avec le lien vers la politique de confidentialité. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous. Votre connexion est gardée dans le coffre chiffré du téléphone.
+**Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 8 caractères, avec une minuscule, une majuscule, un chiffre et un symbole ; s'il en manque, l'app dit lesquels. Sous le bouton, une phrase rappelle où vos données sont gardées, avec le lien vers la politique de confidentialité. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous. Votre connexion est gardée dans le coffre chiffré du téléphone.
 
-![Création de compte : 8 caractères au moins](captures/etape-14c-mot-de-passe.png)
+![Création de compte : l'app dit ce qui manque au mot de passe](captures/etape-14c-mot-de-passe.png)
 
 **Mot de passe oublié** : sur l'écran de connexion, touchez **Mot de passe oublié ?**, saisissez votre adresse et touchez **Recevoir un lien**. Ouvrez l'e-mail reçu **sur le téléphone** et touchez son lien : SimuFlow s'ouvre sur **Nouveau mot de passe**. Choisissez-en un et touchez **Enregistrer le mot de passe** : vous êtes connecté. Le lien est valable une heure et ne sert qu'une fois.
 

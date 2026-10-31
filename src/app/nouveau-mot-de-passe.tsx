@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { type AuthResult, openRecoveryLink, updatePassword } from '@/backend/auth';
-import { checkNewPassword, parseRecoveryLink, PASSWORD_MIN_LENGTH } from '@/backend/auth-messages';
+import { checkNewPassword, parseRecoveryLink, PASSWORD_RULE } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -99,7 +99,7 @@ export default function NewPasswordScreen() {
             value={password}
             onChangeText={setPassword}
             accessibilityLabel="Nouveau mot de passe"
-            accessibilityHint={`Au moins ${PASSWORD_MIN_LENGTH} caractères.`}
+            accessibilityHint={PASSWORD_RULE}
             secureTextEntry
             autoCapitalize="none"
             autoComplete="new-password"
@@ -114,7 +114,7 @@ export default function NewPasswordScreen() {
             ]}
           />
           <ThemedText type="small" themeColor="textSecondary">
-            Au moins {PASSWORD_MIN_LENGTH} caractères.
+            {PASSWORD_RULE}
           </ThemedText>
         </View>
         {error && (

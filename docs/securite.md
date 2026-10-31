@@ -38,7 +38,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
 | Mot de passe oublié sans révéler si une adresse a un compte | ✅ | Même réponse dans les deux cas ; lien à usage unique valable une heure |
-| Longueur minimale du mot de passe | ✅ | 8 caractères, vérifiés par l'app (`PASSWORD_MIN_LENGTH`, testé) et par Supabase (réglage du projet) |
+| Mot de passe robuste | ✅ | 8 caractères au moins, avec minuscule, majuscule, chiffre et symbole, vérifiés par l'app (`passwordProblem`, testé) et par Supabase (réglages « Minimum password length » et « Password requirements » du projet) |
 | Limitation des tentatives (force brute) | ✅ | Limites de Supabase Auth sur la connexion et l'envoi d'e-mails |
 
 ### Réseau (MASVS-NETWORK)
@@ -95,7 +95,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 
 - **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app est publiée sur les stores.
 
-Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le trousseau chiffré, la sauvegarde Android est désactivée, et le mot de passe demande 8 caractères.
+Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le trousseau chiffré, la sauvegarde Android est désactivée, et le mot de passe demande 8 caractères avec minuscule, majuscule, chiffre et symbole.
 
 
 ## Secrets et clés
@@ -118,8 +118,8 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 ## Comptes
 
 - Connexion par e-mail et mot de passe (Supabase Auth). Les mots de passe sont stockés chiffrés par Supabase ; l'app ne les garde pas.
-- Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe d'au moins 8 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
-- Mot de passe d'au moins 8 caractères à la création (vérifié par l'app et par Supabase ; un compte plus ancien de 6 caractères peut toujours se connecter). Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
+- Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe qui suit la même règle qu'à la création. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
+- Mot de passe d'au moins 8 caractères à la création, avec une minuscule, une majuscule, un chiffre et un symbole (vérifié par l'app et par Supabase ; un compte plus ancien peut toujours se connecter avec son mot de passe). Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
 - La session (jeton) est gardée dans le trousseau chiffré du téléphone (Keychain, Keystore), jamais copiée vers un autre appareil, et renouvelée seulement tant que l'app est ouverte. Les données de l'app sont exclues de la sauvegarde Android.
 - Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).
 

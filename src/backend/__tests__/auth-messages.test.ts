@@ -3,7 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { authErrorMessage, checkCredentials, checkNewPassword, parseRecoveryLink } from '../auth-messages';
 
 describe('checkCredentials', () => {
-  const ok = { email: 'camille@exemple.fr', password: 'secret12' };
+  const ok = { email: 'camille@exemple.fr', password: 'Secret-12' };
 
   it('accepte une adresse et un mot de passe', () => {
     expect(checkCredentials(ok, 'connexion')).toBeNull();
@@ -16,8 +16,8 @@ describe('checkCredentials', () => {
   });
 
   it('demande 8 caractères à la création, pas à la connexion', () => {
-    expect(checkCredentials({ ...ok, password: 'abcdefg' }, 'creation')).toMatch(/au moins 8/);
-    expect(checkCredentials({ ...ok, password: 'abcdefgh' }, 'creation')).toBeNull();
+    expect(checkCredentials({ ...ok, password: 'Abc-123' }, 'creation')).toMatch(/au moins 8/);
+    expect(checkCredentials({ ...ok, password: 'Abcd-123' }, 'creation')).toBeNull();
     // Un ancien compte créé avec 6 caractères peut toujours se connecter.
     expect(checkCredentials({ ...ok, password: 'abcdef' }, 'connexion')).toBeNull();
     expect(checkCredentials({ ...ok, password: '' }, 'connexion')).toMatch(/mot de passe/);
@@ -41,8 +41,19 @@ describe('authErrorMessage', () => {
 
 describe('mot de passe oublié', () => {
   it('demande un nouveau mot de passe de 8 caractères', () => {
-    expect(checkNewPassword('abcdefg')).toMatch(/au moins 8/);
-    expect(checkNewPassword('nouveau1')).toBeNull();
+    expect(checkNewPassword('Abc-123')).toMatch(/au moins 8/);
+    expect(checkNewPassword('Nouveau-1')).toBeNull();
+  });
+
+  it('demande une minuscule, une majuscule, un chiffre et un symbole, comme Supabase', () => {
+    expect(checkNewPassword('nouveau1')).toBe(
+      'Il manque au mot de passe une majuscule et un symbole (par exemple ! ? # -).',
+    );
+    expect(checkNewPassword('NOUVEAU-1')).toBe('Il manque au mot de passe une minuscule.');
+    expect(checkNewPassword('motdepasse')).toBe(
+      'Il manque au mot de passe une majuscule, un chiffre et un symbole (par exemple ! ? # -).',
+    );
+    expect(checkNewPassword('Nouveau_1')).toBeNull();
   });
 
   it('lit la session dans le lien qui rouvre l’app', () => {
