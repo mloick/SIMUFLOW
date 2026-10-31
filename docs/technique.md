@@ -445,7 +445,7 @@ Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber`
 **Mise en page.** `layoutProcess(process)` donne la position de chaque étape et le tracé de chaque flèche :
 
 - si des étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original. Une étape ajoutée dans l'éditeur n'en a pas : `placeMissing` la pose sous l'étape qui y mène (sinon au-dessus de celle qui suit, sinon sous tout le schéma), puis la décale vers la droite tant qu'elle chevauche une autre forme. Les positions d'origine ne bougent pas ;
-- sinon (fichier JSON, et plus tard tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
+- sinon (fichier JSON, tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
 - Les flèches descendent à angle droit et **ne traversent jamais une étape**. Pour chaque flèche, plusieurs tracés sont essayés dans l'ordre, et le premier qui ne touche aucune autre étape est gardé (`crosses`) : tout droit si les deux étapes sont alignées ; par le côté si l'étape d'arrivée est sur la ligne suivante, à gauche ou à droite (un côté ne sert qu'à une flèche, et le côté droit est gardé pour les boucles) ; par le bas puis dans l'espace vide au-dessus de l'étape d'arrivée ou sous l'étape de départ ; sinon en descendant par un couloir vertical libre entre deux colonnes (`verticalChannels`).
 - Plusieurs flèches qui arrivent sur une même étape (ou partent par son bas) ont chacune leur point, répartis sur le bord dans l'ordre de gauche à droite (`spread`) : elles ne se confondent pas.
 - Deux flèches qui passent dans le même couloir, à la même hauteur ou à la même abscisse, sont écartées de 10 points chacune sur sa voie (`separateTracks`). Les segments du départ et de l'arrivée ne bougent pas.
@@ -659,7 +659,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | Dossier prévu | Rôle |
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
-| `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
+| `src/import/` | Lecture des fichiers draw.io et JSON (fait) ; les tableaux scannés passent par `src/scan/` |
 | `src/export/` | Export en PDF, draw.io et JSON (fait) |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
 | `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
