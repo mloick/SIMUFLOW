@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableaux à scanner</title>
+<style>
+  :root { --ink: #0b2540; --muted: #4a5b70; --line: #0078bd; --paper: #ffffff; --head: #e1f0fa; --bg: #f2f6fa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.4 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  .intro { color: var(--muted); margin: 0 0 24px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+  nav a { color: var(--line); background: var(--paper); border: 1px solid #c3d0de; border-radius: 999px; padding: 6px 14px; text-decoration: none; font-size: 15px; }
+  section { background: var(--paper); border-radius: 16px; padding: 24px; margin-bottom: 40px; break-inside: avoid; page-break-inside: avoid; }
+  h2 { font-size: 20px; margin: 0 0 4px; }
+  .cas { color: var(--muted); font-size: 15px; margin: 0 0 16px; }
+  .attendu { color: var(--muted); font-size: 14px; margin: 16px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 22px; }
+  th, td { border: 2px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; white-space: nowrap; }
+  section { overflow-x: auto; }
+  th { background: var(--head); }
+  td.n, th.n { width: 3em; text-align: center; }
+  .titre { font-size: 22px; font-weight: 700; margin: 0 0 12px; }
+  @media print { body { background: #fff; } nav, .intro { display: none; } section { padding: 0; margin-bottom: 24px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tableaux à scanner</h1>
+  <p class="intro">Exemples fictifs pour tester le Scanner de SimuFlow. Affichez un tableau en plein écran (ou imprimez la page), puis photographiez-le avec l'onglet Scanner, bien de face. Sous chaque tableau, « Attendu » dit ce que l'app devra en tirer.</p>
+  <nav>
+    <a href="#t1">1. Simple</a>
+    <a href="#t2">2. Autres en-têtes</a>
+    <a href="#t3">3. Une décision</a>
+    <a href="#t4">4. Délais variés</a>
+    <a href="#t5">5. Boucle et trous</a>
+    <a href="#t6">6. Complet</a>
+  </nav>
+
+  <section id="t1">
+    <h2>1. Simple</h2>
+    <p class="cas">Trois colonnes, une étape par ligne, dans l'ordre.</p>
+    <p class="titre">Demande de matériel</p>
+    <table>
+      <tr><th>Étape</th><th>Acteur</th><th>Délai</th></tr>
+      <tr><td>Recevoir la demande</td><td>Accueil</td><td>0,5 JO</td></tr>
+      <tr><td>Valider le besoin</td><td>Manager</td><td>1 JO</td></tr>
+      <tr><td>Commander</td><td>Achats</td><td>3 JO</td></tr>
+      <tr><td>Livrer et clôturer</td><td>Logistique</td><td>2 JO</td></tr>
+    </table>
+    <p class="attendu">Attendu : 4 étapes à la suite, 4 acteurs, 6,5 JO au total.</p>
+  </section>
+
+  <section id="t2">
+    <h2>2. Autres en-têtes, autre ordre</h2>
+    <p class="cas">Les colonnes ne s'appellent pas pareil et l'acteur vient en premier.</p>
+    <p class="titre">Arrivée d'un collaborateur</p>
+    <table>
+      <tr><th>Responsable</th><th>Tâche</th><th>Durée</th></tr>
+      <tr><td>Ressources humaines</td><td>Préparer le contrat</td><td>2 jours</td></tr>
+      <tr><td>Support informatique</td><td>Créer les accès</td><td>1 jour</td></tr>
+      <tr><td>Services généraux</td><td>Préparer le poste</td><td>1 jour</td></tr>
+      <tr><td>Manager</td><td>Accueillir le premier jour</td><td>0,5 jour</td></tr>
+    </table>
+    <p class="attendu">Attendu : « Responsable » lu comme acteur, « Tâche » comme étape, « Durée » comme délai ; 4 étapes, 4,5 JO.</p>
+  </section>
+
+  <section id="t3">
+    <h2>3. Une décision</h2>
+    <p class="cas">Une colonne « Suite » donne l'étape suivante par son numéro ; une question a deux suites.</p>
+    <p class="titre">Validation d'une facture</p>
+    <table>
+      <tr><th class="n">N°</th><th>Étape</th><th>Acteur</th><th>Délai</th><th>Suite</th></tr>
+      <tr><td class="n">1</td><td>Recevoir la facture</td><td>Comptabilité</td><td>0,5 JO</td><td>2</td></tr>
+      <tr><td class="n">2</td><td>Montant supérieur à 500 € ?</td><td>Comptabilité</td><td></td><td>oui → 3 ; non → 4</td></tr>
+      <tr><td class="n">3</td><td>Faire viser</td><td>Direction financière</td><td>2 JO</td><td>4</td></tr>
+      <tr><td class="n">4</td><td>Payer</td><td>Trésorerie</td><td>1 JO</td><td>5</td></tr>
+      <tr><td class="n">5</td><td>Archiver</td><td>Comptabilité</td><td></td><td>fin</td></tr>
+    </table>
+    <p class="attendu">Attendu : l'étape 2 devient une décision avec deux branches « oui » et « non » ; 2 chemins possibles.</p>
+  </section>
+
+  <section id="t4">
+    <h2>4. Délais écrits de plusieurs façons</h2>
+    <p class="cas">Jours ouvrés, jours, heures, semaine, nombre seul, et une case vide.</p>
+    <p class="titre">Traitement d'une réclamation</p>
+    <table>
+      <tr><th>Étape</th><th>Acteur</th><th>Délai</th></tr>
+      <tr><td>Enregistrer la réclamation</td><td>Service client</td><td>4 h</td></tr>
+      <tr><td>Analyser le dossier</td><td>Qualité</td><td>3 jours</td></tr>
+      <tr><td>Proposer une solution</td><td>Service client</td><td>1 sem.</td></tr>
+      <tr><td>Rembourser le client</td><td>Comptabilité</td><td>2</td></tr>
+      <tr><td>Clore la réclamation</td><td>Service client</td><td>—</td></tr>
+    </table>
+    <p class="attendu">Attendu : 0,5 JO (4 h sur une journée de 8 h), 3, 5, 2 JO, et aucun délai pour la dernière étape.</p>
+  </section>
+
+  <section id="t5">
+    <h2>5. Boucle, acteur manquant, texte sur deux lignes</h2>
+    <p class="cas">Un retour en arrière, une case acteur vide et un intitulé long qui passe à la ligne.</p>
+    <p class="titre">Publication d'un article interne</p>
+    <table>
+      <tr><th class="n">N°</th><th>Étape</th><th>Acteur</th><th>Délai</th><th>Suite</th></tr>
+      <tr><td class="n">1</td><td>Rédiger l'article</td><td>Rédaction</td><td>2 JO</td><td>2</td></tr>
+      <tr><td class="n">2</td><td>Relire</td><td></td><td>1 JO</td><td>3</td></tr>
+      <tr><td class="n">3</td><td>Article conforme ?</td><td>Communication</td><td></td><td>oui → 4 ; non → 1</td></tr>
+      <tr><td class="n">4</td><td>Mettre en page et publier<br>sur l'intranet</td><td>Communication</td><td>1 JO</td><td>fin</td></tr>
+    </table>
+    <p class="attendu">Attendu : « non » revient à l'étape 1 (boucle) ; l'étape 2 n'a pas d'acteur (à compléter dans l'éditeur) ; l'étape 4 garde tout son titre.</p>
+  </section>
+
+  <section id="t6">
+    <h2>6. Complet : deux décisions et deux fins</h2>
+    <p class="cas">Plusieurs choix, une fin « refus » et une fin « clôture ».</p>
+    <p class="titre">Demande de congé</p>
+    <table>
+      <tr><th class="n">N°</th><th>Étape</th><th>Acteur</th><th>Délai</th><th>Suite</th></tr>
+      <tr><td class="n">1</td><td>Saisir la demande</td><td>Salarié</td><td>0,5 JO</td><td>2</td></tr>
+      <tr><td class="n">2</td><td>Solde suffisant ?</td><td>Ressources humaines</td><td></td><td>oui → 3 ; non → 6</td></tr>
+      <tr><td class="n">3</td><td>Valider la demande</td><td>Manager</td><td>2 JO</td><td>4</td></tr>
+      <tr><td class="n">4</td><td>Période chargée ?</td><td>Manager</td><td></td><td>oui → 6 ; non → 5</td></tr>
+      <tr><td class="n">5</td><td>Enregistrer le congé</td><td>Ressources humaines</td><td>1 JO</td><td>7</td></tr>
+      <tr><td class="n">6</td><td>Refuser et prévenir</td><td>Manager</td><td>0,5 JO</td><td>fin</td></tr>
+      <tr><td class="n">7</td><td>Clôturer</td><td>Ressources humaines</td><td></td><td>fin</td></tr>
+    </table>
+    <p class="attendu">Attendu : 2 décisions, 2 fins, 3 chemins possibles (refus pour solde, refus pour période, congé accordé).</p>
+  </section>
+</main>
+</body>
+</html>

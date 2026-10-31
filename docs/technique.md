@@ -224,7 +224,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
 7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
 
-`docs/exemples/` contient quatre fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
 
