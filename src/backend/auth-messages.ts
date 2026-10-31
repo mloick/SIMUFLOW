@@ -8,14 +8,53 @@ export const PASSWORD_MIN_LENGTH = 6;
 
 export type Credentials = { email: string; password: string };
 
-/** Un problème dans les champs, ou `null` si on peut envoyer. */
-export function checkCredentials({ email, password }: Credentials, mode: 'connexion' | 'creation'): string | null {
+/** Un problème dans l'adresse e-mail, ou `null`. */
+export function checkEmail(email: string): string | null {
   if (!email.trim()) return 'Saisissez votre adresse e-mail.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Cette adresse e-mail n'est pas valide.";
+  return null;
+}
+
+/** Un problème dans les champs, ou `null` si on peut envoyer. */
+export function checkCredentials({ email, password }: Credentials, mode: 'connexion' | 'creation'): string | null {
+  const emailProblem = checkEmail(email);
+  if (emailProblem) return emailProblem;
   if (!password) return 'Saisissez votre mot de passe.';
   if (mode === 'creation' && password.length < PASSWORD_MIN_LENGTH) {
     return `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
   }
+  return null;
+}
+
+/** Un problème dans le nouveau mot de passe (mot de passe oublié), ou `null`. */
+export function checkNewPassword(password: string): string | null {
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `Le nouveau mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+  }
+  return null;
+}
+
+/** Ce que contient le lien « Mot de passe oublié » qui rouvre l'app. */
+export type RecoveryLink =
+  | { kind: 'session'; accessToken: string; refreshToken: string }
+  | { kind: 'error'; message: string };
+
+/**
+ * Lit le lien de l'e-mail « Mot de passe oublié », après son passage chez Supabase :
+ * `simuflow://nouveau-mot-de-passe#access_token=…&refresh_token=…&type=recovery`,
+ * ou `#error=…&error_code=otp_expired` si le lien a expiré. `null` si ce n'en est pas un.
+ */
+export function parseRecoveryLink(url: string | null): RecoveryLink | null {
+  if (!url) return null;
+  const hash = url.indexOf('#');
+  const query = url.indexOf('?');
+  const raw = hash >= 0 ? url.slice(hash + 1) : query >= 0 ? url.slice(query + 1) : '';
+  const params = new URLSearchParams(raw);
+  const errorCode = params.get('error_code') ?? params.get('error');
+  if (errorCode) return { kind: 'error', message: authErrorMessage({ code: errorCode }) };
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) return { kind: 'session', accessToken, refreshToken };
   return null;
 }
 
@@ -32,6 +71,9 @@ const MESSAGES: Record<string, string> = {
   over_email_send_rate_limit: "Trop d'e-mails envoyés. Réessayez dans une heure.",
   over_request_rate_limit: 'Trop de tentatives. Patientez quelques minutes.',
   signup_disabled: 'La création de compte est fermée pour le moment.',
+  otp_expired: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
+  access_denied: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
+  same_password: "Choisissez un mot de passe différent de l'ancien.",
 };
 
 export function authErrorMessage(error: AuthErrorLike): string {
