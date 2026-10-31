@@ -165,9 +165,15 @@ Les corrections et nouveautés qui ne touchent pas aux fonctions du téléphone 
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
+## Suivre une vraie demande · Disponible
+
+Une vraie demande commence ? Sur la fiche du process, section **Suivi en vrai**, touchez **Suivre une demande**. SimuFlow calcule l'échéance de chaque étape en **jours ouvrés** : du lundi au vendredi, de 9 h à 17 h, sans les jours fériés (Pâques, l'Ascension et la Pentecôte compris). Quand une étape est faite, touchez **Étape terminée** ; à une décision, choisissez la suite (« oui → Faire viser »). Une pastille dit si l'étape est **à l'heure**, si l'**échéance est proche**, ou de combien elle est **en retard**. Les étapes passées restent visibles, avec leur date. Les demandes suivies sont gardées sur le téléphone.
+
+![Suivi en vrai : les demandes d'un process, une demande en cours, puis l'étape suivante](captures/etape-11b-suivi.png)
+
 ## Notifications · En cours
 
-Dans le **Profil**, la section **Notifications** a un interrupteur **Rappels d'échéance**. La première fois, le téléphone demande l'autorisation. Touchez **Envoyer une notification d'essai** : elle arrive 5 secondes plus tard, même téléphone verrouillé. Les notifications sont programmées par le téléphone lui-même, sans serveur. Bientôt : suivre un process en vrai, et être prévenu avant et après l'échéance de chaque étape (en jours ouvrés).
+Dans le **Profil**, la section **Notifications** a un interrupteur **Rappels d'échéance**. La première fois, le téléphone demande l'autorisation. Touchez **Envoyer une notification d'essai** : elle arrive 5 secondes plus tard, même téléphone verrouillé. Les notifications sont programmées par le téléphone lui-même, sans serveur. Bientôt : être prévenu avant et après l'échéance de chaque étape d'une demande suivie.
 
 ![Profil : la section Notifications, en clair et en sombre](captures/etape-11a-notifications.png)
 
