@@ -1,8 +1,8 @@
 /**
  * Module natif local de SimuFlow : lecture du texte d'une photo, sur le
  * téléphone, sans réseau. iOS : Vision (ios/TextRecognitionModule.swift), qui
- * recadre d'abord la photo sur le document qu'elle montre.
- * Android (ML Kit) viendra ensuite ; en attendant, et sur le web, le module
+ * recadre d'abord la photo sur le document qu'elle montre. Android : ML Kit
+ * (android/…/TextRecognitionModule.kt), sans recadrage. Sur le web, le module
  * est absent et `isTextRecognitionAvailable` vaut faux.
  */
 
