@@ -27,7 +27,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire)
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices
   data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -44,6 +44,7 @@ modules/        Modules natifs locaux de l'app : text-recognition (lecture du te
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
+jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js)
 scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, plugins)
@@ -60,7 +61,7 @@ app.json        Configuration Expo (nom, icônes, écran de démarrage, identifi
 | `npm run ios:iphone` | Pareil, avec `--device` (iPhone branché en USB) |
 | `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
-| `npm test` | Lancer les tests unitaires (Jest) |
+| `npm test` | Lancer les tests unitaires et de composants (Jest) |
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
@@ -707,6 +708,15 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
 
 Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion, la suppression du compte et la synchronisation des process importés sont en place.
+
+## Tests de composants (`src/components/__tests__/`)
+
+Les tests unitaires vérifient des fonctions ; un test de composant affiche un vrai composant, comme sur le téléphone, puis le lit et le touche comme le ferait un utilisateur : par son texte et son rôle d'accessibilité (« bouton », « titre »), jamais par son code. Bibliothèque : React Native Testing Library (`@testing-library/react-native`, avec `test-renderer`), dans Jest avec `jest-expo`.
+
+- **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
+- **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (trois tests).
+
+`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). Ces tests tournent avec les autres : `npm test`, et dans la CI.
 
 ## Vérifications automatiques (CI)
 
