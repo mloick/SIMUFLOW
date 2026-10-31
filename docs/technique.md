@@ -708,6 +708,18 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 
 Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion, la suppression du compte et la synchronisation des process importés sont en place.
 
+## Vérifications automatiques (CI)
+
+`.github/workflows/verifications.yml` lance, à chaque pull request et à chaque push sur `main`, sur un serveur GitHub (Ubuntu, Node 22) :
+
+1. `npm ci` : installe exactement les versions de `package-lock.json` ;
+2. crée `expo-env.d.ts`, qui n'est pas versionné (en local, `npx expo start` le crée) ;
+3. `npx tsc --noEmit` : les types ;
+4. `npx expo lint` : l'analyse du code ;
+5. `npx jest --ci` : les tests.
+
+Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : vert, on peut fusionner ; rouge, le journal du job dit quelle étape a échoué. Les types des routes (`.expo/types/`) ne sont pas générés en CI ; sans eux, les liens sont vérifiés comme du texte simple.
+
 ## Mise à jour de la documentation
 
 Les fichiers `README.md`, `README.fr.md`, `docs/technique.md` et `docs/fonctionnalites.md` sont tenus à jour de deux façons :
