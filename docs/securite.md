@@ -14,9 +14,9 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | --- | --- | --- |
 | Aucun secret dans l'app : seulement l'adresse Supabase et la clé publishable | ✅ | `src/backend/config.ts` ; la clé `service_role` n'existe ni dans l'app ni dans le dépôt |
 | Données de l'app dans son espace privé, inaccessible aux autres apps | ✅ | Process dans le dossier Documents de l'app (`saved-file.ts`), réglages et demandes suivies dans sa base SQLite |
-| Jeton de session gardé de façon chiffrée (Keychain iOS, Keystore Android) | ⚠️ | Aujourd'hui dans la base SQLite de l'app (`localStorage` d'expo-sqlite), privée mais non chiffrée |
+| Jeton de session gardé de façon chiffrée (Keychain iOS, Keystore Android) | ✅ | `expo-secure-store` (`secure-session-storage.ts`), réservé à ce téléphone (`AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`) ; l'ancienne copie non chiffrée est déplacée puis effacée (`session-storage.ts`, testé) |
 | Données du compte retirées du téléphone à la déconnexion et à la suppression du compte | ✅ | `cloud-sync.ts` vide les copies du compte ; testé avec deux comptes sur le même téléphone |
-| Sauvegarde Android (`allowBackup`) exclue pour les données sensibles | ⚠️ | Valeur par défaut d'Expo : la sauvegarde Google peut copier les données de l'app, jeton compris |
+| Sauvegarde Android (`allowBackup`) exclue pour les données sensibles | ✅ | `android.allowBackup: false` dans `app.json` : aucune donnée de l'app n'est copiée dans la sauvegarde Google |
 | Pas de données personnelles dans les journaux | ✅ | Les `console.warn` ne montrent que des codes d'erreur, et la plupart seulement en développement (`__DEV__`) |
 | Photos du Scanner jamais envoyées | ✅ | Lecture sur le téléphone (Vision, ML Kit), image dans le dossier temporaire |
 
@@ -38,7 +38,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
 | Mot de passe oublié sans révéler si une adresse a un compte | ✅ | Même réponse dans les deux cas ; lien à usage unique valable une heure |
-| Longueur minimale du mot de passe | ⚠️ | 6 caractères (minimum de Supabase par défaut) ; 8 serait mieux |
+| Longueur minimale du mot de passe | ✅ | 8 caractères, vérifiés par l'app (`PASSWORD_MIN_LENGTH`, testé) et par Supabase (réglage du projet) |
 | Limitation des tentatives (force brute) | ✅ | Limites de Supabase Auth sur la connexion et l'envoi d'e-mails |
 
 ### Réseau (MASVS-NETWORK)
@@ -93,12 +93,9 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 
 ### Points à améliorer
 
-1. **Jeton de session chiffré.** Le garder dans le trousseau du téléphone (`expo-secure-store` : Keychain sur iOS, Keystore sur Android) au lieu de la base SQLite. Demande un module natif, donc une recompilation.
-2. **Sauvegarde Android.** Exclure les données de l'app de la sauvegarde Google (`android.allowBackup: false` dans `app.json`), pour qu'un jeton ne soit pas restauré sur un autre téléphone.
-3. **Mot de passe de 8 caractères au moins.** Réglage Supabase (Authentication > Providers > Email) et message de l'app.
-4. **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app sort des stores de test.
+- **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app est publiée sur les stores.
 
-Les points 1 à 3 sont prévus juste après cette checklist.
+Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le trousseau chiffré, la sauvegarde Android est désactivée, et le mot de passe demande 8 caractères.
 
 
 ## Secrets et clés
@@ -121,9 +118,9 @@ Les points 1 à 3 sont prévus juste après cette checklist.
 ## Comptes
 
 - Connexion par e-mail et mot de passe (Supabase Auth). Les mots de passe sont stockés chiffrés par Supabase ; l'app ne les garde pas.
-- Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe d'au moins 6 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
-- Mot de passe d'au moins 6 caractères à la création. Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
-- La session (jeton) est gardée sur le téléphone, dans la base SQLite privée de l'app (non chiffrée, voir « Points à améliorer »), et renouvelée seulement tant que l'app est ouverte.
+- Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe d'au moins 8 caractères. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
+- Mot de passe d'au moins 8 caractères à la création (vérifié par l'app et par Supabase ; un compte plus ancien de 6 caractères peut toujours se connecter). Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
+- La session (jeton) est gardée dans le trousseau chiffré du téléphone (Keychain, Keystore), jamais copiée vers un autre appareil, et renouvelée seulement tant que l'app est ouverte. Les données de l'app sont exclues de la sauvegarde Android.
 - Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).
 
 ## Sur le téléphone

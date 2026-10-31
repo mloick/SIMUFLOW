@@ -1,23 +1,21 @@
 /**
  * Client Supabase partagé par toute l'app.
  *
- * La session (le jeton de connexion) est gardée dans `localStorage`, que
- * expo-sqlite fournit sur iOS et Android (le navigateur l'a déjà sur le web) :
- * on reste connecté d'un lancement à l'autre.
+ * La session (le jeton de connexion) est gardée dans le trousseau chiffré du
+ * téléphone (secure-session-storage.ts) : on reste connecté d'un lancement à l'autre.
  */
 
-import './local-storage';
 import 'react-native-url-polyfill/auto';
 
 import { createClient } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './config';
+import { secureSessionStorage } from './secure-session-storage';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    // Absent seulement pendant le rendu des pages web sur le serveur de développement.
-    storage: typeof localStorage === 'undefined' ? undefined : localStorage,
+    storage: secureSessionStorage,
     persistSession: true,
     autoRefreshToken: true,
     // Pas de lien de connexion à lire dans une URL de page web.

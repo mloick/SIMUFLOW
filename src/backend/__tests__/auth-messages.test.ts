@@ -3,7 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { authErrorMessage, checkCredentials, checkNewPassword, parseRecoveryLink } from '../auth-messages';
 
 describe('checkCredentials', () => {
-  const ok = { email: 'camille@exemple.fr', password: 'secret1' };
+  const ok = { email: 'camille@exemple.fr', password: 'secret12' };
 
   it('accepte une adresse et un mot de passe', () => {
     expect(checkCredentials(ok, 'connexion')).toBeNull();
@@ -15,9 +15,11 @@ describe('checkCredentials', () => {
     expect(checkCredentials({ ...ok, email: 'camille.exemple.fr' }, 'connexion')).toMatch(/pas valide/);
   });
 
-  it('demande 6 caractères à la création, pas à la connexion', () => {
-    expect(checkCredentials({ ...ok, password: 'abc' }, 'creation')).toMatch(/au moins 6/);
-    expect(checkCredentials({ ...ok, password: 'abc' }, 'connexion')).toBeNull();
+  it('demande 8 caractères à la création, pas à la connexion', () => {
+    expect(checkCredentials({ ...ok, password: 'abcdefg' }, 'creation')).toMatch(/au moins 8/);
+    expect(checkCredentials({ ...ok, password: 'abcdefgh' }, 'creation')).toBeNull();
+    // Un ancien compte créé avec 6 caractères peut toujours se connecter.
+    expect(checkCredentials({ ...ok, password: 'abcdef' }, 'connexion')).toBeNull();
     expect(checkCredentials({ ...ok, password: '' }, 'connexion')).toMatch(/mot de passe/);
   });
 });
@@ -38,8 +40,8 @@ describe('authErrorMessage', () => {
 });
 
 describe('mot de passe oublié', () => {
-  it('demande un nouveau mot de passe de 6 caractères', () => {
-    expect(checkNewPassword('abc')).toMatch(/au moins 6/);
+  it('demande un nouveau mot de passe de 8 caractères', () => {
+    expect(checkNewPassword('abcdefg')).toMatch(/au moins 8/);
     expect(checkNewPassword('nouveau1')).toBeNull();
   });
 

@@ -3,8 +3,11 @@
  * et traduction en français des erreurs renvoyées par Supabase Auth.
  */
 
-/** Longueur minimale d'un mot de passe (la valeur par défaut de Supabase). */
-export const PASSWORD_MIN_LENGTH = 6;
+/**
+ * Longueur minimale d'un nouveau mot de passe. La même valeur est réglée dans Supabase
+ * (Authentication, longueur minimale du mot de passe), qui la vérifie aussi.
+ */
+export const PASSWORD_MIN_LENGTH = 8;
 
 export type Credentials = { email: string; password: string };
 
