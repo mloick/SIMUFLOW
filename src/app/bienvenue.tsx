@@ -47,8 +47,8 @@ export default function WelcomeScreen() {
 
   const finish = () => {
     setWelcomeSeen();
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
+    // Revient aux onglets, même si la présentation est le premier écran affiché.
+    router.dismissTo('/');
   };
 
   return (

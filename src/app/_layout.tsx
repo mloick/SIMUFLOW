@@ -9,6 +9,9 @@ import { useCloudSync } from '@/data/cloud-sync';
 import { configureNotifications } from '@/notifications/notifications';
 import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
 
+// Les onglets restent toujours sous les écrans modaux (présentation du premier lancement).
+export const unstable_settings = { anchor: '(tabs)' };
+
 SplashScreen.preventAutoHideAsync();
 // Notifications locales : affichées même quand l'app est ouverte.
 configureNotifications();
