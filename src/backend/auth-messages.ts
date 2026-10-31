@@ -3,8 +3,36 @@
  * et traduction en français des erreurs renvoyées par Supabase Auth.
  */
 
-/** Longueur minimale d'un mot de passe (la valeur par défaut de Supabase). */
-export const PASSWORD_MIN_LENGTH = 6;
+/**
+ * Longueur minimale d'un nouveau mot de passe. La même valeur est réglée dans Supabase
+ * (Authentication, longueur minimale du mot de passe), qui la vérifie aussi.
+ */
+export const PASSWORD_MIN_LENGTH = 8;
+
+/** Les symboles que Supabase compte (réglage « lowercase, uppercase, digits and symbols »). */
+const SYMBOLS = '!@#$%^&*()_+-=[]{};\'\\:"|<>?,./`~';
+
+/** La règle d'un nouveau mot de passe, affichée sous le champ. */
+export const PASSWORD_RULE = `Au moins ${PASSWORD_MIN_LENGTH} caractères, avec une minuscule, une majuscule, un chiffre et un symbole.`;
+
+/**
+ * Ce qui manque à un nouveau mot de passe, ou `null`. Mêmes exigences que le réglage
+ * Supabase du projet (longueur et types de caractères), qui les vérifie aussi.
+ */
+export function passwordProblem(password: string): string | null {
+  const missing = [
+    !/[a-z]/.test(password) && 'une minuscule',
+    !/[A-Z]/.test(password) && 'une majuscule',
+    !/[0-9]/.test(password) && 'un chiffre',
+    ![...password].some((char) => SYMBOLS.includes(char)) && 'un symbole (par exemple ! ? # -)',
+  ].filter((item): item is string => Boolean(item));
+  if (password.length < PASSWORD_MIN_LENGTH)
+    return `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+  if (missing.length === 0) return null;
+  const list =
+    missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(', ')} et ${missing[missing.length - 1]}`;
+  return `Il manque au mot de passe ${list}.`;
+}
 
 export type Credentials = { email: string; password: string };
 
@@ -20,18 +48,12 @@ export function checkCredentials({ email, password }: Credentials, mode: 'connex
   const emailProblem = checkEmail(email);
   if (emailProblem) return emailProblem;
   if (!password) return 'Saisissez votre mot de passe.';
-  if (mode === 'creation' && password.length < PASSWORD_MIN_LENGTH) {
-    return `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
-  }
-  return null;
+  return mode === 'creation' ? passwordProblem(password) : null;
 }
 
 /** Un problème dans le nouveau mot de passe (mot de passe oublié), ou `null`. */
 export function checkNewPassword(password: string): string | null {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Le nouveau mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
-  }
-  return null;
+  return passwordProblem(password);
 }
 
 /** Ce que contient le lien « Mot de passe oublié » qui rouvre l'app. */
@@ -66,7 +88,7 @@ const MESSAGES: Record<string, string> = {
   email_not_confirmed: "Confirmez d'abord votre adresse : ouvrez le lien reçu par e-mail.",
   user_already_exists: 'Un compte existe déjà avec cette adresse. Connectez-vous.',
   email_exists: 'Un compte existe déjà avec cette adresse. Connectez-vous.',
-  weak_password: `Mot de passe trop faible : au moins ${PASSWORD_MIN_LENGTH} caractères.`,
+  weak_password: `Mot de passe trop faible. ${PASSWORD_RULE}`,
   email_address_invalid: "Cette adresse e-mail n'est pas acceptée.",
   over_email_send_rate_limit: "Trop d'e-mails envoyés. Réessayez dans une heure.",
   over_request_rate_limit: 'Trop de tentatives. Patientez quelques minutes.',

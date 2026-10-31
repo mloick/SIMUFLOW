@@ -24,7 +24,8 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "allowBackup": false
     },
     "web": {
       "output": "server",
@@ -63,6 +64,12 @@
           "enableRemoteNotifications": false,
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#007ec5"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
         }
       ]
     ],

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { signIn, signUp } from '@/backend/auth';
-import { checkCredentials } from '@/backend/auth-messages';
+import { checkCredentials, PASSWORD_RULE } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
 import { ResetPasswordForm } from '@/components/reset-password-form';
 import { SimuflowLogo } from '@/components/simuflow-logo';
@@ -142,7 +142,7 @@ export default function SignInScreen() {
             value={password}
             onChangeText={setPassword}
             accessibilityLabel="Mot de passe"
-            accessibilityHint={creating ? 'Au moins 6 caractères.' : undefined}
+            accessibilityHint={creating ? PASSWORD_RULE : undefined}
             secureTextEntry
             autoCapitalize="none"
             autoComplete={creating ? 'new-password' : 'current-password'}
@@ -154,7 +154,7 @@ export default function SignInScreen() {
           />
           {creating ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Au moins 6 caractères.
+              {PASSWORD_RULE}
             </ThemedText>
           ) : (
             <Pressable
