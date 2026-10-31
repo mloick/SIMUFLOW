@@ -35,7 +35,9 @@ src/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
+  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes et en cellules (rows.ts) ; tests dans __tests__/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
+modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo, Swift avec Vision ; Kotlin à venir)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
@@ -341,11 +343,36 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-La lecture du texte de la photo (module natif Swift avec Vision, Kotlin avec ML Kit) est l'étape suivante.
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Le texte lu est rangé en lignes de tableau par `groupRows` (`src/scan/rows.ts`) et affiché sous la photo, une ligne par rangée, cellules séparées par « · », avec « Tableau lu : 5 lignes, 3 colonnes. ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (Android pour l'instant, web), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
 
 ![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
+
+![Scanner : le tableau 1 des exemples photographié, puis le texte lu rangé en lignes et en colonnes](captures/etape-10b-lecture.png)
+
+### Module natif de lecture du texte (`modules/text-recognition/`)
+
+Un module Expo local (Expo Modules API), écrit pour l'app. Expo le trouve seul dans `modules/` (autoliaison, pas de dépendance à ajouter) ; il est compilé avec l'app, donc il faut refaire `npx expo prebuild --clean --platform ios` puis recompiler. Il ne marche pas dans Expo Go.
+
+| Fichier | Rôle |
+| --- | --- |
+| `expo-module.config.json` | Déclare le module pour iOS (`TextRecognitionModule`) |
+| `ios/TextRecognition.podspec` | Le pod : iOS 16.4, dépend d'`ExpoModulesCore` et du framework `Vision` |
+| `ios/TextRecognitionModule.swift` | Le code natif |
+| `index.ts` | Le côté JavaScript : `recognizeText(uri)` et `isTextRecognitionAvailable` |
+
+**Côté Swift.** Le module s'appelle `TextRecognition` et expose une fonction asynchrone `recognizeTextAsync(uri)`, exécutée hors du fil principal (l'interface ne gèle pas). Elle :
+
+1. ouvre la photo à partir de son adresse de fichier (`UIImage(contentsOfFile:)`), sinon lève `ImageNotReadableException` (« La photo n'a pas pu être lue », avec son chemin) ;
+2. lance une requête Vision `VNRecognizeTextRequest` en mode précis (`.accurate`), avec correction de la langue, pour le français puis l'anglais, en tenant compte du sens de la photo (orientation EXIF convertie en `CGImagePropertyOrientation`) ;
+3. renvoie, pour chaque morceau de texte trouvé, le texte le plus probable, sa confiance (0 à 1) et sa boîte en fraction de l'image. Vision compte la hauteur depuis le bas : le module la retourne (`y = 1 - maxY`) pour que l'origine soit en haut à gauche, comme à l'écran.
+
+Tout se passe sur le téléphone : aucun envoi réseau, aucun service extérieur.
+
+**Côté JavaScript.** `index.ts` charge le module avec `requireOptionalNativeModule('TextRecognition')`, qui renvoie `null` au lieu de planter là où il n'existe pas. `isTextRecognitionAvailable` permet à l'écran de le dire.
+
+**Ranger en tableau** (`src/scan/rows.ts`, TypeScript pur, testé). Vision rend des morceaux de texte en vrac, chacun avec sa boîte. `groupRows` les regroupe en lignes : deux morceaux sont sur la même ligne si leurs centres verticaux sont à moins de 0,6 fois la hauteur du plus petit. Chaque ligne est ensuite triée de gauche à droite (une cellule par morceau), et les lignes de haut en bas. `tableSize` donne le nombre de lignes et de colonnes (la ligne la plus remplie). Trois tests : un tableau en désordre, une photo légèrement penchée, et un texte vide.
 
 ## Écran Simulation
 
