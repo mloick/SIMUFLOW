@@ -6,8 +6,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors } from '@/constants/theme';
 import { useCloudSync } from '@/data/cloud-sync';
+import { configureNotifications } from '@/notifications/notifications';
 
 SplashScreen.preventAutoHideAsync();
+// Notifications locales : affichées même quand l'app est ouverte.
+configureNotifications();
 
 /** Thème de navigation (en-têtes, fonds) construit à partir des couleurs SimuFlow. */
 function navigationTheme(scheme: 'light' | 'dark') {

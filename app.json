@@ -56,6 +56,14 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "enableRemoteNotifications": false,
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#007ec5"
+        }
       ]
     ],
     "experiments": {

@@ -165,6 +165,12 @@ Les corrections et nouveautés qui ne touchent pas aux fonctions du téléphone 
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
+## Notifications · En cours
+
+Dans le **Profil**, la section **Notifications** a un interrupteur **Rappels d'échéance**. La première fois, le téléphone demande l'autorisation. Touchez **Envoyer une notification d'essai** : elle arrive 5 secondes plus tard, même téléphone verrouillé. Les notifications sont programmées par le téléphone lui-même, sans serveur. Bientôt : suivre un process en vrai, et être prévenu avant et après l'échéance de chaque étape (en jours ouvrés).
+
+![Profil : la section Notifications, en clair et en sombre](captures/etape-11a-notifications.png)
+
 ## Partager et valider · Prévue
 
 Partagez un process avec vos collègues. Vous recevez une notification quand quelqu'un valide ou commente une étape.

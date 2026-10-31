@@ -20,6 +20,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | expo-sqlite | 58 (`localStorage` pour garder la session Supabase) |
 | expo-network | 58 (état du réseau : hors connexion réel, synchronisation au retour du réseau ; module natif, l'app compilée par Xcode doit être recompilée) |
 | expo-camera | 58 (appareil photo de l'onglet Scanner ; module natif, l'app doit être recompilée) |
+| expo-notifications | 58 (notifications locales : rappels d'échéance ; module natif, l'app doit être recompilée) |
 
 ## Structure du dépôt
 
@@ -36,6 +37,7 @@ src/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
   scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
+  notifications/ Notifications locales : autorisation, canal Android, notification d'essai (notifications.ts, et notifications.web.ts pour le web), réglage « Rappels d'échéance » (settings.ts)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
@@ -409,6 +411,20 @@ Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de 
 4. recolle une **cellule écrite sur deux lignes** : une ligne serrée contre la précédente (moins de 0,7 fois l'écart habituel) avec du texte dans une seule colonne complète la cellule du dessus.
 
 Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), le nombre de lignes de texte ignorées, et le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes (au plus 3 fois la hauteur du texte), qui n'est pas lui-même un titre de colonne. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
+
+## Notifications (`src/notifications/`)
+
+Des **notifications locales** : le téléphone les programme et les affiche lui-même, sans serveur, avec `expo-notifications`. Elles serviront à suivre un process en vrai : un rappel avant et après l'échéance de chaque étape. Pas de notification « push » envoyée par un serveur : sur iPhone, il faudrait un compte Apple Developer payant. Le plugin est donc configuré sans elles.
+
+- **Configuration** (`app.json`, plugin `expo-notifications`) : `enableRemoteNotifications: false`, ce qui évite l'autorisation « Push Notifications » qu'un compte Apple gratuit ne peut pas signer. Sur Android, `icon` (l'icône monochrome de l'app) et `color` (#007ec5) pour la barre d'état. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
+- **Au démarrage** (`configureNotifications`, appelé dans `src/app/_layout.tsx`) : `setNotificationHandler` affiche aussi les notifications quand l'app est ouverte (bannière, liste, son). Sur Android, un canal « Échéances des process » (`echeances`, importance haute) que l'utilisateur peut régler dans les réglages du téléphone.
+- **Autorisation** : `getNotificationPermission` la lit sans rien demander, `requestNotificationPermission` affiche la fenêtre du système (une seule fois). Les deux rendent `granted`, `denied` (refusée pour de bon) ou `undetermined` (pas encore demandée). Une autorisation « provisoire » d'iOS compte comme accordée.
+- **Notification d'essai** (`sendTestNotification`) : programmée 5 secondes plus tard (`TIME_INTERVAL`), le temps de verrouiller le téléphone.
+- **Web** : `notifications.web.ts` répond `unavailable` ; le Profil le dit.
+
+**Profil, section « Notifications ».** Un interrupteur « Rappels d'échéance », activé par défaut et gardé sur le téléphone (`settings.ts`, `localStorage`). L'activer demande l'autorisation si elle n'a jamais été demandée ; le couper retire les notifications programmées (`cancelAllScheduledNotificationsAsync`). Quand tout est accordé, « Envoyer une notification d'essai ». Une phrase dit l'état : autorisation refusée (avec « Ouvrir les réglages »), à demander, notification envoyée. L'autorisation est relue au retour dans l'app (`AppState`), si l'utilisateur l'a changée dans les réglages.
+
+![Profil : la section Notifications, notification d'essai envoyée (clair) et mode sombre](captures/etape-11a-notifications.png)
 
 ## Écran Simulation
 
