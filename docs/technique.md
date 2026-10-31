@@ -1,10 +1,10 @@
 # Documentation technique
 
-Ce document décrit le code tel qu'il est aujourd'hui, puis l'architecture visée. Il est mis à jour à chaque modification du code (voir « Mise à jour de la documentation » en bas).
+Ce document décrit le code tel qu'il est aujourd'hui. Il est mis à jour à chaque modification du code (voir « Mise à jour de la documentation » en bas).
 
 ## État actuel
 
-Le squelette de navigation est en place : tous les écrans de la maquette existent et sont reliés entre eux. Le cœur du simulateur (`src/domain/`) est codé et testé : types d'un process, diagnostic des anomalies et calcul des chemins. Les écrans Liste des process, Détail d'un process, Importer, Simulation et Connexion suivent la maquette : la liste affiche des process fictifs et ceux importés depuis un fichier draw.io ou JSON, enregistrés sur le téléphone ; les autres écrans n'affichent encore qu'un titre, une description et des liens.
+Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la maquette sont construits : liste des process, détail, import (fichier draw.io ou JSON, aperçu corrigeable), éditeur, simulation (pas à pas et tous les chemins), export (PDF, draw.io, JSON), suivi d'une vraie demande, scanner (module natif de lecture de texte), connexion et mot de passe oublié, présentation du premier lancement et profil. Le backend Supabase garde les comptes, les process et les règles de lecture, avec synchronisation et hors connexion. L'app est testée (tests unitaires, de composants, de bout en bout) et vérifiée à chaque pull request.
 
 | Élément | Version |
 | --- | --- |
@@ -716,19 +716,20 @@ Le `.gitignore` exclut, en plus des fichiers générés :
 - les secrets : `.env` et ses variantes (sauf `.env.example`), clés et certificats (`*.key`, `*.p8`, `*.p12`, `*.pem`, `*.jks`, `*.keystore`, `*.mobileprovision`), `credentials.json`, `google-services.json`, `GoogleService-Info.plist` ;
 - l'état local de Claude Code : le dossier `.claude/` et `CLAUDE.local.md`. `CLAUDE.md` et `AGENTS.md` restent versionnés, car ils portent les règles du projet.
 
-## Architecture visée
+## Architecture
 
-Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript pur et testé séparément (voir « Cœur du simulateur »).
+Le schéma d'ensemble et les choix techniques sont dans le README. Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript pur et testé séparément (voir « Cœur du simulateur »).
 
-| Dossier prévu | Rôle |
+| Dossier | Rôle |
 | --- | --- |
-| `src/domain/` | Types du process, règles du diagnostic, calcul des chemins (fait) |
-| `src/import/` | Lecture des fichiers draw.io et JSON (fait) ; les tableaux scannés passent par `src/scan/` |
-| `src/export/` | Export en PDF, draw.io et JSON (fait) |
-| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
+| `src/domain/` | Types du process, règles du diagnostic, calcul des chemins, modifications de l'éditeur |
+| `src/import/` | Lecture des fichiers draw.io et JSON, règles de lecture apprises ; les tableaux scannés passent par `src/scan/` |
+| `src/export/` | Export en PDF, draw.io et JSON |
+| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins |
+| `src/scan/`, `src/tracking/` | Tableau photographié transformé en process ; échéances en jours ouvrés d'une vraie demande |
 | `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion, la suppression du compte et la synchronisation des process importés sont en place.
+Backend : Supabase (voir « Backend Supabase ») : comptes, tables `processes` et `reading_rules` protégées par la Row Level Security, suppression du compte, synchronisation.
 
 ## Tests de composants (`src/components/__tests__/`)
 
