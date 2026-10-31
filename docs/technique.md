@@ -736,7 +736,7 @@ brew install mobile-dev-inc/tap/maestro
 
 Puis, l'app installée dans le Simulateur (`npm run ios:simulateur`) et `npx expo start` en marche dans un terminal, dans un autre terminal : `npm run e2e`. Maestro affiche chaque action en vert ou en rouge.
 
-Le même parcours a été rejoué dans la version web avec Playwright (mêmes libellés) pour vérifier les textes et le résultat attendu. Maestro ne tourne pas dans la CI GitHub, qui n'a pas de Simulateur iOS.
+Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`. Le parcours avait d'abord été rejoué dans la version web avec Playwright (mêmes libellés). Un disque presque plein empêche de compiler pour le Simulateur (« No space left on device ») : il faut environ 10 Go libres. Maestro ne tourne pas dans la CI GitHub, qui n'a pas de Simulateur iOS.
 
 ## Vérifications automatiques (CI)
 
