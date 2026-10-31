@@ -7,6 +7,7 @@ import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors } from '@/constants/theme';
 import { useCloudSync } from '@/data/cloud-sync';
 import { configureNotifications } from '@/notifications/notifications';
+import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
 
 SplashScreen.preventAutoHideAsync();
 // Notifications locales : affichées même quand l'app est ouverte.
@@ -33,6 +34,8 @@ export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   // Process importés synchronisés avec le compte connecté.
   useCloudSync();
+  // Rappels d'échéance des demandes suivies, et ouverture d'un suivi depuis un rappel.
+  useDeadlineReminders();
   return (
     // Racine des gestes (pincer et glisser sur le schéma).
     <GestureHandlerRootView style={styles.root}>
