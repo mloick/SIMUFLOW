@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Politique de confidentialité · SimuFlow</title>
+  <meta name="description" content="Quelles données SimuFlow utilise, où elles sont gardées, et comment les supprimer.">
+  <link rel="icon" href="logo/simuflow-symbole.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+  <header class="haut">
+    <img src="logo/simuflow-symbole.svg" alt="">
+    <a href="./">SimuFlow</a>
+    <nav class="liens"><a href="./">Accueil</a><a href="https://github.com/mloick/SIMUFLOW">Code</a></nav>
+  </header>
+
+  <main>
+    <h1>Politique de confidentialité</h1>
+    <p class="petit">Dernière mise à jour : 31 octobre 2026. S'applique à l'app SimuFlow pour iPhone et Android, version 1.0.</p>
+
+    <h2>En bref</h2>
+    <ul>
+      <li>Sans compte, tout reste sur votre téléphone.</li>
+      <li>Avec un compte, seuls votre adresse e-mail, vos process importés et vos règles de lecture sont envoyés au serveur, hébergé en Union européenne (Paris). Vous seul y avez accès.</li>
+      <li>Les photos du Scanner sont lues sur le téléphone et ne sont envoyées nulle part.</li>
+      <li>Pas de publicité, pas de mesure d'audience, aucune donnée vendue ni partagée.</li>
+      <li>Vous pouvez supprimer votre compte et tout ce qu'il contient depuis l'app, à tout moment.</li>
+    </ul>
+
+    <h2>Qui est responsable</h2>
+    <p>SimuFlow est développée par Loick, étudiant en Master 2, dans le cadre d'un projet de développement mobile. Pour toute question ou demande sur vos données, ouvrez un ticket sur la <a href="https://github.com/mloick/SIMUFLOW/issues">page du projet</a>.</p>
+
+    <h2>Les données, une par une</h2>
+    <div class="tableau">
+    <table>
+      <tr><th>Donnée</th><th>Pourquoi</th><th>Où elle est gardée</th></tr>
+      <tr><td>Adresse e-mail et mot de passe</td><td>Créer votre compte et vous connecter. Le mot de passe est stocké chiffré ; l'app ne le garde pas.</td><td>Serveur (Supabase, Paris), seulement si vous créez un compte</td></tr>
+      <tr><td>Process importés (étapes, acteurs, délais, liens)</td><td>Les retrouver sur tous vos appareils.</td><td>Téléphone ; et serveur si vous êtes connecté</td></tr>
+      <tr><td>Règles de lecture apprises de vos corrections</td><td>Corriger tout seul les imports suivants.</td><td>Téléphone ; et serveur si vous êtes connecté</td></tr>
+      <tr><td>Photos du Scanner et texte lu</td><td>Transformer un tableau en process. La lecture se fait sur le téléphone (Vision sur iPhone, ML Kit sur Android), sans Internet.</td><td>Dossier temporaire de l'app, sur le téléphone uniquement</td></tr>
+      <tr><td>Demandes suivies et leurs échéances</td><td>Calculer les échéances et programmer les rappels.</td><td>Téléphone uniquement</td></tr>
+      <tr><td>Réglages (rappels, exemples, présentation vue)</td><td>Garder vos choix d'un lancement à l'autre.</td><td>Téléphone uniquement</td></tr>
+    </table>
+    </div>
+    <p>Les process et les règles enregistrés sur le serveur sont protégés par des règles d'accès : chaque compte ne voit que les siens, et rien n'est lisible sans connexion.</p>
+
+    <h2>Autorisations du téléphone</h2>
+    <ul>
+      <li><strong>Appareil photo</strong> : demandé à la première ouverture du Scanner, uniquement pour photographier un tableau. Ni micro, ni photothèque.</li>
+      <li><strong>Notifications</strong> : demandées au premier rappel d'échéance. Elles sont programmées par le téléphone lui-même ; aucun serveur ne vous en envoie. Vous pouvez les couper dans le Profil.</li>
+    </ul>
+
+    <h2>Services utilisés</h2>
+    <ul>
+      <li><strong>Supabase</strong> (hébergement du serveur et des comptes, région Paris) : reçoit les données du compte décrites plus haut.</li>
+      <li><strong>Expo (EAS Update)</strong> : au lancement, l'app demande s'il existe une mise à jour. Cette demande contient des informations techniques (version de l'app, système du téléphone), pas vos données.</li>
+    </ul>
+    <p>Aucun autre service ne reçoit de données de l'app.</p>
+
+    <h2>Combien de temps</h2>
+    <p>Les données du compte sont gardées tant que le compte existe. Sur le téléphone, elles sont gardées jusqu'à la déconnexion (les copies du compte sont alors retirées) ou la désinstallation de l'app.</p>
+
+    <h2>Vos droits</h2>
+    <p>Vous pouvez à tout moment consulter vos process dans l'app, les modifier, les supprimer, et <strong>supprimer votre compte</strong> : Profil, puis « Supprimer mon compte ». Le compte, vos process et vos règles sont alors effacés du serveur et du téléphone. Pour toute autre demande (accès, rectification, opposition), écrivez via la <a href="https://github.com/mloick/SIMUFLOW/issues">page du projet</a>. Vous pouvez aussi adresser une réclamation à la CNIL.</p>
+
+    <h2>Changements</h2>
+    <p>Si cette politique change, la date en haut de la page est mise à jour, et le changement est visible dans l'historique du <a href="https://github.com/mloick/SIMUFLOW">code source</a>.</p>
+  </main>
+
+  <footer>
+    SimuFlow, projet de Master 2 (développement mobile). · <a href="./">Accueil</a> · <a href="https://github.com/mloick/SIMUFLOW">Code source</a>
+  </footer>
+</div>
+</body>
+</html>

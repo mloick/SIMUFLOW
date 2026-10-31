@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SimuFlow : rejouez vos process avant de les lancer</title>
+  <meta name="description" content="SimuFlow est une app mobile qui importe un schéma de process (draw.io, photo d'un tableau) et le rejoue étape par étape pour le valider.">
+  <link rel="icon" href="logo/simuflow-symbole.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+  <header class="haut">
+    <img src="logo/simuflow-symbole.svg" alt="">
+    <a href="./">SimuFlow</a>
+    <nav class="liens"><a href="confidentialite.html">Confidentialité</a><a href="https://github.com/mloick/SIMUFLOW">Code</a></nav>
+  </header>
+
+  <main>
+    <h1>Rejouez vos process avant de les mettre en place.</h1>
+    <p class="accroche">SimuFlow lit le schéma d'un process (fichier draw.io, JSON, ou photo d'un tableau), le rejoue étape par étape et vous montre ce qui cloche : impasses, étapes isolées, chemins sans fin. Une app iPhone et Android, en français.</p>
+    <p><a class="bouton" href="https://github.com/mloick/SIMUFLOW#getting-started">Installer l'app</a><a class="bouton second" href="confidentialite.html">Vos données</a></p>
+
+    <figure>
+      <img src="captures/etape-6-simulation.png" alt="Écrans de simulation : le schéma s'allume étape par étape et chaque décision demande quelle branche suivre.">
+      <figcaption>La simulation : le schéma s'allume au fil du parcours.</figcaption>
+    </figure>
+
+    <h2>Ce que fait l'app</h2>
+    <div class="cartes">
+      <div class="carte"><h3>Importer</h3><p>Un fichier draw.io ou JSON, quel que soit le style du dessin. Les acteurs viennent des couloirs, d'une légende ou du texte.</p></div>
+      <div class="carte"><h3>Scanner</h3><p>Photographiez un tableau (étape, acteur, délai) : le texte est lu sur le téléphone, sans Internet.</p></div>
+      <div class="carte"><h3>Rejouer</h3><p>Pas à pas, cas simple, cas complexe, ou tous les chemins avec le chemin critique.</p></div>
+      <div class="carte"><h3>Corriger</h3><p>Renommez, ajoutez, supprimez. L'app retient vos corrections pour les imports suivants.</p></div>
+      <div class="carte"><h3>Suivre une vraie demande</h3><p>Échéance de chaque étape en jours ouvrés, et rappel le matin du jour J.</p></div>
+      <div class="carte"><h3>Exporter</h3><p>En PDF, en draw.io ou en JSON, pour partager le schéma validé.</p></div>
+    </div>
+
+    <h2>Pour qui ?</h2>
+    <p>Les équipes qui écrivent des procédures (support, service client, services internes) et veulent vérifier qu'elles tiennent debout avant de les déployer.</p>
+
+    <h2>Vos données</h2>
+    <p>Sans compte, tout reste sur votre téléphone. Avec un compte, vos process sont enregistrés sur un serveur en Union européenne (Paris), visibles par vous seul, et supprimés avec votre compte depuis l'app. Pas de publicité, pas de mesure d'audience. <a href="confidentialite.html">Lire la politique de confidentialité</a>.</p>
+  </main>
+
+  <footer>
+    SimuFlow, projet de Master 2 (développement mobile). Tous les exemples sont fictifs.
+    · <a href="confidentialite.html">Confidentialité</a> · <a href="https://github.com/mloick/SIMUFLOW">Code source</a>
+  </footer>
+</div>
+</body>
+</html>

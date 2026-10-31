@@ -1,12 +1,14 @@
 import Constants from 'expo-constants';
 import { Link } from 'expo-router';
 import * as Updates from 'expo-updates';
+import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { deleteAccount, signOut, useSession } from '@/backend/auth';
 import { checkServer, type ServerStatus } from '@/backend/health';
 import { ThemedText } from '@/components/themed-text';
+import { PRIVACY_URL } from '@/constants/links';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
@@ -469,7 +471,8 @@ function ServerRow() {
 }
 
 /**
- * À propos : l'état du serveur, la présentation à revoir, et la version de l'app
+ * À propos : l'état du serveur, la présentation à revoir, la politique de confidentialité,
+ * et la version de l'app
  * avec la date de la mise à jour à distance (EAS Update) en cours, s'il y en a une.
  */
 function About() {
@@ -490,6 +493,14 @@ function About() {
         <Link href="/bienvenue" accessibilityRole="button" style={styles.row}>
           <ThemedText type="link">Revoir la présentation →</ThemedText>
         </Link>
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <Pressable
+          onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
+          accessibilityRole="link"
+          accessibilityHint="Ouvre la page dans le navigateur."
+          style={styles.row}>
+          <ThemedText type="link">Politique de confidentialité ↗</ThemedText>
+        </Pressable>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={styles.row}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>

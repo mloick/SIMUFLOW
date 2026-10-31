@@ -17,7 +17,7 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 - **Process** : la liste des process importés, avec leur état de diagnostic.
 - **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique. Le schéma s'exporte en PDF, en fichier draw.io ou en JSON.
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
-- **Profil** : le compte et la synchronisation, les rappels d'échéance, le réglage des exemples, les règles de lecture apprises, et une section « À propos » (état du serveur, revoir la présentation, version de l'app).
+- **Profil** : le compte et la synchronisation, les rappels d'échéance, le réglage des exemples, les règles de lecture apprises, et une section « À propos » (état du serveur, revoir la présentation, politique de confidentialité, version de l'app).
 
 La maquette complète est dans [`docs/maquette/`](docs/maquette/).
 
@@ -55,6 +55,7 @@ Les fichiers sensibles (`.env`, clés, certificats) et les fichiers locaux de Cl
 - [Guide des fonctionnalités](docs/fonctionnalites.md) : ce que fait l'application, en termes simples.
 - [Sécurité](docs/securite.md) : clés, règles d'accès, comptes, données sur le téléphone.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, MCP) et comment nous travaillons avec.
+- [Site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/` et publiés par GitHub Pages.
 
 ## Technologies
 

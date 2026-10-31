@@ -143,7 +143,7 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **À propos** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
 
-**Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
+**Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Sous le bouton, une phrase rappelle où vos données sont gardées, avec le lien vers la politique de confidentialité. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
 
 **Mot de passe oublié** : sur l'écran de connexion, touchez **Mot de passe oublié ?**, saisissez votre adresse et touchez **Recevoir un lien**. Ouvrez l'e-mail reçu **sur le téléphone** et touchez son lien : SimuFlow s'ouvre sur **Nouveau mot de passe**. Choisissez-en un et touchez **Enregistrer le mot de passe** : vous êtes connecté. Le lien est valable une heure et ne sert qu'une fois.
 
@@ -207,9 +207,17 @@ Sur l'écran d'accueil du téléphone, SimuFlow a l'icône du logo, le chemin en
 
 Pendant le chargement, la liste « respire » doucement, puis les process apparaissent l'un après l'autre. Si vous avez activé « Réduire les animations » sur votre téléphone, rien ne bouge.
 
+## Vos données et le site · Disponible
+
+SimuFlow a un site, https://mloick.github.io/SIMUFLOW/, qui présente l'app et sa **politique de confidentialité** : quelles données sont utilisées, où elles sont gardées, et comment les supprimer. En bref : sans compte, tout reste sur le téléphone ; avec un compte, votre adresse, vos process et vos règles de lecture sont gardés sur un serveur en Union européenne, visibles par vous seul ; les photos du Scanner ne quittent pas le téléphone. Dans l'app : **Profil**, puis **Politique de confidentialité**.
+
+![Le site : l'accueil et la politique de confidentialité](captures/etape-14a-site.png)
+
+![Le lien dans le Profil, et la phrase à la création du compte](captures/etape-14a-liens-app.png)
+
 ## Le Profil · Disponible
 
-L'onglet **Profil** rassemble, de haut en bas : votre **compte** (connexion, synchronisation, suppression), les **notifications** (rappels d'échéance), la **liste des process** (afficher ou non les exemples), les **règles de lecture apprises**, et **À propos** : l'état du serveur, **Revoir la présentation** et la version de l'app.
+L'onglet **Profil** rassemble, de haut en bas : votre **compte** (connexion, synchronisation, suppression), les **notifications** (rappels d'échéance), la **liste des process** (afficher ou non les exemples), les **règles de lecture apprises**, et **À propos** : l'état du serveur, **Revoir la présentation**, la **Politique de confidentialité** et la version de l'app.
 
 ![Le Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 

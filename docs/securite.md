@@ -38,4 +38,4 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 ## Confidentialité
 
 - Uniquement des exemples fictifs dans l'app, le code et la documentation.
-- Politique de confidentialité : à écrire (étape « Rendu »).
+- Politique de confidentialité publiée sur le site du projet (`docs/site/confidentialite.html`, https://mloick.github.io/SIMUFLOW/confidentialite.html) et ouverte depuis le Profil et l'écran de création de compte. Elle liste chaque donnée, où elle est gardée, les services tiers (Supabase, Expo EAS Update) et la suppression du compte. Pas de publicité ni de mesure d'audience dans l'app.
