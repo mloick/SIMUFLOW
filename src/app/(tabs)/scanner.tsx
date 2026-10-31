@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
-import { useIsFocused } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -9,8 +9,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { addImportedProcess } from '@/data/process-store';
+import { applyReadingRules } from '@/data/rules-store';
 import { groupRows, type TableRow } from '@/scan/rows';
 import { findTable, type ScannedTable } from '@/scan/table';
+import { tableToProcess } from '@/scan/to-process';
 import { plural } from '@/utils/format';
 
 import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text-recognition';
@@ -23,8 +26,8 @@ import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text
  * Après la photo, le module natif modules/text-recognition (Vision sur iOS)
  * recadre la photo sur le document et en lit le texte, sur le téléphone. Le
  * texte est rangé en lignes (src/scan/rows.ts), puis seul le tableau est gardé,
- * à partir de sa ligne d'en-tête (src/scan/table.ts). La transformation en
- * process viendra ensuite.
+ * à partir de sa ligne d'en-tête (src/scan/table.ts). « Créer le process » le
+ * transforme en process (src/scan/to-process.ts), ajouté à la liste.
  */
 
 /** Couleurs fixes de l'écran photo (sombre dans les deux thèmes). */
@@ -60,6 +63,14 @@ export default function ScannerScreen() {
     } catch {
       setReading({ state: 'error' });
     }
+  };
+
+  /** Crée le process du tableau trouvé et ouvre sa fiche ; avec `correct`, ouvre l'éditeur par-dessus. */
+  const create = (table: ScannedTable, correct: boolean) => {
+    const process = saveScannedProcess(table);
+    retake();
+    router.push({ pathname: '/process/[id]', params: { id: process.id } });
+    if (correct) router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } });
   };
 
   const retake = () => {
@@ -138,9 +149,32 @@ export default function ScannerScreen() {
             ))}
           </ScrollView>
         )}
-        <View style={styles.full}>
-          <PrimaryButton label="Reprendre la photo" onPress={retake} />
-        </View>
+        {done?.table && done.table.rows.length > 0 ? (
+          <View style={styles.actions}>
+            <PrimaryButton label="Créer le process" onPress={() => create(done.table!, false)} />
+            <View style={styles.links}>
+              <Pressable onPress={retake} accessibilityRole="button" hitSlop={8} style={styles.link}>
+                <ThemedText type="link" style={styles.accent}>
+                  Reprendre la photo
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => create(done.table!, true)}
+                accessibilityRole="button"
+                accessibilityHint="Crée le process puis ouvre l’éditeur pour corriger la lecture"
+                hitSlop={8}
+                style={styles.link}>
+                <ThemedText type="link" style={styles.accent}>
+                  Créer et corriger
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.full}>
+            <PrimaryButton label="Reprendre la photo" onPress={retake} />
+          </View>
+        )}
       </>
     );
   } else {
@@ -213,6 +247,15 @@ export default function ScannerScreen() {
   );
 }
 
+/** Transforme le tableau en process (règles de lecture apprises comprises) et l'ajoute à la liste. */
+function saveScannedProcess(table: ScannedTable) {
+  const name = table.title ?? `Tableau scanné du ${new Date().toLocaleDateString('fr-FR')}`;
+  const { result } = applyReadingRules(tableToProcess(table, name, `scan-${Date.now()}`));
+  const process = result.processes[0];
+  addImportedProcess(process);
+  return process;
+}
+
 type Reading =
   | { state: 'idle' | 'reading' | 'error' | 'unavailable' }
   | { state: 'done'; rows: TableRow[]; table: ScannedTable | null; cropped?: string };
@@ -231,7 +274,8 @@ function readingText(reading: Reading): string {
       if (!table) return 'Pas de ligne de titres trouvée (Étape, Acteur, Délai…). Voici tout le texte lu :';
       if (table.rows.length === 0) return 'Titres trouvés, mais aucune ligne en dessous. Reprenez la photo.';
       const around = table.ignored > 0 ? ` Texte autour ignoré : ${plural(table.ignored, 'ligne')}.` : '';
-      return `Tableau trouvé : ${plural(table.rows.length, 'étape')}.${around}`;
+      const title = table.title ? ` « ${table.title} »` : '';
+      return `Tableau${title} trouvé : ${plural(table.rows.length, 'étape')}.${around}`;
     }
     default:
       return 'Photo prise.';
@@ -307,6 +351,9 @@ const styles = StyleSheet.create({
   error: { color: '#f4a49c' },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three },
   full: { alignSelf: 'stretch' },
+  actions: { alignSelf: 'stretch', gap: Spacing.two },
+  links: { flexDirection: 'row', justifyContent: 'space-between' },
+  link: { minHeight: 44, justifyContent: 'center' },
   veil: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

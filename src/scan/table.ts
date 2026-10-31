@@ -29,6 +29,8 @@ export type ScannedTable = {
   rows: string[][];
   /** Lignes de texte lues hors du tableau, ignorées. */
   ignored: number;
+  /** Titre écrit juste au-dessus du tableau, s'il y en a un (« Demande de matériel »). */
+  title?: string;
 };
 
 /** Mots d'en-tête reconnus, sans accents ni majuscules. */
@@ -129,5 +131,15 @@ export function findTable(rows: TableRow[]): ScannedTable | null {
     rows: table,
     // Lignes lues avant l'en-tête et après la dernière ligne gardée.
     ignored: rows.length - (lastIndex - headerIndex + 1),
+    title: titleAbove(rows, headerIndex),
   };
+}
+
+/** Le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes. */
+function titleAbove(rows: TableRow[], headerIndex: number): string | undefined {
+  const header = rows[headerIndex];
+  const above = rows[headerIndex - 1];
+  if (!above || above.items.length !== 1 || header.y - above.y > 3 * header.height) return undefined;
+  const text = above.cells[0].trim();
+  return text.length >= 3 && !headerKind(text) ? text : undefined;
 }
