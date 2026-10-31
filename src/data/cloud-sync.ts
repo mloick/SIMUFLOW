@@ -5,8 +5,10 @@
  * Elle se lance quand on se connecte, quand l'app revient au premier plan,
  * quand le réseau revient, après un import ou une suppression, et à la demande
  * (« Synchroniser »).
- * Sans compte, les copies déjà envoyées sont retirées du téléphone : elles sont
- * sur le serveur, et le prochain compte connecté ne doit pas les voir.
+ * Les règles de lecture apprises suivent, après les process (rules-store.ts).
+ * Sans compte, les copies déjà envoyées sont retirées du téléphone (process et
+ * règles) : elles sont sur le serveur, et le prochain compte connecté ne doit
+ * pas les voir.
  */
 
 import { useEffect, useSyncExternalStore } from 'react';
@@ -15,8 +17,10 @@ import { AppState } from 'react-native';
 
 import { useSession } from '@/backend/auth';
 import { createCloudProcess, deleteCloudProcess, listCloudProcesses, updateCloudProcess } from '@/backend/processes';
+import { getCloudRules, saveCloudRules } from '@/backend/reading-rules';
 
 import { getImportEntries, setImportEntries, subscribeImports } from './process-store';
+import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
 
 export type SyncStatus = (
@@ -35,6 +39,21 @@ const api: CloudApi = {
   update: updateCloudProcess,
   remove: deleteCloudProcess,
 };
+
+const rulesApi: RulesApi = { get: getCloudRules, save: saveCloudRules };
+
+/**
+ * Les règles de lecture suivent les process. Un échec (table pas encore créée,
+ * réseau) n'empêche pas la synchronisation des process : elles restent
+ * marquées et repartiront la fois suivante.
+ */
+async function syncRulesQuietly() {
+  try {
+    await syncReadingRules(rulesApi);
+  } catch (error) {
+    if (__DEV__) console.warn('Synchronisation des règles de lecture :', error);
+  }
+}
 
 let status: SyncStatus = { state: 'idle', synced: false };
 const statusListeners = new Set<() => void>();
@@ -68,6 +87,7 @@ export async function syncNow() {
       setImportEntries(mergeAfterSync(before, result, getImportEntries()));
       writing = false;
     } while (again && connected);
+    if (connected) await syncRulesQuietly();
     if (connected) setStatus({ state: 'done', at: new Date(), synced: true });
   } catch (error) {
     // Hors connexion ou serveur injoignable : les changements attendent la prochaine fois.
@@ -89,6 +109,7 @@ function forgetCloudCopies() {
   const entries = getImportEntries();
   const kept = entries.filter((entry) => !entry.cloudId);
   if (kept.length !== entries.length) setImportEntries(kept);
+  forgetCloudRules();
   setStatus({ state: 'idle', synced: false });
 }
 
@@ -124,6 +145,10 @@ export function useCloudSync() {
     const stopImports = subscribeImports(() => {
       if (!writing) syncNow();
     });
+    // Une règle apprise ou oubliée : elle part au compte.
+    const stopRules = subscribeRules(() => {
+      if (hasPendingRules()) syncNow();
+    });
     const stopAppState = AppState.addEventListener('change', (state) => {
       if (state === 'active') syncNow();
     });
@@ -136,6 +161,7 @@ export function useCloudSync() {
     });
     return () => {
       stopImports();
+      stopRules();
       stopAppState.remove();
       stopNetwork.remove();
     };

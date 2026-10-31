@@ -2,7 +2,15 @@ import { describe, expect, it } from '@jest/globals';
 
 import type { Process } from '@/domain';
 
-import { applyRules, describeRule, learnRules, mergeRules, parseRules, type ReadingRule } from '../rules';
+import {
+  applyRules,
+  describeRule,
+  learnRules,
+  mergeRules,
+  parseRules,
+  reconcileRules,
+  type ReadingRule,
+} from '../rules';
 
 const lu: Process = {
   id: 'p',
@@ -92,5 +100,11 @@ describe('appliquer les règles', () => {
   it('relit les règles enregistrées en écartant ce qui est mal formé', () => {
     expect(parseRules([...rules, { type: 'role', shape: 'x', role: 'autre' }, null, 'texte'])).toEqual(rules);
     expect(parseRules('abîmé')).toEqual([]);
+  });
+
+  it('accorde les règles du téléphone et du compte', () => {
+    const [compta, hexagone, achats] = rules;
+    expect(reconcileRules([achats], [compta], false, [])).toEqual([achats]);
+    expect(reconcileRules([achats, hexagone], [compta], true, ['role|hexagon'])).toEqual([achats, compta]);
   });
 });

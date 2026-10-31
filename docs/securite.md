@@ -17,6 +17,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 - Row Level Security activée sur `processes` : chaque compte ne lit, ne crée, ne modifie et ne supprime que ses propres process (`(select auth.uid()) = owner_id`). Le rôle `anon` (sans connexion) n'a aucun droit.
 - La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, étapes et liens sous forme de listes.
 - Règles testées avec deux comptes sur un PostgreSQL local (`supabase/tests/processes_rls.sql`), y compris un test cassé exprès pour vérifier qu'il détecte une faille.
+- Règles de lecture apprises : table `reading_rules`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 500 règles en liste, supprimées avec le compte). Testée de la même façon (`supabase/tests/regles_lecture_rls.sql`).
 
 ## Comptes
 
@@ -28,7 +29,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow. Il est complété �
 ## Sur le téléphone
 
 - Les process importés sont enregistrés dans le dossier Documents de l'app, inaccessible aux autres apps.
-- À la déconnexion ou à la suppression du compte, les copies des process du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
+- À la déconnexion ou à la suppression du compte, les copies des process et des règles de lecture du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
 - Les fichiers importés (draw.io, JSON) sont lus comme des données : un fichier abîmé ou inattendu est refusé avec un message, sans planter l'app.
 
 ## Confidentialité

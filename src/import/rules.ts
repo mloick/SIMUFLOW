@@ -19,7 +19,8 @@ export type ReadingRule = { type: 'actor'; from: string; to: string } | { type: 
 const key = (text: string) => text.trim().toLocaleLowerCase('fr');
 
 /** Identité d'une règle : une nouvelle règle sur le même acteur ou la même forme remplace l'ancienne. */
-const ruleKey = (rule: ReadingRule) => (rule.type === 'actor' ? `actor|${key(rule.from)}` : `role|${rule.shape}`);
+export const ruleKey = (rule: ReadingRule) =>
+  rule.type === 'actor' ? `actor|${key(rule.from)}` : `role|${rule.shape}`;
 
 /** Formes de base : il en faut plusieurs, toutes corrigées pareil, pour en tirer une règle. */
 const BASIC_SHAPES = new Set(['rectangle', 'rounded']);
@@ -68,6 +69,25 @@ export function learnRules(before: Process, after: Process): ReadingRule[] {
 export function mergeRules(existing: ReadingRule[], learned: ReadingRule[]): ReadingRule[] {
   const replaced = new Set(learned.map(ruleKey));
   return [...existing.filter((rule) => !replaced.has(ruleKey(rule))), ...learned];
+}
+
+/**
+ * Règles après une synchronisation : sans changement local en attente, celles du
+ * serveur ; sinon celles du serveur, moins les règles oubliées ici, plus celles
+ * apprises ici (qui l'emportent sur le même acteur ou la même forme).
+ */
+export function reconcileRules(
+  server: ReadingRule[],
+  local: ReadingRule[],
+  pending: boolean,
+  forgotten: string[],
+): ReadingRule[] {
+  if (!pending) return server;
+  const gone = new Set(forgotten);
+  return mergeRules(
+    server.filter((rule) => !gone.has(ruleKey(rule))),
+    local,
+  );
 }
 
 /** Applique les règles à un process lu. Renvoie le process et la phrase de chaque règle qui a servi. */

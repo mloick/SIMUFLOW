@@ -107,6 +107,7 @@ function Account() {
 function ReadingRules() {
   const theme = useTheme();
   const rules = useReadingRules();
+  const session = useSession();
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
@@ -141,6 +142,11 @@ function ReadingRules() {
           })
         )}
       </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        {session
+          ? 'Gardées sur ce téléphone et sur votre compte.'
+          : 'Gardées sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.'}
+      </ThemedText>
     </View>
   );
 }

@@ -62,9 +62,11 @@ Quand vous corrigez un process importé, SimuFlow retient ce qui vaut pour tout 
 - un **acteur renommé partout** (par exemple « Serv. compta » devient « Comptabilité » sur toutes ses étapes) ;
 - une **forme qui a un sens chez vous** (par exemple, tous vos hexagones sont des décisions).
 
-Une correction faite sur une seule étape reste ponctuelle : elle n'apprend rien. À l'import, l'aperçu indique **Corrigé d'après vos corrections précédentes** et dit ce qui a été appliqué. Retrouvez ces règles dans l'onglet **Profil**, et touchez **Oublier** pour en retirer une. Elles sont gardées sur le téléphone ; bientôt, aussi sur votre compte.
+Une correction faite sur une seule étape reste ponctuelle : elle n'apprend rien. À l'import, l'aperçu indique **Corrigé d'après vos corrections précédentes** et dit ce qui a été appliqué. Retrouvez ces règles dans l'onglet **Profil**, et touchez **Oublier** pour en retirer une. Elles sont gardées sur le téléphone et, si vous êtes connecté, sur votre compte : vous les retrouvez sur vos autres appareils.
 
 ![Un import corrigé d'après les règles, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
+
+![Les règles dans Profil, avant connexion](captures/etape-L3b-compte.png)
 
 ## Voir les problèmes · Disponible
 
