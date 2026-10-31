@@ -5,7 +5,7 @@
 
 import { useSyncExternalStore } from 'react';
 
-import { authErrorMessage, type Credentials } from './auth-messages';
+import { authErrorMessage, cleanCode, type Credentials, type PasswordReset } from './auth-messages';
 import { supabase } from './client';
 import { createSessionStore, type SessionState } from './session-store';
 
@@ -34,6 +34,27 @@ export async function signUp({ email, password }: Credentials): Promise<AuthResu
   }
   // Pas de session : il faut d'abord cliquer le lien reçu par e-mail.
   return { ok: true, needsConfirmation: !data.session };
+}
+
+/**
+ * Mot de passe oublié, étape 1 : Supabase envoie un e-mail avec un code à 6 chiffres
+ * (modèle « Reset password » du projet, qui doit contenir {{ .Token }}).
+ * Pour ne pas révéler qui a un compte, la réponse est la même que l'adresse existe ou non.
+ */
+export async function requestPasswordReset(email: string): Promise<AuthResult> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+  return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
+}
+
+/**
+ * Mot de passe oublié, étape 2 : le code vérifié ouvre une session sur le compte,
+ * puis le nouveau mot de passe remplace l'ancien. On reste connecté.
+ */
+export async function resetPassword({ email, code, password }: PasswordReset): Promise<AuthResult> {
+  const verified = await supabase.auth.verifyOtp({ email: email.trim(), token: cleanCode(code), type: 'recovery' });
+  if (verified.error) return { ok: false, message: authErrorMessage(verified.error) };
+  const { error } = await supabase.auth.updateUser({ password });
+  return error ? { ok: false, message: authErrorMessage(error) } : { ok: true };
 }
 
 export async function signOut(): Promise<AuthResult> {

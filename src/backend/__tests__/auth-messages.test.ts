@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { authErrorMessage, checkCredentials } from '../auth-messages';
+import { authErrorMessage, checkCredentials, checkPasswordReset, cleanCode } from '../auth-messages';
 
 describe('checkCredentials', () => {
   const ok = { email: 'camille@exemple.fr', password: 'secret1' };
@@ -34,5 +34,30 @@ describe('authErrorMessage', () => {
 
   it('a un message par défaut, sans le texte anglais du serveur', () => {
     expect(authErrorMessage({ code: 'inconnu', message: 'Something broke' })).toBe('La connexion a échoué. Réessayez.');
+  });
+});
+
+describe('checkPasswordReset', () => {
+  const ok = { email: 'camille@exemple.fr', code: '123456', password: 'nouveau1' };
+
+  it('accepte un code à 6 chiffres, même tapé avec des espaces', () => {
+    expect(checkPasswordReset(ok)).toBeNull();
+    expect(checkPasswordReset({ ...ok, code: ' 123 456 ' })).toBeNull();
+    expect(cleanCode(' 123 456 ')).toBe('123456');
+  });
+
+  it('refuse un code vide, trop court ou avec des lettres', () => {
+    expect(checkPasswordReset({ ...ok, code: '' })).toMatch(/Saisissez le code/);
+    expect(checkPasswordReset({ ...ok, code: '1234' })).toMatch(/6 chiffres/);
+    expect(checkPasswordReset({ ...ok, code: '12a456' })).toMatch(/6 chiffres/);
+  });
+
+  it('demande un nouveau mot de passe de 6 caractères et une adresse valide', () => {
+    expect(checkPasswordReset({ ...ok, password: 'abc' })).toMatch(/au moins 6/);
+    expect(checkPasswordReset({ ...ok, email: 'camille' })).toMatch(/pas valide/);
+  });
+
+  it('traduit un code expiré', () => {
+    expect(authErrorMessage({ code: 'otp_expired' })).toMatch(/nouveau code/);
   });
 });

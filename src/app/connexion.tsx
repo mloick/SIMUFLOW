@@ -14,12 +14,13 @@ import {
 import { signIn, signUp } from '@/backend/auth';
 import { checkCredentials } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
+import { ResetPasswordForm } from '@/components/reset-password-form';
 import { SimuflowLogo } from '@/components/simuflow-logo';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Mode = 'connexion' | 'creation';
+type Mode = 'connexion' | 'creation' | 'oubli';
 
 export default function SignInScreen() {
   const theme = useTheme();
@@ -34,7 +35,7 @@ export default function SignInScreen() {
   const creating = mode === 'creation';
 
   const submit = async () => {
-    const problem = checkCredentials({ email, password }, mode);
+    const problem = checkCredentials({ email, password }, creating ? 'creation' : 'connexion');
     setError(problem);
     if (problem) return;
     setBusy(true);
@@ -54,6 +55,26 @@ export default function SignInScreen() {
     styles.input,
     { color: theme.text, backgroundColor: theme.surface, borderColor: theme.fieldBorder },
   ];
+
+  if (mode === 'oubli') {
+    return (
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          style={{ backgroundColor: theme.background }}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          <ResetPasswordForm
+            initialEmail={email}
+            onDone={() => router.back()}
+            onCancel={() => {
+              setMode('connexion');
+              setError(null);
+            }}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   if (checkMail) {
     return (
@@ -130,10 +151,22 @@ export default function SignInScreen() {
             editable={!busy}
             style={inputStyle}
           />
-          {creating && (
+          {creating ? (
             <ThemedText type="small" themeColor="textSecondary">
               Au moins 6 caractères.
             </ThemedText>
+          ) : (
+            <Pressable
+              onPress={() => {
+                setMode('oubli');
+                setError(null);
+              }}
+              disabled={busy}
+              accessibilityRole="button"
+              hitSlop={8}
+              style={({ pressed }) => [styles.forgot, { opacity: pressed ? 0.6 : 1 }]}>
+              <ThemedText type="link">Mot de passe oublié ?</ThemedText>
+            </Pressable>
           )}
         </View>
 
@@ -184,6 +217,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   busy: { minHeight: 48 },
+  forgot: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' },
   switch: {
     alignItems: 'center',
     gap: Spacing.two,

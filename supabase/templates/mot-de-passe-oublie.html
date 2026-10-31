@@ -1,0 +1,10 @@
+<!--
+  Modèle d'e-mail « Reset Password » de Supabase, pour « Mot de passe oublié » dans l'app.
+  À coller dans Supabase : Authentication > Emails > Templates > Reset Password
+  (Subject : « Votre code SimuFlow »). L'app attend le code {{ .Token }}, pas un lien.
+-->
+<h2>Nouveau mot de passe SimuFlow</h2>
+<p>Vous avez demandé à changer le mot de passe de votre compte SimuFlow.</p>
+<p>Saisissez ce code dans l'app :</p>
+<p style="font-size: 28px; font-weight: bold; letter-spacing: 4px">{{ .Token }}</p>
+<p>Il est valable une heure. Si vous n'avez rien demandé, ignorez cet e-mail : votre mot de passe ne change pas.</p>

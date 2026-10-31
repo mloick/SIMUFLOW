@@ -143,6 +143,10 @@ SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **Serveu
 
 **Créer un compte** : dans **Profil**, touchez **Se connecter ou créer un compte**, puis **Créer un compte**. Saisissez votre adresse e-mail et un mot de passe d'au moins 6 caractères. Si l'app vous le demande, ouvrez le lien reçu par e-mail, puis connectez-vous.
 
+**Mot de passe oublié** : sur l'écran de connexion, touchez **Mot de passe oublié ?**, saisissez votre adresse et touchez **Recevoir un code**. Vous recevez un e-mail avec un code à 6 chiffres, valable une heure. Tapez-le dans l'app avec votre nouveau mot de passe, puis touchez **Changer le mot de passe** : vous êtes connecté. L'e-mail peut être lu sur un autre appareil, seul le code compte.
+
+![Mot de passe oublié : le lien, l'adresse, puis le code et le nouveau mot de passe](captures/etape-13a-mot-de-passe-oublie.png)
+
 **Se connecter et se déconnecter** : vous restez connecté d'un lancement à l'autre. Le Profil affiche votre adresse et le bouton **Se déconnecter**. Si un champ est mal rempli, l'app le dit en clair.
 
 **Supprimer son compte** : dans **Profil**, touchez **Supprimer mon compte**. L'app vous redemande de confirmer et dit ce qui sera effacé : votre compte et vos process, sur le serveur et sur ce téléphone.
