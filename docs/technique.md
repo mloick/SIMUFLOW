@@ -29,7 +29,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, écran provisoire)
   constants/    Thème : couleurs, espacements, polices
-  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts)
+  data/         Accès aux process : process fictifs et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
@@ -37,6 +37,7 @@ src/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre)
   scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
+  tracking/     Suivre un process en vrai : calendrier des jours ouvrés français (calendar.ts), suivi d'une demande étape par étape (tracking.ts), textes des échéances (format.ts) ; tests dans __tests__/
   notifications/ Notifications locales : autorisation, canal Android, notification d'essai (notifications.ts, et notifications.web.ts pour le web), réglage « Rappels d'échéance » (settings.ts)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
@@ -177,6 +178,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `(tabs)/profil.tsx` | `/profil` | Profil et compte |
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
+| `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale) |
@@ -411,6 +413,26 @@ Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de 
 4. recolle une **cellule écrite sur deux lignes** : une ligne serrée contre la précédente (moins de 0,7 fois l'écart habituel) avec du texte dans une seule colonne complète la cellule du dessus.
 
 Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), le nombre de lignes de texte ignorées, et le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes (au plus 3 fois la hauteur du texte), qui n'est pas lui-même un titre de colonne. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
+
+## Suivre un process en vrai (`src/tracking/`, `src/app/suivi/[id].tsx`)
+
+La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie demande** : chaque étape a une échéance réelle, calculée en jours ouvrés.
+
+**Calendrier** (`calendar.ts`, TypeScript pur, testé). Jours ouvrés français : du lundi au vendredi, sans les onze jours fériés de métropole. Pâques est calculé chaque année (`easterSunday`, méthode de Meeus) ; le lundi de Pâques, l'Ascension (Pâques + 39 jours) et le lundi de Pentecôte (+ 50) en découlent. Une journée de travail va de 9 h à 17 h : un délai de 0,5 jour ouvré fait 4 heures de travail. `addWorkingDays(début, jours)` avance dans ces heures seulement (1 jour ouvré commencé le vendredi à 14 h finit le lundi à 14 h ; commencé un samedi, il part du lundi 9 h). `workingDaysBetween` mesure le temps de travail écoulé entre deux moments, en jours ouvrés arrondis au dixième.
+
+**Suivi** (`tracking.ts`, TypeScript pur, testé). Un suivi (`Tracking`) garde la demande (nom, début, fin) et la liste des étapes passées (`TrackedStep` : étape, lien emprunté, début, échéance, fin), en dates ISO. Comme le moteur de simulation, chaque fonction prend un suivi et en renvoie un nouveau :
+
+- `startTracking` commence au premier départ du process ; l'échéance de l'étape vaut début + délai (`addWorkingDays`), absente si l'étape n'a pas de délai ;
+- `completeStep` termine l'étape en cours. S'il n'y a qu'une suite, la demande y passe ; à une décision, il faut choisir la branche (sans choix, rien ne bouge) ; sans suite, la demande est close (`finishedAt`) ;
+- `timingOf` dit où en est une étape : `late` (échéance dépassée, ou terminée après), `soon` (échéance dans moins d'une demi-journée de travail), `on-time`, ou `none` (pas de délai). `timingBadge` (`format.ts`) en fait une pastille : « À l'heure », « Échéance proche », « En retard de 0,4 jour ouvré », « Terminée avec 0,5 jour ouvré de retard ».
+
+**Stockage** (`src/data/tracking-store.ts`). Les suivis sont gardés sur le téléphone (`localStorage`, clé `simuflow.suivis`), pas sur le serveur : ce sont les rappels de ce téléphone. `useTrackings(processId)` les donne en cours d'abord, puis du plus récent au plus ancien.
+
+**Écrans.** Sur la fiche d'un process, la section « Suivi en vrai » liste ses demandes (étape en cours, échéance, pastille) et propose « Suivre une demande », qui en commence une (nommée « Demande du 31 oct. à 15:42 ») et ouvre son écran. L'écran de suivi (`/suivi/[id]`) montre l'étape en cours (acteur, échéance, pastille) avec « Étape terminée », ou un bouton par branche à une décision (« oui → Faire viser »), puis les étapes passées, la plus récente en haut, chacune avec sa date de fin et sa pastille. Une demande close affiche sa durée totale en jours ouvrés. « Arrêter ce suivi » le retire, après confirmation. Les échéances sont relues chaque minute.
+
+Tests : 6 sur le calendrier (Pâques, jours fériés mobiles, week-end, jour férié, demi-journées, temps écoulé), 4 sur le suivi (départ et échéance, avance et branche, fin, état d'une étape), 2 sur les pastilles.
+
+![Suivi en vrai : la section de la fiche, une demande en cours avec ses étapes passées, puis l'étape suivante](captures/etape-11b-suivi.png)
 
 ## Notifications (`src/notifications/`)
 

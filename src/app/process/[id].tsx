@@ -4,13 +4,17 @@ import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Badge } from '@/components/badge';
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
+import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { formatMoment, timingBadge } from '@/tracking/format';
+import { currentStep, startTracking } from '@/tracking/tracking';
 import { plural } from '@/utils/format';
 
 const SOURCE_TEXT = {
@@ -149,6 +153,10 @@ function ProcessDetail({ process }: { process: Process }) {
           <StatTile value={toFix} label={toFix > 1 ? 'points à corriger' : 'point à corriger'} tone={fixTone} />
         </View>
 
+        <Section title="Suivi en vrai">
+          <TrackingCard process={process} />
+        </Section>
+
         {summary.actors.length > 0 && (
           <Section title="Acteurs">
             <View style={styles.chips}>
@@ -231,6 +239,77 @@ function ProcessDetail({ process }: { process: Process }) {
 }
 
 const KIND_LABELS = { start: 'Départ', task: 'Tâche', decision: 'Décision', end: 'Fin' } as const;
+
+/** Commence le suivi d'une demande réelle de ce process et renvoie son identifiant. */
+function startNewTracking(process: Process): string | null {
+  const now = new Date();
+  const label = `Demande du ${now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  const tracking = startTracking(process, now, `suivi-${now.getTime()}`, label);
+  if (!tracking) return null;
+  saveTracking(tracking);
+  return tracking.id;
+}
+
+/** Les demandes réelles suivies pour ce process, et « Suivre une demande ». */
+function TrackingCard({ process }: { process: Process }) {
+  const theme = useTheme();
+  const trackings = useTrackings(process.id);
+  const [now] = useState(() => new Date());
+  const open = (id: string) => router.push({ pathname: '/suivi/[id]', params: { id } });
+  const start = () => {
+    const id = startNewTracking(process);
+    if (id) open(id);
+  };
+
+  return (
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+      {trackings.length === 0 && (
+        <ThemedText themeColor="textSecondary" style={styles.trackingIntro}>
+          Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule l’échéance de chaque étape en jours
+          ouvrés.
+        </ThemedText>
+      )}
+      {trackings.map((tracking, index) => {
+        const current = currentStep(tracking);
+        const title = current && process.steps.find((step) => step.id === current.stepId)?.title;
+        return (
+          <Pressable
+            key={tracking.id}
+            onPress={() => open(tracking.id)}
+            accessibilityRole="button"
+            style={[
+              styles.trackingRow,
+              index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+            ]}>
+            <View style={[styles.issueText, styles.trackingText]}>
+              <ThemedText>{tracking.label}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {current
+                  ? `${title || 'Sans titre'}${current.dueAt ? ` · échéance ${formatMoment(current.dueAt)}` : ''}`
+                  : `Terminée le ${formatMoment(tracking.finishedAt!)}`}
+              </ThemedText>
+              {current && <Badge {...timingBadge(current, now)} />}
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right' }}
+              size={16}
+              tintColor={theme.textSecondary}
+            />
+          </Pressable>
+        );
+      })}
+      <Pressable
+        onPress={start}
+        accessibilityRole="button"
+        style={[styles.trackingRow, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+        <SymbolView name={{ ios: 'play.circle', android: 'play_circle' }} size={20} tintColor={theme.link} />
+        <ThemedText type="link" style={{ color: theme.link }}>
+          Suivre une demande
+        </ThemedText>
+      </Pressable>
+    </View>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -387,6 +466,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   section: { gap: Spacing.two },
+  trackingIntro: { padding: Spacing.three },
+  trackingText: { alignItems: 'flex-start' },
+  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 48, padding: Spacing.three },
   sectionTitle: { fontSize: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { borderRadius: Radius.pill, paddingHorizontal: Spacing.three - Spacing.one, paddingVertical: Spacing.one },
