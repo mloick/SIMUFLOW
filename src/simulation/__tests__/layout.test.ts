@@ -6,7 +6,17 @@ import { demoProcesses } from '@/data/demo-processes';
 import { importProcessFile } from '@/import';
 import { FICHIER_CONGES } from '@/import/__fixtures__/conges';
 
-import { borderPoint, computeRanks, layoutProcess, midpoint, NODE_WIDTH, offsetPolyline } from '../layout';
+import { addBranch, addStepAfter } from '@/domain';
+
+import {
+  borderPoint,
+  computeRanks,
+  layoutProcess,
+  midpoint,
+  NODE_WIDTH,
+  offsetPolyline,
+  placeMissing,
+} from '../layout';
 
 const boucle: Process = {
   id: 'boucle',
@@ -177,5 +187,32 @@ describe('tracé des flèches', () => {
         }
       }
     }
+  });
+});
+
+describe('étapes ajoutées dans l’éditeur', () => {
+  const imported = importProcessFile('conges.drawio', FICHIER_CONGES).processes[0];
+  const boxes = (process: Process) => process.steps.map((step) => step.layout!);
+  const overlap = (a: NonNullable<Process['steps'][0]['layout']>, b: typeof a) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+  it('garde les positions du fichier et place les nouvelles sans chevauchement', () => {
+    const first = imported.steps[0];
+    const { process: withStep, stepId } = addStepAfter(imported, first.id, 'Nouvelle');
+    const withCase = addBranch(withStep, stepId, 'Autre cas');
+    const placed = placeMissing(withCase);
+    for (const step of imported.steps) expect(placed.steps.find((s) => s.id === step.id)!.layout).toEqual(step.layout);
+    const all = boxes(placed);
+    all.forEach((box, i) => all.slice(i + 1).forEach((other) => expect(overlap(box, other)).toBe(false)));
+    const layout = layoutProcess(withCase);
+    expect(layout.source).toBe('drawio');
+    expect(layout.nodes.size).toBe(withCase.steps.length);
+  });
+
+  it('place la nouvelle étape sous celle qui y mène', () => {
+    const first = imported.steps[0];
+    const { process, stepId } = addStepAfter(imported, first.id, 'Nouvelle');
+    const box = placeMissing(process).steps.find((step) => step.id === stepId)!.layout!;
+    expect(box.y).toBeGreaterThanOrEqual(first.layout!.y + first.layout!.height);
   });
 });

@@ -121,6 +121,9 @@ function ProcessDetail({ process }: { process: Process }) {
             {process.name}
           </ThemedText>
           {process.source && <ThemedText themeColor="textSecondary">{SOURCE_TEXT[process.source]}</ThemedText>}
+          {process.editedAt && (
+            <ThemedText themeColor="textSecondary">Corrigé dans l’app le {formatDate(process.editedAt)}</ThemedText>
+          )}
           {isImported(process.id) && (
             <Pressable
               onPress={() => router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } })}
@@ -403,3 +406,9 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, gap: Spacing.half },
   footer: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
 });
+
+/** « 30 octobre 2026 à 22:15 ». */
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return `${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+}

@@ -6,7 +6,8 @@
  * acteur (mise en page calculée) ou les positions d'origine (process importé de
  * draw.io). Chaque étape garde son délai dans son texte (« 2 JO ») et son
  * acteur dans une propriété « acteur », lue aussi par l'import quand il n'y a
- * pas de couloir.
+ * pas de couloir. Un process corrigé dans l'app garde la date de la correction
+ * (attribut « modified » du fichier).
  */
 
 import type { Process, StepKind } from '@/domain';
@@ -104,6 +105,6 @@ export function processToDrawio(process: Process, layout: DiagramLayout, options
     `page="1" pageWidth="${Math.ceil(layout.width)}" pageHeight="${Math.ceil(layout.height)}"><root>\n${cells.join('\n')}\n</root></mxGraphModel>`;
   return (
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    `<mxfile host="SimuFlow" type="device"><diagram id="simuflow" name="${attr(process.name)}">${page}</diagram></mxfile>\n`
+    `<mxfile host="SimuFlow"${process.editedAt ? ` modified="${attr(process.editedAt)}"` : ''} type="device"><diagram id="simuflow" name="${attr(process.name)}">${page}</diagram></mxfile>\n`
   );
 }

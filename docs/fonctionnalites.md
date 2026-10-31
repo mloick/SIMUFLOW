@@ -42,15 +42,18 @@ Vous pouvez aussi changer la forme du process :
 
 - **Ajouter une étape après** une autre : elle se glisse entre l'étape et sa suite.
 - **Ajouter un cas** à une décision : donnez-lui un nom et choisissez où il mène, une nouvelle étape ou une étape existante.
+- **Relier à une autre étape** une tâche, par exemple pour revenir en arrière.
 - **Retirer** une branche, ou **Supprimer l'étape** (l'app demande confirmation ; une étape de passage laisse ses voisines reliées).
 
 Pour corriger dès l'import, touchez **Importer et corriger** au lieu d'**Importer** : l'éditeur s'ouvre tout de suite.
 
-Bientôt : exporter la version corrigée en draw.io.
+Le process corrigé garde la trace de la correction : sa fiche affiche « Corrigé dans l'app le … ». Sur le schéma, les étapes d'origine restent à leur place et les nouvelles se rangent sous l'étape qui y mène. Pour faire valider la nouvelle version, exportez-la (**Lancer la simulation**, puis le bouton d'export) en **draw.io** ou en **PDF** : la date de correction y figure aussi.
 
 ![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
 
 ![Importer et corriger, ajouter un cas à une décision, puis une étape](captures/etape-L2b-ajout.png)
+
+![Relier une étape, la fiche datée de la correction, puis le schéma avec les nouvelles étapes](captures/etape-L2c-corrige.png)
 
 ## Voir les problèmes · Disponible
 

@@ -37,4 +37,6 @@ export type Process = {
   source?: ProcessSource;
   steps: Step[];
   links: Link[];
+  /** Dernière correction dans l'éditeur de l'app (date ISO). */
+  editedAt?: string;
 };
