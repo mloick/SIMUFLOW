@@ -30,9 +30,13 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 ![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
 
-## Scanner un tableau · Prévue
+## Scanner un tableau · En cours
 
-**Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes, vous confirmez.
+**Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaîtra les colonnes, vous confirmerez.
+
+Disponible : l'onglet **Scanner** ouvre l'appareil photo. La première fois, l'app demande l'autorisation et explique pourquoi. Cadrez le tableau entre les quatre coins, allumez la lampe si besoin, et touchez le gros bouton rond. Touchez **Reprendre la photo** pour recommencer. Pour essayer, le fichier `docs/exemples/tableaux-a-scanner.html` contient six tableaux fictifs à afficher sur un écran ou à imprimer. Bientôt : la lecture du texte de la photo, puis le process créé à partir du tableau.
+
+![Scanner : l'autorisation, le viseur, puis la photo prise](captures/etape-10a-scanner.png)
 
 ## Corriger un process · Disponible
 

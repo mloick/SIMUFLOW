@@ -47,7 +47,16 @@
       "expo-sharing",
       "expo-image",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SimuFlow utilise l’appareil photo pour lire un tableau de process. Les photos restent sur votre téléphone.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -19,6 +19,7 @@ Le squelette de navigation est en place : tous les écrans de la maquette existe
 | @supabase/supabase-js | 2 (client du backend) |
 | expo-sqlite | 58 (`localStorage` pour garder la session Supabase) |
 | expo-network | 58 (état du réseau : hors connexion réel, synchronisation au retour du réseau ; module natif, l'app compilée par Xcode doit être recompilée) |
+| expo-camera | 58 (appareil photo de l'onglet Scanner ; module natif, l'app doit être recompilée) |
 
 ## Structure du dépôt
 
@@ -223,7 +224,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
 7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
 
-`docs/exemples/` contient quatre fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte) et `accueil-arrivant.json`. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
 
@@ -330,6 +331,21 @@ Les règles sont enregistrées sur le téléphone dans `regles-lecture.json` (m�
 ![Import corrigé d'après les règles apprises, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
 
 ![Profil : les règles, gardées sur le téléphone tant qu'on n'est pas connecté](captures/etape-L3b-compte.png)
+
+## Écran Scanner (`src/app/(tabs)/scanner.tsx`)
+
+Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par information : étape, acteur, délai »), viseur aux quatre coins, déclencheur rond et bouton de lampe. L'écran reste sombre dans les deux thèmes, comme une app photo (couleurs fixes `SCAN`).
+
+- **Autorisation** (`useCameraPermissions` d'`expo-camera`) : tant qu'elle n'est pas donnée, l'écran explique à quoi sert l'appareil photo et propose « Autoriser ». Refusée pour de bon (`canAskAgain` faux), le bouton devient « Ouvrir les réglages » (`Linking.openSettings`).
+- **Aperçu** : `CameraView` (caméra arrière), monté seulement quand l'onglet est affiché (`useIsFocused`), pour libérer l'appareil photo ailleurs. La lampe passe par `enableTorch`. Le déclencheur attend `onCameraReady` ; un échec de démarrage ou de prise de vue s'affiche sous le viseur.
+- **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
+- **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
+
+La lecture du texte de la photo (module natif Swift avec Vision, Kotlin avec ML Kit) est l'étape suivante.
+
+**Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
+
+![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
 
 ## Écran Simulation
 
