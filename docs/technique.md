@@ -586,8 +586,6 @@ L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droi
 
 ![Suppression du compte : le bouton, la confirmation, un échec réseau, le Profil après suppression, le mode sombre](captures/etape-7d-suppression.png)
 
-« Mot de passe oublié » n'est pas encore là : il demande d'ouvrir l'app depuis le lien reçu par e-mail (lien profond).
-
 ![Connexion : l'écran vide, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
 
 ### Table des règles de lecture (`supabase/migrations/20261031120000_regles_lecture.sql`)
