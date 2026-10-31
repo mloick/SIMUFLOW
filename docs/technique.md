@@ -37,7 +37,7 @@ src/
   hooks/        Hooks partagés (thème, mode sombre)
   scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), puis tableau seul retrouvé grâce à sa ligne de titres (table.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
-modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo, Swift avec Vision ; Kotlin à venir)
+modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
 docs/           Documentation (dont securite.md et ia.md), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
@@ -343,7 +343,7 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (Android pour l'instant, web), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (web, Expo Go), l'écran dit que la lecture n'est pas encore disponible. La transformation du tableau en process est l'étape suivante.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
 
@@ -355,13 +355,15 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 
 ### Module natif de lecture du texte (`modules/text-recognition/`)
 
-Un module Expo local (Expo Modules API), écrit pour l'app. Expo le trouve seul dans `modules/` (autoliaison, pas de dépendance à ajouter) ; il est compilé avec l'app, donc il faut refaire `npx expo prebuild --clean --platform ios` puis recompiler. Il ne marche pas dans Expo Go.
+Un module Expo local (Expo Modules API), écrit pour l'app. Expo le trouve seul dans `modules/` (autoliaison, pas de dépendance à ajouter) ; il est compilé avec l'app, donc il faut refaire `npx expo prebuild --clean --platform ios` puis recompiler (sur Android, un nouveau build EAS). Il ne marche pas dans Expo Go. Les deux versions, Swift et Kotlin, rendent la même chose : le côté JavaScript ne sait pas sur quel téléphone il tourne.
 
 | Fichier | Rôle |
 | --- | --- |
-| `expo-module.config.json` | Déclare le module pour iOS (`TextRecognitionModule`) |
+| `expo-module.config.json` | Déclare le module pour iOS (`TextRecognitionModule`) et Android (`expo.modules.textrecognition.TextRecognitionModule`) |
 | `ios/TextRecognition.podspec` | Le pod : iOS 16.4, dépend d'`ExpoModulesCore` et du framework `Vision` |
-| `ios/TextRecognitionModule.swift` | Le code natif |
+| `ios/TextRecognitionModule.swift` | Le code natif iOS |
+| `android/build.gradle` | La bibliothèque Android : ML Kit (`com.google.mlkit:text-recognition`, modèle latin inclus dans l'app) et `androidx.exifinterface` |
+| `android/src/main/java/expo/modules/textrecognition/TextRecognitionModule.kt` | Le code natif Android |
 | `index.ts` | Le côté JavaScript : `recognizeText(uri)` et `isTextRecognitionAvailable` |
 
 **Côté Swift.** Le module s'appelle `TextRecognition` et expose une fonction asynchrone `recognizeTextAsync(uri)`, exécutée hors du fil principal (l'interface ne gèle pas). Elle :
@@ -372,6 +374,14 @@ Un module Expo local (Expo Modules API), écrit pour l'app. Expo le trouve seul 
 4. renvoie `lines` : pour chaque morceau de texte trouvé, le texte le plus probable, sa confiance (0 à 1) et sa boîte en fraction de l'image lue. Vision compte la hauteur depuis le bas : le module la retourne (`y = 1 - maxY`) pour que l'origine soit en haut à gauche, comme à l'écran. Si la photo a été recadrée, il renvoie aussi `uri`, l'image recadrée enregistrée en JPEG dans le dossier temporaire de l'app, pour l'afficher.
 
 Tout se passe sur le téléphone : aucun envoi réseau, aucun service extérieur.
+
+**Côté Kotlin (Android).** Le même module `TextRecognition`, avec la même fonction `recognizeTextAsync(uri)`. Elle :
+
+1. ouvre la photo (`BitmapFactory`), réduite à 2 500 pixels au plus pour ménager la mémoire, et la remet droite d'après son orientation EXIF (`ExifInterface`, rotation par une `Matrix`) ; sinon elle rejette avec `ImageNotReadableException` ;
+2. la lit avec ML Kit (`TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)`, alphabet latin, accents compris). Le modèle est inclus dans l'app (environ 4 Mo) : la lecture marche sans réseau, dès l'installation. ML Kit répond de façon asynchrone ; la fonction prend une `Promise` qu'elle tient ou rejette (`TextNotReadException`) ;
+3. renvoie `lines`, comme sur iOS. ML Kit lit parfois toute une ligne de tableau d'un seul tenant (« Recevoir la demande Accueil 0,5 JO »). Le module la recoupe là où deux mots sont séparés par un grand blanc (plus d'une fois et demie la hauteur du texte) : chaque morceau correspond alors à une cellule, ce qu'attend `findTable`. Boîtes en fraction de l'image, origine en haut à gauche ; confiance de la ligne donnée par ML Kit.
+
+Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de document de Vision sans passer par son propre écran de scan. `findTable` retrouve de toute façon le tableau seul grâce à sa ligne de titres.
 
 **Côté JavaScript.** `index.ts` charge le module avec `requireOptionalNativeModule('TextRecognition')`, qui renvoie `null` au lieu de planter là où il n'existe pas. `isTextRecognitionAvailable` permet à l'écran de le dire.
 
@@ -638,7 +648,7 @@ Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript 
 | `src/import/` | Lecture des fichiers draw.io et JSON (fait), et des tableaux scannés (à venir) |
 | `src/export/` | Export en PDF, draw.io et JSON (fait) |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins (fait) |
-| `modules/` | Module natif de lecture de texte (Kotlin pour Android, Swift pour iOS) |
+| `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
 
 Backend : Supabase (voir « Backend Supabase »). Le client, la table des process avec ses règles de sécurité, la connexion, la suppression du compte et la synchronisation des process importés sont en place.
 

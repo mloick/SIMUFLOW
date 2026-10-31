@@ -1,0 +1,22 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'fr.simuflow'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.textrecognition"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // ML Kit, modèle latin inclus dans l'app : la lecture marche sans réseau, dès l'installation.
+  implementation "com.google.mlkit:text-recognition:16.0.1"
+  // Sens de la photo, lu dans ses métadonnées EXIF.
+  implementation "androidx.exifinterface:exifinterface:1.4.2"
+}
