@@ -6,7 +6,7 @@ Français · [English](README.md)
 
 SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. On importe un schéma draw.io ou on photographie un tableau de process, on voit les anomalies, puis on rejoue le process pas à pas en choisissant chaque branche.
 
-> État : version 1.0, complète pour le cours (octobre 2026). Fonctionne sur iPhone (build Xcode) et Android (build EAS). Tous les exemples de l'app et de la documentation sont fictifs.
+> État : version 1.0, complète pour le cours (octobre 2026). Fonctionne sur iPhone (build Xcode), Android (build EAS) et dans le navigateur ([version web](https://mloick.github.io/SIMUFLOW/app/), sans le Scanner). Tous les exemples de l'app et de la documentation sont fictifs.
 
 **Ce que l'on peut faire**
 
@@ -55,6 +55,8 @@ npm run ios:iphone       # compile et installe sur un iPhone branché en USB
 L'app est un build de développement compilé par Xcode, pas Expo Go : elle contient un module natif local. Les dossiers `ios/` et `android/` sont générés (génération native continue), jamais versionnés ni modifiés à la main. Après un changement d'`app.json` ou un nouveau module natif : `npx expo prebuild --clean --platform ios`, puis recompiler. Sinon, une fois l'app installée, `npx expo start` suffit : les changements de JavaScript apparaissent en quelques secondes. `npm run nettoyer` efface les fichiers de compilation pour libérer de la place.
 
 **Build installable (sans Mac).** `npx eas-cli@latest build --platform android --profile preview` produit un APK Android qui s'installe depuis un lien ou un QR code. Installer un build EAS sur un iPhone demande un compte Apple Developer payant ; avec un compte gratuit, utiliser le build Xcode ci-dessus. Les mises à jour de JavaScript arrivent aux builds installés sans nouveau build grâce à EAS Update : `npx eas-cli@latest update --channel preview --message "..."`.
+
+**Version web.** La même base de code tourne dans un navigateur, sans rien installer : https://mloick.github.io/SIMUFLOW/app/. Elle est exportée par `npx expo export -p web` (une page unique, servie sous `/SIMUFLOW/app`, réglé par `experiments.baseUrl` dans `app.json`) et publiée sur GitHub Pages à chaque fusion sur `main`. Tout y marche sauf le Scanner (module natif) et les rappels (notifications du téléphone). Pour l'essayer en local : `npx expo start --web`.
 
 **Vérifications.**
 
@@ -113,7 +115,7 @@ Le détail, fichier par fichier, est dans [`docs/technique.md`](docs/technique.m
 - [Guide des fonctionnalités](docs/fonctionnalites.md) : ce que fait l'application, en termes simples.
 - [Sécurité](docs/securite.md) : la checklist sécurité remplie (catégories OWASP MASVS), puis clés, règles d'accès, comptes, données sur le téléphone.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, MCP) et comment nous travaillons avec.
-- [Site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/` et publiés par GitHub Pages.
+- [Version web de l'app](https://mloick.github.io/SIMUFLOW/app/), [site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/` et publiés par GitHub Pages.
 
 ## Technologies
 

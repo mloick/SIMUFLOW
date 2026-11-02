@@ -1,8 +1,8 @@
-import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, type BadgeTone } from '@/components/badge';
+import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { Process, ProcessSource, ProcessSummary } from '@/domain';

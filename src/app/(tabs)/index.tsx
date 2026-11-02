@@ -1,4 +1,3 @@
-import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -8,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ListSkeleton } from '@/components/list-skeleton';
 import { ProcessCard } from '@/components/process-card';
 import { StateMessage } from '@/components/state-message';
+import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { splitExamples } from '@/data/examples';

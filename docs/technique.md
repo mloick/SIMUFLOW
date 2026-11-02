@@ -4,7 +4,7 @@ Ce document décrit le code tel qu'il est aujourd'hui. Il est mis à jour à cha
 
 ## État actuel
 
-Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la maquette sont construits : liste des process, détail, import (fichier draw.io ou JSON, aperçu corrigeable), éditeur, simulation (pas à pas et tous les chemins), export (PDF, draw.io, JSON), suivi d'une vraie demande, scanner (module natif de lecture de texte), connexion et mot de passe oublié, présentation du premier lancement et profil. Le backend Supabase garde les comptes, les process et les règles de lecture, avec synchronisation et hors connexion. L'app est testée (tests unitaires, de composants, de bout en bout) et vérifiée à chaque pull request.
+Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la maquette sont construits : liste des process, détail, import (fichier draw.io ou JSON, aperçu corrigeable), éditeur, simulation (pas à pas et tous les chemins), export (PDF, draw.io, JSON), suivi d'une vraie demande, scanner (module natif de lecture de texte), connexion et mot de passe oublié, présentation du premier lancement et profil. Le backend Supabase garde les comptes, les process et les règles de lecture, avec synchronisation et hors connexion. L'app est testée (tests unitaires, de composants, de bout en bout) et vérifiée à chaque pull request. Depuis le 2 novembre 2026, la même base de code est aussi publiée en version web (voir « Version web »).
 
 | Élément | Version |
 | --- | --- |
@@ -28,7 +28,7 @@ Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la m
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -63,6 +63,8 @@ app.json        Configuration Expo (nom, icônes, écran de démarrage, identifi
 | `npm run ios:iphone` | Pareil, avec `--device` (iPhone branché en USB) |
 | `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
+| `npx expo start --web` | Ouvrir l'app dans le navigateur, en développement |
+| `npx expo export -p web` | Construire la version web dans `dist/` (ce que fait la publication) |
 | `npm test` | Lancer les tests unitaires et de composants (Jest) |
 | `npm run e2e` | Lancer le test de bout en bout (Maestro) sur l'app installée dans le Simulateur iOS |
 | `npx tsc --noEmit` | Vérifier les types |
@@ -197,7 +199,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 
 ![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 
-Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android ; la version web n'est pas prise en charge.
+Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android, et tourne aussi dans le navigateur. Sur le web, les onglets natifs deviendraient une barre flottante en haut qui recouvre les titres : `(tabs)/_layout.web.tsx` les remplace par une barre en bas, construite avec les onglets sans style d'Expo Router (`expo-router/ui` : `Tabs`, `TabSlot`, `TabList`, `TabTrigger`), avec les mêmes icônes. Les icônes passent toutes par `src/components/symbol.tsx` : `expo-symbols` n'affiche rien dans le navigateur sans clé `web`, le composant y reprend le nom Material Symbols d'Android.
 
 ## Écran Liste des process
 
@@ -365,7 +367,7 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Là où le module n'existe pas (web, Expo Go), l'écran dit que la lecture n'est pas encore disponible.
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Dans Expo Go, où le module n'existe pas, l'écran dit que la lecture n'est pas encore disponible. Sur le web, l'écran ne demande même pas l'appareil photo : il explique que le Scanner est sur téléphone et propose « Importer un fichier ».
 - **Créer le process** : sous un tableau trouvé, « Créer le process » le transforme en process (`tableToProcess`, voir plus bas), applique les règles de lecture apprises (`applyReadingRules`, comme à l'import d'un fichier), l'ajoute à la liste (`addImportedProcess` : enregistré sur le téléphone et synchronisé avec le compte) et ouvre sa fiche. « Créer et corriger » ouvre en plus l'éditeur par-dessus la fiche. Le nom est le titre écrit au-dessus du tableau, sinon « Tableau scanné du 31/10/2026 ». Le Scanner revient ensuite au viseur. « Reprendre la photo » reste à côté.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
@@ -774,7 +776,22 @@ Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : v
 
 Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
 
-**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) et le publie sur GitHub Pages à chaque push sur `main` qui touche `docs/site/`, ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ».
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
+
+## Version web (`https://mloick.github.io/SIMUFLOW/app/`)
+
+Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `npx expo export -p web` (React Native Web). Ce qui la règle, dans `app.json` :
+
+- `web.output: "single"` : une seule page `index.html` et ses scripts, sans serveur. L'app n'a pas de route d'API, un hébergement de fichiers suffit.
+- `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. Il ne change rien sur téléphone.
+
+**Ouvrir un écran par son adresse.** GitHub Pages ne connaît que des fichiers : `/SIMUFLOW/app/process/gestion-incident` n'en est pas un. La publication copie donc `index.html` en `404.html` à la racine du site. Pour toute adresse inconnue, GitHub Pages sert cette page : l'app démarre et Expo Router ouvre l'écran demandé. Le rechargement d'une page et les liens partagés marchent ainsi.
+
+**Ce qui change dans le navigateur.** Les données sans compte sont dans le stockage local du navigateur (`localStorage`), la session aussi (`secure-session-storage.web.ts`). Les fichiers exportés sont téléchargés, le PDF passe par la fenêtre d'impression. Le Scanner renvoie vers l'import, et les notifications ne sont pas disponibles (le Profil le dit). Pour « Mot de passe oublié », l'adresse de retour est celle de la version web : elle doit être autorisée dans Supabase (Authentication > URL Configuration > Redirect URLs : `https://mloick.github.io/SIMUFLOW/**`).
+
+**Vérifié** avec Playwright sur l'export servi comme sur GitHub Pages (même chemin, même page 404) : accueil du site, bouton « Ouvrir l'app web », présentation, liste, détail, simulation, Profil, Scanner, et rechargement d'un écran par son adresse, sans erreur dans la console.
+
+![Version web : l'accueil du site, la liste, la simulation et le Scanner dans le navigateur](captures/etape-16-version-web.png)
 
 **Dans l'app.** `src/constants/links.ts` donne `SITE_URL` et `PRIVACY_URL`. Le Profil (« À propos ») et l'écran de création de compte ouvrent la politique dans le navigateur intégré (`WebBrowser.openBrowserAsync`, `expo-web-browser`). À la création du compte, une phrase dit où sont gardées les données avant l'envoi.
 
