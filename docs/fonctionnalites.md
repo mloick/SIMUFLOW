@@ -209,6 +209,12 @@ Sur l'écran d'accueil du téléphone, SimuFlow a l'icône du logo, le chemin en
 
 Pendant le chargement, la liste « respire » doucement, puis les process apparaissent l'un après l'autre. Si vous avez activé « Réduire les animations » sur votre téléphone, rien ne bouge.
 
+## Utiliser SimuFlow dans le navigateur · Disponible
+
+SimuFlow s'ouvre aussi dans un navigateur, sur ordinateur ou sur téléphone, sans rien installer : https://mloick.github.io/SIMUFLOW/app/ (ou le bouton **Ouvrir l'app web** sur le site). Tout y est, sauf deux choses qui ont besoin du téléphone : le **Scanner** (l'écran propose alors d'importer un fichier) et les **rappels**. Sans compte, vos process restent dans le navigateur ; avec un compte, vous retrouvez les mêmes process sur le téléphone et sur l'ordinateur.
+
+![La version web : le site, la liste, la simulation et le Scanner](captures/etape-16-version-web.png)
+
 ## Vos données et le site · Disponible
 
 SimuFlow a un site, https://mloick.github.io/SIMUFLOW/, qui présente l'app et sa **politique de confidentialité** : quelles données sont utilisées, où elles sont gardées, et comment les supprimer. En bref : sans compte, tout reste sur le téléphone ; avec un compte, votre adresse, vos process et vos règles de lecture sont gardés sur un serveur en Union européenne, visibles par vous seul ; les photos du Scanner ne quittent pas le téléphone. Dans l'app : **Profil**, puis **Politique de confidentialité**.

@@ -1,14 +1,22 @@
 name: Site
 
-# Publie le site de SimuFlow (accueil et politique de confidentialité) sur
-# GitHub Pages à chaque push sur main qui touche docs/site/. Le site reprend
-# le logo (docs/logo) et quelques captures (docs/captures).
+# Publie sur GitHub Pages le site de SimuFlow (accueil et politique de
+# confidentialité) et la version web de l'app, sous /app/. Le site reprend le
+# logo (docs/logo) et quelques captures (docs/captures). L'app est l'export web
+# d'Expo (`npx expo export -p web`), une page unique : 404.html en est une
+# copie, pour qu'une adresse comme /app/process/… rouvre l'app au bon écran.
 # À activer une fois : Settings > Pages > Source : « GitHub Actions ».
 on:
   push:
     branches: [main]
     paths:
       - "docs/site/**"
+      - "src/**"
+      - "assets/**"
+      - "modules/**"
+      - "app.json"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 
@@ -29,12 +37,22 @@ jobs:
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer les dépendances
+        run: npm ci
+      - name: Exporter la version web de l'app
+        run: npx expo export -p web
       - name: Assembler le site
         run: |
           mkdir -p _site/captures
           cp docs/site/* _site/
           cp -r docs/logo _site/logo
           cp docs/captures/etape-6-simulation.png _site/captures/
+          cp -r dist _site/app
+          cp dist/index.html _site/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -6,7 +6,7 @@
 
 SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. Import a draw.io diagram or photograph a process table, see the anomalies, then replay the process step by step by choosing each branch.
 
-> Status: version 1.0, feature-complete for the course (October 2026). Runs on iPhone (Xcode build) and Android (EAS build). All examples in the app and the docs are fictional.
+> Status: version 1.0, feature-complete for the course (October 2026). Runs on iPhone (Xcode build), Android (EAS build) and in the browser ([web version](https://mloick.github.io/SIMUFLOW/app/), without the Scanner). All examples in the app and the docs are fictional.
 
 **What you can do**
 
@@ -55,6 +55,8 @@ npm run ios:iphone       # build and install on an iPhone plugged in over USB
 The app is a development build compiled by Xcode, not Expo Go: it includes a local native module. The `ios/` and `android/` folders are generated (Continuous Native Generation) and never committed or edited by hand. After a change to `app.json` or a new native module: `npx expo prebuild --clean --platform ios`, then build again. Otherwise, once the app is installed, `npx expo start` is enough: JavaScript changes show up in a few seconds. `npm run nettoyer` deletes build files to free disk space.
 
 **Installable build (no Mac needed).** `npx eas-cli@latest build --platform android --profile preview` produces an Android APK that installs from a link or QR code. Installing an EAS build on an iPhone requires a paid Apple Developer account; with a free account, use the Xcode build above. JavaScript updates reach installed builds without a new build through EAS Update: `npx eas-cli@latest update --channel preview --message "..."`.
+
+**Web version.** The same codebase runs in a browser, with nothing to install: https://mloick.github.io/SIMUFLOW/app/. It is exported by `npx expo export -p web` (a single page, served under `/SIMUFLOW/app`, set by `experiments.baseUrl` in `app.json`) and published to GitHub Pages on every merge to `main`. Everything works except the Scanner (native module) and reminders (phone notifications). To try it locally: `npx expo start --web`.
 
 **Checks.**
 
@@ -113,7 +115,7 @@ More detail, file by file, in [`docs/technique.md`](docs/technique.md) (French).
 - [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
 - [Security](docs/securite.md) (French): the filled-in security checklist (OWASP MASVS categories), then keys, access rules, accounts, data on the phone.
 - [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
-- [Website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
+- [Web version of the app](https://mloick.github.io/SIMUFLOW/app/), [website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
 
 ## Tech stack
 

@@ -1,12 +1,12 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { router, useIsFocused } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { addImportedProcess } from '@/data/process-store';
@@ -95,7 +95,25 @@ export default function ScannerScreen() {
   };
 
   let body: ReactNode;
-  if (!permission) {
+  if (Platform.OS === 'web') {
+    // Dans le navigateur, le texte d'une photo ne peut pas être lu (module natif) :
+    // inutile de demander l'appareil photo, on propose l'import d'un fichier.
+    body = (
+      <View style={styles.permission}>
+        <View style={styles.permissionIcon} importantForAccessibility="no-hide-descendants">
+          <SymbolView name={{ ios: 'iphone', android: 'smartphone' }} size={32} tintColor={SCAN.accent} />
+        </View>
+        <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
+          Le Scanner est sur téléphone
+        </ThemedText>
+        <ThemedText style={[styles.muted, styles.centerText]}>
+          La photo d’un tableau est lue par le téléphone lui-même, sans Internet. Dans le navigateur, importez plutôt un
+          fichier draw.io ou JSON.
+        </ThemedText>
+        <PrimaryButton label="Importer un fichier" onPress={() => router.push('/import')} />
+      </View>
+    );
+  } else if (!permission) {
     body = <ActivityIndicator color={SCAN.text} style={styles.center} />;
   } else if (!permission.granted) {
     body = (

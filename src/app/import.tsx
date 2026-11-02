@@ -1,5 +1,4 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -8,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge } from '@/components/badge';
 import { diagnosticBadge } from '@/components/process-card';
 import { PrimaryButton } from '@/components/primary-button';
+import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { addImportedProcess } from '@/data/process-store';
