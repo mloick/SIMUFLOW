@@ -21,6 +21,7 @@ Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la m
 | expo-secure-store | 58 (session Supabase dans le trousseau chiffré du téléphone ; module natif, l'app doit être recompilée) |
 | expo-network | 58 (état du réseau : hors connexion réel, synchronisation au retour du réseau ; module natif, l'app compilée par Xcode doit être recompilée) |
 | expo-camera | 58 (appareil photo de l'onglet Scanner ; module natif, l'app doit être recompilée) |
+| tesseract.js | 7 (lecture du texte d'une photo dans la version web, en WebAssembly ; données du français : `@tesseract.js-data/fra`, en dépendance de développement) |
 | expo-notifications | 58 (notifications locales : rappels d'échéance ; module natif, l'app doit être recompilée) |
 
 ## Structure du dépôt
@@ -37,17 +38,18 @@ src/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre, grands textes)
-  scan/         Lecture d'un tableau photographié : texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
+  scan/         Lecture d'un tableau photographié : mots lus par Tesseract dans la version web rangés en cases (words.ts) après effacement des traits du tableau (table-lines.ts), texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   tracking/     Suivre un process en vrai : calendrier des jours ouvrés français (calendar.ts), suivi d'une demande étape par étape (tracking.ts), textes des échéances (format.ts), rappels à programmer (reminders.ts) ; tests dans __tests__/
   notifications/ Notifications locales : autorisation, canal Android, notification d'essai et rappels programmés (notifications.ts, et notifications.web.ts pour le web), réglage « Rappels d'échéance » (settings.ts), mise à jour des rappels (use-deadline-reminders.ts)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
+public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil, moteur de lecture du Scanner web (ocr/, copié par scripts/ocr-web.mjs, non versionné)
 docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js)
-scripts/        Lancement iOS (ios.sh) et nettoyage (nettoyer-ios.sh)
+scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh) et copie du moteur de lecture du Scanner web (ocr-web.mjs)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
 ```
@@ -63,8 +65,8 @@ app.json        Configuration Expo (nom, icônes, écran de démarrage, identifi
 | `npm run ios:iphone` | Pareil, avec `--device` (iPhone branché en USB) |
 | `npm run nettoyer` | Effacer les fichiers temporaires de compilation iOS pour libérer de l'espace |
 | `npx expo start` | Relancer le serveur de développement quand le build est déjà installé |
-| `npx expo start --web` | Ouvrir l'app dans le navigateur, en développement |
-| `npx expo export -p web` | Construire la version web dans `dist/` (ce que fait la publication) |
+| `npm run web` | Ouvrir l'app dans le navigateur, en développement (copie d'abord le moteur de lecture du Scanner web dans `public/ocr/`) |
+| `npm run export:web` | Construire la version web dans `dist/`, moteur de lecture compris (ce que fait la publication) |
 | `npm test` | Lancer les tests unitaires et de composants (Jest) |
 | `npm run e2e` | Lancer le test de bout en bout (Maestro) sur l'app installée dans le Simulateur iOS |
 | `npx tsc --noEmit` | Vérifier les types |
@@ -367,7 +369,7 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
-- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Dans Expo Go, où le module n'existe pas, l'écran dit que la lecture n'est pas encore disponible. Sur le web, l'écran ne demande même pas l'appareil photo : il explique que le Scanner est sur téléphone et propose « Importer un fichier ».
+- **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Dans Expo Go, où le module n'existe pas, l'écran dit que la lecture n'est pas encore disponible. Sur le web, l'écran ne montre pas de viseur : voir « Scanner dans la version web » plus bas.
 - **Créer le process** : sous un tableau trouvé, « Créer le process » le transforme en process (`tableToProcess`, voir plus bas), applique les règles de lecture apprises (`applyReadingRules`, comme à l'import d'un fichier), l'ajoute à la liste (`addImportedProcess` : enregistré sur le téléphone et synchronisé avec le compte) et ouvre sa fiche. « Créer et corriger » ouvre en plus l'éditeur par-dessus la fiche. Le nom est le titre écrit au-dessus du tableau, sinon « Tableau scanné du 31/10/2026 ». Le Scanner revient ensuite au viseur. « Reprendre la photo » reste à côté.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
@@ -390,6 +392,20 @@ TypeScript pur, testé. `tableToProcess(tableau, nom, préfixe)` rend le même r
 Neuf tests : les délais, la colonne Suite, une suite vers une ligne absente, puis les six tableaux d'exemple, de la photo (positions relevées) jusqu'au process. On retrouve ce que chaque tableau annonce dans « Attendu » : 6,5 JO pour le tableau 1, 4,5 JO pour le 2, une décision et deux chemins pour le 3, les délais du 4, la boucle et l'acteur manquant du 5, deux décisions, deux fins et trois chemins pour le 6.
 
 ![Scanner : le tableau trouvé, « Créer le process », puis la fiche du process créé](captures/etape-10d-process.png)
+
+### Scanner dans la version web (`modules/text-recognition/index.web.ts`)
+
+Dans le navigateur, pas de module natif : `index.web.ts` remplace `index.ts` (Metro prend la version `.web.ts`) et rend la même chose, avec **Tesseract** (`tesseract.js` 7), un moteur de lecture de texte libre qui tourne dans le navigateur en WebAssembly. La photo ne quitte pas l'appareil.
+
+- **Écran.** Pas d'aperçu en direct : « Prendre ou choisir une photo » (`src/utils/pick-photo.web.ts`) crée un champ de fichier `accept="image/*"` avec `capture="environment"`. Sur téléphone, il ouvre l'appareil photo arrière ; sur ordinateur, le choix d'une image. L'image choisie (adresse `blob:`) suit ensuite le même chemin que la photo sur téléphone : lecture, tableau trouvé, « Créer le process » ou « Créer et corriger ». Un lien mène aussi à l'import de fichier.
+- **Préparation de l'image** (dans `index.web.ts`). Réduite à 2 000 px de large au plus, passée en niveaux de gris, puis les traits du tableau sont effacés par `eraseTableLines` (`src/scan/table-lines.ts`, testé) : toute suite de pixels sombres plus longue que 12 % de la largeur (ou de la hauteur) est repeinte en blanc. Sans cela, Tesseract prend la grille pour une image et lit les cases de travers.
+- **Lecture.** Mode d'analyse automatique de la page (`PSM.AUTO`) : sur les tableaux d'exemple, c'est lui qui lit le mieux les numéros seuls de la colonne « N° ». Le moteur est créé une fois, au premier Scanner, puis gardé.
+- **Des mots aux cases** (`wordsToTextLines`, `src/scan/words.ts`, testé). Tesseract rend des lignes de mots avec leur boîte en pixels. Les mots sont regroupés en cases, coupées quand l'écart entre deux mots dépasse la hauteur du texte, comme ML Kit sur Android. La hauteur de chaque case vient de la hauteur des minuscules et de la ligne de base données par Tesseract, et pas de la boîte des lettres (« Étape », avec son accent, serait sinon plus haut que les autres titres, et `findTable` le prendrait pour un texte d'une autre taille). Les traits lus comme du texte (« | », « — ») sont ignorés, et « 1J0 » redevient « 1 JO ». `groupRows` et `findTable` servent ensuite sans changement.
+- **Fichiers du moteur.** `scripts/ocr-web.mjs` copie de `node_modules` vers `public/ocr/` le worker, le moteur WebAssembly (trois versions : le worker prend la plus rapide que le navigateur accepte) et les données du français (`fra.traineddata.gz`), environ 12 Mo au total, dont 6 Mo chargés au premier Scanner. Ils sont servis avec l'app (`/SIMUFLOW/app/ocr/`) : le navigateur ne télécharge rien ailleurs. `public/ocr/` n'est pas versionné ; `npm run web` et `npm run export:web` (utilisé par la publication) lancent la copie.
+
+**Vérifié** avec Playwright sur l'export servi comme sur GitHub Pages, avec des captures des tableaux 1, 3 et 6 de `docs/exemples/tableaux-a-scanner.html` : les trois tableaux sont trouvés avec toutes leurs étapes (4, 5 et 7), en 1,5 à 2 s chacun. Limites vues : les flèches des suites (« oui → 3 ; non → 4 ») sont parfois mal lues, et une colonne étroite peut perdre son titre. « Créer et corriger » permet de vérifier.
+
+![Le Scanner dans le navigateur : choisir une photo, le tableau trouvé, le process créé](captures/etape-17-scanner-web.png)
 
 ### Module natif de lecture du texte (`modules/text-recognition/`)
 
@@ -776,7 +792,7 @@ Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : v
 
 Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
 
-**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
 
 ## Version web (`https://mloick.github.io/SIMUFLOW/app/`)
 
@@ -785,9 +801,17 @@ Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `
 - `web.output: "single"` : une seule page `index.html` et ses scripts, sans serveur. L'app n'a pas de route d'API, un hébergement de fichiers suffit.
 - `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. Il ne change rien sur téléphone.
 
+**Web app (ajout à l'écran d'accueil).** Le dossier `public/` est copié tel quel dans l'export :
+
+- `public/index.html` remplace la page de base d'Expo (Expo prend ce fichier s'il existe) : langue `fr`, description, lien vers le manifeste, icône Apple (`apple-touch-icon`), nom court sous l'icône (`apple-mobile-web-app-title` : « SimuFlow »), plein écran sur iPhone (`apple-mobile-web-app-capable`), couleur de la barre d'état et fond de la page en clair et en sombre (pas de flash blanc au lancement).
+- `public/manifest.webmanifest` : nom, adresse de départ et périmètre (`/SIMUFLOW/app/`), affichage `standalone` (sans barre du navigateur), portrait, couleurs, icônes 192 et 512 px, et une version « maskable » (marge de 10 %) qu'Android peut découper en rond.
+- `public/icones/` : les icônes, tirées de `assets/images/icon.png` (180 px pour l'iPhone, 192 et 512 px).
+
+Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page sert aussi de `404.html` à la racine du site, où un chemin relatif ne marcherait pas. Chrome confirme que l'app est installable (aucune erreur d'installabilité ni de manifeste). Il n'y a pas de service worker : l'app web a besoin du réseau pour s'ouvrir.
+
 **Ouvrir un écran par son adresse.** GitHub Pages ne connaît que des fichiers : `/SIMUFLOW/app/process/gestion-incident` n'en est pas un. La publication copie donc `index.html` en `404.html` à la racine du site. Pour toute adresse inconnue, GitHub Pages sert cette page : l'app démarre et Expo Router ouvre l'écran demandé. Le rechargement d'une page et les liens partagés marchent ainsi.
 
-**Ce qui change dans le navigateur.** Les données sans compte sont dans le stockage local du navigateur (`localStorage`), la session aussi (`secure-session-storage.web.ts`). Les fichiers exportés sont téléchargés, le PDF passe par la fenêtre d'impression. Le Scanner renvoie vers l'import, et les notifications ne sont pas disponibles (le Profil le dit). Pour « Mot de passe oublié », l'adresse de retour est celle de la version web : elle doit être autorisée dans Supabase (Authentication > URL Configuration > Redirect URLs : `https://mloick.github.io/SIMUFLOW/**`).
+**Ce qui change dans le navigateur.** Les données sans compte sont dans le stockage local du navigateur (`localStorage`), la session aussi (`secure-session-storage.web.ts`). Les fichiers exportés sont téléchargés, le PDF passe par la fenêtre d'impression. Le Scanner lit la photo dans le navigateur (voir « Scanner dans la version web »), et les notifications ne sont pas disponibles (le Profil le dit). Pour « Mot de passe oublié », l'adresse de retour est celle de la version web : elle doit être autorisée dans Supabase (Authentication > URL Configuration > Redirect URLs : `https://mloick.github.io/SIMUFLOW/**`).
 
 **Vérifié** avec Playwright sur l'export servi comme sur GitHub Pages (même chemin, même page 404) : accueil du site, bouton « Ouvrir l'app web », présentation, liste, détail, simulation, Profil, Scanner, et rechargement d'un écran par son adresse, sans erreur dans la console.
 
