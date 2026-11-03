@@ -45,7 +45,7 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
       - name: Exporter la version web de l'app
-        run: npx expo export -p web
+        run: npm run export:web
       - name: Assembler le site
         run: |
           mkdir -p _site/captures

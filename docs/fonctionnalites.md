@@ -38,6 +38,10 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 Disponible : l'onglet **Scanner** ouvre l'appareil photo. La première fois, l'app demande l'autorisation et explique pourquoi. Cadrez le tableau entre les quatre coins, allumez la lampe si besoin, et touchez le gros bouton rond. Touchez **Reprendre la photo** pour recommencer. Pour essayer, le fichier `docs/exemples/tableaux-a-scanner.html` contient six tableaux fictifs à afficher sur un écran ou à imprimer. Juste après la photo, l'app recadre la photo sur la feuille ou l'écran photographié (sur iPhone, comme son appareil photo), puis lit le texte, sur le téléphone, sans Internet. Elle ne garde que le tableau : elle le repère à sa ligne de titres (Étape, Acteur, Délai, ou Tâche, Responsable, Durée…) et ignore le texte autour (titre de la page, onglets du navigateur, notes). Le tableau trouvé s'affiche en colonnes sous la photo (« Tableau trouvé : 4 étapes »). Sans ligne de titres, l'app le dit et montre tout le texte lu. La lecture marche sur iPhone et sur Android.
 
+**Dans la version web** (navigateur ou web app), le bouton **Prendre ou choisir une photo** ouvre l'appareil photo du téléphone, ou, sur ordinateur, le choix d'une image (une capture d'écran marche aussi). Le texte est lu dans le navigateur, sans envoyer l'image. La première lecture prend quelques secondes de plus, le temps de charger le moteur de lecture. Elle est un peu moins fine que sur téléphone et ne recadre pas la photo : prenez le tableau bien de face et d'assez près, et touchez **Créer et corriger** pour vérifier ce qui a été lu.
+
+![Le Scanner dans le navigateur : choisir une photo, le tableau trouvé, le process créé](captures/etape-17-scanner-web.png)
+
 Touchez **Créer le process** : chaque ligne devient une étape, avec son acteur et son délai (« 2 JO », « 3 jours », « 4 h », « 1 sem. »). Les étapes se suivent dans l'ordre du tableau. Une colonne **Suite** peut donner l'étape suivante par son numéro, plusieurs cas (« oui → 3 ; non → 4 ») ou « fin ». Une étape avec plusieurs cas devient une décision. Le process prend le nom écrit au-dessus du tableau et s'ajoute à la liste. Touchez **Créer et corriger** pour ouvrir aussi l'éditeur, par exemple pour compléter un acteur manquant.
 
 ![Scanner : l'autorisation, le viseur, puis la photo prise](captures/etape-10a-scanner.png)
@@ -211,7 +215,7 @@ Pendant le chargement, la liste « respire » doucement, puis les process appara
 
 ## Utiliser SimuFlow dans le navigateur · Disponible
 
-SimuFlow s'ouvre aussi dans un navigateur, sur ordinateur ou sur téléphone, sans rien installer : https://mloick.github.io/SIMUFLOW/app/ (ou le bouton **Ouvrir l'app web** sur le site). Tout y est, sauf deux choses qui ont besoin du téléphone : le **Scanner** (l'écran propose alors d'importer un fichier) et les **rappels**. Sans compte, vos process restent dans le navigateur ; avec un compte, vous retrouvez les mêmes process sur le téléphone et sur l'ordinateur.
+SimuFlow s'ouvre aussi dans un navigateur, sur ordinateur ou sur téléphone, sans rien installer : https://mloick.github.io/SIMUFLOW/app/ (ou le bouton **Ouvrir l'app web** sur le site). Tout y est, sauf les **rappels**, qui ont besoin de l'app installée sur le téléphone. Sans compte, vos process restent dans le navigateur ; avec un compte, vous retrouvez les mêmes process sur le téléphone et sur l'ordinateur.
 
 **L'ajouter à l'écran d'accueil**, comme une vraie app : sur iPhone, ouvrez l'adresse dans Safari, touchez **Partager** puis **Sur l'écran d'accueil**. Sur Android, dans Chrome, menu **⋮** puis **Ajouter à l'écran d'accueil** (ou **Installer l'application**). L'icône SimuFlow apparaît avec son nom, et l'app s'ouvre en plein écran, sans la barre du navigateur.
 

@@ -14,6 +14,7 @@ import { applyReadingRules } from '@/data/rules-store';
 import { groupRows, type TableRow } from '@/scan/rows';
 import { findTable, type ScannedTable } from '@/scan/table';
 import { tableToProcess } from '@/scan/to-process';
+import { pickPhoto } from '@/utils/pick-photo';
 import { plural } from '@/utils/format';
 
 import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text-recognition';
@@ -28,6 +29,9 @@ import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text
  * texte est rangé en lignes (src/scan/rows.ts), puis seul le tableau est gardé,
  * à partir de sa ligne d'en-tête (src/scan/table.ts). « Créer le process » le
  * transforme en process (src/scan/to-process.ts), ajouté à la liste.
+ *
+ * Dans le navigateur, pas de viseur : la photo est prise ou choisie avec
+ * src/utils/pick-photo.web.ts, puis lue par Tesseract (index.web.ts du module).
  */
 
 /** Couleurs fixes de l'écran photo (sombre dans les deux thèmes). */
@@ -94,48 +98,16 @@ export default function ScannerScreen() {
     }
   };
 
+  /** Version web : prend ou choisit une photo, puis la lit. */
+  const pick = async () => {
+    const uri = await pickPhoto();
+    if (!uri) return;
+    setPhoto(uri);
+    read(uri);
+  };
+
   let body: ReactNode;
-  if (Platform.OS === 'web') {
-    // Dans le navigateur, le texte d'une photo ne peut pas être lu (module natif) :
-    // inutile de demander l'appareil photo, on propose l'import d'un fichier.
-    body = (
-      <View style={styles.permission}>
-        <View style={styles.permissionIcon} importantForAccessibility="no-hide-descendants">
-          <SymbolView name={{ ios: 'iphone', android: 'smartphone' }} size={32} tintColor={SCAN.accent} />
-        </View>
-        <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
-          Le Scanner est sur téléphone
-        </ThemedText>
-        <ThemedText style={[styles.muted, styles.centerText]}>
-          La photo d’un tableau est lue par le téléphone lui-même, sans Internet. Dans le navigateur, importez plutôt un
-          fichier draw.io ou JSON.
-        </ThemedText>
-        <PrimaryButton label="Importer un fichier" onPress={() => router.push('/import')} />
-      </View>
-    );
-  } else if (!permission) {
-    body = <ActivityIndicator color={SCAN.text} style={styles.center} />;
-  } else if (!permission.granted) {
-    body = (
-      <View style={styles.permission}>
-        <View style={styles.permissionIcon} importantForAccessibility="no-hide-descendants">
-          <SymbolView name={{ ios: 'camera', android: 'photo_camera' }} size={32} tintColor={SCAN.accent} />
-        </View>
-        <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
-          Autoriser l’appareil photo
-        </ThemedText>
-        <ThemedText style={[styles.muted, styles.centerText]}>
-          {permission.canAskAgain
-            ? 'SimuFlow utilise l’appareil photo seulement pour lire un tableau de process. Les photos restent sur votre téléphone.'
-            : 'L’accès a été refusé. Autorisez l’appareil photo pour SimuFlow dans les réglages du téléphone.'}
-        </ThemedText>
-        <PrimaryButton
-          label={permission.canAskAgain ? 'Autoriser' : 'Ouvrir les réglages'}
-          onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
-        />
-      </View>
-    );
-  } else if (photo) {
+  if (photo) {
     const done = reading.state === 'done' ? reading : null;
     body = (
       <>
@@ -194,6 +166,52 @@ export default function ScannerScreen() {
           </View>
         )}
       </>
+    );
+  } else if (Platform.OS === 'web') {
+    // Dans le navigateur : pas d'aperçu en direct. Sur téléphone, le bouton ouvre
+    // l'appareil photo ; sur ordinateur, le choix d'une image. Tesseract lit le
+    // texte dans le navigateur (modules/text-recognition/index.web.ts).
+    body = (
+      <View style={styles.permission}>
+        <View style={styles.permissionIcon} importantForAccessibility="no-hide-descendants">
+          <SymbolView name={{ ios: 'camera', android: 'photo_camera' }} size={32} tintColor={SCAN.accent} />
+        </View>
+        <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
+          Photographier un tableau
+        </ThemedText>
+        <ThemedText style={[styles.muted, styles.centerText]}>
+          Prenez le tableau en photo, ou choisissez une image (photo, capture d’écran). Le texte est lu dans votre
+          navigateur : l’image n’est envoyée nulle part.
+        </ThemedText>
+        <PrimaryButton label="Prendre ou choisir une photo" onPress={pick} />
+        <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8} style={styles.link}>
+          <ThemedText type="link" style={[styles.accent, styles.centerText]}>
+            Importer un fichier draw.io ou JSON
+          </ThemedText>
+        </Pressable>
+      </View>
+    );
+  } else if (!permission) {
+    body = <ActivityIndicator color={SCAN.text} style={styles.center} />;
+  } else if (!permission.granted) {
+    body = (
+      <View style={styles.permission}>
+        <View style={styles.permissionIcon} importantForAccessibility="no-hide-descendants">
+          <SymbolView name={{ ios: 'camera', android: 'photo_camera' }} size={32} tintColor={SCAN.accent} />
+        </View>
+        <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
+          Autoriser l’appareil photo
+        </ThemedText>
+        <ThemedText style={[styles.muted, styles.centerText]}>
+          {permission.canAskAgain
+            ? 'SimuFlow utilise l’appareil photo seulement pour lire un tableau de process. Les photos restent sur votre téléphone.'
+            : 'L’accès a été refusé. Autorisez l’appareil photo pour SimuFlow dans les réglages du téléphone.'}
+        </ThemedText>
+        <PrimaryButton
+          label={permission.canAskAgain ? 'Autoriser' : 'Ouvrir les réglages'}
+          onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
+        />
+      </View>
     );
   } else {
     body = (
@@ -281,7 +299,9 @@ type Reading =
 function readingText(reading: Reading): string {
   switch (reading.state) {
     case 'reading':
-      return 'Lecture du tableau…';
+      return Platform.OS === 'web'
+        ? 'Lecture du tableau… La première fois, le navigateur charge aussi le moteur de lecture.'
+        : 'Lecture du tableau…';
     case 'error':
       return 'Le texte n’a pas pu être lu. Reprenez la photo, bien de face et nette.';
     case 'unavailable':
