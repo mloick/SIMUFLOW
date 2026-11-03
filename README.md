@@ -56,7 +56,7 @@ The app is a development build compiled by Xcode, not Expo Go: it includes a loc
 
 **Installable build (no Mac needed).** `npx eas-cli@latest build --platform android --profile preview` produces an Android APK that installs from a link or QR code. Installing an EAS build on an iPhone requires a paid Apple Developer account; with a free account, use the Xcode build above. JavaScript updates reach installed builds without a new build through EAS Update: `npx eas-cli@latest update --channel preview --message "..."`.
 
-**Web version.** The same codebase runs in a browser, with nothing to install: https://mloick.github.io/SIMUFLOW/app/. It is exported by `npx expo export -p web` (a single page, served under `/SIMUFLOW/app`, set by `experiments.baseUrl` in `app.json`) and published to GitHub Pages on every merge to `main`. Everything works except the Scanner (native module) and reminders (phone notifications). To try it locally: `npx expo start --web`.
+**Web version.** The same codebase runs in a browser, with nothing to install: https://mloick.github.io/SIMUFLOW/app/. It is exported by `npx expo export -p web` (a single page, served under `/SIMUFLOW/app`, set by `experiments.baseUrl` in `app.json`) and published to GitHub Pages on every merge to `main`. It can be added to a phone's home screen like an app (web app: SimuFlow icon and name, full screen), thanks to `public/manifest.webmanifest` and the `public/index.html` page. Everything works except the Scanner (native module) and reminders (phone notifications). To try it locally: `npx expo start --web`.
 
 **Checks.**
 

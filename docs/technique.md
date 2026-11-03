@@ -43,6 +43,7 @@ src/
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
+public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil
 docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
@@ -776,7 +777,7 @@ Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : v
 
 Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
 
-**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
 
 ## Version web (`https://mloick.github.io/SIMUFLOW/app/`)
 
@@ -784,6 +785,14 @@ Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `
 
 - `web.output: "single"` : une seule page `index.html` et ses scripts, sans serveur. L'app n'a pas de route d'API, un hébergement de fichiers suffit.
 - `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. Il ne change rien sur téléphone.
+
+**Web app (ajout à l'écran d'accueil).** Le dossier `public/` est copié tel quel dans l'export :
+
+- `public/index.html` remplace la page de base d'Expo (Expo prend ce fichier s'il existe) : langue `fr`, description, lien vers le manifeste, icône Apple (`apple-touch-icon`), nom court sous l'icône (`apple-mobile-web-app-title` : « SimuFlow »), plein écran sur iPhone (`apple-mobile-web-app-capable`), couleur de la barre d'état et fond de la page en clair et en sombre (pas de flash blanc au lancement).
+- `public/manifest.webmanifest` : nom, adresse de départ et périmètre (`/SIMUFLOW/app/`), affichage `standalone` (sans barre du navigateur), portrait, couleurs, icônes 192 et 512 px, et une version « maskable » (marge de 10 %) qu'Android peut découper en rond.
+- `public/icones/` : les icônes, tirées de `assets/images/icon.png` (180 px pour l'iPhone, 192 et 512 px).
+
+Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page sert aussi de `404.html` à la racine du site, où un chemin relatif ne marcherait pas. Chrome confirme que l'app est installable (aucune erreur d'installabilité ni de manifeste). Il n'y a pas de service worker : l'app web a besoin du réseau pour s'ouvrir.
 
 **Ouvrir un écran par son adresse.** GitHub Pages ne connaît que des fichiers : `/SIMUFLOW/app/process/gestion-incident` n'en est pas un. La publication copie donc `index.html` en `404.html` à la racine du site. Pour toute adresse inconnue, GitHub Pages sert cette page : l'app démarre et Expo Router ouvre l'écran demandé. Le rechargement d'une page et les liens partagés marchent ainsi.
 

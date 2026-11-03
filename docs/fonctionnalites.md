@@ -213,6 +213,8 @@ Pendant le chargement, la liste « respire » doucement, puis les process appara
 
 SimuFlow s'ouvre aussi dans un navigateur, sur ordinateur ou sur téléphone, sans rien installer : https://mloick.github.io/SIMUFLOW/app/ (ou le bouton **Ouvrir l'app web** sur le site). Tout y est, sauf deux choses qui ont besoin du téléphone : le **Scanner** (l'écran propose alors d'importer un fichier) et les **rappels**. Sans compte, vos process restent dans le navigateur ; avec un compte, vous retrouvez les mêmes process sur le téléphone et sur l'ordinateur.
 
+**L'ajouter à l'écran d'accueil**, comme une vraie app : sur iPhone, ouvrez l'adresse dans Safari, touchez **Partager** puis **Sur l'écran d'accueil**. Sur Android, dans Chrome, menu **⋮** puis **Ajouter à l'écran d'accueil** (ou **Installer l'application**). L'icône SimuFlow apparaît avec son nom, et l'app s'ouvre en plein écran, sans la barre du navigateur.
+
 ![La version web : le site, la liste, la simulation et le Scanner](captures/etape-16-version-web.png)
 
 ## Vos données et le site · Disponible
