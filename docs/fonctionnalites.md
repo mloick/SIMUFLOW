@@ -199,7 +199,7 @@ L'app suit le réglage de votre téléphone : claire le jour, sombre si vous ave
 
 ## Présentation au premier lancement · Disponible
 
-À la première ouverture, quatre pages présentent SimuFlow : ce qu'elle fait, comment ajouter vos process, les rejouer et les corriger, et suivre une vraie demande. Touchez **Suivant**, ou **Passer** pour aller directement à la liste. Pour la revoir : **Profil**, puis **Revoir la présentation**, tout en bas.
+À la première ouverture, quatre pages présentent SimuFlow : ce qu'elle fait, comment ajouter vos process, les rejouer et les corriger, et suivre une vraie demande. Dans le navigateur, une page de plus explique comment installer SimuFlow sur l'écran d'accueil. Touchez **Suivant**, ou **Passer** pour aller directement à la liste. Pour la revoir : **Profil**, puis **Revoir la présentation**, tout en bas.
 
 ![La présentation : bienvenue, ajouter ses process, suivre une vraie demande, et le lien dans le Profil](captures/etape-13c-bienvenue.png)
 
@@ -217,9 +217,11 @@ Pendant le chargement, la liste « respire » doucement, puis les process appara
 
 SimuFlow s'ouvre aussi dans un navigateur, sur ordinateur ou sur téléphone, sans rien installer : https://mloick.github.io/SIMUFLOW/app/ (ou le bouton **Ouvrir l'app web** sur le site). Tout y est, sauf les **rappels**, qui ont besoin de l'app installée sur le téléphone. Sans compte, vos process restent dans le navigateur ; avec un compte, vous retrouvez les mêmes process sur le téléphone et sur l'ordinateur.
 
-**L'ajouter à l'écran d'accueil**, comme une vraie app : sur iPhone, ouvrez l'adresse dans Safari, touchez **Partager** puis **Sur l'écran d'accueil**. Sur Android, dans Chrome, menu **⋮** puis **Ajouter à l'écran d'accueil** (ou **Installer l'application**). L'icône SimuFlow apparaît avec son nom, et l'app s'ouvre en plein écran, sans la barre du navigateur.
+**L'ajouter à l'écran d'accueil**, comme une vraie app : à la première ouverture dans le navigateur, la présentation montre les gestes à faire, pour l'iPhone, Android ou l'ordinateur selon l'appareil. Sur iPhone, dans Safari, touchez **•••** puis **Partager** (ou directement le bouton **Partager**), puis **Sur l'écran d'accueil**. Sur Android, dans Chrome, menu **⋮** puis **Ajouter à l'écran d'accueil** (ou **Installer l'application**). L'icône SimuFlow apparaît avec son nom, et l'app s'ouvre en plein écran, sans la barre du navigateur.
 
 ![La version web : le site, la liste, la simulation et le Scanner](captures/etape-16-version-web.png)
+
+![La page « Installez SimuFlow » de la présentation, sur iPhone et sur Android](captures/etape-18-installer-web.png)
 
 ## Vos données et le site · Disponible
 

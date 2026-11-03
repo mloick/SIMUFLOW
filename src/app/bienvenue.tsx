@@ -11,8 +11,10 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { setWelcomeSeen } from '@/data/welcome-setting';
 import { useTheme } from '@/hooks/use-theme';
+import { INSTALL_STEPS, type InstallPlatform } from '@/utils/install-guide';
+import { installPlatform } from '@/utils/install-guide-platform';
 
-type Page = { icon?: SymbolViewProps['name']; title: string; text: string };
+type Page = { icon?: SymbolViewProps['name']; title: string; text: string; steps?: string[] };
 
 const PAGES: Page[] = [
   {
@@ -36,14 +38,36 @@ const PAGES: Page[] = [
   },
 ];
 
+const INSTALL_TEXT: Record<InstallPlatform, string> = {
+  ios: 'En trois gestes, sur l’écran d’accueil :',
+  android: 'En trois gestes, sur l’écran d’accueil :',
+  desktop: 'SimuFlow s’utilise aussi comme une app sur votre téléphone :',
+};
+
+/**
+ * Pages de la présentation. Dans un navigateur (web app pas encore installée),
+ * la deuxième page explique comment ajouter SimuFlow à l'écran d'accueil.
+ */
+function buildPages(): Page[] {
+  const platform = installPlatform();
+  if (!platform) return PAGES;
+  const install: Page = {
+    title: 'Installez SimuFlow',
+    text: INSTALL_TEXT[platform],
+    steps: INSTALL_STEPS[platform],
+  };
+  return [PAGES[0], install, ...PAGES.slice(1)];
+}
+
 /** Présentation du premier lancement, en quatre pages. Revoyable depuis le Profil. */
 export default function WelcomeScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  const [pages] = useState(buildPages);
   const [index, setIndex] = useState(0);
-  const page = PAGES[index];
-  const last = index === PAGES.length - 1;
+  const page = pages[index];
+  const last = index === pages.length - 1;
 
   const finish = () => {
     setWelcomeSeen();
@@ -71,7 +95,8 @@ export default function WelcomeScreen() {
           entering={reduceMotion ? undefined : FadeIn.duration(250)}
           style={styles.page}
           accessibilityLiveRegion="polite">
-          {page.icon ? (
+          {/* Une page d'étapes n'a pas d'icône : tout doit tenir sur l'écran d'un téléphone. */}
+          {page.steps ? null : page.icon ? (
             <View
               style={[styles.icon, { backgroundColor: theme.primaryBackground }]}
               importantForAccessibility="no-hide-descendants">
@@ -83,15 +108,27 @@ export default function WelcomeScreen() {
           <ThemedText type="title" style={styles.center} accessibilityRole="header">
             {page.title}
           </ThemedText>
-          <ThemedText themeColor="textSecondary" style={[styles.center, styles.text]}>
+          <ThemedText themeColor="textSecondary" style={[styles.center, page.steps ? undefined : styles.text]}>
             {page.text}
           </ThemedText>
+          {page.steps && (
+            <View style={[styles.steps, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              {page.steps.map((step, number) => (
+                <View key={step} style={styles.step}>
+                  <View style={[styles.number, { backgroundColor: theme.primary }]}>
+                    <ThemedText style={[styles.numberText, { color: theme.onPrimary }]}>{number + 1}</ThemedText>
+                  </View>
+                  <ThemedText style={styles.stepText}>{step}</ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
         </Animated.View>
       </ScrollView>
 
       <View style={styles.bottom}>
-        <View style={styles.dots} accessible accessibilityLabel={`Page ${index + 1} sur ${PAGES.length}`}>
-          {PAGES.map((item, dot) => (
+        <View style={styles.dots} accessible accessibilityLabel={`Page ${index + 1} sur ${pages.length}`}>
+          {pages.map((item, dot) => (
             <View
               key={item.title}
               style={[styles.dot, { backgroundColor: dot === index ? theme.primary : theme.fieldBorder }]}
@@ -130,6 +167,11 @@ const styles = StyleSheet.create({
   page: { alignItems: 'center', gap: Spacing.four },
   icon: { width: 96, height: 96, borderRadius: Radius.medium, alignItems: 'center', justifyContent: 'center' },
   center: { textAlign: 'center' },
+  steps: { alignSelf: 'stretch', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.medium, borderWidth: 1 },
+  step: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
+  number: { width: 28, height: 28, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  numberText: { fontWeight: '700', fontSize: 15, lineHeight: 20 },
+  stepText: { flex: 1 },
   text: { fontSize: 18, lineHeight: 26 },
   bottom: {
     gap: Spacing.three,
