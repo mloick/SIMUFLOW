@@ -1,0 +1,6 @@
+N°;Étape;Acteur;Délai;Suite
+1;Saisir la demande;Demandeur;1 JO;2
+2;Valider la demande;Manager;2 JO;"oui → 3 ; non → 5"
+3;Commander le matériel;Service Achats;5 JO;4
+4;Livrer le matériel;Service Informatique;3 JO;fin
+5;Informer le demandeur;Manager;1 JO;fin

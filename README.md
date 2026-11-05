@@ -11,6 +11,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 **What you can do**
 
 - **Add a process** from a draw.io or JSON file, or by **photographing a table** (step, actor, delay): the text is read on the phone by a native module (Swift with Vision on iOS, Kotlin with ML Kit on Android).
+- **Open an Excel or CSV table** (in progress): the workbook is read on the device, and the app says what each sheet holds (process table, workflow with SLA and OLA, form template, list). Turning it into processes comes next.
 - **See what is wrong**: dead ends, unreachable steps, paths that can never finish, one-way decisions, unlabeled branches.
 - **Correct it** in an editor (steps, decisions, branches). The app learns reading rules from your corrections and reapplies them on the next imports.
 - **Replay it** step by step, or see every path at once with the critical path. Export it as a PDF, a draw.io file or JSON.
@@ -25,7 +26,7 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 
 - **Process**: your processes with their diagnostic status, then the sample processes in a collapsible section.
 - **Detail**: key figures, the diagnostic with a "Show" button on each problem, actors and steps; edit, export or follow a real request from here.
-- **Import**: pick a draw.io or JSON file (or a scan), check and correct the preview, then keep it.
+- **Import**: pick a draw.io or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet.
 - **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path. The diagram can be exported as a PDF, a draw.io file or JSON.
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 - **Follow**: a real request, step by step, with each deadline in working days and the delay so far.
