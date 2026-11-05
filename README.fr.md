@@ -11,6 +11,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 **Ce que l'on peut faire**
 
 - **Ajouter un process** depuis un fichier draw.io ou JSON, ou en **photographiant un tableau** (étape, acteur, délai) : le texte est lu sur le téléphone par un module natif (Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android).
+- **Ouvrir un tableau Excel ou CSV** (en cours) : le classeur est lu sur l'appareil, et l'app dit ce que contient chaque onglet (tableau de process, workflow avec SLA et OLA, template de formulaire, liste). La création des process vient ensuite.
 - **Voir ce qui cloche** : impasses, étapes inatteignables, chemins qui ne finissent jamais, décisions à sens unique, branches sans nom.
 - **Le corriger** dans un éditeur (étapes, décisions, branches). L'app apprend des règles de lecture de vos corrections et les réapplique aux imports suivants.
 - **Le rejouer** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique. L'exporter en PDF, en fichier draw.io ou en JSON.
@@ -25,7 +26,7 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 
 - **Process** : vos process avec leur état de diagnostic, puis les process d'exemple dans une section repliable.
 - **Détail** : chiffres clés, diagnostic avec un bouton « Voir » sur chaque problème, acteurs et étapes ; on y modifie, exporte ou suit une vraie demande.
-- **Importer** : choisir un fichier draw.io ou JSON (ou un scan), vérifier et corriger l'aperçu, puis le garder.
+- **Importer** : choisir un fichier draw.io ou JSON (ou un scan), vérifier et corriger l'aperçu, puis le garder. Un tableau Excel ou CSV est lu onglet par onglet.
 - **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique. Le schéma s'exporte en PDF, en fichier draw.io ou en JSON.
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
 - **Suivi** : une vraie demande, étape par étape, avec l'échéance de chaque étape en jours ouvrés et le retard éventuel.
