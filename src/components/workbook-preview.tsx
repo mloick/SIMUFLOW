@@ -40,8 +40,18 @@ export function sheetMeta(sheet: SheetReport): string {
  * Ce que l'app a reconnu dans un classeur Excel ou un CSV : le genre de
  * fichier, puis chaque onglet avec ce qu'il contient.
  */
-export function WorkbookPreview({ report, warnings }: { report: WorkbookReport; warnings: string[] }) {
+export function WorkbookPreview({
+  report,
+  warnings,
+  importable,
+}: {
+  report: WorkbookReport;
+  warnings: string[];
+  /** Nombre de process importables (onglets « process »). */
+  importable: number;
+}) {
   const theme = useTheme();
+  const later = report.sheets.some((sheet) => sheet.kind === 'sla-ola' || sheet.kind === 'formulaire');
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
@@ -89,12 +99,21 @@ export function WorkbookPreview({ report, warnings }: { report: WorkbookReport; 
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          Le fichier est lu sur l’appareil, sans être envoyé ni gardé. La création des process à partir d’un
-          tableau arrive dans la prochaine version.
+          {importNotice(importable, later)}
         </ThemedText>
       </View>
     </View>
   );
+}
+
+/** Ce qui s'importe, et ce qui viendra plus tard. */
+export function importNotice(importable: number, later: boolean): string {
+  const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
+  if (importable > 0) {
+    return later ? `${local} Seuls les onglets « Process » s’importent pour l’instant.` : local;
+  }
+  if (later) return `${local} L’import des workflows SLA / OLA et des formulaires arrive dans une prochaine version.`;
+  return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…).`;
 }
 
 const styles = StyleSheet.create({

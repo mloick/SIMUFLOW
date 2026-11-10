@@ -9,7 +9,7 @@ import type { Process, ProcessSource, ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
 
-const SOURCE_LABELS: Record<ProcessSource, string> = { drawio: 'draw.io', scan: 'Scan', json: 'JSON' };
+const SOURCE_LABELS: Record<ProcessSource, string> = { drawio: 'draw.io', scan: 'Scan', json: 'JSON', tableau: 'Tableau' };
 
 /** Pastille du diagnostic : les erreurs d'abord, puis les avertissements. */
 export function diagnosticBadge(summary: ProcessSummary): { label: string; tone: BadgeTone } {
