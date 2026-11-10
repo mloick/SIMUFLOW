@@ -33,7 +33,7 @@ src/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
-  import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/
+  import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/ ; tableaux Excel et CSV dans tableau/ (lecture du classeur, reconnaissance de chaque onglet)
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
@@ -48,8 +48,8 @@ public/         Fichiers copiés tels quels dans la version web : page de base (
 docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
-jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js)
-scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh) et copie du moteur de lecture du Scanner web (ocr-web.mjs)
+jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
+scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs) et fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
 ```
@@ -165,6 +165,16 @@ Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros s
 
 Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauche à droite) et gardent leur position (`layout`) pour un futur affichage du schéma. Un fichier de plusieurs pages donne un process par page, nommé « Fichier · Page ».
 
+**Tableaux Excel et CSV** (`tableau/`). Le fichier est lu sur l'appareil, en JavaScript pur, sans bibliothèque de plus ni module natif : il marche sur iPhone, Android et web, et rien n'est envoyé ni gardé. Pour l'instant, l'app lit le classeur et dit ce que contient chaque onglet ; la création des process à partir de ces onglets vient aux étapes suivantes.
+
+- `readTableFile(nom, octets)` (`index.ts`) choisit le lecteur d'après l'extension, puis les premiers octets. Il rend un `Workbook` (`types.ts`) : des onglets, chacun une grille de textes (`rows`), ses cellules fusionnées (`merges`) et s'il est masqué.
+- **.xlsx, .xlsm** (`xlsx.ts`). Un classeur est un ZIP de fichiers XML : `fflate` ne décompresse que ceux qui servent (`workbook.xml`, ses relations, `sharedStrings.xml`, `styles.xml`, les feuilles), jamais les images. Chaque cellule donne sa **valeur affichée** : texte partagé, texte enrichi, texte en ligne, booléen (« VRAI »), valeur enregistrée d'une formule (non recalculée), date au format « 05/11/2026 » quand le style de la cellule est un format de date. Les retours à la ligne des cellules sont gardés. Les lignes et colonnes vides de la fin sont retirées ; au-delà de 5 000 lignes ou 500 colonnes, l'onglet est tronqué avec une remarque. Un onglet graphique (sans cellules) est sauté.
+- **Fichiers refusés avec un message qui dit quoi faire** : ancien .xls et classeur protégé par mot de passe (signature `D0 CF 11 E0`, pas un ZIP), .xlsb, .ods de LibreOffice, Numbers, fichier abîmé.
+- **.csv** (`csv.ts`). Séparateur deviné sur la première ligne (point-virgule, virgule, tabulation) ; guillemets, séparateurs et retours à la ligne dans une case ; UTF-8 avec ou sans BOM, sinon Windows-1252 (CSV d'un Excel français). Un seul onglet, nommé d'après le fichier.
+- **Reconnaissance** (`detect.ts`, `describeWorkbook`). Pour chaque onglet, sans rien demander : *Process* (ligne d'en-tête du scanner : au moins deux colonnes connues dont l'étape, cherchée dans les 30 premières lignes, donc même sous un titre), *SLA / OLA* (une ligne d'en-tête qui parle de SLA, d'OLA et de groupe : un workflow d'outil de tickets, une ligne par situation), *Formulaire* (onglets d'un template de formulaire de catalogue : Basic info, Questions, Fulfillment flow, Assignment & Summary, Values…, numérotés ou non, reconnus quand le classeur en a au moins trois), *Liste* (deux colonnes remplies au plus), *Vide* ou *Non reconnu*. Le nombre de lignes compté est celui sous l'en-tête jusqu'à la première ligne vide (étapes ou situations). Le classeur entier est un « Workflow avec SLA et OLA », un « Template de formulaire », un « Tableau de process » ou un « Tableau non reconnu ».
+
+**Tests** (`tableau/__tests__/`). Un classeur fabriqué en code (`tableau/__fixtures__/classeur.ts`) avec textes partagés et enrichis, texte en ligne, booléen, formule, dates, fusion, onglet masqué écrit avec un préfixe d'espace de noms et onglet graphique ; les vrais classeurs fictifs de `docs/exemples/` enregistrés par un tableur ; les CSV (guillemets, encodages) ; la reconnaissance de chaque genre d'onglet et les fichiers refusés.
+
 **JSON** (`json.ts`). Le format SimuFlow : `{ "format": "simuflow", "version": 1, "name", "steps": [{ "id", "kind", "title", "actor", "duration" }], "links": [{ "from", "to", "label" }] }`. Seuls `steps` et les `id` sont obligatoires ; le rôle vaut `task` par défaut. Chaque erreur dit où elle est (« Étape 2 : l'identifiant « a » est déjà utilisé. »). `processToJson` fait l'inverse, pour exporter un process.
 
 **Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé. Un schéma fictif d'achat de fournitures sans couloir (`__fixtures__/legende.ts`, aussi dans `docs/exemples/achats-fournitures.drawio`) teste la légende par couleur : acteurs lus, étape d'une couleur absente de la légende sans acteur, pastille isolée ignorée. `__fixtures__/varies.ts` dessine des process de façons très différentes : que des rectangles sans couleur ni « Début »/« Fin » avec les acteurs dans le texte (aussi dans `docs/exemples/validation-facture.drawio`), que des cercles, des personnes et des équipes écrites de plusieurs façons.
@@ -244,7 +254,7 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 
 `src/app/import.tsx` reprend l'écran 5 de la maquette, en fenêtre modale ouverte par le bouton « + » de la liste.
 
-1. **Source** : « Fichier draw.io » et « Fichier JSON » ouvrent le sélecteur de fichiers du téléphone (`expo-document-picker`, qui accède à Fichiers, iCloud Drive, Drive, pièces jointes enregistrées). « Scanner un tableau » ouvre l'onglet Scanner. Le sélecteur copie le fichier dans le cache de l'app ; `readPickedFile` (`src/utils/read-file.ts`) en lit le texte avec `File` d'`expo-file-system`. Un fichier de plus de 5 Mo est refusé.
+1. **Source** : « Fichier draw.io », « Tableau Excel ou CSV » et « Fichier JSON » ouvrent le sélecteur de fichiers du téléphone (`expo-document-picker`, qui accède à Fichiers, iCloud Drive, Drive, pièces jointes enregistrées). « Scanner un tableau » ouvre l'onglet Scanner. Le sélecteur copie le fichier dans le cache de l'app ; `readPickedFile` (`src/utils/read-file.ts`) en lit le texte avec `File` d'`expo-file-system`. Un fichier de plus de 5 Mo est refusé. Pour un tableau, `readPickedBytes` en lit les octets (`File.bytes()` sur le téléphone, `arrayBuffer()` du fichier dans le navigateur), jusqu'à 20 Mo (un classeur peut contenir des images, qui ne sont pas lues) ; le sélecteur propose les types .xlsx, .xlsm, .xls et .csv. L'écran affiche alors « Ce que l'app a lu » (`src/components/workbook-preview.tsx`) : le genre de classeur, puis chaque onglet avec ce qui y a été reconnu (pastille), son nombre d'étapes, de situations ou de lignes, de colonnes et de cellules fusionnées. Le bouton Importer reste grisé : la création des process à partir d'un tableau vient à l'étape suivante.
 2. **Lecture** : `importProcessFile` (voir « Import de fichiers »). Si le fichier est illisible, son message d'erreur s'affiche en rouge sous les sources, et rien n'est ajouté.
 3. **Page à importer** : si le fichier draw.io a plusieurs pages, une liste à choix unique permet d'en garder une.
 4. **Aperçu** : nombre d'étapes, de décisions et d'acteurs, pastille de diagnostic, et remarques de la lecture (par exemple une flèche rattachée).
@@ -252,9 +262,15 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
 7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
 
-`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, des tableaux à ouvrir avec « Tableau Excel ou CSV » (`workflow-sla-ola.xlsx` : deux onglets de situations à SLA et OLA, famille fusionnée, colonnes décalées, un onglet de liste ; `template-formulaire.xlsx` : sept onglets d'un template de formulaire ; `demande-materiel.xlsx` et `demande-materiel.csv` : un tableau de process classique), et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
+
+![La source « Tableau Excel ou CSV » sur l'écran Importer](captures/etape-19a-tableau-source.png)
+
+![Un classeur de workflow lu : deux onglets SLA / OLA et un onglet de liste](captures/etape-19a-tableau-workflow.png)
+
+![Un template de formulaire reconnu à ses sept onglets](captures/etape-19a-tableau-formulaire.png)
 
 **Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
 
@@ -741,7 +757,7 @@ Le schéma d'ensemble et les choix techniques sont dans le README. Le cœur du s
 | Dossier | Rôle |
 | --- | --- |
 | `src/domain/` | Types du process, règles du diagnostic, calcul des chemins, modifications de l'éditeur |
-| `src/import/` | Lecture des fichiers draw.io et JSON, règles de lecture apprises ; les tableaux scannés passent par `src/scan/` |
+| `src/import/` | Lecture des fichiers draw.io et JSON, règles de lecture apprises, lecture des tableaux Excel et CSV (`tableau/`) ; les tableaux scannés passent par `src/scan/` |
 | `src/export/` | Export en PDF, draw.io et JSON |
 | `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins |
 | `src/scan/`, `src/tracking/` | Tableau photographié transformé en process ; échéances en jours ouvrés d'une vraie demande |

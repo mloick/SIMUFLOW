@@ -9,30 +9,41 @@ import { diagnosticBadge } from '@/components/process-card';
 import { PrimaryButton } from '@/components/primary-button';
 import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
+import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { addImportedProcess } from '@/data/process-store';
 import { applyReadingRules } from '@/data/rules-store';
 import { summarize } from '@/domain';
 import { ImportError, importProcessFile, type ImportResult } from '@/import';
+import { describeWorkbook, readTableFile, TABLE_FILE_TYPES, type WorkbookReport } from '@/import/tableau';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
-import { readPickedFile } from '@/utils/read-file';
+import { readPickedBytes, readPickedFile } from '@/utils/read-file';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+/** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
+const MAX_TABLE_SIZE = 20 * 1024 * 1024;
 
-type FileKind = 'drawio' | 'json';
+type FileKind = 'drawio' | 'json' | 'tableau';
+
+/** Préfixe unique des identifiants d'un import. */
+const newImportId = () => `import-${Date.now()}`;
 /** `applied` : les règles de lecture apprises qui ont corrigé la lecture. */
 type Picked = { fileName: string; result: ImportResult; applied: string[] };
+/** Tableau Excel ou CSV lu : ce que l'app y a reconnu. */
+type PickedTable = { fileName: string; report: WorkbookReport; warnings: string[] };
 
 /**
  * Modale « Nouveau process » (maquette, écran 5) : choisir un fichier draw.io
- * ou JSON, voir ce qui a été lu, puis l'ajouter à la liste.
+ * ou JSON, voir ce qui a été lu, puis l'ajouter à la liste. Un tableau Excel
+ * ou CSV est lu et décrit onglet par onglet.
  */
 export default function ImportScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<FileKind | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
+  const [table, setTable] = useState<PickedTable | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [name, setName] = useState('');
@@ -44,16 +55,21 @@ export default function ImportScreen() {
   const pick = async (nextKind: FileKind) => {
     setKind(nextKind);
     const selection = await DocumentPicker.getDocumentAsync({
-      type: nextKind === 'json' ? ['application/json', 'text/plain'] : '*/*',
+      type: nextKind === 'json' ? ['application/json', 'text/plain'] : nextKind === 'tableau' ? TABLE_FILE_TYPES : '*/*',
       copyToCacheDirectory: true,
     });
     if (selection.canceled) return;
     const asset = selection.assets[0];
+    if (nextKind === 'tableau') {
+      await pickTable(asset);
+      return;
+    }
+    setTable(null);
     try {
       if (asset.size && asset.size > MAX_FILE_SIZE)
         throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
       const content = await readPickedFile(asset);
-      const { result, applied } = applyReadingRules(importProcessFile(asset.name, content, `import-${Date.now()}`));
+      const { result, applied } = applyReadingRules(importProcessFile(asset.name, content, newImportId()));
       setPicked({ fileName: asset.name, result, applied });
       setPage(0);
       setName(result.processes[0].name);
@@ -61,6 +77,20 @@ export default function ImportScreen() {
       setError(null);
     } catch (cause) {
       setPicked(null);
+      setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+    }
+  };
+
+  const pickTable = async (asset: DocumentPicker.DocumentPickerAsset) => {
+    setPicked(null);
+    try {
+      if (asset.size && asset.size > MAX_TABLE_SIZE)
+        throw new ImportError('Ce fichier est trop volumineux (20 Mo au plus).');
+      const workbook = readTableFile(asset.name, await readPickedBytes(asset));
+      setTable({ fileName: asset.name, report: describeWorkbook(workbook), warnings: workbook.warnings });
+      setError(null);
+    } catch (cause) {
+      setTable(null);
       setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
     }
   };
@@ -146,6 +176,13 @@ export default function ImportScreen() {
             onPress={() => pick('drawio')}
           />
           <SourceCard
+            icon={{ ios: 'tablecells', android: 'table_chart' }}
+            title="Tableau Excel ou CSV"
+            description="Process, workflow avec SLA et OLA, formulaire"
+            selected={kind === 'tableau'}
+            onPress={() => pick('tableau')}
+          />
+          <SourceCard
             icon={{ ios: 'viewfinder', android: 'document_scanner' }}
             title="Scanner un tableau"
             description="Photo d’un tableau étape, acteur, délai"
@@ -169,6 +206,8 @@ export default function ImportScreen() {
             </ThemedText>
           </View>
         )}
+
+        {table && <WorkbookPreview report={table.report} warnings={table.warnings} />}
 
         {picked && pageCount > 1 && (
           <View style={styles.sources}>
@@ -280,6 +319,11 @@ export default function ImportScreen() {
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             Fichier choisi : {picked.fileName}
             {pageCount > 1 ? ` · ${plural(pageCount, 'page')}` : ''}
+          </ThemedText>
+        )}
+        {table && (
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            Fichier choisi : {table.fileName}
           </ThemedText>
         )}
         <PrimaryButton
