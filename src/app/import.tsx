@@ -15,7 +15,13 @@ import { addImportedProcess } from '@/data/process-store';
 import { applyReadingRules } from '@/data/rules-store';
 import { summarize } from '@/domain';
 import { ImportError, importProcessFile, type ImportResult } from '@/import';
-import { describeWorkbook, readTableFile, TABLE_FILE_TYPES, type WorkbookReport } from '@/import/tableau';
+import {
+  describeWorkbook,
+  readTableFile,
+  TABLE_FILE_TYPES,
+  workbookToProcesses,
+  type WorkbookReport,
+} from '@/import/tableau';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
 import { readPickedBytes, readPickedFile } from '@/utils/read-file';
@@ -36,7 +42,8 @@ type PickedTable = { fileName: string; report: WorkbookReport; warnings: string[
 /**
  * Modale « Nouveau process » (maquette, écran 5) : choisir un fichier draw.io
  * ou JSON, voir ce qui a été lu, puis l'ajouter à la liste. Un tableau Excel
- * ou CSV est lu et décrit onglet par onglet.
+ * ou CSV est décrit onglet par onglet ; ses onglets « process » s'importent
+ * comme les pages d'un draw.io.
  */
 export default function ImportScreen() {
   const theme = useTheme();
@@ -88,6 +95,15 @@ export default function ImportScreen() {
         throw new ImportError('Ce fichier est trop volumineux (20 Mo au plus).');
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
       setTable({ fileName: asset.name, report: describeWorkbook(workbook), warnings: workbook.warnings });
+      // Les onglets « process » deviennent des process à importer, comme les pages d'un draw.io.
+      const read = workbookToProcesses(workbook, newImportId());
+      if (read.processes.length > 0) {
+        const { result, applied } = applyReadingRules(read);
+        setPicked({ fileName: asset.name, result, applied });
+        setPage(0);
+        setName(result.processes[0].name);
+        setNameMissing(false);
+      }
       setError(null);
     } catch (cause) {
       setTable(null);
@@ -207,12 +223,14 @@ export default function ImportScreen() {
           </View>
         )}
 
-        {table && <WorkbookPreview report={table.report} warnings={table.warnings} />}
+        {table && (
+          <WorkbookPreview report={table.report} warnings={table.warnings} importable={pageCount} />
+        )}
 
         {picked && pageCount > 1 && (
           <View style={styles.sources}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              Page à importer
+              {table ? 'Onglet à importer' : 'Page à importer'}
             </ThemedText>
             <View
               style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
@@ -318,10 +336,10 @@ export default function ImportScreen() {
         {picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             Fichier choisi : {picked.fileName}
-            {pageCount > 1 ? ` · ${plural(pageCount, 'page')}` : ''}
+            {pageCount > 1 ? ` · ${plural(pageCount, table ? 'onglet' : 'page')}` : ''}
           </ThemedText>
         )}
-        {table && (
+        {table && !picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             Fichier choisi : {table.fileName}
           </ThemedText>

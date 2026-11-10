@@ -32,17 +32,21 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 ![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
 
-## Ouvrir un tableau Excel ou CSV · En cours
+## Importer un tableau Excel ou CSV · En cours
 
 Touchez **+**, puis **Tableau Excel ou CSV**, et choisissez un fichier .xlsx ou .csv. L'app le lit sur le téléphone, sans l'envoyer nulle part ni le garder, et vous montre ce qu'elle a compris de chaque onglet : un tableau de process (étape, acteur, délai), un workflow avec SLA et OLA (une ligne par situation), un template de formulaire, une simple liste, ou un onglet qu'elle ne reconnaît pas. Pas besoin de régler quoi que ce soit : elle trouve seule.
 
-Pour l'instant, l'app s'arrête là : la création des process à partir du tableau arrive bientôt. Un ancien fichier .xls ou un classeur protégé par mot de passe est refusé avec un message qui explique quoi faire (l'enregistrer en .xlsx, retirer le mot de passe).
+Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, comme pour le scanner) s'importe tout de suite : l'aperçu montre les étapes et les acteurs, touchez **Importer**. Si le classeur a plusieurs onglets de ce genre, choisissez celui à importer. Le process prend le titre écrit au-dessus du tableau, sinon le nom de l'onglet. Les workflows avec SLA et OLA et les templates de formulaire sont reconnus, mais leur import arrive bientôt. Un ancien fichier .xls ou un classeur protégé par mot de passe est refusé avec un message qui explique quoi faire (l'enregistrer en .xlsx, retirer le mot de passe).
 
 ![La source « Tableau Excel ou CSV »](captures/etape-19a-tableau-source.png)
 
 ![Ce que l'app a lu dans un classeur de workflow](captures/etape-19a-tableau-workflow.png)
 
 ![Un template de formulaire reconnu](captures/etape-19a-tableau-formulaire.png)
+
+![Un tableau de process en Excel, prêt à importer](captures/etape-19b-tableau-apercu.png)
+
+![Le process importé depuis le tableau](captures/etape-19b-tableau-importe.png)
 
 ## Scanner un tableau · Disponible
 

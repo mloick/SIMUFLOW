@@ -39,7 +39,7 @@ export type WorkbookKind = 'process' | 'workflow' | 'formulaire' | 'inconnu';
 export type WorkbookReport = { kind: WorkbookKind; sheets: SheetReport[] };
 
 /** Seules les premières lignes sont fouillées pour trouver l'en-tête (un titre peut le précéder). */
-const HEADER_SEARCH_ROWS = 30;
+export const HEADER_SEARCH_ROWS = 30;
 
 /** Minuscules, sans accents, espaces simples. */
 export const normalize = (text: string) =>
@@ -84,12 +84,12 @@ function isSlaOlaHeader(row: string[]): boolean {
 }
 
 /** Vrai si la ligne est l'en-tête d'un tableau de process (colonnes du scanner). */
-function isProcessHeader(row: string[]): boolean {
+export function isProcessHeader(row: string[]): boolean {
   const kinds = new Set(row.map(headerKind).filter((kind) => kind !== null));
   return kinds.size >= 2 && kinds.has('step');
 }
 
-const isFilled = (row: string[]) => row.some(Boolean);
+export const isFilled = (row: string[]) => row.some(Boolean);
 
 /** Lignes remplies sous l'en-tête, jusqu'à la première ligne vide. */
 function rowsBelow(sheet: Sheet, headerIndex: number): number {

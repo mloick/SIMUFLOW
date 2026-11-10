@@ -11,17 +11,18 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
-import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
+import { countPaths, explainIssue, summarize, type Issue, type Process, type ProcessSource } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
 import { plural } from '@/utils/format';
 
-const SOURCE_TEXT = {
+const SOURCE_TEXT: Record<ProcessSource, string> = {
   drawio: 'Importé depuis draw.io',
   scan: 'Créé à partir d’un tableau scanné',
   json: 'Importé depuis un fichier JSON',
+  tableau: 'Importé depuis un tableau Excel ou CSV',
 };
 
 /**

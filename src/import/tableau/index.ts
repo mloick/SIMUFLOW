@@ -4,9 +4,11 @@
  * l'appareil ; le fichier n'est ni envoyé ni gardé.
  */
 
-import { ImportError } from '../errors';
+import { ImportError, type ImportResult } from '../errors';
 
 import { readCsv } from './csv';
+import { describeWorkbook } from './detect';
+import { sheetToProcess } from './modeles/simple';
 import { isOldOfficeFile, isZip, readXlsx } from './xlsx';
 import type { Workbook } from './types';
 
@@ -14,6 +16,7 @@ export { describeSheet, describeWorkbook, SHEET_KIND_LABELS, WORKBOOK_KIND_LABEL
 export type { SheetKind, SheetReport, WorkbookKind, WorkbookReport } from './detect';
 export type { MergedRange, Sheet, Workbook } from './types';
 export { readCsv, readXlsx };
+export { sheetToProcess, sheetToTable } from './modeles/simple';
 
 /** Types de fichiers proposés par le sélecteur de documents. */
 export const TABLE_FILE_TYPES = [
@@ -35,4 +38,24 @@ export function readTableFile(fileName: string, bytes: Uint8Array): Workbook {
   if (['csv', 'tsv', 'txt'].includes(extension)) return readCsv(bytes, fileName);
   if (['xlsx', 'xlsm', 'xls'].includes(extension) || isZip(bytes) || isOldOfficeFile(bytes)) return readXlsx(bytes);
   throw new ImportError('Format non reconnu : choisissez un fichier Excel (.xlsx) ou CSV.');
+}
+
+/**
+ * Les process d'un classeur : un par onglet reconnu comme tableau de process.
+ * Les remarques d'un onglet sont précédées de son nom quand il y en a plusieurs
+ * (celles de la lecture du classeur restent dans `workbook.warnings`).
+ * Les autres genres d'onglets (SLA / OLA, formulaire) seront lus plus tard.
+ */
+export function workbookToProcesses(workbook: Workbook, idPrefix: string): ImportResult {
+  const report = describeWorkbook(workbook);
+  const sheets = workbook.sheets.filter((_, index) => report.sheets[index].kind === 'process');
+  const result: ImportResult = { processes: [], warnings: [] };
+  sheets.forEach((sheet, index) => {
+    const read = sheetToProcess(sheet, `${idPrefix}-${index + 1}`);
+    if (!read) return;
+    result.processes.push(...read.processes);
+    const prefix = sheets.length > 1 ? `${sheet.name} : ` : '';
+    result.warnings.push(...read.warnings.map((warning) => prefix + warning));
+  });
+  return result;
 }
