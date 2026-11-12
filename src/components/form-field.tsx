@@ -61,7 +61,10 @@ export function FormField({
   const theme = useTheme();
   const [title, ...rest] = question.label.split('\n');
   const subtitle = rest.join('\n').trim();
-  const condition = conditionText(question, questions);
+  // Une suite de questions à la même condition ne la montre qu'une fois, sur la première.
+  const previous = questions[questions.findIndex((item) => item.n === question.n) - 1];
+  const sameAsPrevious = previous !== undefined && JSON.stringify(previous.conditions) === JSON.stringify(question.conditions);
+  const condition = sameAsPrevious ? null : conditionText(question, questions);
 
   if (question.type === 'break') {
     return <View style={[styles.break, { backgroundColor: theme.border }]} accessibilityRole="none" />;
@@ -215,11 +218,20 @@ export function FormField({
         (question.fields.length > 0 ? (
           question.fields.map((field) => (
             <View key={field} style={styles.subfield}>
-              <ThemedText type="small">{field}</ThemedText>
+              <ThemedText type="small">
+                {field}
+                {question.limits?.[field] ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {` · ${question.limits[field]} caractères au plus`}
+                  </ThemedText>
+                ) : null}
+              </ThemedText>
               <TextInput
                 value={fieldValues[field] ?? ''}
                 onChangeText={(next) => onChange({ ...fieldValues, [field]: next })}
+                maxLength={question.limits?.[field]}
                 accessibilityLabel={`${title} : ${field}`}
+                accessibilityHint={question.limits?.[field] ? `${question.limits[field]} caractères au plus` : undefined}
                 style={inputStyle}
               />
             </View>
