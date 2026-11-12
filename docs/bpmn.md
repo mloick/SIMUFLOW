@@ -74,4 +74,8 @@ Le modèle de SimuFlow (des étapes reliées par des liens, voir [`technique.md`
 
 Ce qui n'est pas encore lu : les flux de message entre pools, les événements attachés au bord d'une tâche (*boundary events*), les données (*data objects*) et les annotations. L'import le dit dans ses remarques, comme pour un schéma draw.io. Une passerelle qui ne fait que réunir des branches est retirée, et un événement ou une passerelle est agrandi pour que son nom tienne dans la forme. Le diagnostic, la simulation, le suivi et l'export marchent ensuite comme pour n'importe quel process.
 
+## Et Visio ?
+
+Visio enregistre ses schémas en `.vsdx`, son propre format (une archive zip de XML), pas en BPMN. SimuFlow le lit aussi : **+**, puis **Fichier Visio**. Un diagramme fonctionnel croisé s'y lit comme un schéma BPMN à couloirs : le losange est la décision, les couloirs donnent les acteurs, le texte d'un connecteur devient le nom de la branche (voir [`fonctionnalites.md`](fonctionnalites.md)).
+
 Plus tard, l'**export BPMN** fera le chemin inverse : renvoyer un process vérifié dans SimuFlow vers ces outils.

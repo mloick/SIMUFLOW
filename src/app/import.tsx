@@ -19,7 +19,7 @@ import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { anonymizeProcess, parseHiddenWords, summarize } from '@/domain';
-import { ImportError, importProcessFile, learnColumnRules, type ImportResult } from '@/import';
+import { ImportError, importProcessFile, learnColumnRules, parseVisio, type ImportResult } from '@/import';
 import {
   describeWorkbook,
   readFormTemplate,
@@ -44,7 +44,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
 const MAX_TABLE_SIZE = 20 * 1024 * 1024;
 
-type FileKind = 'drawio' | 'bpmn' | 'json' | 'tableau' | 'formulaire';
+type FileKind = 'drawio' | 'bpmn' | 'visio' | 'json' | 'tableau' | 'formulaire';
 
 /** Préfixe unique des identifiants d'un import. */
 const newImportId = () => `import-${Date.now()}`;
@@ -141,8 +141,12 @@ export default function ImportScreen() {
     try {
       if (asset.size && asset.size > MAX_FILE_SIZE)
         throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
-      const content = await readPickedFile(asset);
-      const { result, applied } = applyReadingRules(importProcessFile(asset.name, content, newImportId()));
+      // Un .vsdx est une archive zip : il se lit en octets, pas en texte.
+      const read =
+        nextKind === 'visio' || /\.vsdx$/i.test(asset.name)
+          ? parseVisio(await readPickedBytes(asset), asset.name, newImportId())
+          : importProcessFile(asset.name, await readPickedFile(asset), newImportId());
+      const { result, applied } = applyReadingRules(read);
       setPicked({ fileName: asset.name, result, applied });
       setPage(0);
       setName(result.processes[0].name);
@@ -323,6 +327,13 @@ export default function ImportScreen() {
             description="Un .bpmn de Camunda, Bizagi, Signavio, bpmn.io…"
             selected={kind === 'bpmn'}
             onPress={() => pick('bpmn')}
+          />
+          <SourceCard
+            icon={{ ios: 'square.on.circle', android: 'schema' }}
+            title="Fichier Visio"
+            description="Un .vsdx de Microsoft Visio (2013 et après)"
+            selected={kind === 'visio'}
+            onPress={() => pick('visio')}
           />
           <SourceCard
             icon={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}
