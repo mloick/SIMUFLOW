@@ -34,7 +34,7 @@ export type SheetReport = {
   hidden?: boolean;
 };
 
-export type WorkbookKind = 'process' | 'workflow' | 'formulaire' | 'inconnu';
+export type WorkbookKind = 'process' | 'workflow' | 'formulaire' | 'formulaire-workflow' | 'inconnu';
 
 export type WorkbookReport = { kind: WorkbookKind; sheets: SheetReport[] };
 
@@ -141,7 +141,9 @@ export function describeWorkbook(workbook: Workbook, learned?: LearnedHeaders): 
   const sheets = workbook.sheets.map((sheet) => describeSheet(sheet, template, learned));
   const has = (kind: SheetKind) => sheets.some((sheet) => sheet.kind === kind);
   const kind: WorkbookKind = has('sla-ola')
-    ? 'workflow'
+    ? template && has('formulaire')
+      ? 'formulaire-workflow'
+      : 'workflow'
     : template
       ? 'formulaire'
       : has('process')
@@ -165,5 +167,6 @@ export const WORKBOOK_KIND_LABELS: Record<WorkbookKind, string> = {
   process: 'Tableau de process',
   workflow: 'Workflow avec SLA et OLA',
   formulaire: 'Template de formulaire',
+  'formulaire-workflow': 'Formulaire et son workflow',
   inconnu: 'Tableau non reconnu',
 };

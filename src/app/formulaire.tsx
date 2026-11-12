@@ -1,3 +1,4 @@
+import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -6,16 +7,26 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, type BadgeTone } from '@/components/badge';
 import { FormField } from '@/components/form-field';
 import { PrimaryButton } from '@/components/primary-button';
+import { situationMeta } from '@/components/situation-list';
 import { StateMessage } from '@/components/state-message';
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { getShownForm, keepSentAnswers } from '@/data/form-preview';
+import { processForForm, readWorkflowFile, startFormTracking } from '@/data/form-chain';
+import { getShownForm, keepSentAnswers, linkWorkflow, saveForm, type LinkedWorkflow } from '@/data/form-store';
+import type { Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { ImportError } from '@/import';
 import {
   answerSummary,
   checkAnswers,
+  chosenSituation,
+  findFormLink,
+  situationName,
   visibleQuestions,
+  VARIANT_LABELS,
+  type AnswerLine,
+  type FormTemplate,
   type FormAnswer,
   type FormAnswers,
   type FormWarning,
@@ -38,7 +49,11 @@ export default function FormScreen() {
   const scroll = useRef<ScrollViewInstance>(null);
   const positions = useRef(new Map<number, number>());
   const cardTop = useRef(0);
-  const [form] = useState(getShownForm);
+  const [shown] = useState(getShownForm);
+  const form = shown?.form ?? null;
+  const [workflow, setWorkflow] = useState<LinkedWorkflow | null>(shown?.workflow ?? null);
+  const [savedId, setSavedId] = useState<string | null>(shown?.savedId ?? null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<FormAnswers>({});
   const [attempted, setAttempted] = useState(false);
   const [sent, setSent] = useState(false);
@@ -65,6 +80,39 @@ export default function FormScreen() {
   }
 
   const hidden = form.questions.length - visible.size;
+
+  /** Lier un workflow : un classeur SLA / OLA dont les situations sont des choix du formulaire, ou un process. */
+  const pickWorkflow = async () => {
+    const selection = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+    if (selection.canceled) return;
+    try {
+      const next = await readWorkflowFile(selection.assets[0]);
+      if (next.kind === 'situations' && !findFormLink(form, next.situations)) {
+        throw new ImportError('Aucun choix du formulaire ne porte le nom d’une situation de ce workflow : le lien est impossible.');
+      }
+      setWorkflow(next);
+      setLinkError(null);
+      if (savedId) linkWorkflow(savedId, next);
+    } catch (cause) {
+      setLinkError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+    }
+  };
+  const unlink = () => {
+    setWorkflow(null);
+    if (savedId) linkWorkflow(savedId, null);
+  };
+  const keep = () => setSavedId(saveForm(form, shown?.source ?? '', workflow));
+  const workflowCard = (
+    <WorkflowCard
+      form={form}
+      workflow={workflow}
+      saved={savedId !== null}
+      error={linkError}
+      onPick={pickWorkflow}
+      onUnlink={unlink}
+      onKeep={keep}
+    />
+  );
 
   const answer = (n: number, value: FormAnswer) => setAnswers((current) => ({ ...current, [n]: value }));
 
@@ -131,15 +179,17 @@ export default function FormScreen() {
           </View>
         </View>
 
-        {(form.assignmentGroup || form.tasks.length > 0) && (
-          <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
-            <SymbolView name={{ ios: 'arrow.right.circle', android: 'arrow_circle_right' }} size={20} tintColor={theme.link} />
-            <ThemedText type="small" style={styles.flex}>
-              {form.assignmentGroup ? `Le ticket irait à ${form.assignmentGroup}. ` : ''}
-              Suivre la demande dans son process arrive dans une prochaine version.
-            </ThemedText>
-          </View>
+        {shown && (
+          <NextStep
+            form={form}
+            workflow={workflow}
+            lines={lines}
+            answers={answers}
+            run={(index) => processForForm({ ...shown, workflow }, index)}
+          />
         )}
+
+        {workflowCard}
 
         <View style={styles.actions}>
           <PrimaryButton label="Modifier les réponses" onPress={() => setSent(false)} />
@@ -180,6 +230,8 @@ export default function FormScreen() {
           )}
         </View>
       </View>
+
+      {workflowCard}
 
       <View
         onLayout={(event) => (cardTop.current = event.nativeEvent.layout.y)}
@@ -289,6 +341,181 @@ export default function FormScreen() {
   );
 }
 
+/** Le workflow lié au formulaire : ce qui suit l'envoi. Lier, changer, retirer ; garder le formulaire. */
+function WorkflowCard({
+  form,
+  workflow,
+  saved,
+  error,
+  onPick,
+  onUnlink,
+  onKeep,
+}: {
+  form: FormTemplate;
+  workflow: LinkedWorkflow | null;
+  saved: boolean;
+  error: string | null;
+  onPick: () => void;
+  onUnlink: () => void;
+  onKeep: () => void;
+}) {
+  const theme = useTheme();
+  const link = workflow?.kind === 'situations' ? findFormLink(form, workflow.situations) : null;
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Workflow lié
+      </ThemedText>
+      <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <View style={styles.row}>
+          <SymbolView
+            name={workflow ? { ios: 'link', android: 'link' } : { ios: 'doc.text', android: 'description' }}
+            size={20}
+            tintColor={workflow ? theme.link : theme.textSecondary}
+          />
+          <ThemedText type="smallBold" style={styles.flex}>
+            {workflow ? workflow.source || 'Workflow' : 'Formulaire seul'}
+          </ThemedText>
+        </View>
+        <ThemedText type="small" themeColor="textSecondary">
+          {workflow?.kind === 'situations'
+            ? `${plural(workflow.situations.length, 'situation')}. La réponse à « ${link?.question.label.split('\n')[0] ?? '?'} » choisit le process qui suit la demande (${plural(link?.linked ?? 0, 'choix relié', 'choix reliés')}).`
+            : workflow
+              ? `Process « ${workflow.process.name} » : il suit chaque demande envoyée.`
+              : 'Aucun workflow : la simulation s’arrête au formulaire. Liez un classeur SLA / OLA, un schéma draw.io ou un tableau de process pour que la demande continue dans son process.'}
+        </ThemedText>
+        {error && (
+          <ThemedText type="small" style={{ color: theme.danger }} accessibilityLiveRegion="polite">
+            {error}
+          </ThemedText>
+        )}
+        <View style={styles.links}>
+          <Pressable onPress={onPick} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
+            <ThemedText type="link" style={{ color: theme.link }}>
+              {workflow ? 'Changer de workflow' : 'Lier un workflow'}
+            </ThemedText>
+          </Pressable>
+          {workflow && (
+            <Pressable onPress={onUnlink} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
+              <ThemedText type="link" style={{ color: theme.danger }}>
+                Retirer le lien
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+        <View style={[styles.keep, { borderTopColor: theme.border }]}>
+          {saved ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              Gardé sur ce téléphone : retrouvez-le dans Profil, « Mes formulaires ».
+            </ThemedText>
+          ) : (
+            <Pressable onPress={onKeep} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
+              <ThemedText type="link" style={{ color: theme.link }}>
+                Garder ce formulaire{workflow ? ' et son workflow' : ''}
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Après « Demande prête » : la situation choisie et son process, à simuler ou à suivre en vrai. */
+function NextStep({
+  form,
+  workflow,
+  lines,
+  answers,
+  run,
+}: {
+  form: FormTemplate;
+  workflow: LinkedWorkflow | null;
+  lines: AnswerLine[];
+  answers: FormAnswers;
+  /** Crée (une fois) le process qui suit, pour la situation `index` ou le process lié. */
+  run: (index: number | null) => Process | null;
+}) {
+  const theme = useTheme();
+  if (!workflow) {
+    return (
+      <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
+        <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
+        <ThemedText type="small" style={styles.flex}>
+          {form.assignmentGroup ? `Le ticket irait à ${form.assignmentGroup}. ` : ''}
+          Ce formulaire n’est lié à aucun workflow : la simulation s’arrête ici. Liez-en un plus bas pour suivre la demande dans son process.
+        </ThemedText>
+      </View>
+    );
+  }
+
+  const chosen = workflow.kind === 'situations' ? chosenSituation(form, workflow.situations, answers) : null;
+  const index = chosen?.kind === 'situation' ? chosen.index : null;
+  const situation = index !== null && workflow.kind === 'situations' ? workflow.situations[index] : null;
+  const ready = workflow.kind === 'process' || situation !== null;
+
+  const simulate = () => {
+    const process = run(index);
+    if (process) router.push({ pathname: '/simulation/[id]', params: { id: process.id } });
+  };
+  const track = () => {
+    const process = run(index);
+    if (!process) return;
+    const id = startFormTracking(process, form.name ?? 'Demande', lines, workflow.kind === 'situations');
+    if (id) router.push({ pathname: '/suivi/[id]', params: { id } });
+  };
+
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        La suite de la demande
+      </ThemedText>
+      <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: ready ? theme.primary : theme.border }]}>
+        {chosen?.kind === 'situation' && situation && (
+          <>
+            <ThemedText type="small" themeColor="textSecondary">
+              Réponse « {chosen.option} » : la situation du workflow
+            </ThemedText>
+            <ThemedText type="subtitle">{situationName(situation)}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {situationMeta(situation)} · {VARIANT_LABELS[situation.variant]}
+            </ThemedText>
+          </>
+        )}
+        {chosen?.kind === 'unmatched' && (
+          <ThemedText style={{ color: theme.warning }}>
+            La réponse « {chosen.option} » ne correspond à aucune situation du workflow : rien ne suit.
+          </ThemedText>
+        )}
+        {chosen?.kind === 'unanswered' && (
+          <ThemedText style={{ color: theme.warning }}>Aucune situation choisie dans le formulaire : rien ne suit.</ThemedText>
+        )}
+        {chosen?.kind === 'no-link' && (
+          <ThemedText style={{ color: theme.warning }}>Aucun choix du formulaire ne correspond aux situations du workflow.</ThemedText>
+        )}
+        {workflow.kind === 'process' && (
+          <>
+            <ThemedText type="small" themeColor="textSecondary">
+              Le process lié
+            </ThemedText>
+            <ThemedText type="subtitle">{workflow.process.name}</ThemedText>
+          </>
+        )}
+        {ready && (
+          <View style={styles.actions}>
+            <PrimaryButton label="Simuler le parcours" onPress={simulate} />
+            <Pressable onPress={track} accessibilityRole="button" style={styles.secondary}>
+              <ThemedText type="link" style={{ color: theme.link }}>
+                Suivre la demande en vrai
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   content: {
     gap: Spacing.four,
@@ -312,6 +539,9 @@ const styles = StyleSheet.create({
   line: { gap: Spacing.half, padding: Spacing.three },
   actions: { gap: Spacing.two },
   secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.four },
+  linkButton: { minHeight: 44, justifyContent: 'center' },
+  keep: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.two },
   section: { gap: Spacing.two },
   warning: { gap: Spacing.one, padding: Spacing.three },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },

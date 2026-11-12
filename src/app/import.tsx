@@ -13,7 +13,7 @@ import { ColumnPicker } from '@/components/column-picker';
 import { SituationList } from '@/components/situation-list';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { showForm } from '@/data/form-preview';
+import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { summarize } from '@/domain';
@@ -134,7 +134,7 @@ export default function ImportScreen() {
         workbook,
         report,
         warnings: workbook.warnings,
-        form: report.kind === 'formulaire' ? readFormTemplate(workbook) : null,
+        form: report.kind === 'formulaire' || report.kind === 'formulaire-workflow' ? readFormTemplate(workbook) : null,
         situations,
         skipped,
       });
@@ -308,9 +308,14 @@ export default function ImportScreen() {
             importable={pageCount}
             onChooseColumns={setChoosing}
             form={table.form}
+            linkedSituations={table.situations.length}
             onShowForm={() => {
               if (!table.form) return;
-              showForm(table.form);
+              // Formulaire et workflow dans le même classeur : ils sont liés d'office.
+              showForm(table.form, {
+                source: table.fileName,
+                workflow: table.situations.length > 0 ? { kind: 'situations', source: table.fileName, situations: table.situations } : null,
+              });
               router.push('/formulaire');
             }}
           />
