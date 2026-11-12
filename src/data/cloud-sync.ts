@@ -5,9 +5,10 @@
  * Elle se lance quand on se connecte, quand l'app revient au premier plan,
  * quand le réseau revient, après un import ou une suppression, et à la demande
  * (« Synchroniser »).
- * Les règles de lecture apprises suivent, après les process (rules-store.ts).
- * Sans compte, les copies déjà envoyées sont retirées du téléphone (process et
- * règles) : elles sont sur le serveur, et le prochain compte connecté ne doit
+ * Les règles de lecture apprises (rules-store.ts) et les formulaires gardés
+ * (form-store.ts) suivent, après les process.
+ * Sans compte, les copies déjà envoyées sont retirées du téléphone (process,
+ * règles et formulaires) : elles sont sur le serveur, et le prochain compte connecté ne doit
  * pas les voir.
  */
 
@@ -18,7 +19,15 @@ import { AppState } from 'react-native';
 import { useSession } from '@/backend/auth';
 import { createCloudProcess, deleteCloudProcess, listCloudProcesses, updateCloudProcess } from '@/backend/processes';
 import { getCloudRules, saveCloudRules } from '@/backend/reading-rules';
+import { getCloudForms, saveCloudForms } from '@/backend/saved-forms';
 
+import {
+  forgetCloudForms,
+  hasPendingForms,
+  subscribeSavedForms,
+  syncSavedForms,
+  type FormsApi,
+} from './form-store';
 import { getImportEntries, setImportEntries, subscribeImports } from './process-store';
 import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
@@ -41,6 +50,7 @@ const api: CloudApi = {
 };
 
 const rulesApi: RulesApi = { get: getCloudRules, save: saveCloudRules };
+const formsApi: FormsApi = { get: getCloudForms, save: saveCloudForms };
 
 /**
  * Les règles de lecture suivent les process. Un échec (table pas encore créée,
@@ -52,6 +62,15 @@ async function syncRulesQuietly() {
     await syncReadingRules(rulesApi);
   } catch (error) {
     if (__DEV__) console.warn('Synchronisation des règles de lecture :', error);
+  }
+}
+
+/** Les formulaires gardés suivent aussi ; un échec (table pas encore créée) les laisse marqués. */
+async function syncFormsQuietly() {
+  try {
+    await syncSavedForms(formsApi);
+  } catch (error) {
+    if (__DEV__) console.warn('Synchronisation des formulaires :', error);
   }
 }
 
@@ -88,6 +107,7 @@ export async function syncNow() {
       writing = false;
     } while (again && connected);
     if (connected) await syncRulesQuietly();
+    if (connected) await syncFormsQuietly();
     if (connected) setStatus({ state: 'done', at: new Date(), synced: true });
   } catch (error) {
     // Hors connexion ou serveur injoignable : les changements attendent la prochaine fois.
@@ -110,6 +130,7 @@ function forgetCloudCopies() {
   const kept = entries.filter((entry) => !entry.cloudId);
   if (kept.length !== entries.length) setImportEntries(kept);
   forgetCloudRules();
+  forgetCloudForms();
   setStatus({ state: 'idle', synced: false });
 }
 
@@ -149,6 +170,10 @@ export function useCloudSync() {
     const stopRules = subscribeRules(() => {
       if (hasPendingRules()) syncNow();
     });
+    // Un formulaire gardé, modifié ou retiré : il part au compte.
+    const stopForms = subscribeSavedForms(() => {
+      if (hasPendingForms()) syncNow();
+    });
     const stopAppState = AppState.addEventListener('change', (state) => {
       if (state === 'active') syncNow();
     });
@@ -162,6 +187,7 @@ export function useCloudSync() {
     return () => {
       stopImports();
       stopRules();
+      stopForms();
       stopAppState.remove();
       stopNetwork.remove();
     };

@@ -16,7 +16,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Correct it** in an editor (steps, decisions, branches). The app learns reading rules from your corrections and reapplies them on the next imports.
 - **Replay it** step by step, or see every path at once with the critical path. Export it as a PDF, a draw.io file or JSON.
 - **Follow a real request**: each step gets its deadline in French working days, with a local reminder the morning of the deadline.
-- **Keep it everywhere** with an account: processes and reading rules sync across devices, work offline, and are deleted with the account.
+- **Keep it everywhere** with an account: processes, reading rules and saved forms sync across devices, work offline, and are deleted with the account.
 
 ## Who it is for
 
@@ -89,7 +89,7 @@ flowchart TB
 ```
 
 - **Screens** only display and react. Every rule (diagnostic, paths, simulation, file reading, table detection, working-day deadlines) lives in **pure TypeScript** with no React or Expo import, so it is unit-tested in isolation.
-- **App state** (`src/data/`) keeps processes, settings and followed requests on the phone first (local-first), then syncs the account's processes and reading rules with **Supabase** when signed in and online.
+- **App state** (`src/data/`) keeps processes, settings and followed requests on the phone first (local-first), then syncs the account's processes, reading rules and saved forms with **Supabase** when signed in and online.
 - **Supabase** stores only what an account needs. Row Level Security makes each account see only its own rows; nothing is readable without signing in.
 - The **native module** reads text from a photo on the device; the rest of the scanner (rows, table, process) is TypeScript.
 

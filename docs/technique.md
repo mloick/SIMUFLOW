@@ -751,6 +751,16 @@ Une ligne par compte : `owner_id` (clé, rempli avec le compte connecté, `on de
 
 **Test** (`supabase/tests/regles_lecture_rls.sql`), même méthode que pour les process : A crée puis remplace sa ligne, ne peut ni écrire au nom de B, ni enregistrer autre chose qu'une liste, ni donner sa ligne à B ; B ne voit ni ne change rien ; sans connexion, refusé ; supprimer A supprime ses règles. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
+### Table des formulaires gardés (`supabase/migrations/20261112230000_formulaires.sql`)
+
+Même forme que la table des règles : une ligne par compte, `owner_id` (clé, `on delete cascade`), `forms` (`jsonb`, une liste d'au plus 200 formulaires et de 5 Mo au plus, au format de l'app : formulaire, fichier d'origine, workflow lié, dates) et `updated_at`. Mêmes règles de sécurité : RLS, rien pour `anon`, une règle par action limitée à `(select auth.uid()) = owner_id`. L'app lit la ligne (`getCloudForms`) et la remplace en entier (`saveCloudForms`, `upsert`) : `src/backend/saved-forms.ts`. **À coller dans Supabase** (SQL Editor) comme les autres migrations ; tant qu'elle n'y est pas, les formulaires restent sur le téléphone, sans erreur affichée.
+
+**Synchronisation** (`syncSavedForms`, `reconcileForms`, `src/data/form-store.ts`, lancée par `cloud-sync.ts` après les règles). Le fichier du téléphone (version 2) garde, en plus des formulaires, `pending` (un changement pas encore envoyé) et `removed` (les formulaires déjà envoyés puis retirés ici). Chaque formulaire porte `updatedAt` (posé à chaque modification, toujours après la version modifiée) et `cloud` (déjà envoyé, propre au téléphone : pas envoyé au serveur). L'accord se fait formulaire par formulaire : présent des deux côtés, le plus récent gagne ; seulement sur le compte, il arrive, sauf s'il vient d'être retiré ici ; seulement sur le téléphone, il part s'il est nouveau, et disparaît s'il avait déjà été envoyé (retiré sur un autre appareil). La liste n'est renvoyée que si elle a changé. Sans compte, `forgetCloudForms` retire du téléphone les formulaires déjà envoyés et garde les autres.
+
+**Tests.** `form-store.test.ts` : l'accord (chaque cas), puis un aller-retour avec un faux serveur (envoi, réception, modification qui repart, rien de renvoyé sans changement, retrait, déconnexion). `supabase/tests/formulaires_rls.sql`, même méthode que pour les règles, plus le refus de plus de 200 formulaires. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
+
+![Mes formulaires dans Profil, avec la phrase qui dit où ils sont gardés](captures/etape-27-formulaires-compte.png)
+
 ### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
 La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
@@ -870,7 +880,7 @@ Le schéma d'ensemble et les choix techniques sont dans le README. Le cœur du s
 | `src/scan/`, `src/tracking/` | Tableau photographié transformé en process ; échéances en jours ouvrés d'une vraie demande |
 | `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
 
-Backend : Supabase (voir « Backend Supabase ») : comptes, tables `processes` et `reading_rules` protégées par la Row Level Security, suppression du compte, synchronisation.
+Backend : Supabase (voir « Backend Supabase ») : comptes, tables `processes`, `reading_rules` et `saved_forms` protégées par la Row Level Security, suppression du compte, synchronisation.
 
 ## Tests de composants (`src/components/__tests__/`)
 

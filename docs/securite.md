@@ -32,8 +32,8 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Point | État | Preuve |
 | --- | --- | --- |
 | Authentification par un service éprouvé, pas maison | ✅ | Supabase Auth (e-mail et mot de passe), mots de passe hachés côté serveur |
-| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes` et `reading_rules` : `(select auth.uid()) = owner_id` |
-| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
+| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes`, `reading_rules` et `saved_forms` : `(select auth.uid()) = owner_id` |
+| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
 | Aucun droit sans connexion | ✅ | Rôle `anon` sans aucun droit sur les tables |
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
@@ -114,6 +114,7 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, étapes et liens sous forme de listes.
 - Règles testées avec deux comptes sur un PostgreSQL local (`supabase/tests/processes_rls.sql`), y compris un test cassé exprès pour vérifier qu'il détecte une faille.
 - Règles de lecture apprises : table `reading_rules`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 500 règles en liste, supprimées avec le compte). Testée de la même façon (`supabase/tests/regles_lecture_rls.sql`).
+- Formulaires gardés : table `saved_forms`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 200 formulaires et 5 Mo, supprimés avec le compte). Testée de la même façon (`supabase/tests/formulaires_rls.sql`).
 
 ## Comptes
 

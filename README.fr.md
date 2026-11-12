@@ -16,7 +16,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Le corriger** dans un éditeur (étapes, décisions, branches). L'app apprend des règles de lecture de vos corrections et les réapplique aux imports suivants.
 - **Le rejouer** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique. L'exporter en PDF, en fichier draw.io ou en JSON.
 - **Suivre une vraie demande** : chaque étape a son échéance en jours ouvrés français, avec un rappel local le matin du jour J.
-- **Le retrouver partout** avec un compte : process et règles de lecture synchronisés entre vos appareils, utilisables hors connexion, supprimés avec le compte.
+- **Le retrouver partout** avec un compte : process, règles de lecture et formulaires gardés synchronisés entre vos appareils, utilisables hors connexion, supprimés avec le compte.
 
 ## Pour qui
 
@@ -89,7 +89,7 @@ flowchart TB
 ```
 
 - Les **écrans** affichent et réagissent, sans plus. Chaque règle (diagnostic, chemins, simulation, lecture des fichiers, repérage du tableau, échéances en jours ouvrés) est en **TypeScript pur**, sans React ni Expo, et donc testée à part.
-- L'**état de l'app** (`src/data/`) garde process, réglages et demandes suivies d'abord sur le téléphone, puis synchronise les process et règles de lecture du compte avec **Supabase** quand on est connecté et en ligne.
+- L'**état de l'app** (`src/data/`) garde process, réglages et demandes suivies d'abord sur le téléphone, puis synchronise les process, règles de lecture et formulaires gardés du compte avec **Supabase** quand on est connecté et en ligne.
 - **Supabase** ne garde que ce dont un compte a besoin. La Row Level Security fait que chaque compte ne voit que ses lignes ; rien n'est lisible sans connexion.
 - Le **module natif** lit le texte d'une photo sur le téléphone ; le reste du scanner (lignes, tableau, process) est en TypeScript.
 
