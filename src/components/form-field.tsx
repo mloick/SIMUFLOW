@@ -325,7 +325,7 @@ function Checkboxes({
   );
 }
 
-function Dropdown({
+export function Dropdown({
   options,
   value,
   onChange,

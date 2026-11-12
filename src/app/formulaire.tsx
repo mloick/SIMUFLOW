@@ -13,7 +13,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { processForForm, readWorkflowFile, startFormTracking } from '@/data/form-chain';
-import { getShownForm, keepSentAnswers, linkWorkflow, saveForm, type LinkedWorkflow } from '@/data/form-store';
+import { keepSentAnswers, linkWorkflow, markShownSaved, saveForm, useShownForm, type LinkedWorkflow } from '@/data/form-store';
 import type { Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { ImportError } from '@/import';
@@ -49,7 +49,7 @@ export default function FormScreen() {
   const scroll = useRef<ScrollViewInstance>(null);
   const positions = useRef(new Map<number, number>());
   const cardTop = useRef(0);
-  const [shown] = useState(getShownForm);
+  const shown = useShownForm();
   const form = shown?.form ?? null;
   const [workflow, setWorkflow] = useState<LinkedWorkflow | null>(shown?.workflow ?? null);
   const [savedId, setSavedId] = useState<string | null>(shown?.savedId ?? null);
@@ -58,6 +58,15 @@ export default function FormScreen() {
   const [attempted, setAttempted] = useState(false);
   const [sent, setSent] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+
+  // Formulaire modifié dans l'éditeur : les réponses repartent de zéro.
+  const [formSeen, setFormSeen] = useState(form);
+  if (form !== formSeen) {
+    setFormSeen(form);
+    setAnswers({});
+    setAttempted(false);
+    setSent(false);
+  }
 
   const visible = useMemo(() => new Set(form ? visibleQuestions(form.questions, answers).map((q) => q.n) : []), [form, answers]);
   const problems = useMemo(
@@ -101,7 +110,11 @@ export default function FormScreen() {
     setWorkflow(null);
     if (savedId) linkWorkflow(savedId, null);
   };
-  const keep = () => setSavedId(saveForm(form, shown?.source ?? '', workflow));
+  const keep = () => {
+    const id = saveForm(form, shown?.source ?? '', workflow);
+    markShownSaved(id);
+    setSavedId(id);
+  };
   const workflowCard = (
     <WorkflowCard
       form={form}
@@ -228,6 +241,15 @@ export default function FormScreen() {
               </ThemedText>
             </Pressable>
           )}
+          <Pressable
+            onPress={() => router.push('/formulaire-modifier')}
+            accessibilityRole="button"
+            accessibilityHint="Ajouter, retirer ou corriger des questions, des pièces jointes et des conditions"
+            hitSlop={8}>
+            <ThemedText type="smallBold" style={{ color: theme.link }}>
+              Modifier le formulaire
+            </ThemedText>
+          </Pressable>
         </View>
       </View>
 

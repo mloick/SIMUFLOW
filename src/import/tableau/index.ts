@@ -44,6 +44,23 @@ export {
   type FormAnswers,
 } from './modeles/reponses';
 export {
+  addCondition,
+  addQuestion,
+  answersOf,
+  changeType,
+  cleanForm,
+  conditionSources,
+  dependants,
+  EDITABLE_TYPES,
+  listKind,
+  moveQuestion,
+  removeCondition,
+  removeQuestion,
+  splitDocuments,
+  typeLabel,
+  updateQuestion,
+} from './modeles/edition';
+export {
   classifyStepCell,
   columnLetter,
   formatSituationWarning,
