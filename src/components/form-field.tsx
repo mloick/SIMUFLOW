@@ -215,11 +215,20 @@ export function FormField({
         (question.fields.length > 0 ? (
           question.fields.map((field) => (
             <View key={field} style={styles.subfield}>
-              <ThemedText type="small">{field}</ThemedText>
+              <ThemedText type="small">
+                {field}
+                {question.limits?.[field] ? (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {` · ${question.limits[field]} caractères au plus`}
+                  </ThemedText>
+                ) : null}
+              </ThemedText>
               <TextInput
                 value={fieldValues[field] ?? ''}
                 onChangeText={(next) => onChange({ ...fieldValues, [field]: next })}
+                maxLength={question.limits?.[field]}
                 accessibilityLabel={`${title} : ${field}`}
+                accessibilityHint={question.limits?.[field] ? `${question.limits[field]} caractères au plus` : undefined}
                 style={inputStyle}
               />
             </View>

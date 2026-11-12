@@ -18,7 +18,7 @@ const { situations } = workbookToSituations(workbook);
 describe('formulaire et workflow dans un même classeur', () => {
   it('reconnaît le classeur comme un formulaire avec son workflow', () => {
     expect(describeWorkbook(workbook).kind).toBe('formulaire-workflow');
-    expect(form.questions).toHaveLength(10);
+    expect(form.questions).toHaveLength(16);
     expect(situations).toHaveLength(6);
   });
 

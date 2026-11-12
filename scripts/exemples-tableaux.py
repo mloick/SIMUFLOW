@@ -92,34 +92,41 @@ def template(nom="template-formulaire.xlsx"):
     questions = classeur.create_sheet("3 - Questions")
     lignes = [
         ["Questions posées au demandeur"],
-        [None, "Instructions"] + [f"Question {n}" for n in range(1, 11)],
+        [None, "Instructions"] + [f"Question {n}" for n in range(1, 12)],
         ["Questions auxquelles le demandeur va répondre", "Nom de la question",
          "Coordonnées du demandeur", "Situation", "Êtes-vous le signataire du dossier ?",
          "Si NON : indiquer le signataire", "Quel changement souhaitez-vous ?",
          "MOTIF 1 : Indiquer la nouvelle adresse", "MOTIF 2 : Indiquer le nouveau contact",
-         "Joindre le justificatif", "Date souhaitée", "Numéro de commande"],
+         "Joindre le justificatif", "Date souhaitée", "Numéro de commande",
+         "MOTIF 2 : Quel est le lien avec l'ancien contact ?"],
         ["Format de la question", "Voir l'onglet Values",
          "Libellé", "Menu déroulant", "Oui/Non", "Libellé", "Case à cocher", "Texte sur plusieurs lignes",
-         "Libellé", "Pièce jointe", "Date", "Texte sur une ligne"],
+         "Libellé", "Pièce jointe", "Date", "Texte sur une ligne", "Case à cocher"],
         ["Le demandeur est-il obligé d'y répondre ?", "Impossible d'envoyer sans les questions obligatoires",
-         "oui", "oui", "oui", "oui", "oui", "oui", "oui", "oui", "non", "oui"],
+         "oui", "oui", "oui", "oui", "oui", "oui", "oui", "oui", "non", "oui", "oui"],
         ["Explication de la question / Type", "Choix d'un menu déroulant ou de cases à cocher",
-         "N° de dossier :\nNom :\nTéléphone :",
+         "N° de dossier :\nNom / Prénom du demandeur :\nTéléphone :",
          "- Cas 1\n- Cas 2\n- Cas 3\n- Cas 4\n- Cas 5\n- Cas 6",
          None,
          "Nom du signataire :\nFonction :",
          "- MOTIF 1 : Changement d'adresse\n- MOTIF 2 : Changement de contact",
          None,
-         "Nom du contact :\nTéléphone :\nEmail :",
-         "Documents attendus :\n- Justificatif de domicile\n- Pièce d'identité",
-         None, None],
+         "Nom / Prénom du contact :\nTéléphone :\nEmail :\n\n"
+         "!!!!! Nbre de caractères maximum à respecter :\nNom\t40\nTéléphone\t15",
+         "Documents attendus :\n- Justificatif de domicile\n- Pièce d'identité\n"
+         "- Attestation de l'employeur uniquement en cas de mutation",
+         None, None,
+         "- Même service\n- Service repris\n- Fusion de services\n- Autre (préciser)\n\n"
+         "Pièce jointe obligatoire pour chacun des 2 cas ci-dessous\n\n"
+         "Dans le cas du Service repris\n- Acte de reprise\nou par défaut :\n- Attestation sur l'honneur\n\n"
+         "Dans le cas de la Fusion de services\n- Procès-verbal de fusion"],
         ["Conditions additionnelles et dépendances", "Afficher selon une autre réponse",
-         None, None, None, None, None, None, None, None, None, "Si Question 2 = Cas 3"],
+         None, None, None, None, None, None, None, None, None, "Si Question 2 = Cas 3", None],
         ["Sous la question en italique : explications pour le demandeur", "Aide affichée sous la question",
          None, "Choisissez la situation qui correspond à votre demande", None, None,
-         "Plusieurs choix possibles", None, None, "Un fichier PDF ou une photo", None, None],
+         "Plusieurs choix possibles", None, None, "Un fichier PDF ou une photo", None, None, None],
         ["Exemples de réponses (optionnel)", "Disparaît dès que l'on écrit",
-         None, None, None, None, None, "12 rue des Lilas, 75000 Ville", None, None, "05/12/2026", "C-0000"],
+         None, None, None, None, None, "12 rue des Lilas, 75000 Ville", None, None, "05/12/2026", "C-0000", None],
     ]
     remplir(questions, lignes)
     remplir(classeur.create_sheet("4 - Access"), [["Qui peut faire la demande"], [None, "Instructions", "Your Value"],

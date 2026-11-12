@@ -36,19 +36,21 @@ const question = (overrides: Partial<FormQuestion>): FormQuestion => ({
 
 /** Une demande complète sur l'exemple : signataire, changement d'adresse. */
 const complete: FormAnswers = {
-  1: { 'N° de dossier': 'D-001', Nom: 'Martin', Téléphone: '0600000000' },
+  1: { 'N° de dossier': 'D-001', 'Nom du demandeur': 'Martin', 'Prénom du demandeur': 'Paul', Téléphone: '0600000000' },
   2: 'Cas 1',
   3: 'Oui',
   5: ["MOTIF 1 : Changement d'adresse"],
   6: '12 rue des Lilas',
-  8: ['justificatif.pdf'],
+  9: ['domicile.pdf'],
+  10: ['identite.pdf'],
 };
 
 describe('questions affichées', () => {
   it('cache les questions conditionnelles tant que la réponse attendue n’est pas donnée', () => {
-    expect(numbers({})).toEqual([1, 2, 3, 5, 8, 9]);
-    expect(numbers({ 3: 'Non' })).toEqual([1, 2, 3, 4, 5, 8, 9]);
-    expect(numbers({ 2: 'Cas 3', 5: ['MOTIF 2 : Changement de contact'] })).toEqual([1, 2, 3, 5, 7, 8, 9, 10]);
+    expect(numbers({})).toEqual([1, 2, 3, 5, 8, 9, 10, 11, 12]);
+    expect(numbers({ 3: 'Non' })).toEqual([1, 2, 3, 4, 5, 8, 9, 10, 11, 12]);
+    expect(numbers({ 2: 'Cas 3', 5: ['MOTIF 2 : Changement de contact'] })).toEqual([1, 2, 3, 5, 7, 8, 9, 10, 11, 12, 13, 14]);
+    expect(numbers({ 5: ['MOTIF 2 : Changement de contact'], 14: ['Service repris'] })).toContain(15);
   });
 
   it('ne tient pas compte de la réponse d’une question cachée', () => {
@@ -69,14 +71,15 @@ describe('vérification avant l’envoi', () => {
       [2, 'Réponse obligatoire.'],
       [3, 'Réponse obligatoire.'],
       [5, 'Réponse obligatoire.'],
-      [8, 'Ajoutez au moins un fichier.'],
+      [9, 'Ajoutez au moins un fichier.'],
+      [10, 'Ajoutez au moins un fichier.'],
     ]);
     expect(checkAnswers(template.questions, complete).size).toBe(0);
     expect([...checkAnswers(template.questions, { ...complete, 3: 'Non' }).keys()]).toEqual([4]);
   });
 
   it('demande tous les champs d’un libellé obligatoire', () => {
-    expect(checkAnswers(template.questions, { ...complete, 1: { Nom: 'Martin' } }).get(1)).toBe('Remplissez tous les champs.');
+    expect(checkAnswers(template.questions, { ...complete, 1: { 'Nom du demandeur': 'Martin' } }).get(1)).toBe('Remplissez tous les champs.');
   });
 
   it('vérifie le format des e-mails, adresses web, IP et dates', () => {
@@ -105,12 +108,17 @@ describe('vérification avant l’envoi', () => {
 describe('récapitulatif', () => {
   it('reprend les réponses des questions affichées, dans l’ordre', () => {
     expect(answerSummary(template.questions, { ...complete, 4: { Nom: 'oublié' } })).toEqual([
-      { n: 1, label: expect.any(String), answer: 'N° de dossier : D-001 · Nom : Martin · Téléphone : 0600000000' },
+      {
+        n: 1,
+        label: expect.any(String),
+        answer: 'N° de dossier : D-001 · Nom du demandeur : Martin · Prénom du demandeur : Paul · Téléphone : 0600000000',
+      },
       { n: 2, label: expect.any(String), answer: 'Cas 1' },
       { n: 3, label: expect.any(String), answer: 'Oui' },
       { n: 5, label: expect.any(String), answer: "MOTIF 1 : Changement d'adresse" },
       { n: 6, label: expect.any(String), answer: '12 rue des Lilas' },
-      { n: 8, label: expect.any(String), answer: 'justificatif.pdf' },
+      { n: 9, label: expect.any(String), answer: 'domicile.pdf' },
+      { n: 10, label: expect.any(String), answer: 'identite.pdf' },
     ]);
   });
 });

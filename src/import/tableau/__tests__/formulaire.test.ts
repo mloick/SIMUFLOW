@@ -23,7 +23,8 @@ describe('template d’exemple', () => {
       { n: 1, description: 'Fournir le document', group: 'Groupe A', sequence: '1' },
       { n: 2, description: 'Fournir le document', group: 'Groupe B', sequence: '2' },
     ]);
-    expect(template.warnings).toEqual([]);
+    // Le seul point à vérifier : le rappel de longueurs, retiré du formulaire.
+    expect(template.warnings.map(({ level, cell }) => [level, cell])).toEqual([['info', 'I3']]);
   });
 
   it('lit chaque question avec son type et ce qu’elle demande', () => {
@@ -35,17 +36,23 @@ describe('template d’exemple', () => {
       [5, 'checkbox', true],
       [6, 'multiline', true],
       [7, 'label', true],
-      [8, 'attachment', true],
-      [9, 'date', false],
-      [10, 'text', true],
+      [8, 'label', true],
+      [9, 'attachment', true],
+      [10, 'attachment', true],
+      [11, 'attachment', false],
+      [12, 'date', false],
+      [13, 'text', true],
+      [14, 'checkbox', true],
+      [15, 'attachment', true],
+      [16, 'attachment', true],
     ]);
-    const [coordonnees, situation, , , changement, adresse, , justificatif, date] = template.questions;
-    expect(coordonnees.fields).toEqual(['N° de dossier', 'Nom', 'Téléphone']);
+    const [coordonnees, situation, , , changement, adresse, , , domicile, , , date] = template.questions;
+    expect(coordonnees.fields).toEqual(['N° de dossier', 'Nom du demandeur', 'Prénom du demandeur', 'Téléphone']);
     expect(situation.options).toEqual(['Cas 1', 'Cas 2', 'Cas 3', 'Cas 4', 'Cas 5', 'Cas 6']);
     expect(situation.help).toBe('Choisissez la situation qui correspond à votre demande');
     expect(changement.options).toEqual(["MOTIF 1 : Changement d'adresse", 'MOTIF 2 : Changement de contact']);
     expect(adresse.example).toBe('12 rue des Lilas, 75000 Ville');
-    expect(justificatif.documents).toEqual(['Justificatif de domicile', "Pièce d'identité"]);
+    expect(domicile.label).toBe('Justificatif de domicile');
     expect(date.cell).toBe('K3');
   });
 
@@ -54,12 +61,12 @@ describe('template d’exemple', () => {
     expect(conditions[3]).toEqual([{ question: 3, equals: 'Non' }]);
     expect(conditions[5]).toEqual([{ question: 5, equals: "MOTIF 1 : Changement d'adresse" }]);
     expect(conditions[6]).toEqual([{ question: 5, equals: 'MOTIF 2 : Changement de contact' }]);
-    expect(conditions[9]).toEqual([{ question: 2, equals: 'Cas 3' }]);
-    expect(template.questions[9].conditionText).toBe('Si Question 2 = Cas 3');
+    expect(conditions[12]).toEqual([{ question: 2, equals: 'Cas 3' }]);
+    expect(template.questions[12].conditionText).toBe('Si Question 2 = Cas 3');
   });
 
   it('affiche une question selon les réponses données', () => {
-    const [, , , signataire, , adresse, , , , commande] = template.questions;
+    const [, , , signataire, , adresse, , , , , , , commande] = template.questions;
     expect(isQuestionVisible(signataire, new Map())).toBe(false);
     expect(isQuestionVisible(signataire, new Map([[3, 'Non']]))).toBe(true);
     expect(isQuestionVisible(signataire, new Map([[3, 'Oui']]))).toBe(false);
@@ -67,6 +74,44 @@ describe('template d’exemple', () => {
     expect(isQuestionVisible(adresse, new Map([[5, ["MOTIF 1 : Changement d'adresse", 'MOTIF 2 : Changement de contact']]]))).toBe(true);
     expect(isQuestionVisible(commande, new Map([[2, 'Cas 3']]))).toBe(true);
     expect(isQuestionVisible(template.questions[0], new Map())).toBe(true);
+  });
+});
+
+describe('règles de lecture', () => {
+  const template = exemple();
+  const byLabel = (label: string) => template.questions.find((question) => question.label === label)!;
+
+  it('sépare « Nom / Prénom » en deux champs', () => {
+    expect(byLabel('MOTIF 2 : Indiquer le nouveau contact').fields).toEqual(['Nom du contact', 'Prénom du contact', 'Téléphone', 'Email']);
+  });
+
+  it('retire le rappel de longueurs du formulaire et l’applique aux champs du même nom', () => {
+    const contact = byLabel('MOTIF 2 : Indiquer le nouveau contact');
+    expect(contact.limits).toEqual({ 'Nom du contact': 40, Téléphone: 15 });
+    expect(template.warnings[0].message).toContain('Rappel pour l’équipe, retiré du formulaire');
+  });
+
+  it('fait une pièce jointe par document, facultative quand le document ne sert que dans un cas', () => {
+    expect(byLabel('Joindre le justificatif').type).toBe('label');
+    expect(template.questions.slice(8, 11).map(({ label, type, mandatory }) => [label, type, mandatory])).toEqual([
+      ['Justificatif de domicile', 'attachment', true],
+      ["Pièce d'identité", 'attachment', true],
+      ["Attestation de l'employeur uniquement en cas de mutation", 'attachment', false],
+    ]);
+  });
+
+  it('ajoute les documents de chaque choix, affichés quand ce choix est coché', () => {
+    const lien = byLabel("MOTIF 2 : Quel est le lien avec l'ancien contact ?");
+    expect(lien.options).toEqual(['Même service', 'Service repris', 'Fusion de services', 'Autre (préciser)']);
+    const repris = byLabel('Pièce jointe : Service repris');
+    expect(repris).toMatchObject({ type: 'attachment', mandatory: true, documents: ['Acte de reprise', 'ou, à défaut :', "Attestation sur l'honneur"] });
+    expect(repris.conditions).toEqual([
+      { question: 5, equals: 'MOTIF 2 : Changement de contact' },
+      { question: lien.n, equals: 'Service repris' },
+    ]);
+    const motif2 = ['MOTIF 2 : Changement de contact'];
+    expect(isQuestionVisible(repris, new Map<number, string[]>([[5, motif2], [lien.n, ['Même service']]]))).toBe(false);
+    expect(isQuestionVisible(repris, new Map<number, string[]>([[5, motif2], [lien.n, ['Service repris']]]))).toBe(true);
   });
 });
 

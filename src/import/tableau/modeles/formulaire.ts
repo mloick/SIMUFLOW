@@ -15,6 +15,19 @@
  * dans la ligne prévue (« Si Question 2 = Cas 3 »), ou dans l'intitulé, où
  * elles sont souvent écrites : « Si NON : … » suit la question oui / non
  * précédente, « MOTIF 1 : … » le choix « MOTIF 1 » d'une question précédente.
+ *
+ * Les templates mêlent souvent au formulaire des notes pour l'équipe qui le
+ * construira. Règles de lecture, valables pour tout template :
+ * - « Nom / Prénom du contact : » devient deux champs, « Nom du contact » et
+ *   « Prénom du contact » ;
+ * - un rappel « !!! Nbre de caractères maximum… » n'est pas un champ : ses
+ *   longueurs s'appliquent aux champs du même nom, et il passe dans les
+ *   points à vérifier ;
+ * - une pièce jointe qui liste plusieurs documents devient une pièce jointe
+ *   par document, obligatoire sauf si le document dit « uniquement », « si »,
+ *   « facultatif » ou « optionnel » ;
+ * - sous des choix, « Dans le cas de X » suivi de documents ajoute une pièce
+ *   jointe qui s'affiche quand le choix X est coché.
  * Fonctions pures, testées dans __tests__/formulaire.test.ts.
  */
 
@@ -64,6 +77,8 @@ export type FormQuestion = {
   fields: string[];
   /** Documents attendus pour une pièce jointe. */
   documents: string[];
+  /** Longueur maximale d'un champ, d'après un rappel « Nbre de caractères » du template. */
+  limits?: Record<string, number>;
   /** Aide affichée sous la question. */
   help: string | null;
   /** Exemple de réponse, qui disparaît quand on écrit. */
@@ -261,25 +276,98 @@ const QUESTION_PROPERTIES: ['help' | 'example' | 'conditions' | 'mandatory' | 'e
 
 const isYes = (text: string) => /^(oui|yes|x|vrai|true|obligatoire)\b/.test(norm(text));
 
+/** Un rappel pour l'équipe, pas une question : « !!!!! Nbre de caractères maximum… ». */
+const REMINDER = /^!|nbre de caract|nombre (maximum |minimum |max |min )?de caract/;
+/** Fin des choix, début des documents demandés selon le choix. */
+const CASES_START = /^(dans le cas|pieces? jointes?|documents?\b)/;
+/** Un document qui ne sert que dans certains cas. */
+const OPTIONAL_DOCUMENT = /\b(uniquement|seulement|si|facultati\w*|optionnel\w*|le cas echeant)\b/;
+
+/** « Nom / Prénom du contact » : deux champs. */
+function splitField(field: string): string[] {
+  const match = /^(nom|prenom)\s*\/\s*(nom|prenom)\b\s*(.*)$/i.exec(field.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+  if (!match || match[1].toLowerCase() === match[2].toLowerCase()) return [field];
+  const rest = field.slice(field.length - match[3].length).trim();
+  return ['Nom', 'Prénom'].map((part) => (rest ? `${part} ${rest}` : part));
+}
+
+/** « Raison Sociale  40 », « CP 5 » : longueurs maximales lues dans un rappel. */
+function readLimits(reminder: string[]): { name: string; max: number }[] {
+  return reminder
+    .map((line) => /^(.+?)[\s:]+(\d{1,4})\s*(car\w*)?\.?$/i.exec(line))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => ({ name: match[1].trim(), max: Number(match[2]) }));
+}
+
+const limitKey = (text: string) =>
+  ` ${norm(text)
+    .replace(/n°|\bno\b|\bnumero\b/g, 'n ')
+    .replace(/\bcp\b/g, 'code postal')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()} `;
+
+/** La longueur de chaque champ : la plus précise des limites dont le nom est dans celui du champ. */
+function fieldLimits(fields: string[], limits: { name: string; max: number }[]): Record<string, number> {
+  const found: Record<string, number> = {};
+  for (const field of fields) {
+    const key = limitKey(field);
+    const best = limits
+      .map((limit) => ({ ...limit, key: limitKey(limit.name) }))
+      .filter((limit) => key.includes(limit.key) || limit.key.includes(key))
+      .sort((a, b) => Number(key.includes(b.key)) - Number(key.includes(a.key)) || b.key.length - a.key.length)[0];
+    if (best) found[field] = best.max;
+  }
+  return found;
+}
+
+export type CaseDocuments = { name: string; documents: string[] };
+
+/** « Dans le cas de la fusion » puis ses documents ; « ou par défaut : » reste dans la liste. */
+function readCases(rest: string[]): CaseDocuments[] {
+  const cases: CaseDocuments[] = [];
+  for (const line of rest) {
+    const start = /^dans le cas\s+(?:de la |de l[’']|du |des |de |d[’'])?(.+?)\s*:?\s*$/i.exec(line);
+    if (start) {
+      cases.push({ name: start[1].trim(), documents: [] });
+    } else if (cases.length > 0) {
+      const text = line.replace(BULLET, '').trim();
+      if (/^ou\b/i.test(norm(text))) cases[cases.length - 1].documents.push('ou, à défaut :');
+      else if (BULLET.test(line)) cases[cases.length - 1].documents.push(text);
+    }
+  }
+  return cases.filter((item) => item.documents.length > 0);
+}
+
 /** Choix, champs et documents tirés de l'explication, selon le type. */
 function readExplanation(type: QuestionType, explanation: string) {
-  const all = lines(explanation);
-  const bullets = all.filter((line) => BULLET.test(line)).map((line) => line.replace(BULLET, '').trim());
+  const every = lines(explanation);
+  const stop = every.findIndex((line) => REMINDER.test(norm(line)));
+  const all = stop >= 0 ? every.slice(0, stop) : every;
+  const reminder = stop >= 0 ? every.slice(stop) : [];
+  const empty = { options: [] as string[], fields: [] as string[], documents: [] as string[], reminder, limits: {} as Record<string, number> };
+  const bullets = (from: string[]) => from.filter((line) => BULLET.test(line)).map((line) => line.replace(BULLET, '').trim());
+  if (type === 'select' || type === 'checkbox' || type === 'scale' || type === 'list') {
+    const end = all.findIndex((line) => CASES_START.test(norm(line)));
+    const head = end >= 0 ? all.slice(0, end) : all;
+    const rest = end >= 0 ? all.slice(end) : [];
+    const cases = readCases(rest);
+    const casesRequired = rest.some((line) => /obligatoire/.test(norm(line)));
+    const options = bullets(head);
+    if (options.length > 0) return { ...empty, options, cases, casesRequired };
+    // Choix écrits sur une ligne : « Cas 1, Cas 2, Cas 3 ».
+    if (type !== 'list' && head.length === 1 && /[,;]/.test(head[0])) {
+      return { ...empty, options: head[0].split(/[,;]/).map((item) => item.trim()).filter(Boolean), cases, casesRequired };
+    }
+    return empty;
+  }
+  if (type === 'attachment') return { ...empty, documents: bullets(all) };
   // « Nom : », « Téléphone du contact : » : un champ à remplir.
   const fields = all
     .map((line) => line.replace(BULLET, '').trim())
     .filter((line) => /^[^:]{1,80}:\s*\**\s*$/.test(line))
-    .map((line) => line.replace(/\s*:\s*\**\s*$/, '').trim());
-  if (type === 'select' || type === 'checkbox' || type === 'scale' || type === 'list') {
-    if (bullets.length > 0) return { options: bullets, fields: [], documents: [] };
-    // Choix écrits sur une ligne : « Cas 1, Cas 2, Cas 3 ».
-    if (type !== 'list' && all.length === 1 && /[,;]/.test(all[0])) {
-      return { options: all[0].split(/[,;]/).map((item) => item.trim()).filter(Boolean), fields: [], documents: [] };
-    }
-    return { options: [], fields: [], documents: [] };
-  }
-  if (type === 'attachment') return { options: [], fields: [], documents: bullets };
-  return { options: [], fields, documents: [] };
+    .map((line) => line.replace(/\s*:\s*\**\s*$/, '').trim())
+    .flatMap(splitField);
+  return { ...empty, fields, limits: fieldLimits(fields, readLimits(reminder)) };
 }
 
 /** « Si Question 2 = Cas 3 », « Afficher si question 5 est Oui ». */
@@ -326,6 +414,7 @@ function labelConditions(label: string, before: FormQuestion[]): FormCondition[]
 function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
   const records = readRecords(sheet, /^questions? ?\d+$/, QUESTION_PROPERTIES, 'name');
   const questions: FormQuestion[] = [];
+  const casesOf = new Map<number, { cases: CaseDocuments[]; required: boolean }>();
   const warn = (level: FormWarning['level'], message: string, cell: string, question?: string) =>
     warnings.push({ sheet: sheet.name, level, message, cell, ...(question ? { question } : {}) });
 
@@ -342,7 +431,15 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       else warn('info', `Question ${n} sans format : affichée comme un libellé.`, record.cell);
       type = typeText ? 'text' : 'label';
     }
-    const { options, fields, documents } = readExplanation(type, explanation);
+    const read = readExplanation(type, explanation);
+    const { options, fields, documents } = read;
+    if (read.reminder.length > 0) {
+      warn(
+        'info',
+        `Rappel pour l’équipe, retiré du formulaire : « ${read.reminder.map((line) => line.replace(/\s+/g, ' ')).join(' ; ')} ».${Object.keys(read.limits).length > 0 ? ` Longueurs appliquées : ${Object.entries(read.limits).map(([field, max]) => `${field} ${max}`).join(', ')}.` : ''}`,
+        record.cell,
+      );
+    }
     if (type === 'select' && options.length === 0) {
       warn('orange', `Menu déroulant « ${name.split('\n')[0]} » sans choix.`, record.cell, 'Quels choix le menu propose-t-il ?');
     }
@@ -356,6 +453,7 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       options,
       fields,
       documents,
+      ...(Object.keys(read.limits).length > 0 ? { limits: read.limits } : {}),
       help: help ?? null,
       example: example ?? null,
       conditions: [],
@@ -376,8 +474,75 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       }
     }
     questions.push(question);
+    if ('cases' in read && read.cases && read.cases.length > 0) casesOf.set(question.n, { cases: read.cases, required: read.casesRequired ?? false });
   }
-  return questions;
+  return expandDocuments(questions, casesOf, warn);
+}
+
+/**
+ * Une pièce jointe par document (la question d'origine devient un titre), et
+ * les documents de chaque choix après la question à choix. Les questions sont
+ * renumérotées, conditions comprises.
+ */
+function expandDocuments(
+  questions: FormQuestion[],
+  casesOf: Map<number, { cases: CaseDocuments[]; required: boolean }>,
+  warn: (level: FormWarning['level'], message: string, cell: string, question?: string) => void,
+): FormQuestion[] {
+  const out: { question: FormQuestion; from: number | null }[] = [];
+  const attachment = (base: FormQuestion, label: string, mandatory: boolean, documents: string[], conditions: FormCondition[]) => ({
+    question: {
+      ...base,
+      label,
+      type: 'attachment' as const,
+      mandatory,
+      explanation: null,
+      options: [],
+      fields: [],
+      documents,
+      help: null,
+      example: null,
+      conditions,
+      conditionText: null,
+    },
+    from: null,
+  });
+  for (const question of questions) {
+    if (question.type === 'attachment' && question.documents.length > 1) {
+      out.push({ question: { ...question, type: 'label', explanation: null, documents: [] }, from: question.n });
+      for (const document of question.documents) {
+        const optional = OPTIONAL_DOCUMENT.test(norm(document));
+        out.push(attachment(question, document, question.mandatory && !optional, [], question.conditions));
+      }
+      continue;
+    }
+    out.push({ question, from: question.n });
+    const cases = casesOf.get(question.n);
+    if (!cases) continue;
+    for (const item of cases.cases) {
+      const wanted = ` ${norm(item.name).replace(/[^a-z0-9]+/g, ' ').trim()} `;
+      const option = question.options.find((choice) => ` ${norm(choice).replace(/[^a-z0-9]+/g, ' ').trim()} `.includes(wanted));
+      if (!option) {
+        warn('orange', `Documents « ${item.name} » sans choix correspondant.`, question.cell, 'À quel choix ces documents correspondent-ils ?');
+        continue;
+      }
+      out.push(
+        attachment(question, `Pièce jointe : ${option}`, cases.required, item.documents, [
+          ...question.conditions,
+          { question: question.n, equals: option },
+        ]),
+      );
+    }
+  }
+  const renumber = new Map<number, number>();
+  out.forEach(({ from }, index) => {
+    if (from !== null) renumber.set(from, index + 1);
+  });
+  return out.map(({ question }, index) => ({
+    ...question,
+    n: index + 1,
+    conditions: question.conditions.map((condition) => ({ ...condition, question: renumber.get(condition.question) ?? condition.question })),
+  }));
 }
 
 // ---------------------------------------------------------------------------

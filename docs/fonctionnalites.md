@@ -92,6 +92,15 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 
 ![Demande prête : le récapitulatif des réponses](captures/etape-20c-formulaire-recapitulatif.png)
 
+**Un formulaire plus juste.** Les templates mêlent souvent au formulaire des notes pour l'équipe qui le construira. L'app les corrige seule, quel que soit le template :
+
+- « Nom / Prénom du contact » devient deux cases, **Nom du contact** et **Prénom du contact**.
+- Un rappel comme « !!!!! Nbre de caractères maximum… » n'apparaît plus dans le formulaire. Les longueurs qu'il donne s'appliquent aux champs du même nom (« Nom du contact · 40 caractères au plus »), et le rappel est gardé dans **Points à vérifier dans le template**.
+- Une pièce jointe qui liste plusieurs documents devient **une pièce jointe par document**, chacune obligatoire, sauf un document qui ne sert que dans un cas (« uniquement… », « si… », « facultatif »).
+- Sous des cases à cocher, « Dans le cas de X » suivi de documents ajoute une pièce jointe qui n'apparaît que si X est coché.
+
+![Nom et prénom séparés, longueurs appliquées, une pièce jointe par document, et les documents du choix coché](captures/etape-24-regles-formulaire.png)
+
 **Du formulaire au process.** L'app fait la différence toute seule :
 
 - **Un formulaire seul** (un template, sans workflow) se simule en formulaire : la simulation s'arrête à « Demande prête ».
