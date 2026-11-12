@@ -11,7 +11,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 **What you can do**
 
 - **Add a process** from a draw.io or JSON file, or by **photographing a table** (step, actor, delay): the text is read on the phone by a native module (Swift with Vision on iOS, Kotlin with ML Kit on Android).
-- **Import an Excel or CSV table** (in progress): the workbook is read on the device, and the app says what each sheet holds (process table, workflow with SLA and OLA, form template, list). Process tables (step, actor, delay, next) are imported as processes, one per sheet; workflows with SLA and OLA and form templates come next.
+- **Import an Excel or CSV table** (in progress): the workbook is read on the device, and the app says what each sheet holds (process table, workflow with SLA and OLA, form template, list). Process tables (step, actor, delay, next) are imported as processes, one per sheet. For a table the app does not recognise, you pick the header row and say which column is the step, the actor, the delay…; the app remembers those column titles for the next tables; workflows with SLA and OLA and form templates come next.
 - **See what is wrong**: dead ends, unreachable steps, paths that can never finish, one-way decisions, unlabeled branches.
 - **Correct it** in an editor (steps, decisions, branches). The app learns reading rules from your corrections and reapplies them on the next imports.
 - **Replay it** step by step, or see every path at once with the critical path. Export it as a PDF, a draw.io file or JSON.

@@ -12,6 +12,8 @@ export { parseProcessJson, processToJson } from './json';
 export {
   applyRules,
   describeRule,
+  learnColumnRules,
+  learnedHeaders,
   learnRules,
   mergeRules,
   parseRules,

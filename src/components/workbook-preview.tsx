@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, type BadgeTone } from '@/components/badge';
 import { SymbolView } from '@/components/symbol';
@@ -13,6 +13,9 @@ import {
   type WorkbookReport,
 } from '@/import/tableau';
 import { plural } from '@/utils/format';
+
+/** Onglets dont on peut choisir les colonnes à la main. */
+const CHOOSABLE = new Set<SheetKind>(['inconnu', 'liste']);
 
 const TONES: Record<SheetKind, BadgeTone> = {
   process: 'success',
@@ -44,11 +47,14 @@ export function WorkbookPreview({
   report,
   warnings,
   importable,
+  onChooseColumns,
 }: {
   report: WorkbookReport;
   warnings: string[];
   /** Nombre de process importables (onglets « process »). */
   importable: number;
+  /** Onglet non reconnu : ouvrir le choix des colonnes (index de l'onglet). */
+  onChooseColumns?: (index: number) => void;
 }) {
   const theme = useTheme();
   const later = report.sheets.some((sheet) => sheet.kind === 'sla-ola' || sheet.kind === 'formulaire');
@@ -66,19 +72,31 @@ export function WorkbookPreview({
             {plural(report.sheets.length, 'onglet')}
           </ThemedText>
         </View>
-        {report.sheets.map((sheet) => (
-          <View
-            key={sheet.name}
-            style={[styles.row, { borderTopColor: theme.border }]}
-            accessible
-            accessibilityLabel={`Onglet ${sheet.name}. ${SHEET_KIND_LABELS[sheet.kind]}. ${sheetMeta(sheet)}`}>
-            <View style={styles.flex}>
-              <ThemedText>{sheet.name}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {sheetMeta(sheet)}
-              </ThemedText>
+        {report.sheets.map((sheet, index) => (
+          <View key={sheet.name} style={[styles.sheet, { borderTopColor: theme.border }]}>
+            <View
+              style={styles.row}
+              accessible
+              accessibilityLabel={`Onglet ${sheet.name}. ${SHEET_KIND_LABELS[sheet.kind]}. ${sheetMeta(sheet)}`}>
+              <View style={styles.flex}>
+                <ThemedText>{sheet.name}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {sheetMeta(sheet)}
+                </ThemedText>
+              </View>
+              <Badge label={SHEET_KIND_LABELS[sheet.kind]} tone={TONES[sheet.kind]} />
             </View>
-            <Badge label={SHEET_KIND_LABELS[sheet.kind]} tone={TONES[sheet.kind]} />
+            {onChooseColumns && CHOOSABLE.has(sheet.kind) && (
+              <Pressable
+                onPress={() => onChooseColumns(index)}
+                accessibilityRole="button"
+                accessibilityLabel={`Choisir les colonnes de l’onglet ${sheet.name}`}
+                style={styles.choose}>
+                <ThemedText type="link" style={{ color: theme.link }}>
+                  Choisir les colonnes
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
         ))}
       </View>
@@ -113,7 +131,7 @@ export function importNotice(importable: number, later: boolean): string {
     return later ? `${local} Seuls les onglets « Process » s’importent pour l’instant.` : local;
   }
   if (later) return `${local} L’import des workflows SLA / OLA et des formulaires arrive dans une prochaine version.`;
-  return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…).`;
+  return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…) : touchez « Choisir les colonnes » sous un onglet pour dire à l’app où elles sont.`;
 }
 
 const styles = StyleSheet.create({
@@ -121,6 +139,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   summary: { gap: Spacing.half, padding: Spacing.three },
   title: { fontSize: 16 },
+  sheet: { borderTopWidth: StyleSheet.hairlineWidth },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -128,8 +147,8 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
+  choose: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.three, marginTop: -Spacing.two },
   flex: { flex: 1 },
   notice: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, borderRadius: Radius.medium },
 });

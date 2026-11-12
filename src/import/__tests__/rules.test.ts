@@ -5,6 +5,7 @@ import type { Process } from '@/domain';
 import {
   applyRules,
   describeRule,
+  learnColumnRules,
   learnRules,
   mergeRules,
   parseRules,
@@ -106,5 +107,22 @@ describe('appliquer les règles', () => {
     const [compta, hexagone, achats] = rules;
     expect(reconcileRules([achats], [compta], false, [])).toEqual([achats]);
     expect(reconcileRules([achats, hexagone], [compta], true, ['role|hexagon'])).toEqual([achats, compta]);
+  });
+});
+
+describe('règles de colonnes (tableaux Excel et CSV)', () => {
+  it('n’apprend que les titres qui n’étaient pas déjà compris pareil', () => {
+    expect(learnColumnRules(['Étape', 'Pilote', '', 'Note'], ['step', 'actor', 'delay', null])).toEqual([
+      { type: 'column', header: 'Pilote', column: 'actor' },
+    ]);
+  });
+
+  it('se décrit, se relit et remplace une règle sur le même titre', () => {
+    const rule: ReadingRule = { type: 'column', header: 'Pilote', column: 'actor' };
+    expect(describeRule(rule)).toBe('Colonne « Pilote » lue comme l’acteur');
+    expect(parseRules([rule, { type: 'column', header: 'x', column: 'autre' }])).toEqual([rule]);
+    expect(mergeRules([rule], [{ type: 'column', header: 'pilote', column: 'step' }])).toEqual([
+      { type: 'column', header: 'pilote', column: 'step' },
+    ]);
   });
 });

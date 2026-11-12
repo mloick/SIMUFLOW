@@ -7,20 +7,53 @@
  *   (un service renommé, une abréviation développée).
  * - « rôle » : toutes les étapes d'une même forme ont reçu le même rôle
  *   (par exemple, chez cet utilisateur, un hexagone est une décision).
+ * - « colonne » : dans un tableau Excel ou CSV non reconnu, l'utilisateur a
+ *   dit que la colonne titrée « Intitulé » est l'étape ; les tableaux suivants
+ *   qui ont ce titre sont reconnus seuls (`learnColumnRules`).
  *
  * Une correction faite sur une seule étape parmi d'autres semblables reste
  * une correction ponctuelle : elle n'apprend rien.
  */
 
 import type { Process, StepKind } from '@/domain';
+import { headerKey, headerKind, type ColumnKind, type LearnedHeaders } from '@/scan/table';
 
-export type ReadingRule = { type: 'actor'; from: string; to: string } | { type: 'role'; shape: string; role: StepKind };
+export type ReadingRule =
+  | { type: 'actor'; from: string; to: string }
+  | { type: 'role'; shape: string; role: StepKind }
+  | { type: 'column'; header: string; column: ColumnKind };
 
 const key = (text: string) => text.trim().toLocaleLowerCase('fr');
 
 /** Identité d'une règle : une nouvelle règle sur le même acteur ou la même forme remplace l'ancienne. */
 export const ruleKey = (rule: ReadingRule) =>
-  rule.type === 'actor' ? `actor|${key(rule.from)}` : `role|${rule.shape}`;
+  rule.type === 'actor'
+    ? `actor|${key(rule.from)}`
+    : rule.type === 'role'
+      ? `role|${rule.shape}`
+      : `column|${headerKey(rule.header)}`;
+
+/**
+ * Ce qu'apprend un choix de colonnes fait à la main : pour chaque colonne
+ * choisie dont le titre n'est pas déjà compris pareil, « ce titre est cette
+ * colonne ». Les colonnes sans titre ou ignorées n'apprennent rien.
+ */
+export function learnColumnRules(headers: string[], choice: (ColumnKind | null)[]): ReadingRule[] {
+  const rules: ReadingRule[] = [];
+  choice.forEach((column, index) => {
+    const header = headers[index]?.trim();
+    if (!column || !header || !headerKey(header) || headerKind(header) === column) return;
+    rules.push({ type: 'column', header, column });
+  });
+  return rules;
+}
+
+/** Les titres de colonnes appris, pour la lecture des tableaux. */
+export function learnedHeaders(rules: ReadingRule[]): LearnedHeaders {
+  return new Map(
+    rules.flatMap((rule) => (rule.type === 'column' ? [[headerKey(rule.header), rule.column] as const] : [])),
+  );
+}
 
 /** Formes de base : il en faut plusieurs, toutes corrigées pareil, pour en tirer une règle. */
 const BASIC_SHAPES = new Set(['rectangle', 'rounded']);
@@ -127,6 +160,14 @@ const SHAPE_NAMES: Record<string, string> = {
   step: 'flèche',
 };
 
+const COLUMN_NAMES: Record<ColumnKind, string> = {
+  number: 'le numéro',
+  step: 'l’étape',
+  actor: 'l’acteur',
+  delay: 'le délai',
+  next: 'la suite',
+};
+
 const ROLE_NAMES: Record<StepKind, string> = {
   start: 'un départ',
   task: 'une tâche',
@@ -142,6 +183,7 @@ export function shapeName(shape: string): string {
 /** Phrase d’une règle : « Acteur « Serv. compta » lu comme « Comptabilité » », « Forme hexagone lue comme une décision ». */
 export function describeRule(rule: ReadingRule): string {
   if (rule.type === 'actor') return `Acteur « ${rule.from} » lu comme « ${rule.to} »`;
+  if (rule.type === 'column') return `Colonne « ${rule.header} » lue comme ${COLUMN_NAMES[rule.column]}`;
   const name = shapeName(rule.shape);
   return `Forme ${name} lue comme ${ROLE_NAMES[rule.role]}`;
 }
@@ -150,9 +192,11 @@ export function describeRule(rule: ReadingRule): string {
 export function parseRules(value: unknown): ReadingRule[] {
   if (!Array.isArray(value)) return [];
   const kinds: StepKind[] = ['start', 'task', 'decision', 'end'];
+  const columns: ColumnKind[] = ['number', 'step', 'actor', 'delay', 'next'];
   return value.filter(
     (rule): rule is ReadingRule =>
       (rule?.type === 'actor' && typeof rule.from === 'string' && typeof rule.to === 'string') ||
-      (rule?.type === 'role' && typeof rule.shape === 'string' && kinds.includes(rule.role)),
+      (rule?.type === 'role' && typeof rule.shape === 'string' && kinds.includes(rule.role)) ||
+      (rule?.type === 'column' && typeof rule.header === 'string' && columns.includes(rule.column)),
   );
 }

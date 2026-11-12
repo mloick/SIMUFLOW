@@ -11,7 +11,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 **Ce que l'on peut faire**
 
 - **Ajouter un process** depuis un fichier draw.io ou JSON, ou en **photographiant un tableau** (étape, acteur, délai) : le texte est lu sur le téléphone par un module natif (Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android).
-- **Importer un tableau Excel ou CSV** (en cours) : le classeur est lu sur l'appareil, et l'app dit ce que contient chaque onglet (tableau de process, workflow avec SLA et OLA, template de formulaire, liste). Les tableaux de process (étape, acteur, délai, suite) s'importent en process, un par onglet ; les workflows avec SLA et OLA et les templates de formulaire viennent ensuite.
+- **Importer un tableau Excel ou CSV** (en cours) : le classeur est lu sur l'appareil, et l'app dit ce que contient chaque onglet (tableau de process, workflow avec SLA et OLA, template de formulaire, liste). Les tableaux de process (étape, acteur, délai, suite) s'importent en process, un par onglet. Pour un tableau que l'app ne reconnaît pas, on choisit la ligne des titres et on dit quelle colonne est l'étape, l'acteur, le délai… ; l'app retient ces titres de colonnes pour les tableaux suivants ; les workflows avec SLA et OLA et les templates de formulaire viennent ensuite.
 - **Voir ce qui cloche** : impasses, étapes inatteignables, chemins qui ne finissent jamais, décisions à sens unique, branches sans nom.
 - **Le corriger** dans un éditeur (étapes, décisions, branches). L'app apprend des règles de lecture de vos corrections et les réapplique aux imports suivants.
 - **Le rejouer** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique. L'exporter en PDF, en fichier draw.io ou en JSON.
