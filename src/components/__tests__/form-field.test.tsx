@@ -95,4 +95,21 @@ describe('FormField', () => {
     await render(<FormField question={questions[1]} questions={questions} value={undefined} onChange={() => {}} />);
     expect(screen.getByText('S’affiche si « Êtes-vous le signataire ? » = Non')).toBeOnTheScreen();
   });
+
+  it('écrit l’erreur d’une réponse et retire un fichier joint', async () => {
+    const onChange = jest.fn();
+    await render(
+      <FormField
+        question={question({ label: 'Justificatif', type: 'attachment', mandatory: true })}
+        questions={[]}
+        value={['facture.pdf', 'photo.jpg']}
+        onChange={onChange}
+        error="Ajoutez au moins un fichier."
+      />,
+    );
+    expect(screen.getByText('Ajoutez au moins un fichier.')).toBeOnTheScreen();
+    expect(screen.getByText('Ajouter un autre fichier')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByLabelText('Retirer facture.pdf'));
+    expect(onChange).toHaveBeenCalledWith(['photo.jpg']);
+  });
 });

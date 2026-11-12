@@ -57,7 +57,7 @@ export default function RootLayout() {
           <Stack.Screen name="simulation/[id]" options={{ title: 'Simulation' }} />
           <Stack.Screen name="suivi/[id]" options={{ title: 'Suivi' }} />
           <Stack.Screen name="import" options={{ title: 'Importer un process', presentation: 'modal' }} />
-          <Stack.Screen name="formulaire" options={{ title: 'Aperçu du formulaire', presentation: 'modal' }} />
+          <Stack.Screen name="formulaire" options={{ title: 'Formulaire', presentation: 'modal' }} />
           <Stack.Screen name="export/[id]" options={{ title: 'Exporter le schéma', presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

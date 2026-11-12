@@ -151,10 +151,10 @@ export function WorkbookPreview({
   );
 }
 
-/** Template de formulaire : le formulaire se regarde déjà, le reste viendra. */
+/** Template de formulaire : le formulaire se regarde et se remplit déjà, le reste viendra. */
 export function formNotice(importable: number): string {
   const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
-  const next = 'Touchez « Voir le formulaire » pour le voir comme le demandeur.';
+  const next = 'Touchez « Voir le formulaire » pour le voir et le remplir comme le demandeur.';
   return importable > 0 ? `${local} ${next}` : `${local} ${next} Le process qui suit la demande arrive dans une prochaine version.`;
 }
 

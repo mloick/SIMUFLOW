@@ -1,3 +1,4 @@
+import * as DocumentPicker from 'expo-document-picker';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
@@ -5,10 +6,9 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { FormQuestion } from '@/import/tableau';
+import type { FormAnswer, FormQuestion } from '@/import/tableau';
 
-/** Réponse à une question : un texte, des choix cochés, ou un texte par champ d'un libellé. */
-export type FormAnswer = string | string[] | Record<string, string>;
+export type { FormAnswer };
 
 /** « Êtes-vous le signataire ? = Non » : la condition d'une question, lisible. */
 export function conditionText(question: FormQuestion, questions: FormQuestion[]): string | null {
@@ -48,12 +48,15 @@ export function FormField({
   questions,
   value,
   onChange,
+  error,
 }: {
   question: FormQuestion;
   /** Toutes les questions, pour écrire les conditions avec leurs intitulés. */
   questions: FormQuestion[];
   value: FormAnswer | undefined;
   onChange: (value: FormAnswer) => void;
+  /** Ce qui ne va pas dans la réponse, écrit en rouge sous la question. */
+  error?: string | null;
 }) {
   const theme = useTheme();
   const [title, ...rest] = question.label.split('\n');
@@ -74,7 +77,15 @@ export function FormField({
   const text = typeof value === 'string' ? value : '';
   const checked = Array.isArray(value) ? value : [];
   const fieldValues = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const inputStyle = [styles.input, { color: theme.text, backgroundColor: theme.surface, borderColor: theme.fieldBorder }];
+  const borderColor = error ? theme.danger : theme.fieldBorder;
+  const inputStyle = [styles.input, { color: theme.text, backgroundColor: theme.surface, borderColor }];
+
+  const addFile = async () => {
+    const selection = await DocumentPicker.getDocumentAsync({ multiple: true, copyToCacheDirectory: false });
+    if (selection.canceled) return;
+    const names = selection.assets.map((asset) => asset.name).filter((name) => !checked.includes(name));
+    onChange([...checked, ...names]);
+  };
 
   return (
     <View style={styles.question}>
@@ -125,7 +136,7 @@ export function FormField({
       )}
 
       {question.type === 'select' && (
-        <Dropdown options={question.options} value={text} onChange={onChange} label={title} />
+        <Dropdown options={question.options} value={text} onChange={onChange} label={title} borderColor={borderColor} />
       )}
 
       {question.type === 'scale' && (
@@ -163,13 +174,28 @@ export function FormField({
       )}
 
       {question.type === 'attachment' && (
-        <View style={[styles.attachment, { borderColor: theme.fieldBorder }]}>
-          <View style={styles.row}>
+        <View style={[styles.attachment, { borderColor }]}>
+          {checked.map((name) => (
+            <View key={name} style={styles.row}>
+              <SymbolView name={{ ios: 'doc', android: 'description' }} size={18} tintColor={theme.textSecondary} />
+              <ThemedText type="small" style={styles.flex} numberOfLines={1}>
+                {name}
+              </ThemedText>
+              <Pressable
+                onPress={() => onChange(checked.filter((item) => item !== name))}
+                accessibilityRole="button"
+                accessibilityLabel={`Retirer ${name}`}
+                hitSlop={12}>
+                <SymbolView name={{ ios: 'xmark.circle.fill', android: 'cancel' }} size={20} tintColor={theme.textSecondary} />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable onPress={addFile} accessibilityRole="button" accessibilityLabel={`${title} : ajouter un fichier`} style={styles.row}>
             <SymbolView name={{ ios: 'paperclip', android: 'attach_file' }} size={18} tintColor={theme.link} />
             <ThemedText type="link" style={{ color: theme.link }}>
-              Ajouter un fichier
+              {checked.length > 0 ? 'Ajouter un autre fichier' : 'Ajouter un fichier'}
             </ThemedText>
-          </View>
+          </Pressable>
           {question.documents.length > 0 && (
             <View style={styles.documents}>
               <ThemedText type="small" themeColor="textSecondary">
@@ -203,6 +229,15 @@ export function FormField({
             {question.explanation}
           </ThemedText>
         ) : null)}
+
+      {error && (
+        <View style={styles.row} accessibilityLiveRegion="polite">
+          <SymbolView name={{ ios: 'exclamationmark.circle.fill', android: 'error' }} size={16} tintColor={theme.danger} />
+          <ThemedText type="small" style={[styles.flex, { color: theme.danger }]}>
+            {error}
+          </ThemedText>
+        </View>
+      )}
     </View>
   );
 }
@@ -283,11 +318,13 @@ function Dropdown({
   value,
   onChange,
   label,
+  borderColor,
 }: {
   options: string[];
   value: string;
   onChange: (value: string) => void;
   label: string;
+  borderColor: string;
 }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -299,7 +336,7 @@ function Dropdown({
         accessibilityLabel={label}
         accessibilityValue={{ text: value || 'Aucun choix' }}
         accessibilityState={{ expanded: open }}
-        style={[styles.input, styles.dropdown, { backgroundColor: theme.surface, borderColor: theme.fieldBorder }]}>
+        style={[styles.input, styles.dropdown, { backgroundColor: theme.surface, borderColor }]}>
         <ThemedText style={[styles.flex, !value && { color: theme.textSecondary }]}>{value || '— Choisir —'}</ThemedText>
         <SymbolView
           name={open ? { ios: 'chevron.up', android: 'expand_less' } : { ios: 'chevron.down', android: 'expand_more' }}

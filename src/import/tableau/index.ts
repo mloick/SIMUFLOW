@@ -32,6 +32,18 @@ export {
   type QuestionType,
 } from './modeles/formulaire';
 export {
+  answerProblem,
+  answerSummary,
+  answerText,
+  checkAnswers,
+  expectsAnswer,
+  isEmptyAnswer,
+  visibleQuestions,
+  type AnswerLine,
+  type FormAnswer,
+  type FormAnswers,
+} from './modeles/reponses';
+export {
   classifyStepCell,
   columnLetter,
   formatSituationWarning,

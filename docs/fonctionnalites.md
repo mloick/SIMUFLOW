@@ -58,7 +58,7 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 
 ![Les titres retenus, dans Profil](captures/etape-19c-colonnes-regles.png)
 
-**Voir un formulaire avant qu'il existe.** Un template de création de formulaire (onglets Basic info, Questions, Fulfillment flow…) est reconnu tout seul. Touchez **Voir le formulaire** : l'app montre le formulaire tel que le demandeur le verra, question par question. Chaque question a le bon champ : texte, oui / non, menu déroulant, cases à cocher, date, pièce jointe avec la liste des documents attendus, ou un libellé avec ses champs à remplir. Les réponses obligatoires portent une étoile rouge, l'aide est écrite en italique dessous. Une question qui ne s'affiche que selon une autre réponse le dit (« S'affiche si … = Non »), même quand la condition n'est écrite que dans l'intitulé (« Si NON : … », « MOTIF 2 : … »). En bas : à qui le ticket sera attribué et les tasks prévues, puis les points à vérifier dans le template, avec la cellule et la question à poser. Vous pouvez déjà toucher les champs ; l'envoi et le process qui suit arrivent dans une prochaine version. Pour essayer : `template-formulaire.xlsx`.
+**Voir un formulaire avant qu'il existe.** Un template de création de formulaire (onglets Basic info, Questions, Fulfillment flow…) est reconnu tout seul. Touchez **Voir le formulaire** : l'app montre le formulaire tel que le demandeur le verra, question par question. Chaque question a le bon champ : texte, oui / non, menu déroulant, cases à cocher, date, pièce jointe avec la liste des documents attendus, ou un libellé avec ses champs à remplir. Les réponses obligatoires portent une étoile rouge, l'aide est écrite en italique dessous. Une question qui ne s'affiche que selon une autre réponse le dit (« S'affiche si … = Non »), même quand la condition n'est écrite que dans l'intitulé (« Si NON : … », « MOTIF 2 : … »). En bas : à qui le ticket sera attribué et les tasks prévues, puis les points à vérifier dans le template, avec la cellule et la question à poser. Pour essayer : `template-formulaire.xlsx`.
 
 ![Un template de formulaire reconnu, avec « Voir le formulaire »](captures/etape-20b-formulaire-import.png)
 
@@ -69,6 +69,18 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 ![Des questions qui ne s'affichent que selon une réponse](captures/etape-20b-formulaire-conditions.png)
 
 ![Pièce jointe avec ses documents attendus, puis ce qui se passe après l'envoi](captures/etape-20b-formulaire-piece-jointe.png)
+
+**Remplir le formulaire comme le demandeur.** Le formulaire se remplit pour de vrai. Au départ, seules les questions toujours posées s'affichent ; l'encadré du haut dit combien d'autres apparaîtront selon vos réponses, et **Montrer aussi les questions cachées** les montre en grisé pour relire tout le template. Répondez « Non » à « Êtes-vous le signataire ? » et la question « Si NON : indiquer le signataire » apparaît ; cochez MOTIF 1 et la question de MOTIF 1 apparaît. **Ajouter un fichier** ouvre vos fichiers ; seul le nom du fichier est gardé, et la croix le retire. Touchez **Envoyer la demande** : s'il manque une réponse obligatoire, ou si un e-mail, une adresse web ou une date est mal écrit, l'app remonte à la première question à corriger et écrit en rouge ce qui ne va pas. Quand tout est bon, **Demande prête** affiche le récapitulatif : chaque question posée et votre réponse. Rien n'est envoyé : c'est une simulation. **Modifier les réponses** revient au formulaire, **Nouvelle demande** le vide. Suivre la demande dans le process de la situation choisie arrive dans une prochaine version.
+
+![Le formulaire vide, avec le nombre de questions qui apparaîtront](captures/etape-20c-formulaire-vide.png)
+
+![Envoyer sans répondre : les réponses manquantes en rouge](captures/etape-20c-formulaire-erreurs.png)
+
+![« Non » fait apparaître la question sur le signataire](captures/etape-20c-formulaire-condition.png)
+
+![Un fichier joint, qu'on peut retirer](captures/etape-20c-formulaire-piece-jointe.png)
+
+![Demande prête : le récapitulatif des réponses](captures/etape-20c-formulaire-recapitulatif.png)
 
 ## Scanner un tableau · Disponible
 
