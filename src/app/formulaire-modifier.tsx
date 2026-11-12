@@ -22,10 +22,12 @@ import {
   moveQuestion,
   removeCondition,
   removeQuestion,
+  splitDocuments,
   typeLabel,
   updateQuestion,
   type FormQuestion,
   type FormTemplate,
+  type QuestionType,
 } from '@/import/tableau';
 import { confirmAction } from '@/utils/confirm';
 import { plural } from '@/utils/format';
@@ -87,9 +89,9 @@ function Editor({ original }: { original: FormTemplate }) {
       'Continuer à modifier',
     );
   };
-  const add = (after: number) => {
-    const { form, n } = addQuestion(draft, after);
-    setDraft(form);
+  const add = (after: number, type?: QuestionType) => {
+    const { form, n } = addQuestion(draft, after, type);
+    setDraft(type === 'attachment' ? updateQuestion(form, n, { label: 'Pièce jointe' }) : form);
     setOpen(n);
   };
 
@@ -141,7 +143,7 @@ function Editor({ original }: { original: FormTemplate }) {
                 setDraft(moveQuestion(draft, question.n, delta));
                 setOpen(question.n + delta);
               }}
-              onAddAfter={() => add(question.n)}
+              onAddAfter={(type) => add(question.n, type)}
               onRemove={() => {
                 setDraft(removeQuestion(draft, question.n));
                 setOpen(null);
@@ -180,7 +182,7 @@ function QuestionEditor({
   onToggle: () => void;
   onChange: (next: FormTemplate) => void;
   onMove: (delta: -1 | 1) => void;
-  onAddAfter: () => void;
+  onAddAfter: (type?: QuestionType) => void;
   onRemove: () => void;
 }) {
   const theme = useTheme();
@@ -270,6 +272,9 @@ function QuestionEditor({
           {kind && (
             <>
               <Label text={LIST_LABELS[kind].title} />
+              {kind === 'documents' && question.documents.filter((document) => document.trim()).length > 1 && (
+                <Action label="Une pièce jointe par document" onPress={() => onChange(splitDocuments(form, question.n))} />
+              )}
               <ThemedText type="small" themeColor="textSecondary">
                 {LIST_LABELS[kind].hint}
               </ThemedText>
@@ -337,7 +342,8 @@ function QuestionEditor({
           <View style={styles.footer}>
             <Action label="Monter" onPress={() => onMove(-1)} disabled={question.n === 1} />
             <Action label="Descendre" onPress={() => onMove(1)} disabled={question.n === form.questions.length} />
-            <Action label="Ajouter une question après" onPress={onAddAfter} />
+            <Action label="Ajouter une question après" onPress={() => onAddAfter()} />
+            <Action label="Ajouter une pièce jointe après" onPress={() => onAddAfter('attachment')} />
             <Action label="Supprimer" onPress={remove} danger />
           </View>
         </View>

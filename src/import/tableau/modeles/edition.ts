@@ -151,3 +151,21 @@ export function cleanForm(form: FormTemplate): FormTemplate {
     })),
   };
 }
+
+/**
+ * Une pièce jointe qui liste plusieurs documents devient un titre de section suivi d'une
+ * pièce jointe par document (mêmes conditions, même obligation).
+ */
+export function splitDocuments(form: FormTemplate, n: number): FormTemplate {
+  const question = form.questions.find((item) => item.n === n);
+  const documents = question?.documents.map((document) => document.trim()).filter(Boolean) ?? [];
+  if (!question || question.type !== 'attachment' || documents.length < 2) return form;
+  let next = updateQuestion(form, n, { type: 'container', typeText: typeLabel('container'), documents: [], fields: [] });
+  let after = n;
+  for (const document of documents) {
+    const added = addQuestion(next, after, 'attachment');
+    next = updateQuestion(added.form, added.n, { label: document, mandatory: question.mandatory });
+    after = added.n;
+  }
+  return next;
+}

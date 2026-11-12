@@ -56,6 +56,7 @@ export {
   moveQuestion,
   removeCondition,
   removeQuestion,
+  splitDocuments,
   typeLabel,
   updateQuestion,
 } from './modeles/edition';

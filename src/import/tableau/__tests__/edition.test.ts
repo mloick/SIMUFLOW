@@ -14,6 +14,7 @@ import {
   readTableFile,
   removeCondition,
   removeQuestion,
+  splitDocuments,
   updateQuestion,
 } from '..';
 
@@ -70,5 +71,21 @@ describe('modifier un formulaire', () => {
   it('nettoie les listes avant d’enregistrer', () => {
     const form = updateQuestion(template(), 2, { options: ['Cas 1', '', ' Cas 2 ', ''], label: '  ', help: ' ' });
     expect(cleanForm(form).questions[1]).toMatchObject({ options: ['Cas 1', 'Cas 2'], label: 'Question sans titre', help: null });
+  });
+});
+
+describe('pièces jointes', () => {
+  it('fait une pièce jointe par document, avec les mêmes conditions et la même obligation', () => {
+    let form = template();
+    const { form: added, n } = addQuestion(form, 4, 'attachment');
+    form = updateQuestion(added, n, { label: 'Pièces du signataire', mandatory: true, documents: ['Pièce d’identité', '', 'Procuration'] });
+    const next = splitDocuments(form, n);
+    expect(next.questions.slice(n - 1, n + 2).map(({ label, type, mandatory, conditions }) => ({ label, type, mandatory, conditions }))).toEqual([
+      { label: 'Pièces du signataire', type: 'container', mandatory: true, conditions: [{ question: 3, equals: 'Non' }] },
+      { label: 'Pièce d’identité', type: 'attachment', mandatory: true, conditions: [{ question: 3, equals: 'Non' }] },
+      { label: 'Procuration', type: 'attachment', mandatory: true, conditions: [{ question: 3, equals: 'Non' }] },
+    ]);
+    expect(next.questions).toHaveLength(form.questions.length + 2);
+    expect(splitDocuments(template(), 2)).toEqual(template());
   });
 });
