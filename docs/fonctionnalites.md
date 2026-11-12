@@ -48,6 +48,16 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 
 ![Le process importé depuis le tableau](captures/etape-19b-tableau-importe.png)
 
+**Un tableau que l'app ne reconnaît pas ?** Si vos colonnes portent d'autres noms (« Intitulé », « Pilote », « Durée prévue »…), l'onglet est marqué « Non reconnu ». Touchez **Choisir les colonnes** sous l'onglet : la ligne des titres est proposée (changez-la avec **Précédente** et **Suivante** si votre tableau commence plus bas), puis, pour chaque colonne, touchez son rôle : **Étape**, **Acteur**, **Délai**, **Suite**, **N°**, ou **Ignorer**. Seule la colonne Étape est obligatoire. Touchez **Lire ce tableau** : l'aperçu apparaît, puis **Importer**. L'app retient ces titres : la prochaine fois qu'un tableau a une colonne « Pilote », elle la lit seule comme l'acteur. Ces règles apparaissent dans **Profil**, avec **Oublier** pour en retirer une. Pour essayer : `tableau-a-completer.xlsx`.
+
+![Un onglet non reconnu, avec « Choisir les colonnes »](captures/etape-19c-colonnes-non-reconnu.png)
+
+![Le rôle de chaque colonne](captures/etape-19c-colonnes-choix.png)
+
+![Le même tableau, reconnu seul au prochain import](captures/etape-19c-colonnes-reconnu.png)
+
+![Les titres retenus, dans Profil](captures/etape-19c-colonnes-regles.png)
+
 ## Scanner un tableau · Disponible
 
 **Scannez un tableau** avec l'appareil photo : une ligne par étape, avec l'acteur et le délai. L'app reconnaît les colonnes et crée le process.
@@ -96,7 +106,7 @@ Quand vous corrigez un process importé, SimuFlow retient ce qui vaut pour tout 
 - un **acteur renommé partout** (par exemple « Serv. compta » devient « Comptabilité » sur toutes ses étapes) ;
 - une **forme qui a un sens chez vous** (par exemple, tous vos hexagones sont des décisions).
 
-Une correction faite sur une seule étape reste ponctuelle : elle n'apprend rien. À l'import, l'aperçu indique **Corrigé d'après vos corrections précédentes** et dit ce qui a été appliqué. Retrouvez ces règles dans l'onglet **Profil**, et touchez **Oublier** pour en retirer une. Elles sont gardées sur le téléphone et, si vous êtes connecté, sur votre compte : vous les retrouvez sur vos autres appareils.
+Une correction faite sur une seule étape reste ponctuelle : elle n'apprend rien. Les colonnes choisies pour un tableau Excel ou CSV deviennent aussi des règles (« Colonne « Pilote » lue comme l'acteur »). À l'import, l'aperçu indique **Corrigé d'après vos corrections précédentes** et dit ce qui a été appliqué. Retrouvez ces règles dans l'onglet **Profil**, et touchez **Oublier** pour en retirer une. Elles sont gardées sur le téléphone et, si vous êtes connecté, sur votre compte : vous les retrouvez sur vos autres appareils.
 
 ![Un import corrigé d'après les règles, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
 

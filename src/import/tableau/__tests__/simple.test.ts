@@ -1,7 +1,16 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { lireExemple } from '../../../../jest/lire-exemple';
-import { readTableFile, sheetToProcess, sheetToTable, workbookToProcesses } from '..';
+import { learnColumnRules, learnedHeaders } from '../../rules';
+import {
+  describeSheet,
+  firstFilledRow,
+  readTableFile,
+  sheetToProcess,
+  sheetToProcessWithColumns,
+  sheetToTable,
+  workbookToProcesses,
+} from '..';
 import { filledRows } from '../grid';
 import type { Sheet } from '../types';
 
@@ -93,5 +102,47 @@ describe('filledRows', () => {
       ['a', 'a'],
       ['a', 'a'],
     ]);
+  });
+});
+
+describe('colonnes choisies à la main', () => {
+  const sheet = () => exemple('tableau-a-completer.xlsx').sheets[0];
+
+  it('ne reconnaît pas d’abord un tableau aux titres inconnus', () => {
+    expect(describeSheet(sheet()).kind).toBe('inconnu');
+    expect(workbookToProcesses(exemple('tableau-a-completer.xlsx'), 'x').processes).toEqual([]);
+  });
+
+  it('lit l’onglet avec la ligne des titres et le rôle de chaque colonne', () => {
+    const read = sheetToProcessWithColumns(sheet(), 0, ['step', 'actor', 'delay', null], 'm');
+    const [process] = read!.processes;
+    expect(process.source).toBe('tableau');
+    expect(process.name).toBe('Arrivée');
+    expect(process.steps.map((step) => [step.title, step.kind, step.actor, step.duration])).toEqual([
+      ['Préparer le poste', 'start', 'Service Informatique', 2],
+      ['Créer les accès', 'task', 'Service Informatique', 1],
+      ['Accueillir la personne', 'end', 'Manager', 1],
+    ]);
+  });
+
+  it('refuse un choix sans colonne Étape', () => {
+    expect(sheetToProcessWithColumns(sheet(), 0, [null, 'actor', 'delay', null], 'm')).toBeNull();
+  });
+
+  it('reconnaît seul le tableau suivant grâce aux titres appris', () => {
+    const rules = learnColumnRules(sheet().rows[0], ['step', 'actor', 'delay', null]);
+    expect(rules).toEqual([
+      { type: 'column', header: 'Intitulé', column: 'step' },
+      { type: 'column', header: 'Pilote', column: 'actor' },
+      { type: 'column', header: 'Durée prévue', column: 'delay' },
+    ]);
+    const learned = learnedHeaders(rules);
+    expect(describeSheet(sheet(), false, learned).kind).toBe('process');
+    const [process] = workbookToProcesses(exemple('tableau-a-completer.xlsx'), 'x', learned).processes;
+    expect(process.steps).toHaveLength(3);
+  });
+
+  it('propose la première ligne remplie comme ligne des titres', () => {
+    expect(firstFilledRow({ name: 'f', rows: [['', ''], ['a', 'b']], merges: [] })).toBe(1);
   });
 });

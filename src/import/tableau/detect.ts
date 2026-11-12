@@ -16,7 +16,7 @@
  * Fonctions pures, testées dans __tests__/detect.test.ts.
  */
 
-import { headerKind } from '@/scan/table';
+import { learnedHeaderKind, type LearnedHeaders } from '@/scan/table';
 
 import type { Sheet, Workbook } from './types';
 
@@ -84,8 +84,8 @@ function isSlaOlaHeader(row: string[]): boolean {
 }
 
 /** Vrai si la ligne est l'en-tête d'un tableau de process (colonnes du scanner). */
-export function isProcessHeader(row: string[]): boolean {
-  const kinds = new Set(row.map(headerKind).filter((kind) => kind !== null));
+export function isProcessHeader(row: string[], learned?: LearnedHeaders): boolean {
+  const kinds = new Set(row.map((cell) => learnedHeaderKind(cell, learned)).filter((kind) => kind !== null));
   return kinds.size >= 2 && kinds.has('step');
 }
 
@@ -106,7 +106,7 @@ function findHeader(sheet: Sheet, test: (row: string[]) => boolean): number {
 }
 
 /** Ce que contient un onglet. `template` : le classeur est un template de formulaire. */
-export function describeSheet(sheet: Sheet, template = false): SheetReport {
+export function describeSheet(sheet: Sheet, template = false, learned?: LearnedHeaders): SheetReport {
   const columnCount = sheet.rows[0]?.length ?? 0;
   const base = {
     name: sheet.name,
@@ -119,7 +119,7 @@ export function describeSheet(sheet: Sheet, template = false): SheetReport {
 
   for (const [kind, test] of [
     ['sla-ola', isSlaOlaHeader],
-    ['process', isProcessHeader],
+    ['process', (row: string[]) => isProcessHeader(row, learned)],
   ] as const) {
     const header = findHeader(sheet, test);
     if (header >= 0) return { ...base, kind, rowCount: rowsBelow(sheet, header), headerRow: header + 1 };
@@ -136,9 +136,9 @@ export function describeSheet(sheet: Sheet, template = false): SheetReport {
 }
 
 /** Ce que contient le classeur : chaque onglet, et le genre de fichier dans son ensemble. */
-export function describeWorkbook(workbook: Workbook): WorkbookReport {
+export function describeWorkbook(workbook: Workbook, learned?: LearnedHeaders): WorkbookReport {
   const template = workbook.sheets.filter((sheet) => isTemplateSheet(sheet.name)).length >= 3;
-  const sheets = workbook.sheets.map((sheet) => describeSheet(sheet, template));
+  const sheets = workbook.sheets.map((sheet) => describeSheet(sheet, template, learned));
   const has = (kind: SheetKind) => sheets.some((sheet) => sheet.kind === kind);
   const kind: WorkbookKind = has('sla-ola')
     ? 'workflow'

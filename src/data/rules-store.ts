@@ -12,6 +12,7 @@ import { useSyncExternalStore } from 'react';
 import type { Process } from '@/domain';
 import {
   applyRules,
+  learnedHeaders,
   learnRules,
   mergeRules,
   parseRules,
@@ -79,6 +80,16 @@ export function learnFromCorrection(before: Process, after: Process): number {
   const learned = learnRules(before, after);
   if (learned.length) setState({ ...state, rules: mergeRules(state.rules, learned), pending: true });
   return learned.length;
+}
+
+/** Retient des règles déjà formées (par exemple les titres de colonnes choisis à la main). */
+export function addReadingRules(learned: ReadingRule[]) {
+  if (learned.length) setState({ ...state, rules: mergeRules(state.rules, learned), pending: true });
+}
+
+/** Les titres de colonnes appris, pour lire les tableaux Excel et CSV. */
+export function getLearnedHeaders() {
+  return learnedHeaders(state.rules);
 }
 
 export function forgetReadingRule(rule: ReadingRule) {

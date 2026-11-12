@@ -42,7 +42,8 @@ const HEADERS: Record<ColumnKind, string[]> = {
   next: ['suite', 'suivant', 'ensuite', 'apres', 'vers', 'etapesuivante'],
 };
 
-const normalize = (text: string) =>
+/** Titre de colonne sans accents, majuscules, espaces ni ponctuation : la clé des comparaisons. */
+export const headerKey = (text: string) =>
   text
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -51,11 +52,19 @@ const normalize = (text: string) =>
 
 /** Le genre de colonne qu'annonce un titre, ou null. */
 export function headerKind(text: string): ColumnKind | null {
-  const word = normalize(text);
+  const word = headerKey(text);
   for (const [kind, names] of Object.entries(HEADERS) as [ColumnKind, string[]][]) {
     if (names.includes(word)) return kind;
   }
   return null;
+}
+
+/** Titres de colonnes appris (règles de lecture), par clé de titre (`headerKey`). */
+export type LearnedHeaders = ReadonlyMap<string, ColumnKind>;
+
+/** Comme `headerKind`, en essayant d'abord les titres appris. */
+export function learnedHeaderKind(text: string, learned?: LearnedHeaders): ColumnKind | null {
+  return learned?.get(headerKey(text)) ?? headerKind(text);
 }
 
 /** Marge pour ranger un texte dans une colonne : un « 1 » centré sous « N° » commence un peu après lui. */

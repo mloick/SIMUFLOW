@@ -9,17 +9,22 @@ import { diagnosticBadge } from '@/components/process-card';
 import { PrimaryButton } from '@/components/primary-button';
 import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
+import { ColumnPicker } from '@/components/column-picker';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { addImportedProcess } from '@/data/process-store';
-import { applyReadingRules } from '@/data/rules-store';
+import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { summarize } from '@/domain';
-import { ImportError, importProcessFile, type ImportResult } from '@/import';
+import { ImportError, importProcessFile, learnColumnRules, type ImportResult } from '@/import';
 import {
   describeWorkbook,
   readTableFile,
+  sheetGrid,
+  sheetToProcessWithColumns,
   TABLE_FILE_TYPES,
   workbookToProcesses,
+  type ColumnChoice,
+  type Workbook,
   type WorkbookReport,
 } from '@/import/tableau';
 import { useTheme } from '@/hooks/use-theme';
@@ -37,7 +42,7 @@ const newImportId = () => `import-${Date.now()}`;
 /** `applied` : les règles de lecture apprises qui ont corrigé la lecture. */
 type Picked = { fileName: string; result: ImportResult; applied: string[] };
 /** Tableau Excel ou CSV lu : ce que l'app y a reconnu. */
-type PickedTable = { fileName: string; report: WorkbookReport; warnings: string[] };
+type PickedTable = { fileName: string; workbook: Workbook; report: WorkbookReport; warnings: string[] };
 
 /**
  * Modale « Nouveau process » (maquette, écran 5) : choisir un fichier draw.io
@@ -51,6 +56,8 @@ export default function ImportScreen() {
   const [kind, setKind] = useState<FileKind | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [table, setTable] = useState<PickedTable | null>(null);
+  /** Onglet dont on choisit les colonnes à la main (index), s'il y en a un. */
+  const [choosing, setChoosing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [name, setName] = useState('');
@@ -90,13 +97,20 @@ export default function ImportScreen() {
 
   const pickTable = async (asset: DocumentPicker.DocumentPickerAsset) => {
     setPicked(null);
+    setChoosing(null);
     try {
       if (asset.size && asset.size > MAX_TABLE_SIZE)
         throw new ImportError('Ce fichier est trop volumineux (20 Mo au plus).');
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
-      setTable({ fileName: asset.name, report: describeWorkbook(workbook), warnings: workbook.warnings });
+      const learned = getLearnedHeaders();
+      setTable({
+        fileName: asset.name,
+        workbook,
+        report: describeWorkbook(workbook, learned),
+        warnings: workbook.warnings,
+      });
       // Les onglets « process » deviennent des process à importer, comme les pages d'un draw.io.
-      const read = workbookToProcesses(workbook, newImportId());
+      const read = workbookToProcesses(workbook, newImportId(), learned);
       if (read.processes.length > 0) {
         const { result, applied } = applyReadingRules(read);
         setPicked({ fileName: asset.name, result, applied });
@@ -109,6 +123,34 @@ export default function ImportScreen() {
       setTable(null);
       setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
     }
+  };
+
+  /** Colonnes choisies à la main : l'onglet devient un process, et l'app retient les titres. */
+  const readWithColumns = (headerIndex: number, choice: ColumnChoice) => {
+    if (!table || choosing === null) return;
+    const sheet = table.workbook.sheets[choosing];
+    const read = sheetToProcessWithColumns(sheet, headerIndex, choice, newImportId());
+    if (!read) return;
+    addReadingRules(learnColumnRules(sheetGrid(sheet)[headerIndex] ?? [], choice));
+    // L'onglet est désormais lu comme un tableau de process.
+    const { report } = table;
+    setTable({
+      ...table,
+      report: {
+        kind: report.kind === 'inconnu' ? 'process' : report.kind,
+        sheets: report.sheets.map((described, index) =>
+          index === choosing
+            ? { ...described, kind: 'process', rowCount: read.processes[0].steps.length, headerRow: headerIndex + 1 }
+            : described,
+        ),
+      },
+    });
+    const { result, applied } = applyReadingRules(read);
+    setPicked({ fileName: table.fileName, result, applied });
+    setPage(0);
+    setName(result.processes[0].name);
+    setNameMissing(false);
+    setChoosing(null);
   };
 
   const choosePage = (index: number) => {
@@ -224,7 +266,21 @@ export default function ImportScreen() {
         )}
 
         {table && (
-          <WorkbookPreview report={table.report} warnings={table.warnings} importable={pageCount} />
+          <WorkbookPreview
+            report={table.report}
+            warnings={table.warnings}
+            importable={pageCount}
+            onChooseColumns={setChoosing}
+          />
+        )}
+
+        {table && choosing !== null && table.workbook.sheets[choosing] && (
+          <ColumnPicker
+            key={choosing}
+            sheet={table.workbook.sheets[choosing]}
+            onDone={readWithColumns}
+            onCancel={() => setChoosing(null)}
+          />
         )}
 
         {picked && pageCount > 1 && (

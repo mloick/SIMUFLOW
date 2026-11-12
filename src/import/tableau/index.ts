@@ -4,6 +4,8 @@
  * l'appareil ; le fichier n'est ni envoyé ni gardé.
  */
 
+import type { LearnedHeaders } from '@/scan/table';
+
 import { ImportError, type ImportResult } from '../errors';
 
 import { readCsv } from './csv';
@@ -16,7 +18,14 @@ export { describeSheet, describeWorkbook, SHEET_KIND_LABELS, WORKBOOK_KIND_LABEL
 export type { SheetKind, SheetReport, WorkbookKind, WorkbookReport } from './detect';
 export type { MergedRange, Sheet, Workbook } from './types';
 export { readCsv, readXlsx };
-export { sheetToProcess, sheetToTable } from './modeles/simple';
+export {
+  firstFilledRow,
+  sheetGrid,
+  sheetToProcess,
+  sheetToProcessWithColumns,
+  sheetToTable,
+  type ColumnChoice,
+} from './modeles/simple';
 
 /** Types de fichiers proposés par le sélecteur de documents. */
 export const TABLE_FILE_TYPES = [
@@ -46,12 +55,12 @@ export function readTableFile(fileName: string, bytes: Uint8Array): Workbook {
  * (celles de la lecture du classeur restent dans `workbook.warnings`).
  * Les autres genres d'onglets (SLA / OLA, formulaire) seront lus plus tard.
  */
-export function workbookToProcesses(workbook: Workbook, idPrefix: string): ImportResult {
-  const report = describeWorkbook(workbook);
+export function workbookToProcesses(workbook: Workbook, idPrefix: string, learned?: LearnedHeaders): ImportResult {
+  const report = describeWorkbook(workbook, learned);
   const sheets = workbook.sheets.filter((_, index) => report.sheets[index].kind === 'process');
   const result: ImportResult = { processes: [], warnings: [] };
   sheets.forEach((sheet, index) => {
-    const read = sheetToProcess(sheet, `${idPrefix}-${index + 1}`);
+    const read = sheetToProcess(sheet, `${idPrefix}-${index + 1}`, learned);
     if (!read) return;
     result.processes.push(...read.processes);
     const prefix = sheets.length > 1 ? `${sheet.name} : ` : '';

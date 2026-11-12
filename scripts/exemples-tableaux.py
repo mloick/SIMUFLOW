@@ -121,7 +121,22 @@ def process():
     (DOSSIER / "demande-materiel.csv").write_text("\n".join(lignes) + "\n", encoding="utf-8")
 
 
+def a_completer():
+    """Un tableau aux titres que l'app ne connaît pas : on choisit les colonnes à la main."""
+    classeur = Workbook()
+    feuille = classeur.active
+    feuille.title = "Arrivée"
+    remplir(feuille, [
+        ["Intitulé", "Pilote", "Durée prévue", "Commentaire"],
+        ["Préparer le poste", "Service Informatique", "2 JO", "Avant l'arrivée"],
+        ["Créer les accès", "Service Informatique", "1 JO", None],
+        ["Accueillir la personne", "Manager", "1 JO", "Premier jour"],
+    ])
+    classeur.save(DOSSIER / "tableau-a-completer.xlsx")
+
+
 if __name__ == "__main__":
     workflow()
     template()
     process()
+    a_completer()
