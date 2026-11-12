@@ -77,7 +77,7 @@ const bareSheetName = (name: string) =>
 export const isTemplateSheet = (name: string) => TEMPLATE_SHEETS.includes(bareSheetName(name));
 
 /** Vrai si la ligne est l'en-tête d'un workflow à SLA et OLA. */
-function isSlaOlaHeader(row: string[]): boolean {
+export function isSlaOlaHeader(row: string[]): boolean {
   const text = normalize(row.join(' | '));
   // « Groupe de compétence », « Assignment group »…
   return /\bsla\b/.test(text) && /\bola\b/.test(text) && /\bgroupe?s?\b/.test(text);

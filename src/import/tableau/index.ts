@@ -10,6 +10,7 @@ import { ImportError, type ImportResult } from '../errors';
 
 import { readCsv } from './csv';
 import { describeWorkbook } from './detect';
+import { readSlaOlaSheet, type SlaOlaSheetResult } from './modeles/sla-ola';
 import { sheetToProcess } from './modeles/simple';
 import { isOldOfficeFile, isZip, readXlsx } from './xlsx';
 import type { Workbook } from './types';
@@ -18,6 +19,19 @@ export { describeSheet, describeWorkbook, SHEET_KIND_LABELS, WORKBOOK_KIND_LABEL
 export type { SheetKind, SheetReport, WorkbookKind, WorkbookReport } from './detect';
 export type { MergedRange, Sheet, Workbook } from './types';
 export { readCsv, readXlsx };
+export {
+  classifyStepCell,
+  columnLetter,
+  formatSituationWarning,
+  readSlaOlaSheet,
+  VARIANT_LABELS,
+  type Situation,
+  type SituationWarning,
+  type SlaOlaSheetResult,
+  type WarningLevel,
+  type WorkflowStep,
+  type WorkflowVariant,
+} from './modeles/sla-ola';
 export {
   firstFilledRow,
   sheetGrid,
@@ -65,6 +79,23 @@ export function workbookToProcesses(workbook: Workbook, idPrefix: string, learne
     result.processes.push(...read.processes);
     const prefix = sheets.length > 1 ? `${sheet.name} : ` : '';
     result.warnings.push(...read.warnings.map((warning) => prefix + warning));
+  });
+  return result;
+}
+
+/**
+ * Les situations de tous les onglets « SLA / OLA » d'un classeur, dans l'ordre
+ * des onglets, avec le nombre de lignes pas encore décrites.
+ */
+export function workbookToSituations(workbook: Workbook): SlaOlaSheetResult {
+  const report = describeWorkbook(workbook);
+  const result: SlaOlaSheetResult = { situations: [], skipped: 0 };
+  workbook.sheets.forEach((sheet, index) => {
+    const described = report.sheets[index];
+    if (described.kind !== 'sla-ola' || !described.headerRow) return;
+    const read = readSlaOlaSheet(sheet, described.headerRow - 1);
+    result.situations.push(...read.situations);
+    result.skipped += read.skipped;
   });
   return result;
 }
