@@ -3,13 +3,14 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AnonymizeOption } from '@/components/anonymize-option';
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { FamilyColors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
-import type { Process } from '@/domain';
+import { anonymizeProcess, parseHiddenWords, type Process } from '@/domain';
 import { exportFileName, exportText, MIME_TYPES, processToPdfHtml, type ExportFormat } from '@/export';
 import { useTheme } from '@/hooks/use-theme';
 import { overviewOf } from '@/simulation/families';
@@ -59,6 +60,12 @@ function Exporter({ process }: { process: Process }) {
   const [colorFamilies, setColorFamilies] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [anonymous, setAnonymous] = useState(false);
+  const [hiddenWords, setHiddenWords] = useState('');
+  const anonymizer = useMemo(
+    () => (anonymous ? anonymizeProcess(process, { hidden: parseHiddenWords(hiddenWords) }) : null),
+    [process, anonymous, hiddenWords],
+  );
   const pathCount = useMemo(() => overviewOf(process).pathCount, [process]);
   // Le JSON ne garde que les étapes et les liens : pas de couleurs.
   const colorable = format !== 'json';
@@ -66,13 +73,15 @@ function Exporter({ process }: { process: Process }) {
   const submit = async () => {
     setBusy(true);
     setError(null);
-    const fileName = exportFileName(process, format);
-    const title = `Exporter « ${process.name} »`;
+    // Anonymisé, le fichier ne garde ni les acteurs ni les mots masqués, jusque dans son nom.
+    const shared = anonymizer?.process ?? process;
+    const fileName = exportFileName(shared, format);
+    const title = `Exporter « ${shared.name} »`;
     try {
       // Couleurs claires : le fichier est fait pour une page blanche.
       const options = { colorFamilies: colorable && colorFamilies, colors: FamilyColors.light };
-      if (format === 'pdf') await sharePdf(fileName, processToPdfHtml(process, options), title);
-      else await shareTextFile(fileName, exportText(process, format, options), MIME_TYPES[format], title);
+      if (format === 'pdf') await sharePdf(fileName, processToPdfHtml(shared, options), title);
+      else await shareTextFile(fileName, exportText(shared, format, options), MIME_TYPES[format], title);
     } catch (cause) {
       setError(cause instanceof Error && cause.message ? cause.message : 'Le fichier n’a pas pu être créé.');
     } finally {
@@ -164,6 +173,18 @@ function Exporter({ process }: { process: Process }) {
             <ThemedText>Colorer les familles de chemins</ThemedText>
           </Pressable>
         )}
+
+        <AnonymizeOption
+          checked={anonymous}
+          onToggle={() => setAnonymous((value) => !value)}
+          hidden={hiddenWords}
+          onChangeHidden={setHiddenWords}
+          result={
+            anonymizer
+              ? `${plural(anonymizer.actorCount, 'acteur renommé', 'acteurs renommés')} · partagé sous le nom « ${anonymizer.process.name} »`
+              : undefined
+          }
+        />
 
         {error && (
           <View style={[styles.notice, { backgroundColor: theme.dangerBackground }]} accessibilityRole="alert">

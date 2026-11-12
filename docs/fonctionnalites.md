@@ -239,6 +239,18 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
 
+## Anonymiser un process · Disponible
+
+Pour montrer un process sans dévoiler de vrais noms, cochez **Anonymiser les noms**, à l'import (sous l'aperçu) ou à l'export (sous le choix du format).
+
+- Chaque acteur devient **Service A**, **Service B**… partout où son nom apparaît : dans les étapes, sur les flèches et dans le nom du process.
+- Les adresses e-mail, les numéros de téléphone et les liens sont masqués.
+- Dans **Autres mots à masquer**, écrivez ce qui doit aussi disparaître, séparé par des virgules : le nom de l'entreprise, d'un client… Il est remplacé par « [masqué] ».
+
+Les étapes, les flèches et les délais ne changent pas : la simulation reste la même. À l'import, c'est le process anonymisé qui est gardé. À l'export, seul le fichier partagé est anonymisé : votre process reste intact dans l'app.
+
+![Anonymiser : l'option à l'import, le process importé avec ses services, puis l'option à l'export](captures/etape-26-anonymisation.png)
+
 ## Compte et serveur · Disponible
 
 SimuFlow a son serveur, hébergé à Paris. Dans **Profil**, la section **À propos** indique si l'app arrive à le joindre ; sinon, vérifiez la connexion Internet et touchez **Réessayer**.
