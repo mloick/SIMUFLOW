@@ -101,6 +101,11 @@ export function linkWorkflow(id: string, workflow: LinkedWorkflow | null) {
   setForms(forms.map((saved) => (saved.id === id ? { ...saved, workflow } : saved)));
 }
 
+/** Remplace le formulaire d'un formulaire gardé (après modification). */
+export function updateSavedForm(id: string, form: FormTemplate) {
+  setForms(forms.map((saved) => (saved.id === id ? { ...saved, form } : saved)));
+}
+
 export function removeSavedForm(id: string) {
   setForms(forms.filter((saved) => saved.id !== id));
 }
@@ -120,6 +125,8 @@ export type ShownForm = {
 
 let shown: ShownForm | null = null;
 let sent: FormAnswers | null = null;
+const shownListeners = new Set<() => void>();
+const notifyShown = () => shownListeners.forEach((listener) => listener());
 
 /** Le formulaire à afficher : lu à l'import (avec son workflow s'il est dans le même classeur) ou gardé. */
 export function showForm(form: FormTemplate, options: { source?: string; workflow?: LinkedWorkflow | null; savedId?: string | null } = {}) {
@@ -131,6 +138,37 @@ export function showForm(form: FormTemplate, options: { source?: string; workflo
     key: options.savedId ?? `apercu-${Date.now()}`,
   };
   sent = null;
+  notifyShown();
+}
+
+/**
+ * Le formulaire affiché, modifié dans l'éditeur. Gardé, il est aussi mis à
+ * jour dans « Mes formulaires ». Une nouvelle clé : les process créés depuis
+ * l'ancienne version ne sont pas repris.
+ */
+export function editShownForm(form: FormTemplate) {
+  if (!shown) return;
+  shown = { ...shown, form, key: `${shown.savedId ?? 'apercu'}-${Date.now()}` };
+  sent = null;
+  if (shown.savedId) updateSavedForm(shown.savedId, form);
+  notifyShown();
+}
+
+function subscribeShown(listener: () => void) {
+  shownListeners.add(listener);
+  return () => {
+    shownListeners.delete(listener);
+  };
+}
+
+/** Le formulaire affiché vient d'être gardé : ses modifications suivantes iront aussi dans « Mes formulaires ». */
+export function markShownSaved(id: string) {
+  if (shown) shown = { ...shown, savedId: id };
+}
+
+/** Le formulaire affiché, mis à jour quand il change. */
+export function useShownForm(): ShownForm | null {
+  return useSyncExternalStore(subscribeShown, getShownForm, getShownForm);
 }
 
 /** Rouvre un formulaire gardé. */
