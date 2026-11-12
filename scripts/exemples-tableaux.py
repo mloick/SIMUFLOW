@@ -70,26 +70,74 @@ def workflow():
 
 
 def template():
+    """Même disposition qu'un vrai template : une colonne par question, une ligne par propriété."""
     classeur = Workbook()
     infos = classeur.active
-    infos.title = "1. Basic info"
-    remplir(infos, [["Champ", "Valeur"], ["Nom", "Demande sur un dossier"], ["Description", "Formulaire fictif"],
-                    ["Mots-clés", "dossier, financement"]])
-    remplir(classeur.create_sheet("2. Catalog location"), [["Catégorie", "Sous-catégorie"], ["Finance", "Dossiers"]])
-    remplir(classeur.create_sheet("3. Questions"), [
-        ["Question", "Type", "Obligatoire", "Valeurs", "Texte d'aide"],
-        ["Situation", "Menu déroulant", "Oui", "Cas 1, Cas 2, Cas 3", "Choisissez la situation"],
-        ["N° de dossier", "Texte", "Oui", None, "Format D-0000"],
-        ["Description", "Texte long", "Non", None, None],
+    infos.title = "1 - Basic info"
+    remplir(infos, [
+        ["Informations de base sur le formulaire"],
+        [None, "Instructions", "Your Value"],
+        ["Ticket : Incident, Case ou Request", "Voir l'onglet Values", "Request"],
+        ["Nom du formulaire visible", "Nom unique du formulaire", "Demande sur un dossier"],
+        ["Description du formulaire", "Affichée sur la tuile du formulaire", "Signaler un problème sur un dossier"],
+        ["Mots clés pour retrouver le formulaire", "Aident la recherche", "dossier, document, adresse"],
     ])
-    remplir(classeur.create_sheet("4. Access"), [["Qui peut demander", "Tous les salariés"]])
-    remplir(classeur.create_sheet("5. Fulfillment flow"), [
-        ["Task", "Groupe", "Séquence"], ["Fournir le document", "Groupe A", "1"], ["Fournir le document", "Groupe B", "2"],
+    remplir(classeur.create_sheet("2 - Location"), [
+        ["Où le formulaire apparaît"], [None, "Instructions", "Your Value"], ["Category", "Rubrique du catalogue", "Dossiers"],
     ])
-    remplir(classeur.create_sheet("6. Assignment & Summary"), [
-        ["Owner", "Service P"], ["Résumé", "Demande sur le dossier {n° de dossier}"],
+    questions = classeur.create_sheet("3 - Questions")
+    lignes = [
+        ["Questions posées au demandeur"],
+        [None, "Instructions"] + [f"Question {n}" for n in range(1, 11)],
+        ["Questions auxquelles le demandeur va répondre", "Nom de la question",
+         "Coordonnées du demandeur", "Situation", "Êtes-vous le signataire du dossier ?",
+         "Si NON : indiquer le signataire", "Quel changement souhaitez-vous ?",
+         "MOTIF 1 : Indiquer la nouvelle adresse", "MOTIF 2 : Indiquer le nouveau contact",
+         "Joindre le justificatif", "Date souhaitée", "Numéro de commande"],
+        ["Format de la question", "Voir l'onglet Values",
+         "Libellé", "Menu déroulant", "Oui/Non", "Libellé", "Case à cocher", "Texte sur plusieurs lignes",
+         "Libellé", "Pièce jointe", "Date", "Texte sur une ligne"],
+        ["Le demandeur est-il obligé d'y répondre ?", "Impossible d'envoyer sans les questions obligatoires",
+         "oui", "oui", "oui", "oui", "oui", "oui", "oui", "oui", "non", "oui"],
+        ["Explication de la question / Type", "Choix d'un menu déroulant ou de cases à cocher",
+         "N° de dossier :\nNom :\nTéléphone :",
+         "- Cas 1\n- Cas 2\n- Cas 3\n- Cas 4\n- Cas 5\n- Cas 6",
+         None,
+         "Nom du signataire :\nFonction :",
+         "- MOTIF 1 : Changement d'adresse\n- MOTIF 2 : Changement de contact",
+         None,
+         "Nom du contact :\nTéléphone :\nEmail :",
+         "Documents attendus :\n- Justificatif de domicile\n- Pièce d'identité",
+         None, None],
+        ["Conditions additionnelles et dépendances", "Afficher selon une autre réponse",
+         None, None, None, None, None, None, None, None, None, "Si Question 2 = Cas 3"],
+        ["Sous la question en italique : explications pour le demandeur", "Aide affichée sous la question",
+         None, "Choisissez la situation qui correspond à votre demande", None, None,
+         "Plusieurs choix possibles", None, None, "Un fichier PDF ou une photo", None, None],
+        ["Exemples de réponses (optionnel)", "Disparaît dès que l'on écrit",
+         None, None, None, None, None, "12 rue des Lilas, 75000 Ville", None, None, "05/12/2026", "C-0000"],
+    ]
+    remplir(questions, lignes)
+    remplir(classeur.create_sheet("4 - Access"), [["Qui peut faire la demande"], [None, "Instructions", "Your Value"],
+                                                  ["Disponible pour", "Public visé", "Tous les clients"]])
+    remplir(classeur.create_sheet("5 - Fulfillment flow"), [
+        ["Traitement de la demande"],
+        [None, "Instructions", "Task 1", "Task 2"],
+        ["Task Short Description", "Titre de la task", "Fournir le document", "Fournir le document"],
+        ["Assignment Group", "Nom exact du groupe", "Groupe A", "Groupe B"],
+        ["Sequence", "1, 2, ou 3a / 3b en parallèle", "1", "2"],
     ])
-    remplir(classeur.create_sheet("7. Values"), [["Valeur"], ["Cas 1"], ["Cas 2"], ["Cas 3"]])
+    remplir(classeur.create_sheet("6 - Assignment & Summary"), [
+        ["Création du ticket"], [None, "Instructions", "Your Value"],
+        ["Assignment Group", "Groupe propriétaire du ticket", "Service P"],
+        ["Summary of Ticket", "Résumé du ticket créé", "Demande sur le dossier {N° de dossier}"],
+    ])
+    remplir(classeur.create_sheet("Values"), [
+        ["Question Types (sheet 3 - Questions)"], ["Type de Question", "Quand l'utiliser"],
+        ["Pièce jointe", "Un fichier"], ["Case à cocher", "Plusieurs choix"], ["Date", "Un jour"],
+        ["Libellé", "Un titre ou des champs à remplir"], ["Menu déroulant", "Un choix dans une liste"],
+        ["Oui/Non", "Oui ou Non"], ["Texte sur une ligne", "160 caractères"], ["Texte sur plusieurs lignes", "Texte long"],
+    ])
     classeur.save(DOSSIER / "template-formulaire.xlsx")
 
 
