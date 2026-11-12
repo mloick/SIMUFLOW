@@ -12,18 +12,21 @@ import { ThemedText } from '@/components/themed-text';
 import { ColumnPicker } from '@/components/column-picker';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { showForm } from '@/data/form-preview';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { summarize } from '@/domain';
 import { ImportError, importProcessFile, learnColumnRules, type ImportResult } from '@/import';
 import {
   describeWorkbook,
+  readFormTemplate,
   readTableFile,
   sheetGrid,
   sheetToProcessWithColumns,
   TABLE_FILE_TYPES,
   workbookToProcesses,
   type ColumnChoice,
+  type FormTemplate,
   type Workbook,
   type WorkbookReport,
 } from '@/import/tableau';
@@ -42,7 +45,14 @@ const newImportId = () => `import-${Date.now()}`;
 /** `applied` : les règles de lecture apprises qui ont corrigé la lecture. */
 type Picked = { fileName: string; result: ImportResult; applied: string[] };
 /** Tableau Excel ou CSV lu : ce que l'app y a reconnu. */
-type PickedTable = { fileName: string; workbook: Workbook; report: WorkbookReport; warnings: string[] };
+type PickedTable = {
+  fileName: string;
+  workbook: Workbook;
+  report: WorkbookReport;
+  warnings: string[];
+  /** Le formulaire décrit, quand le classeur est un template de formulaire. */
+  form: FormTemplate | null;
+};
 
 /**
  * Modale « Nouveau process » (maquette, écran 5) : choisir un fichier draw.io
@@ -103,11 +113,13 @@ export default function ImportScreen() {
         throw new ImportError('Ce fichier est trop volumineux (20 Mo au plus).');
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
       const learned = getLearnedHeaders();
+      const report = describeWorkbook(workbook, learned);
       setTable({
         fileName: asset.name,
         workbook,
-        report: describeWorkbook(workbook, learned),
+        report,
         warnings: workbook.warnings,
+        form: report.kind === 'formulaire' ? readFormTemplate(workbook) : null,
       });
       // Les onglets « process » deviennent des process à importer, comme les pages d'un draw.io.
       const read = workbookToProcesses(workbook, newImportId(), learned);
@@ -271,6 +283,12 @@ export default function ImportScreen() {
             warnings={table.warnings}
             importable={pageCount}
             onChooseColumns={setChoosing}
+            form={table.form}
+            onShowForm={() => {
+              if (!table.form) return;
+              showForm(table.form);
+              router.push('/formulaire');
+            }}
           />
         )}
 

@@ -36,7 +36,7 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 Touchez **+**, puis **Tableau Excel ou CSV**, et choisissez un fichier .xlsx ou .csv. L'app le lit sur le téléphone, sans l'envoyer nulle part ni le garder, et vous montre ce qu'elle a compris de chaque onglet : un tableau de process (étape, acteur, délai), un workflow avec SLA et OLA (une ligne par situation), un template de formulaire, une simple liste, ou un onglet qu'elle ne reconnaît pas. Pas besoin de régler quoi que ce soit : elle trouve seule.
 
-Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, comme pour le scanner) s'importe tout de suite : l'aperçu montre les étapes et les acteurs, touchez **Importer**. Si le classeur a plusieurs onglets de ce genre, choisissez celui à importer. Le process prend le titre écrit au-dessus du tableau, sinon le nom de l'onglet. Les workflows avec SLA et OLA et les templates de formulaire sont reconnus, mais leur import arrive bientôt. Un ancien fichier .xls ou un classeur protégé par mot de passe est refusé avec un message qui explique quoi faire (l'enregistrer en .xlsx, retirer le mot de passe).
+Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, comme pour le scanner) s'importe tout de suite : l'aperçu montre les étapes et les acteurs, touchez **Importer**. Si le classeur a plusieurs onglets de ce genre, choisissez celui à importer. Le process prend le titre écrit au-dessus du tableau, sinon le nom de l'onglet. Les workflows avec SLA et OLA sont reconnus, mais leur import arrive bientôt. Un ancien fichier .xls ou un classeur protégé par mot de passe est refusé avec un message qui explique quoi faire (l'enregistrer en .xlsx, retirer le mot de passe).
 
 ![La source « Tableau Excel ou CSV »](captures/etape-19a-tableau-source.png)
 
@@ -57,6 +57,18 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 ![Le même tableau, reconnu seul au prochain import](captures/etape-19c-colonnes-reconnu.png)
 
 ![Les titres retenus, dans Profil](captures/etape-19c-colonnes-regles.png)
+
+**Voir un formulaire avant qu'il existe.** Un template de création de formulaire (onglets Basic info, Questions, Fulfillment flow…) est reconnu tout seul. Touchez **Voir le formulaire** : l'app montre le formulaire tel que le demandeur le verra, question par question. Chaque question a le bon champ : texte, oui / non, menu déroulant, cases à cocher, date, pièce jointe avec la liste des documents attendus, ou un libellé avec ses champs à remplir. Les réponses obligatoires portent une étoile rouge, l'aide est écrite en italique dessous. Une question qui ne s'affiche que selon une autre réponse le dit (« S'affiche si … = Non »), même quand la condition n'est écrite que dans l'intitulé (« Si NON : … », « MOTIF 2 : … »). En bas : à qui le ticket sera attribué et les tasks prévues, puis les points à vérifier dans le template, avec la cellule et la question à poser. Vous pouvez déjà toucher les champs ; l'envoi et le process qui suit arrivent dans une prochaine version. Pour essayer : `template-formulaire.xlsx`.
+
+![Un template de formulaire reconnu, avec « Voir le formulaire »](captures/etape-20b-formulaire-import.png)
+
+![Le formulaire tel que le demandeur le verra](captures/etape-20b-formulaire-apercu.png)
+
+![Un menu déroulant ouvert](captures/etape-20b-formulaire-menu.png)
+
+![Des questions qui ne s'affichent que selon une réponse](captures/etape-20b-formulaire-conditions.png)
+
+![Pièce jointe avec ses documents attendus, puis ce qui se passe après l'envoi](captures/etape-20b-formulaire-piece-jointe.png)
 
 ## Scanner un tableau · Disponible
 

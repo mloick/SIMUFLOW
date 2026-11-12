@@ -29,9 +29,9 @@ Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la m
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, pastille, bouton, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, pastille, bouton, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
-  data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts)
+  data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaire en cours d’aperçu, en mémoire (form-preview.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/ ; tableaux Excel et CSV dans tableau/ (lecture du classeur, reconnaissance de chaque onglet, modèles de lecture dans modeles/)
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
@@ -183,7 +183,7 @@ Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauch
   - **Variante de décision**, d'après les règles lues et le nombre d'étapes réelles : `one_step` (une task, puis clôture), `escalation` (task 2 si la task 1 n'est pas résolue ou sans réponse), `conditional_step2` (« Si Ok … création auto » : task 2 seulement si accord), `complex_escalation` (« Si complexe … » : task 2 seulement si cas complexe), `takeover` (étape 2 annoncée, mais le propriétaire reprend la main : aucune task 2 inventée). Sans réponse dans l'OLA, la task compte comme non résolue ; c'est toujours le propriétaire qui clôture.
   - **Avertissements**, chacun avec sa cellule d'origine (« J3 ») et, quand il faut trancher, la question à poser au métier. Rouge : SLA absent ou illisible, pas de groupe ou pas d'OLA à l'étape 1. Orange : reprise en main sans task 2, étape 2 annoncée sans groupe ni task, étape 2 sans règle qui dit quand la créer, critère « complexe » non défini, « Si pas complexe » sans étape 2 (gardé en note), SLA différent de OLA 1 + OLA 2, SLA plus court que l'OLA seul, OLA de l'étape 2 absent. Information : colonnes décalées lues par contenu, SLA plus long que l'OLA seul (marge). Une ligne qui nomme une situation sans SLA ni étape n'est pas encore décrite : elle est comptée à part (`skipped`).
   - **Vérifié** en privé sur un vrai classeur de spécification (jamais versionné) : ses douze situations remplies sont lues avec la bonne variante (escalade avec assignee manuel, une étape, reprise en main, cas complexe, étape 2 si accord).
-- **Modèle « template de formulaire »** (`modeles/formulaire.ts`, `readFormTemplate`). Le classeur qui décrit un formulaire de demande avant sa création dans l'outil de tickets. Pas encore visible dans l'app : l'affichage du formulaire tel que le demandeur le verra, puis son remplissage, sont les étapes suivantes.
+- **Modèle « template de formulaire »** (`modeles/formulaire.ts`, `readFormTemplate`). Le classeur qui décrit un formulaire de demande avant sa création dans l'outil de tickets. Il s'affiche dans l'écran « Aperçu du formulaire » (voir l'écran d'import) ; son remplissage avec les conditions appliquées, puis l'enchaînement avec le process, sont les étapes suivantes.
   - **Onglets**, trouvés par leur nom sans numéro (`bareSheetName`) : « Basic info » (nom, description, type de ticket, mots clés), « Questions », « Fulfillment flow » (tasks : titre, groupe, séquence) et « Assignment & Summary » (groupe propriétaire, résumé du ticket). Dans « Basic info » et « Assignment », la valeur est lue dans la colonne « Your Value » (ou « Valeur »), sinon en seconde case d'une ligne de deux.
   - **Questions** (`readRecords`). Disposition d'un vrai template : une colonne par question (« Question 1 », « Question 2 »…, et les colonnes remplies d'après même sans titre), une ligne par propriété, reconnue à son intitulé : nom, format, obligatoire, explication, conditions, aide (« en italique »), exemple. La disposition inverse (une ligne par question, une colonne par propriété) est lue aussi. Les questions sans rien d'écrit sont ignorées.
   - **Types** (`questionType`), en français ou en anglais : texte sur une ligne ou plusieurs, oui / non, menu déroulant, cases à cocher, liste, échelle, référence, date, date et heure, email, lien, adresse IP, pièce jointe, libellé, texte mis en forme, section, séparateur. L'explication donne, selon le type, les **choix** (lignes à tiret, ou « Cas 1, Cas 2 » sur une ligne), les **champs à remplir** d'un libellé (lignes qui finissent par « : », comme « Téléphone : ») ou les **documents attendus** d'une pièce jointe.
@@ -218,6 +218,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
 | `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
 | `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
+| `formulaire.tsx` | `/formulaire` | Aperçu du formulaire décrit par un template (fenêtre modale) |
 | `connexion.tsx` | `/connexion` | Connexion (fenêtre modale), avec « Mot de passe oublié » |
 | `nouveau-mot-de-passe.tsx` | `/nouveau-mot-de-passe` | Nouveau mot de passe, ouvert par le lien de l'e-mail |
 | `bienvenue.tsx` | `/bienvenue` | Présentation du premier lancement (plein écran) |
@@ -302,6 +303,20 @@ En mode développement, l'onglet Profil propose « Démo · état de la liste de
 ![Le même fichier réimporté : reconnu « Process » grâce aux titres appris](captures/etape-19c-colonnes-reconnu.png)
 
 ![Profil : les règles de colonnes](captures/etape-19c-colonnes-regles.png)
+
+**Aperçu du formulaire** (`src/app/formulaire.tsx`, `src/components/form-field.tsx`). Quand le classeur est un template de formulaire, l'écran d'import le lit (`readFormTemplate`) et `WorkbookPreview` affiche en haut une carte « Voir le formulaire » (nom, nombre de questions) ; l'encadré d'information invite à la toucher. Le formulaire est déposé dans `src/data/form-preview.ts` (en mémoire seulement, rien n'est enregistré) et la modale `/formulaire` s'ouvre. Elle montre un encadré « Aperçu », puis une carte : nom, description, type de ticket, nombre de questions, « * Réponse obligatoire », et une question par bloc. `FormField` dessine chaque type : champ de texte (clavier adapté pour email, lien, date ; exemple en texte d'attente), texte sur plusieurs lignes, oui / non et échelle en pastilles, menu déroulant qui s'ouvre sur ses choix (`combobox`), cases à cocher, pièce jointe (cadre pointillé « Ajouter un fichier » et documents attendus), libellé avec un champ par champ annoncé, liste ou référence (choix dans les données de l'outil, encadré), section et séparateur. Astérisque rouge pour une question obligatoire, aide en italique, et pour une question conditionnelle une pastille « S'affiche si « Intitulé » = réponse » (`conditionText`). Les réponses se touchent déjà (état local de l'écran, rien n'est envoyé) ; toutes les questions restent affichées, et « Envoyer la demande » est grisé. Sous la carte : « Après l'envoi » (groupe propriétaire, résumé du ticket, tasks avec groupe et séquence), puis « Points à vérifier dans le template » (niveau, onglet, cellule, message, question à poser). Sans formulaire (écran ouvert directement), un message d'état propose de fermer.
+
+**Tests** (`src/components/__tests__/form-field.test.tsx`) : question obligatoire avec aide et exemple, menu déroulant ouvert puis choix, cases cochées et décochées, champs d'un libellé et documents d'une pièce jointe, texte d'une condition.
+
+![« Voir le formulaire » en haut de ce que l'app a lu](captures/etape-20b-formulaire-import.png)
+
+![Aperçu du formulaire : en-tête et premières questions](captures/etape-20b-formulaire-apercu.png)
+
+![Menu déroulant ouvert](captures/etape-20b-formulaire-menu.png)
+
+![Oui / non, conditions et cases à cocher](captures/etape-20b-formulaire-conditions.png)
+
+![Pièce jointe, question conditionnelle, « Après l'envoi »](captures/etape-20b-formulaire-piece-jointe.png)
 
 **Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
 
