@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AnonymizeOption } from '@/components/anonymize-option';
 import { Badge } from '@/components/badge';
 import { diagnosticBadge } from '@/components/process-card';
 import { PrimaryButton } from '@/components/primary-button';
@@ -17,7 +18,7 @@ import { readFormBundle } from '@/data/form-chain';
 import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
-import { summarize } from '@/domain';
+import { anonymizeProcess, parseHiddenWords, summarize } from '@/domain';
 import { ImportError, importProcessFile, learnColumnRules, type ImportResult } from '@/import';
 import {
   describeWorkbook,
@@ -88,8 +89,17 @@ export default function ImportScreen() {
   const [name, setName] = useState('');
   const [nameMissing, setNameMissing] = useState(false);
 
+  const [anonymous, setAnonymous] = useState(false);
+  const [hiddenWords, setHiddenWords] = useState('');
+
   const chosen = picked?.result.processes[page];
-  const summary = useMemo(() => (chosen ? summarize(chosen) : null), [chosen]);
+  const anonymizer = useMemo(
+    () => (chosen && anonymous ? anonymizeProcess(chosen, { hidden: parseHiddenWords(hiddenWords) }) : null),
+    [chosen, anonymous, hiddenWords],
+  );
+  /** Le process tel qu'il sera importé : anonymisé si la case est cochée. */
+  const shown = anonymizer?.process ?? chosen;
+  const summary = useMemo(() => (shown ? summarize(shown) : null), [shown]);
 
   /**
    * Formulaire et workflow : un ou deux fichiers. Le formulaire s'ouvre pour
@@ -228,7 +238,7 @@ export default function ImportScreen() {
       setNameMissing(true);
       return;
     }
-    addImportedProcess({ ...chosen, name: trimmed });
+    addImportedProcess({ ...(anonymizer?.process ?? chosen), name: anonymizer ? anonymizer.text(trimmed) : trimmed });
     router.replace({ pathname: '/process/[id]', params: { id: chosen.id } });
     if (correct) router.push({ pathname: '/process/modifier/[id]', params: { id: chosen.id } });
   };
@@ -436,6 +446,17 @@ export default function ImportScreen() {
                 <Badge {...diagnosticBadge(summary)} />
               </View>
             </View>
+            <AnonymizeOption
+              checked={anonymous}
+              onToggle={() => setAnonymous((value) => !value)}
+              hidden={hiddenWords}
+              onChangeHidden={setHiddenWords}
+              result={
+                anonymizer
+                  ? `${plural(anonymizer.actorCount, 'acteur renommé', 'acteurs renommés')} · importé sous le nom « ${anonymizer.text(name.trim())} »`
+                  : undefined
+              }
+            />
             {picked && picked.applied.length > 0 && (
               <View
                 style={[styles.notice, { backgroundColor: theme.primaryBackground }]}
@@ -471,7 +492,7 @@ export default function ImportScreen() {
                   </ThemedText>
                   {picked.result.warnings.map((warning) => (
                     <ThemedText key={warning} type="small" style={{ color: theme.warning }}>
-                      {warning}
+                      {anonymizer ? anonymizer.text(warning) : warning}
                     </ThemedText>
                   ))}
                 </View>

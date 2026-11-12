@@ -143,6 +143,8 @@ Une modification de ces fichiers ou d'`app.json` demande de régénérer le doss
 
 Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros schéma plein de boucles ne bloque pas le téléphone.
 
+**Anonymisation** (`anonymize.ts`). `anonymizeProcess(process, { hidden })` renvoie le process anonymisé, une fonction `text` qui applique les mêmes remplacements à un autre texte (le nom tapé à l'import, les remarques de lecture), et le nombre d'acteurs renommés. Les acteurs distincts, dans l'ordre d'apparition, deviennent « Service A » … « Service Z », puis « Service 27 »… (`serviceName`). Leur nom est aussi remplacé dans le nom du process, les titres des étapes et les libellés des liens : mot entier, sans tenir compte des accents ni des majuscules, le terme le plus long d'abord ; « l'Équipe Achats » devient « le Service A ». Les mots de `hidden` (lus par `parseHiddenWords`, séparés par des virgules) deviennent « [masqué] ». Les e-mails, les liens et les numéros d'au moins 9 chiffres sont masqués ; un délai comme « 12 jours » reste. Les identifiants, rôles, délais et positions ne changent pas. Le composant `AnonymizeOption` (`src/components/anonymize-option.tsx`) affiche la case et le champ « Autres mots à masquer », à l'import et à l'export.
+
 **Tests** (`__tests__/`). Jest, avec le préréglage `jest-expo`. Les tests partent d'un process fictif, la demande de matériel de bureau (`exemples.ts`), et y créent chaque anomalie une par une.
 
 ## Import de fichiers
@@ -682,9 +684,13 @@ Le bouton de partage en haut à droite de la simulation ouvre la modale « Expor
 
 `exportFileName` tire le nom du fichier du nom du process (« Gestion d’un incident » → `gestion-d-un-incident.pdf`). `src/utils/share-file.ts` écrit le fichier dans le cache de l'app (`Paths.cache`), puis appelle `Sharing.shareAsync`. Sur iOS, on ne passe pas de type MIME : il ajouterait une seconde extension (`.drawio.xml`). Sur le web, `share-file.web.ts` télécharge le fichier, et le PDF s'ouvre dans une fenêtre d'impression (« Enregistrer en PDF »). Neuf tests couvrent l'aller-retour draw.io (avec et sans couloirs, caractères spéciaux), les couleurs, le contenu du PDF, le nom du fichier et le JSON.
 
-**Accessibilité.** Les formats sont des boutons radio, la case « Colorer » est une case à cocher qui annonce son état, et une erreur de partage s'affiche dans un encadré annoncé (`alert`).
+**Anonymiser.** La case « Anonymiser les noms » passe le process par `anonymizeProcess` avant l'export : le fichier et son nom ne gardent ni les acteurs ni les mots masqués, et le process enregistré ne change pas. Le même choix existe à l'import, sous l'aperçu : le process gardé est alors l'anonymisé, nom compris. Un test d'écran (`export-anonyme-ecran.test.tsx`) partage un JSON anonymisé et vérifie qu'aucun acteur ni mot masqué n'y reste.
+
+**Accessibilité.** Les formats sont des boutons radio, les cases « Colorer » et « Anonymiser » sont des cases à cocher qui annoncent leur état, et une erreur de partage s'affiche dans un encadré annoncé (`alert`).
 
 ![Export du schéma : choix du format, puis le PDF obtenu](captures/etape-6b-export.png)
+
+![Anonymiser : à l'import, le process importé, puis à l'export](captures/etape-26-anonymisation.png)
 
 Pas encore fait : « Suivre les deux branches » (écran 4).
 

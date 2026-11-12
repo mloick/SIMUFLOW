@@ -1,3 +1,4 @@
+export * from './anonymize';
 export * from './diagnostic';
 export * from './edit';
 export * from './graph';
