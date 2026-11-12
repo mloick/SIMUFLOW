@@ -49,7 +49,7 @@ docs/           Documentation (dont securite.md et ia.md), site public : accueil
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
-scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs) fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
+scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
 ```
@@ -781,7 +781,7 @@ La base est décrite par des fichiers SQL versionnés dans le dépôt (des « mi
 | `id` | `uuid` | Identifiant, tiré au hasard par la base (`gen_random_uuid()`) |
 | `owner_id` | `uuid` | Compte propriétaire, rempli tout seul avec le compte connecté (`default auth.uid()`). Supprimer le compte supprime ses process (`on delete cascade`) |
 | `name` | `text` | Nom, de 1 à 200 caractères hors espaces (contrainte `check`) |
-| `source` | `text` | Origine : `drawio`, `scan`, `json`, `tableau` (Excel ou CSV) , `bpmn` ou `visio`, ou vide. Les valeurs `tableau`, `bpmn` et `visio` sont ajoutées par `supabase/migrations/20261110150000_source_tableau.sql`, `20261113000000_source_bpmn.sql` puis `20261114000000_source_visio.sql`, à appliquer de la même façon ; sans elles, un process importé d'un tableau, d'un fichier BPMN ou Visio reste sur le téléphone et n'est pas envoyé |
+| `source` | `text` | Origine : `drawio`, `scan`, `json`, `tableau` (Excel ou CSV), `bpmn` ou `visio`, ou vide. Les valeurs `tableau`, `bpmn` et `visio` sont ajoutées par `supabase/migrations/20261110150000_source_tableau.sql`, `20261113000000_source_bpmn.sql` puis `20261114000000_source_visio.sql`, à appliquer de la même façon ; sans elles, un process importé d'un tableau, d'un fichier BPMN ou Visio reste sur le téléphone et n'est pas envoyé |
 | `content` | `jsonb` | Étapes et liens, au format de l'app : `{ "steps": [...], "links": [...] }` ; la base refuse un contenu sans ces deux listes |
 | `created_at`, `updated_at` | `timestamptz` | Dates de création et de modification ; `updated_at` est tenue à jour par un déclencheur (`set_updated_at`) |
 
