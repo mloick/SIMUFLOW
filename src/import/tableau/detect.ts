@@ -68,7 +68,7 @@ const TEMPLATE_SHEETS = [
 ];
 
 /** « 3. Fulfillment flow » → « fulfillment flow ». */
-const bareSheetName = (name: string) =>
+export const bareSheetName = (name: string) =>
   normalize(name)
     .replace(/[^a-z ]/g, ' ')
     .replace(/\s+/g, ' ')

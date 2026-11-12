@@ -20,6 +20,18 @@ export type { SheetKind, SheetReport, WorkbookKind, WorkbookReport } from './det
 export type { MergedRange, Sheet, Workbook } from './types';
 export { readCsv, readXlsx };
 export {
+  isQuestionVisible,
+  QUESTION_TYPE_LABELS,
+  questionType,
+  readFormTemplate,
+  type FormCondition,
+  type FormQuestion,
+  type FormTask,
+  type FormTemplate,
+  type FormWarning,
+  type QuestionType,
+} from './modeles/formulaire';
+export {
   classifyStepCell,
   columnLetter,
   formatSituationWarning,

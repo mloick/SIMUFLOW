@@ -22,13 +22,13 @@ describe('describeWorkbook', () => {
     const report = describeWorkbook(exemple('template-formulaire.xlsx'));
     expect(report.kind).toBe('formulaire');
     expect(report.sheets.filter((sheet) => sheet.kind === 'formulaire').map((sheet) => sheet.name)).toEqual([
-      '1. Basic info',
-      '2. Catalog location',
-      '3. Questions',
-      '4. Access',
-      '5. Fulfillment flow',
-      '6. Assignment & Summary',
-      '7. Values',
+      '1 - Basic info',
+      '2 - Location',
+      '3 - Questions',
+      '4 - Access',
+      '5 - Fulfillment flow',
+      '6 - Assignment & Summary',
+      'Values',
     ]);
   });
 
