@@ -129,6 +129,7 @@ function Account() {
 /** Les formulaires gardés, à rouvrir (remplir, lier un workflow) ou à retirer. */
 function SavedForms() {
   const theme = useTheme();
+  const session = useSession();
   const forms = useSavedForms();
   const open = (index: number) => {
     showSavedForm(forms[index]);
@@ -181,7 +182,9 @@ function SavedForms() {
         )}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        Gardés sur ce téléphone, avec le workflow lié.
+        {session
+          ? 'Gardés avec leur workflow, sur ce téléphone et sur votre compte.'
+          : 'Gardés avec leur workflow sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.'}
       </ThemedText>
     </View>
   );

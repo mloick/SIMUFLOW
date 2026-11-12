@@ -4,6 +4,10 @@
  * draw.io, tableau de process). Un formulaire gardé se rouvre depuis Profil,
  * se remplit, et la réponse au choix de la situation mène au process.
  *
+ * Connecté, ils sont aussi gardés sur le compte (syncSavedForms, lancée par
+ * cloud-sync.ts) : `pending` marque un changement pas encore envoyé, et
+ * `removed` les formulaires retirés ici, à retirer aussi du serveur.
+ *
  * Le formulaire en cours d'affichage (`showForm`) vit en mémoire : celui que
  * l'écran d'import vient de lire, ou un formulaire gardé.
  */
@@ -27,6 +31,10 @@ export type SavedForm = {
   source: string;
   savedAt: string;
   workflow: LinkedWorkflow | null;
+  /** Dernière modification (date ISO) : entre deux appareils, la plus récente gagne. Sinon `savedAt`. */
+  updatedAt?: string;
+  /** Déjà envoyé au compte. */
+  cloud?: boolean;
 };
 
 const FILE = 'formulaires';
@@ -49,25 +57,46 @@ export function parseSavedForms(text: string | null): SavedForm[] {
   }
 }
 
-function load(): SavedForm[] {
+type FormsState = { forms: SavedForm[]; pending: boolean; removed: string[] };
+
+function load(): FormsState {
   try {
-    return parseSavedForms(readSaved(FILE));
+    const text = readSaved(FILE);
+    const data = JSON.parse(text ?? 'null');
+    const saved = parseSavedForms(text);
+    const removed = Array.isArray(data?.removed) ? data.removed.filter((id: unknown) => typeof id === 'string') : [];
+    // Version 1 (avant le compte) : tout est encore à envoyer.
+    return { forms: saved, pending: data?.version === 1 ? saved.length > 0 : data?.pending === true, removed };
   } catch {
-    return [];
+    return { forms: [], pending: false, removed: [] };
   }
 }
 
-let forms: SavedForm[] = load();
+let state: FormsState = load();
+let forms: SavedForm[] = state.forms;
 const listeners = new Set<() => void>();
 
-function setForms(next: SavedForm[]) {
-  forms = next;
+function setState(next: FormsState) {
+  state = next;
+  forms = next.forms;
   listeners.forEach((listener) => listener());
   try {
-    writeSaved(JSON.stringify({ format: FORMAT, version: 1, forms: next }), FILE);
+    writeSaved(JSON.stringify({ format: FORMAT, version: 2, ...next }), FILE);
   } catch (error) {
     console.warn('Les formulaires n’ont pas pu être enregistrés.', error);
   }
+}
+
+/** Un changement fait par l'utilisateur : il partira au compte. */
+function setForms(next: SavedForm[], removed: string[] = []) {
+  setState({ forms: next, pending: true, removed: [...state.removed, ...removed] });
+}
+
+/** Marque une modification : toujours plus récente que la version modifiée, même si l'horloge d'un appareil avance. */
+function touch(saved: SavedForm, now = new Date()): SavedForm {
+  const previous = Date.parse(saved.updatedAt ?? saved.savedAt);
+  const at = Number.isNaN(previous) ? now.getTime() : Math.max(now.getTime(), previous + 1);
+  return { ...saved, updatedAt: new Date(at).toISOString() };
 }
 
 export function getSavedForms(): SavedForm[] {
@@ -92,22 +121,87 @@ export function useSavedForms(): SavedForm[] {
 /** Garde un formulaire (et son workflow) ; renvoie son identifiant. */
 export function saveForm(form: FormTemplate, source: string, workflow: LinkedWorkflow | null, now = new Date()): string {
   const id = `formulaire-${now.getTime()}`;
-  setForms([{ id, form, source, savedAt: now.toISOString(), workflow }, ...forms]);
+  const savedAt = now.toISOString();
+  setForms([{ id, form, source, savedAt, updatedAt: savedAt, workflow }, ...forms]);
   return id;
 }
 
 /** Lie (ou délie, avec `null`) un workflow à un formulaire gardé. */
 export function linkWorkflow(id: string, workflow: LinkedWorkflow | null) {
-  setForms(forms.map((saved) => (saved.id === id ? { ...saved, workflow } : saved)));
+  setForms(forms.map((saved) => (saved.id === id ? touch({ ...saved, workflow }) : saved)));
 }
 
 /** Remplace le formulaire d'un formulaire gardé (après modification). */
 export function updateSavedForm(id: string, form: FormTemplate) {
-  setForms(forms.map((saved) => (saved.id === id ? { ...saved, form } : saved)));
+  setForms(forms.map((saved) => (saved.id === id ? touch({ ...saved, form }) : saved)));
 }
 
 export function removeSavedForm(id: string) {
-  setForms(forms.filter((saved) => saved.id !== id));
+  const removed = forms.find((saved) => saved.id === id);
+  setForms(
+    forms.filter((saved) => saved.id !== id),
+    removed?.cloud ? [id] : [],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compte
+
+/** Un changement attend d'être envoyé au compte. */
+export function hasPendingForms(): boolean {
+  return state.pending;
+}
+
+export function subscribeSavedForms(listener: () => void) {
+  return subscribe(listener);
+}
+
+const stamp = (saved: SavedForm) => saved.updatedAt ?? saved.savedAt;
+
+/**
+ * Accorde les formulaires du téléphone et ceux du compte, formulaire par
+ * formulaire :
+ * - présent des deux côtés : le plus récemment modifié gagne ;
+ * - seulement sur le compte : il arrive sur le téléphone, sauf s'il vient d'y être retiré ;
+ * - seulement sur le téléphone : il part au compte s'il est nouveau ; déjà
+ *   envoyé, c'est qu'il a été retiré sur un autre appareil, il disparaît.
+ * Le résultat garde l'ordre du téléphone, les formulaires arrivés du compte devant.
+ */
+export function reconcileForms(server: SavedForm[], local: SavedForm[], removed: string[]): SavedForm[] {
+  const fromServer = new Map(server.map((saved) => [saved.id, saved]));
+  const gone = new Set(removed);
+  const localIds = new Set(local.map((saved) => saved.id));
+  const arrived = server.filter((saved) => !localIds.has(saved.id) && !gone.has(saved.id));
+  const kept = local.flatMap((saved) => {
+    const other = fromServer.get(saved.id);
+    if (!other) return saved.cloud ? [] : [saved];
+    return [stamp(other) > stamp(saved) ? other : saved];
+  });
+  return [...arrived, ...kept].map((saved) => ({ ...saved, cloud: true }));
+}
+
+/** Ce qui part au compte : sans la marque `cloud`, propre au téléphone. */
+const forCloud = (list: SavedForm[]) => list.map(({ cloud: _cloud, ...saved }) => saved);
+
+export type FormsApi = {
+  get: () => Promise<SavedForm[]>;
+  save: (forms: SavedForm[]) => Promise<void>;
+};
+
+/** Accorde les formulaires avec le compte. Un changement fait pendant l'envoi partira à la synchronisation suivante. */
+export async function syncSavedForms(api: FormsApi): Promise<void> {
+  const before = state;
+  const server = parseSavedForms(JSON.stringify({ format: FORMAT, forms: await api.get() }));
+  const next = reconcileForms(server, before.forms, before.removed);
+  if (JSON.stringify(forCloud(next)) !== JSON.stringify(server)) await api.save(forCloud(next));
+  if (state !== before) return; // modifié pendant l'envoi : on repassera
+  setState({ forms: next, pending: false, removed: [] });
+}
+
+/** Plus de compte : les formulaires déjà sur le compte quittent le téléphone ; ceux pas encore envoyés restent. */
+export function forgetCloudForms() {
+  const kept = forms.filter((saved) => !saved.cloud);
+  if (kept.length !== forms.length) setState({ forms: kept, pending: state.pending, removed: [] });
 }
 
 // ---------------------------------------------------------------------------
