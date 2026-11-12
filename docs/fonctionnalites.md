@@ -97,9 +97,9 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 - « Nom / Prénom du contact » devient deux cases, **Nom du contact** et **Prénom du contact**.
 - Un rappel comme « !!!!! Nbre de caractères maximum… » n'apparaît plus dans le formulaire. Les longueurs qu'il donne s'appliquent aux champs du même nom (« Nom du contact · 40 caractères au plus »), et le rappel est gardé dans **Points à vérifier dans le template**.
 - Une pièce jointe qui liste plusieurs documents devient **une pièce jointe par document**, chacune obligatoire, sauf un document qui ne sert que dans un cas (« uniquement… », « si… », « facultatif »).
-- Sous des cases à cocher, « Dans le cas de X » suivi de documents ajoute une pièce jointe qui n'apparaît que si X est coché.
+- Sous des cases à cocher, « Dans le cas de X » suivi de documents ajoute, quand X est coché, un titre « Documents à fournir : X » et **une pièce jointe obligatoire par document** (« ou par défaut » n'y change rien : chaque document est demandé).
 
-![Nom et prénom séparés, longueurs appliquées, une pièce jointe par document, et les documents du choix coché](captures/etape-24-regles-formulaire.png)
+![Nom et prénom séparés, longueurs appliquées, une pièce jointe par document, et les documents du choix coché, un par pièce jointe](captures/etape-24-regles-formulaire.png)
 
 **Du formulaire au process.** L'app fait la différence toute seule :
 

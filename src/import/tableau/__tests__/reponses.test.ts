@@ -50,7 +50,7 @@ describe('questions affichées', () => {
     expect(numbers({})).toEqual([1, 2, 3, 5, 8, 9, 10, 11, 12]);
     expect(numbers({ 3: 'Non' })).toEqual([1, 2, 3, 4, 5, 8, 9, 10, 11, 12]);
     expect(numbers({ 2: 'Cas 3', 5: ['MOTIF 2 : Changement de contact'] })).toEqual([1, 2, 3, 5, 7, 8, 9, 10, 11, 12, 13, 14]);
-    expect(numbers({ 5: ['MOTIF 2 : Changement de contact'], 14: ['Service repris'] })).toContain(15);
+    expect(numbers({ 5: ['MOTIF 2 : Changement de contact'], 14: ['Service repris'] })).toContain(16);
   });
 
   it('ne tient pas compte de la réponse d’une question cachée', () => {

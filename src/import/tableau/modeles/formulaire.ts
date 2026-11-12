@@ -26,8 +26,8 @@
  * - une pièce jointe qui liste plusieurs documents devient une pièce jointe
  *   par document, obligatoire sauf si le document dit « uniquement », « si »,
  *   « facultatif » ou « optionnel » ;
- * - sous des choix, « Dans le cas de X » suivi de documents ajoute une pièce
- *   jointe qui s'affiche quand le choix X est coché.
+ * - sous des choix, « Dans le cas de X » suivi de documents ajoute un titre
+ *   et une pièce jointe par document, affichés quand le choix X est coché.
  * Fonctions pures, testées dans __tests__/formulaire.test.ts.
  */
 
@@ -322,7 +322,7 @@ function fieldLimits(fields: string[], limits: { name: string; max: number }[]):
 
 export type CaseDocuments = { name: string; documents: string[] };
 
-/** « Dans le cas de la fusion » puis ses documents ; « ou par défaut : » reste dans la liste. */
+/** « Dans le cas de la fusion » puis ses documents (« ou par défaut : » est ignoré : chaque document est demandé). */
 function readCases(rest: string[]): CaseDocuments[] {
   const cases: CaseDocuments[] = [];
   for (const line of rest) {
@@ -330,9 +330,7 @@ function readCases(rest: string[]): CaseDocuments[] {
     if (start) {
       cases.push({ name: start[1].trim(), documents: [] });
     } else if (cases.length > 0) {
-      const text = line.replace(BULLET, '').trim();
-      if (/^ou\b/i.test(norm(text))) cases[cases.length - 1].documents.push('ou, à défaut :');
-      else if (BULLET.test(line)) cases[cases.length - 1].documents.push(text);
+      if (BULLET.test(line)) cases[cases.length - 1].documents.push(line.replace(BULLET, '').trim());
     }
   }
   return cases.filter((item) => item.documents.length > 0);
@@ -526,12 +524,13 @@ function expandDocuments(
         warn('orange', `Documents « ${item.name} » sans choix correspondant.`, question.cell, 'À quel choix ces documents correspondent-ils ?');
         continue;
       }
-      out.push(
-        attachment(question, `Pièce jointe : ${option}`, cases.required, item.documents, [
-          ...question.conditions,
-          { question: question.n, equals: option },
-        ]),
-      );
+      // Un titre, puis une pièce jointe par document, affichés quand le choix est coché.
+      const conditions = [...question.conditions, { question: question.n, equals: option }];
+      out.push({
+        question: { ...attachment(question, `Documents à fournir : ${option}`, false, [], conditions).question, type: 'label' as const },
+        from: null,
+      });
+      for (const document of item.documents) out.push(attachment(question, document, cases.required, [], conditions));
     }
   }
   const renumber = new Map<number, number>();

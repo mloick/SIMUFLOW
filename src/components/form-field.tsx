@@ -61,7 +61,10 @@ export function FormField({
   const theme = useTheme();
   const [title, ...rest] = question.label.split('\n');
   const subtitle = rest.join('\n').trim();
-  const condition = conditionText(question, questions);
+  // Une suite de questions à la même condition ne la montre qu'une fois, sur la première.
+  const previous = questions[questions.findIndex((item) => item.n === question.n) - 1];
+  const sameAsPrevious = previous !== undefined && JSON.stringify(previous.conditions) === JSON.stringify(question.conditions);
+  const condition = sameAsPrevious ? null : conditionText(question, questions);
 
   if (question.type === 'break') {
     return <View style={[styles.break, { backgroundColor: theme.border }]} accessibilityRole="none" />;

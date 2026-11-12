@@ -43,8 +43,11 @@ describe('template d’exemple', () => {
       [12, 'date', false],
       [13, 'text', true],
       [14, 'checkbox', true],
-      [15, 'attachment', true],
+      [15, 'label', false],
       [16, 'attachment', true],
+      [17, 'attachment', true],
+      [18, 'label', false],
+      [19, 'attachment', true],
     ]);
     const [coordonnees, situation, , , changement, adresse, , , domicile, , , date] = template.questions;
     expect(coordonnees.fields).toEqual(['N° de dossier', 'Nom du demandeur', 'Prénom du demandeur', 'Téléphone']);
@@ -100,18 +103,25 @@ describe('règles de lecture', () => {
     ]);
   });
 
-  it('ajoute les documents de chaque choix, affichés quand ce choix est coché', () => {
+  it('ajoute un titre et une pièce jointe par document pour chaque choix, affichés quand ce choix est coché', () => {
     const lien = byLabel("MOTIF 2 : Quel est le lien avec l'ancien contact ?");
     expect(lien.options).toEqual(['Même service', 'Service repris', 'Fusion de services', 'Autre (préciser)']);
-    const repris = byLabel('Pièce jointe : Service repris');
-    expect(repris).toMatchObject({ type: 'attachment', mandatory: true, documents: ['Acte de reprise', 'ou, à défaut :', "Attestation sur l'honneur"] });
-    expect(repris.conditions).toEqual([
+    const after = template.questions.slice(lien.n, lien.n + 5);
+    expect(after.map(({ label, type, mandatory }) => [label, type, mandatory])).toEqual([
+      ['Documents à fournir : Service repris', 'label', false],
+      ['Acte de reprise', 'attachment', true],
+      ["Attestation sur l'honneur", 'attachment', true],
+      ['Documents à fournir : Fusion de services', 'label', false],
+      ['Procès-verbal de fusion', 'attachment', true],
+    ]);
+    const acte = after[1];
+    expect(acte.conditions).toEqual([
       { question: 5, equals: 'MOTIF 2 : Changement de contact' },
       { question: lien.n, equals: 'Service repris' },
     ]);
     const motif2 = ['MOTIF 2 : Changement de contact'];
-    expect(isQuestionVisible(repris, new Map<number, string[]>([[5, motif2], [lien.n, ['Même service']]]))).toBe(false);
-    expect(isQuestionVisible(repris, new Map<number, string[]>([[5, motif2], [lien.n, ['Service repris']]]))).toBe(true);
+    expect(isQuestionVisible(acte, new Map<number, string[]>([[5, motif2], [lien.n, ['Même service']]]))).toBe(false);
+    expect(isQuestionVisible(acte, new Map<number, string[]>([[5, motif2], [lien.n, ['Service repris']]]))).toBe(true);
   });
 });
 
