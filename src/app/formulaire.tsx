@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AnonymizeOption } from '@/components/anonymize-option';
 import { Badge, type BadgeTone } from '@/components/badge';
 import { FormField } from '@/components/form-field';
 import { PrimaryButton } from '@/components/primary-button';
@@ -13,8 +14,16 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { processForForm, readWorkflowFile, startFormTracking } from '@/data/form-chain';
-import { keepSentAnswers, linkWorkflow, markShownSaved, saveForm, useShownForm, type LinkedWorkflow } from '@/data/form-store';
-import type { Process } from '@/domain';
+import {
+  anonymizeShown,
+  keepSentAnswers,
+  markShownSaved,
+  saveForm,
+  setShownWorkflow,
+  useShownForm,
+  type LinkedWorkflow,
+} from '@/data/form-store';
+import { parseHiddenWords, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { ImportError } from '@/import';
 import {
@@ -51,13 +60,14 @@ export default function FormScreen() {
   const cardTop = useRef(0);
   const shown = useShownForm();
   const form = shown?.form ?? null;
-  const [workflow, setWorkflow] = useState<LinkedWorkflow | null>(shown?.workflow ?? null);
+  const workflow = shown?.workflow ?? null;
   const [savedId, setSavedId] = useState<string | null>(shown?.savedId ?? null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<FormAnswers>({});
   const [attempted, setAttempted] = useState(false);
   const [sent, setSent] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [hiddenWords, setHiddenWords] = useState(shown?.anonymous?.hidden.join(', ') ?? '');
 
   // Formulaire modifié dans l'éditeur : les réponses repartent de zéro.
   const [formSeen, setFormSeen] = useState(form);
@@ -99,16 +109,18 @@ export default function FormScreen() {
       if (next.kind === 'situations' && !findFormLink(form, next.situations)) {
         throw new ImportError('Aucun choix du formulaire ne porte le nom d’une situation de ce workflow : le lien est impossible.');
       }
-      setWorkflow(next);
+      setShownWorkflow(next);
       setLinkError(null);
-      if (savedId) linkWorkflow(savedId, next);
     } catch (cause) {
       setLinkError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
     }
   };
-  const unlink = () => {
-    setWorkflow(null);
-    if (savedId) linkWorkflow(savedId, null);
+  const unlink = () => setShownWorkflow(null);
+  /** Anonymiser : les groupes deviennent Service A, B…, partout, workflow compris. */
+  const toggleAnonymous = () => anonymizeShown(shown?.anonymous ? null : parseHiddenWords(hiddenWords));
+  const changeHiddenWords = (value: string) => {
+    setHiddenWords(value);
+    if (shown?.anonymous) anonymizeShown(parseHiddenWords(value));
   };
   const keep = () => {
     const id = saveForm(form, shown?.source ?? '', workflow);
@@ -251,6 +263,22 @@ export default function FormScreen() {
             </ThemedText>
           </Pressable>
         </View>
+      </View>
+
+      <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <AnonymizeOption
+          checked={!!shown?.anonymous}
+          onToggle={toggleAnonymous}
+          hidden={hiddenWords}
+          onChangeHidden={changeHiddenWords}
+          label="Anonymiser le formulaire"
+          description="Groupes et services → Service A, B…, dans le formulaire et son workflow ; e-mails, téléphones et liens masqués"
+          result={
+            shown?.anonymous
+              ? `${plural(shown.anonymous.actorCount, 'groupe renommé', 'groupes renommés')}${savedId ? ' · le formulaire gardé suit' : ''}`
+              : undefined
+          }
+        />
       </View>
 
       {workflowCard}
@@ -428,7 +456,7 @@ function WorkflowCard({
         <View style={[styles.keep, { borderTopColor: theme.border }]}>
           {saved ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Gardé sur ce téléphone : retrouvez-le dans Profil, « Mes formulaires ».
+              Gardé : retrouvez-le dans Profil, « Mes formulaires ».
             </ThemedText>
           ) : (
             <Pressable onPress={onKeep} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>

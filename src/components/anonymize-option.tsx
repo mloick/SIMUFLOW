@@ -12,6 +12,8 @@ type Props = {
   onChangeHidden: (value: string) => void;
   /** Ce que l'anonymisation a fait, par exemple « 3 acteurs renommés ». */
   result?: string;
+  label?: string;
+  description?: string;
 };
 
 /**
@@ -19,7 +21,15 @@ type Props = {
  * deviennent Service A, B…, et les mots choisis (le nom de l'entreprise) sont
  * masqués. Les e-mails, téléphones et liens sont masqués d'office.
  */
-export function AnonymizeOption({ checked, onToggle, hidden, onChangeHidden, result }: Props) {
+export function AnonymizeOption({
+  checked,
+  onToggle,
+  hidden,
+  onChangeHidden,
+  result,
+  label = 'Anonymiser les noms',
+  description = 'Acteurs → Service A, B… ; e-mails, téléphones et liens masqués',
+}: Props) {
   const theme = useTheme();
   return (
     <View style={styles.option}>
@@ -27,7 +37,7 @@ export function AnonymizeOption({ checked, onToggle, hidden, onChangeHidden, res
         onPress={onToggle}
         accessibilityRole="checkbox"
         accessibilityState={{ checked }}
-        accessibilityHint="Remplace les acteurs par Service A, B… et masque les e-mails, téléphones et liens"
+        accessibilityHint={description}
         style={styles.check}>
         <View
           style={[
@@ -43,9 +53,9 @@ export function AnonymizeOption({ checked, onToggle, hidden, onChangeHidden, res
           )}
         </View>
         <View style={styles.flex}>
-          <ThemedText>Anonymiser les noms</ThemedText>
+          <ThemedText>{label}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Acteurs → Service A, B… ; e-mails, téléphones et liens masqués
+            {description}
           </ThemedText>
         </View>
       </Pressable>

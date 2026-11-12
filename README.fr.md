@@ -26,7 +26,7 @@ Les chefs de projet et analystes qui conçoivent des workflows de gestion des se
 
 - **Process** : vos process avec leur état de diagnostic, puis les process d'exemple dans une section repliable.
 - **Détail** : chiffres clés, diagnostic avec un bouton « Voir » sur chaque problème, acteurs et étapes ; on y modifie, exporte ou suit une vraie demande.
-- **Importer** : choisir un fichier draw.io ou JSON (ou un scan), vérifier et corriger l'aperçu, puis le garder. Un tableau Excel ou CSV est lu onglet par onglet. Une case anonymise les noms (acteurs → Service A, B…, e-mails et mots choisis masqués).
+- **Importer** : choisir un fichier draw.io ou JSON (ou un scan), vérifier et corriger l'aperçu, puis le garder. Un tableau Excel ou CSV est lu onglet par onglet. Une case anonymise les noms (acteurs → Service A, B…, e-mails et mots choisis masqués), pour les process comme pour les formulaires et leur workflow.
 - **Simulation** : le schéma s'allume au fil du parcours ; chaque décision demande quelle branche suivre. La vue « Tous » montre tous les chemins, une couleur par famille, avec le chemin critique. Le schéma s'exporte en PDF, en fichier draw.io ou en JSON, anonymisé si besoin.
 - **Scanner** : on photographie un tableau (étape, acteur, délai) et il devient un workflow.
 - **Suivi** : une vraie demande, étape par étape, avec l'échéance de chaque étape en jours ouvrés et le retard éventuel.
