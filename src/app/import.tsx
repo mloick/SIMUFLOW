@@ -44,7 +44,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
 const MAX_TABLE_SIZE = 20 * 1024 * 1024;
 
-type FileKind = 'drawio' | 'json' | 'tableau' | 'formulaire';
+type FileKind = 'drawio' | 'bpmn' | 'json' | 'tableau' | 'formulaire';
 
 /** Préfixe unique des identifiants d'un import. */
 const newImportId = () => `import-${Date.now()}`;
@@ -316,6 +316,13 @@ export default function ImportScreen() {
             description="Depuis Fichiers, un mail ou Drive"
             selected={kind === 'drawio'}
             onPress={() => pick('drawio')}
+          />
+          <SourceCard
+            icon={{ ios: 'point.3.connected.trianglepath.dotted', android: 'account_tree' }}
+            title="Fichier BPMN"
+            description="Un .bpmn de Camunda, Bizagi, Signavio, bpmn.io…"
+            selected={kind === 'bpmn'}
+            onPress={() => pick('bpmn')}
           />
           <SourceCard
             icon={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}

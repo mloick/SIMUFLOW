@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemple fictif pour SimuFlow : une demande d'achat en BPMN 2.0. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs" targetNamespace="https://exemple.test/simuflow">
+  <bpmn:collaboration id="collab">
+    <bpmn:participant id="pool" name="Achats de fournitures" processRef="achat" />
+  </bpmn:collaboration>
+  <bpmn:process id="achat" isExecutable="false">
+    <bpmn:laneSet id="lanes">
+      <bpmn:lane id="lane_demandeur" name="Demandeur">
+        <bpmn:flowNodeRef>debut</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>saisir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>refus</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>fin</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_manager" name="Responsable">
+        <bpmn:flowNodeRef>valider</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>gw_ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>budget</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="lane_achats" name="Service Achats">
+        <bpmn:flowNodeRef>split</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>commander</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>join</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>attente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>livrer</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="debut" name="Besoin d'achat" />
+    <bpmn:userTask id="saisir" name="Saisir la demande" />
+    <bpmn:userTask id="valider" name="Valider la demande (2 JO)" />
+    <bpmn:exclusiveGateway id="gw_ok" name="Demande validée ?" />
+    <bpmn:sendTask id="refus" name="Prévenir du refus" />
+    <bpmn:parallelGateway id="split" />
+    <bpmn:serviceTask id="commander" name="Passer la commande (1 JO)" />
+    <bpmn:userTask id="budget" name="Réserver le budget" />
+    <bpmn:parallelGateway id="join" />
+    <bpmn:intermediateCatchEvent id="attente" name="Attendre la livraison (5 JO)"><bpmn:timerEventDefinition id="t1" /></bpmn:intermediateCatchEvent>
+    <bpmn:manualTask id="livrer" name="Remettre le matériel" />
+    <bpmn:exclusiveGateway id="merge" />
+    <bpmn:endEvent id="fin" name="Demande close" />
+    <bpmn:sequenceFlow id="f1" sourceRef="debut" targetRef="saisir" />
+    <bpmn:sequenceFlow id="f2" sourceRef="saisir" targetRef="valider" />
+    <bpmn:sequenceFlow id="f3" sourceRef="valider" targetRef="gw_ok" />
+    <bpmn:sequenceFlow id="f4" name="oui" sourceRef="gw_ok" targetRef="split" />
+    <bpmn:sequenceFlow id="f5" name="non" sourceRef="gw_ok" targetRef="refus" />
+    <bpmn:sequenceFlow id="f6" sourceRef="split" targetRef="commander" />
+    <bpmn:sequenceFlow id="f7" sourceRef="split" targetRef="budget" />
+    <bpmn:sequenceFlow id="f8" sourceRef="commander" targetRef="join" />
+    <bpmn:sequenceFlow id="f9" sourceRef="budget" targetRef="join" />
+    <bpmn:sequenceFlow id="f10" sourceRef="join" targetRef="attente" />
+    <bpmn:sequenceFlow id="f11" sourceRef="attente" targetRef="livrer" />
+    <bpmn:sequenceFlow id="f12" sourceRef="livrer" targetRef="merge" />
+    <bpmn:sequenceFlow id="f13" sourceRef="refus" targetRef="merge" />
+    <bpmn:sequenceFlow id="f14" sourceRef="merge" targetRef="fin" />
+    <bpmn:textAnnotation id="note"><bpmn:text>Achats de moins de 500 €</bpmn:text></bpmn:textAnnotation>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="diagramme">
+    <bpmndi:BPMNPlane id="plan" bpmnElement="collab">
+      <bpmndi:BPMNShape id="pool_di" bpmnElement="pool" isHorizontal="true"><dc:Bounds x="130" y="80" width="1360" height="450" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_demandeur_di" bpmnElement="lane_demandeur" isHorizontal="true"><dc:Bounds x="160" y="80" width="1330" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_manager_di" bpmnElement="lane_manager" isHorizontal="true"><dc:Bounds x="160" y="230" width="1330" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane_achats_di" bpmnElement="lane_achats" isHorizontal="true"><dc:Bounds x="160" y="380" width="1330" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut"><dc:Bounds x="220" y="137" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="saisir_di" bpmnElement="saisir"><dc:Bounds x="300" y="115" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="valider_di" bpmnElement="valider"><dc:Bounds x="450" y="265" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_ok_di" bpmnElement="gw_ok"><dc:Bounds x="600" y="280" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="refus_di" bpmnElement="refus"><dc:Bounds x="700" y="115" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="split_di" bpmnElement="split"><dc:Bounds x="700" y="430" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="commander_di" bpmnElement="commander"><dc:Bounds x="800" y="415" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="budget_di" bpmnElement="budget"><dc:Bounds x="800" y="265" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="join_di" bpmnElement="join"><dc:Bounds x="950" y="430" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="attente_di" bpmnElement="attente"><dc:Bounds x="1050" y="437" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="livrer_di" bpmnElement="livrer"><dc:Bounds x="1150" y="415" width="110" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="merge_di" bpmnElement="merge"><dc:Bounds x="1300" y="130" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin_di" bpmnElement="fin"><dc:Bounds x="1400" y="137" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="256" y="155" /><di:waypoint x="300" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="410" y="155" /><di:waypoint x="450" y="305" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="560" y="305" /><di:waypoint x="600" y="305" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="650" y="305" /><di:waypoint x="700" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="650" y="305" /><di:waypoint x="700" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="750" y="455" /><di:waypoint x="800" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7"><di:waypoint x="750" y="455" /><di:waypoint x="800" y="305" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8"><di:waypoint x="910" y="455" /><di:waypoint x="950" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9"><di:waypoint x="910" y="305" /><di:waypoint x="950" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10"><di:waypoint x="1000" y="455" /><di:waypoint x="1050" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11"><di:waypoint x="1086" y="455" /><di:waypoint x="1150" y="455" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12"><di:waypoint x="1260" y="455" /><di:waypoint x="1300" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13_di" bpmnElement="f13"><di:waypoint x="810" y="155" /><di:waypoint x="1300" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f14_di" bpmnElement="f14"><di:waypoint x="1350" y="155" /><di:waypoint x="1400" y="155" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

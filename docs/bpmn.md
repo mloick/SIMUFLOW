@@ -1,6 +1,6 @@
 # BPMN 2.0 en bref
 
-Ce document explique ce qu'est BPMN, ce que contient un fichier `.bpmn`, et ce que SimuFlow en fera. Il prépare l'import des fichiers `.bpmn`, qui n'est pas encore fait.
+Ce document explique ce qu'est BPMN, ce que contient un fichier `.bpmn`, et ce que SimuFlow en fera. L'import des fichiers `.bpmn` est disponible : **+**, puis **Fichier BPMN**.
 
 ## Ce que c'est
 
@@ -58,7 +58,7 @@ BPMN est le format commun des outils de modélisation de process : **Camunda** (
 
 ## Ce que ça change pour SimuFlow
 
-Le modèle de SimuFlow (des étapes reliées par des liens, voir [`technique.md`](technique.md)) recouvre l'essentiel de BPMN. L'import prévu lira :
+Le modèle de SimuFlow (des étapes reliées par des liens, voir [`technique.md`](technique.md)) recouvre l'essentiel de BPMN. L'import lit :
 
 | BPMN | SimuFlow |
 | --- | --- |
@@ -72,6 +72,6 @@ Le modèle de SimuFlow (des étapes reliées par des liens, voir [`technique.md`
 | `lane` | Acteur de chaque étape qu'elle contient |
 | `dc:Bounds` du dessin | Position de l'étape, pour garder la mise en page d'origine |
 
-Ce qui ne sera pas lu au début : les flux de message entre pools, les événements attachés au bord d'une tâche (*boundary events*), les données (*data objects*) et les annotations. L'import le dira dans ses remarques, comme pour un schéma draw.io. Le diagnostic, la simulation, le suivi et l'export marcheront ensuite comme pour n'importe quel process.
+Ce qui n'est pas encore lu : les flux de message entre pools, les événements attachés au bord d'une tâche (*boundary events*), les données (*data objects*) et les annotations. L'import le dit dans ses remarques, comme pour un schéma draw.io. Une passerelle qui ne fait que réunir des branches est retirée, et un événement ou une passerelle est agrandi pour que son nom tienne dans la forme. Le diagnostic, la simulation, le suivi et l'export marchent ensuite comme pour n'importe quel process.
 
 Plus tard, l'**export BPMN** fera le chemin inverse : renvoyer un process vérifié dans SimuFlow vers ces outils.
