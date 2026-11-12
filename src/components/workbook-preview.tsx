@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   SHEET_KIND_LABELS,
   WORKBOOK_KIND_LABELS,
+  type FormTemplate,
   type SheetKind,
   type SheetReport,
   type WorkbookReport,
@@ -48,6 +49,8 @@ export function WorkbookPreview({
   warnings,
   importable,
   onChooseColumns,
+  form,
+  onShowForm,
 }: {
   report: WorkbookReport;
   warnings: string[];
@@ -55,6 +58,9 @@ export function WorkbookPreview({
   importable: number;
   /** Onglet non reconnu : ouvrir le choix des colonnes (index de l'onglet). */
   onChooseColumns?: (index: number) => void;
+  /** Le formulaire lu dans un template, à ouvrir avec `onShowForm`. */
+  form?: FormTemplate | null;
+  onShowForm?: () => void;
 }) {
   const theme = useTheme();
   const later = report.sheets.some((sheet) => sheet.kind === 'sla-ola' || sheet.kind === 'formulaire');
@@ -63,6 +69,27 @@ export function WorkbookPreview({
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         Ce que l’app a lu
       </ThemedText>
+      {form && onShowForm && (
+        <Pressable
+          onPress={onShowForm}
+          accessibilityRole="button"
+          accessibilityLabel={`Voir le formulaire ${form.name ?? ''}, ${plural(form.questions.length, 'question')}`}
+          style={[styles.form, { backgroundColor: theme.surface, borderColor: theme.primary }]}>
+          <View style={[styles.formIcon, { backgroundColor: theme.primaryBackground }]}>
+            <SymbolView name={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }} size={24} tintColor={theme.link} />
+          </View>
+          <View style={styles.flex}>
+            <ThemedText type="smallBold" style={styles.title}>
+              Voir le formulaire
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {[form.name, plural(form.questions.length, 'question')].filter(Boolean).join(' · ')}
+            </ThemedText>
+          </View>
+          <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={18} tintColor={theme.textSecondary} />
+        </Pressable>
+      )}
+
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.summary}>
           <ThemedText type="smallBold" style={styles.title}>
@@ -117,11 +144,18 @@ export function WorkbookPreview({
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {importNotice(importable, later)}
+          {form ? formNotice(importable) : importNotice(importable, later)}
         </ThemedText>
       </View>
     </View>
   );
+}
+
+/** Template de formulaire : le formulaire se regarde déjà, le reste viendra. */
+export function formNotice(importable: number): string {
+  const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
+  const next = 'Touchez « Voir le formulaire » pour le voir comme le demandeur.';
+  return importable > 0 ? `${local} ${next}` : `${local} ${next} Le process qui suit la demande arrive dans une prochaine version.`;
 }
 
 /** Ce qui s'importe, et ce qui viendra plus tard. */
@@ -150,5 +184,15 @@ const styles = StyleSheet.create({
   },
   choose: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.three, marginTop: -Spacing.two },
   flex: { flex: 1 },
+  form: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    minHeight: 64,
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
+  formIcon: { width: 44, height: 44, borderRadius: Radius.small, alignItems: 'center', justifyContent: 'center' },
   notice: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, borderRadius: Radius.medium },
 });
