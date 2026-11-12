@@ -56,6 +56,7 @@ export {
   type WorkflowStep,
   type WorkflowVariant,
 } from './modeles/sla-ola';
+export { chosenSituation, findFormLink, situationOfOption, type ChosenSituation, type FormLink } from './modeles/lien';
 export { situationLevel, situationName, situationsToProcesses, situationToProcess } from './modeles/parcours';
 export {
   firstFilledRow,

@@ -13,7 +13,8 @@ import { ColumnPicker } from '@/components/column-picker';
 import { SituationList } from '@/components/situation-list';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { showForm } from '@/data/form-preview';
+import { readFormBundle } from '@/data/form-chain';
+import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { summarize } from '@/domain';
@@ -42,7 +43,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
 const MAX_TABLE_SIZE = 20 * 1024 * 1024;
 
-type FileKind = 'drawio' | 'json' | 'tableau';
+type FileKind = 'drawio' | 'json' | 'tableau' | 'formulaire';
 
 /** Préfixe unique des identifiants d'un import. */
 const newImportId = () => `import-${Date.now()}`;
@@ -90,13 +91,37 @@ export default function ImportScreen() {
   const chosen = picked?.result.processes[page];
   const summary = useMemo(() => (chosen ? summarize(chosen) : null), [chosen]);
 
+  /**
+   * Formulaire et workflow : un ou deux fichiers. Le formulaire s'ouvre pour
+   * être rempli ; sa réponse au choix de la situation mène ensuite au process.
+   */
+  const openFormBundle = async (assets: DocumentPicker.DocumentPickerAsset[]) => {
+    setPicked(null);
+    setTable(null);
+    setChoosing(null);
+    try {
+      const bundle = await readFormBundle(assets);
+      setError(null);
+      showForm(bundle.form, { source: bundle.source, workflow: bundle.workflow });
+      router.push('/formulaire');
+    } catch (cause) {
+      setError(cause instanceof ImportError ? cause.message : 'Les fichiers n’ont pas pu être lus.');
+    }
+  };
+
   const pick = async (nextKind: FileKind) => {
     setKind(nextKind);
     const selection = await DocumentPicker.getDocumentAsync({
       type: nextKind === 'json' ? ['application/json', 'text/plain'] : nextKind === 'tableau' ? TABLE_FILE_TYPES : '*/*',
       copyToCacheDirectory: true,
+      multiple: nextKind === 'formulaire' || nextKind === 'tableau',
     });
     if (selection.canceled) return;
+    // Deux fichiers choisis ensemble : un formulaire et son workflow.
+    if (nextKind === 'formulaire' || selection.assets.length > 1) {
+      await openFormBundle(selection.assets);
+      return;
+    }
     const asset = selection.assets[0];
     if (nextKind === 'tableau') {
       await pickTable(asset);
@@ -129,12 +154,13 @@ export default function ImportScreen() {
       const learned = getLearnedHeaders();
       const report = describeWorkbook(workbook, learned);
       const { situations, skipped } = workbookToSituations(workbook);
+      const form = report.kind === 'formulaire' || report.kind === 'formulaire-workflow' ? readFormTemplate(workbook) : null;
       setTable({
         fileName: asset.name,
         workbook,
         report,
         warnings: workbook.warnings,
-        form: report.kind === 'formulaire' ? readFormTemplate(workbook) : null,
+        form,
         situations,
         skipped,
       });
@@ -142,8 +168,10 @@ export default function ImportScreen() {
       // puis chaque situation d'un workflow avec SLA et OLA.
       const importId = newImportId();
       const read = workbookToProcesses(workbook, importId, learned);
+      // Un formulaire se remplit d'abord : ses situations mènent à leur process après l'envoi.
+      if (form) read.processes = [];
       const situationsFrom = read.processes.length;
-      read.processes.push(...situationsToProcesses(situations, `${importId}-situation`).processes);
+      if (!form) read.processes.push(...situationsToProcesses(situations, `${importId}-situation`).processes);
       if (read.processes.length > 0) {
         const { result, applied } = applyReadingRules(read);
         setPicked({ fileName: asset.name, result, applied, ...(situations.length > 0 ? { situationsFrom } : {}) });
@@ -203,6 +231,16 @@ export default function ImportScreen() {
     addImportedProcess({ ...chosen, name: trimmed });
     router.replace({ pathname: '/process/[id]', params: { id: chosen.id } });
     if (correct) router.push({ pathname: '/process/modifier/[id]', params: { id: chosen.id } });
+  };
+
+  /** Formulaire et workflow dans le même classeur : ils sont liés d'office. */
+  const openTableForm = () => {
+    if (!table?.form) return;
+    showForm(table.form, {
+      source: table.fileName,
+      workflow: table.situations.length > 0 ? { kind: 'situations', source: table.fileName, situations: table.situations } : null,
+    });
+    router.push('/formulaire');
   };
 
   const pageCount = picked?.result.processes.length ?? 0;
@@ -270,6 +308,13 @@ export default function ImportScreen() {
             onPress={() => pick('drawio')}
           />
           <SourceCard
+            icon={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}
+            title="Formulaire et son workflow"
+            description="Le template, et son workflow si vous l’avez : un ou deux fichiers"
+            selected={kind === 'formulaire'}
+            onPress={() => pick('formulaire')}
+          />
+          <SourceCard
             icon={{ ios: 'tablecells', android: 'table_chart' }}
             title="Tableau Excel ou CSV"
             description="Process, workflow avec SLA et OLA, formulaire"
@@ -308,11 +353,8 @@ export default function ImportScreen() {
             importable={pageCount}
             onChooseColumns={setChoosing}
             form={table.form}
-            onShowForm={() => {
-              if (!table.form) return;
-              showForm(table.form);
-              router.push('/formulaire');
-            }}
+            linkedSituations={table.situations.length}
+            onShowForm={openTableForm}
           />
         )}
 
@@ -453,12 +495,16 @@ export default function ImportScreen() {
             Fichier choisi : {table.fileName}
           </ThemedText>
         )}
-        <PrimaryButton
-          label="Importer"
-          onPress={() => submit()}
-          disabled={!chosen}
-          accessibilityLabel={chosen ? 'Importer le process' : 'Importer, choisissez d’abord un fichier'}
-        />
+        {table?.form && !chosen ? (
+          <PrimaryButton label="Remplir le formulaire" onPress={openTableForm} />
+        ) : (
+          <PrimaryButton
+            label="Importer"
+            onPress={() => submit()}
+            disabled={!chosen}
+            accessibilityLabel={chosen ? 'Importer le process' : 'Importer, choisissez d’abord un fichier'}
+          />
+        )}
         {chosen && (
           <Pressable
             onPress={() => submit(true)}

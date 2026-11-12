@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/badge';
@@ -15,6 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { workingDaysBetween } from '@/tracking/calendar';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { completeStep, currentStep, nextChoices, stepOf, type Tracking } from '@/tracking/tracking';
+import { confirmAction } from '@/utils/confirm';
 import { plural } from '@/utils/format';
 
 /**
@@ -69,17 +70,10 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
   const complete = (linkId?: string) => saveTracking(completeStep(process, tracking, new Date(), linkId));
 
   const confirmStop = () =>
-    Alert.alert('Arrêter ce suivi ?', `« ${tracking.label} » sera retiré de ce téléphone.`, [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Arrêter',
-        style: 'destructive',
-        onPress: () => {
-          removeTracking(tracking.id);
-          router.back();
-        },
-      },
-    ]);
+    confirmAction('Arrêter ce suivi ?', `« ${tracking.label} » sera retiré de cet appareil.`, 'Arrêter', () => {
+      removeTracking(tracking.id);
+      router.back();
+    });
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -161,6 +155,26 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
           </View>
         )}
 
+        {tracking.answers && tracking.answers.length > 0 && (
+          <View style={styles.section}>
+            <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+              Réponses du formulaire
+            </ThemedText>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              {tracking.answers.map((line, index) => (
+                <View
+                  key={`${line.label}-${index}`}
+                  style={[styles.answer, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {line.label}
+                  </ThemedText>
+                  <ThemedText>{line.answer}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {done.length > 0 && (
           <View style={styles.section}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
@@ -197,6 +211,7 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
 }
 
 const styles = StyleSheet.create({
+  answer: { gap: Spacing.half, padding: Spacing.three },
   screen: { flex: 1 },
   content: { gap: Spacing.four, padding: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   titleBlock: { gap: Spacing.one },

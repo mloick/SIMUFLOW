@@ -51,6 +51,7 @@ export function WorkbookPreview({
   onChooseColumns,
   form,
   onShowForm,
+  linkedSituations = 0,
 }: {
   report: WorkbookReport;
   warnings: string[];
@@ -61,6 +62,8 @@ export function WorkbookPreview({
   /** Le formulaire lu dans un template, à ouvrir avec `onShowForm`. */
   form?: FormTemplate | null;
   onShowForm?: () => void;
+  /** Situations du même classeur, liées d'office au formulaire. */
+  linkedSituations?: number;
 }) {
   const theme = useTheme();
   const later = report.sheets.some((sheet) => sheet.kind === 'formulaire');
@@ -81,10 +84,16 @@ export function WorkbookPreview({
           </View>
           <View style={styles.flex}>
             <ThemedText type="smallBold" style={styles.title}>
-              Voir le formulaire
+              {linkedSituations > 0 ? 'Remplir le formulaire, puis suivre son process' : 'Voir le formulaire'}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {[form.name, plural(form.questions.length, 'question')].filter(Boolean).join(' · ')}
+              {[
+                form.name,
+                plural(form.questions.length, 'question'),
+                linkedSituations > 0 ? `lié à ${plural(linkedSituations, 'situation')}` : 'formulaire seul',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </ThemedText>
           </View>
           <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={18} tintColor={theme.textSecondary} />
@@ -145,18 +154,21 @@ export function WorkbookPreview({
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {form ? formNotice(importable) : importNotice(importable, later, situations)}
+          {form ? formNotice(importable, linkedSituations > 0) : importNotice(importable, later, situations)}
         </ThemedText>
       </View>
     </View>
   );
 }
 
-/** Template de formulaire : le formulaire se regarde et se remplit déjà, le reste viendra. */
-export function formNotice(importable: number): string {
+/** Template de formulaire, seul ou avec son workflow dans le même classeur. */
+export function formNotice(importable: number, linked = false): string {
   const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
-  const next = 'Touchez « Voir le formulaire » pour le voir et le remplir comme le demandeur.';
-  return importable > 0 ? `${local} ${next}` : `${local} ${next} Le process qui suit la demande arrive dans une prochaine version.`;
+  if (linked) {
+    return `${local} Le formulaire et son workflow sont dans ce classeur : touchez « Remplir le formulaire », remplissez-le, et la situation choisie mène à son process, avec ses acteurs et ses délais.`;
+  }
+  const next = 'Touchez « Voir le formulaire » pour le remplir comme le demandeur.';
+  return `${local} ${next}${importable > 0 ? '' : ' Formulaire seul : la simulation s’arrête à l’envoi, sauf si vous lui liez un workflow.'}`;
 }
 
 /** Ce qui s'importe, et ce qui viendra plus tard. `situations` : le classeur a des onglets « SLA / OLA ». */

@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/badge';
@@ -16,6 +16,7 @@ import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
+import { confirmAction } from '@/utils/confirm';
 import { plural } from '@/utils/format';
 
 const SOURCE_TEXT: Record<ProcessSource, string> = {
@@ -83,22 +84,16 @@ function ProcessDetail({ process }: { process: Process }) {
     });
 
   const confirmDelete = () =>
-    Alert.alert(
+    confirmAction(
       'Supprimer ce process ?',
       isInCloud(process.id)
-        ? `« ${process.name} » sera retiré de ce téléphone et de votre compte.`
-        : `« ${process.name} » sera retiré de ce téléphone.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            removeImportedProcess(process.id);
-            router.back();
-          },
-        },
-      ],
+        ? `« ${process.name} » sera retiré de cet appareil et de votre compte.`
+        : `« ${process.name} » sera retiré de cet appareil.`,
+      'Supprimer',
+      () => {
+        removeImportedProcess(process.id);
+        router.back();
+      },
     );
 
   const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';

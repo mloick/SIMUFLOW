@@ -31,6 +31,8 @@ export type Tracking = {
   steps: TrackedStep[];
   /** Fin atteinte (ou étape sans suite terminée) : la demande est close. */
   finishedAt?: string;
+  /** Réponses du formulaire qui a lancé la demande (simulation d'un formulaire). */
+  answers?: { label: string; answer: string }[];
 };
 
 export type StepTiming = 'none' | 'on-time' | 'soon' | 'late';

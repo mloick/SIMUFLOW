@@ -24,14 +24,16 @@ def remplir(feuille, lignes):
             cellule.alignment = RETOUR
 
 
-def workflow():
-    classeur = Workbook()
+def workflow(classeur=None, nom="workflow-sla-ola.xlsx"):
+    """Seul, ou ajouté à un classeur existant (`classeur`) ; `nom` vide : pas d'enregistrement."""
+    nouveau = classeur is None
+    classeur = classeur or Workbook()
     entete = [
         "Famille", "Situation (menu déroulant)", "Explicite", "Champs du formulaire", "Propriétaire", "SLA",
         "Groupe de compétence 1", "Task 1", "OLA 1",
         "Groupe de compétence 2", "Task 2", "OLA 2", "Commentaires",
     ]
-    financement = classeur.active
+    financement = classeur.active if nouveau else classeur.create_sheet()
     financement.title = "Dossier de financement"
     remplir(financement, [
         entete,
@@ -66,10 +68,12 @@ def workflow():
 
     listes = classeur.create_sheet("Listes")
     remplir(listes, [["Groupes"], ["Groupe A"], ["Groupe B"], ["Groupe C"], ["Groupe D"], ["Groupe E"]])
-    classeur.save(DOSSIER / "workflow-sla-ola.xlsx")
+    if nom:
+        classeur.save(DOSSIER / nom)
+    return classeur
 
 
-def template():
+def template(nom="template-formulaire.xlsx"):
     """Même disposition qu'un vrai template : une colonne par question, une ligne par propriété."""
     classeur = Workbook()
     infos = classeur.active
@@ -138,7 +142,14 @@ def template():
         ["Libellé", "Un titre ou des champs à remplir"], ["Menu déroulant", "Un choix dans une liste"],
         ["Oui/Non", "Oui ou Non"], ["Texte sur une ligne", "160 caractères"], ["Texte sur plusieurs lignes", "Texte long"],
     ])
-    classeur.save(DOSSIER / "template-formulaire.xlsx")
+    if nom:
+        classeur.save(DOSSIER / nom)
+    return classeur
+
+
+def formulaire_et_workflow():
+    """Le template de formulaire et le workflow dans un seul classeur : le choix « Situation » mène au process."""
+    workflow(template(None), "formulaire-et-workflow.xlsx")
 
 
 def process():
@@ -186,5 +197,6 @@ def a_completer():
 if __name__ == "__main__":
     workflow()
     template()
+    formulaire_et_workflow()
     process()
     a_completer()

@@ -80,7 +80,7 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 
 ![Pièce jointe avec ses documents attendus, puis ce qui se passe après l'envoi](captures/etape-20b-formulaire-piece-jointe.png)
 
-**Remplir le formulaire comme le demandeur.** Le formulaire se remplit pour de vrai. Au départ, seules les questions toujours posées s'affichent ; l'encadré du haut dit combien d'autres apparaîtront selon vos réponses, et **Montrer aussi les questions cachées** les montre en grisé pour relire tout le template. Répondez « Non » à « Êtes-vous le signataire ? » et la question « Si NON : indiquer le signataire » apparaît ; cochez MOTIF 1 et la question de MOTIF 1 apparaît. **Ajouter un fichier** ouvre vos fichiers ; seul le nom du fichier est gardé, et la croix le retire. Touchez **Envoyer la demande** : s'il manque une réponse obligatoire, ou si un e-mail, une adresse web ou une date est mal écrit, l'app remonte à la première question à corriger et écrit en rouge ce qui ne va pas. Quand tout est bon, **Demande prête** affiche le récapitulatif : chaque question posée et votre réponse. Rien n'est envoyé : c'est une simulation. **Modifier les réponses** revient au formulaire, **Nouvelle demande** le vide. Suivre la demande dans le process de la situation choisie arrive dans une prochaine version.
+**Remplir le formulaire comme le demandeur.** Le formulaire se remplit pour de vrai. Au départ, seules les questions toujours posées s'affichent ; l'encadré du haut dit combien d'autres apparaîtront selon vos réponses, et **Montrer aussi les questions cachées** les montre en grisé pour relire tout le template. Répondez « Non » à « Êtes-vous le signataire ? » et la question « Si NON : indiquer le signataire » apparaît ; cochez MOTIF 1 et la question de MOTIF 1 apparaît. **Ajouter un fichier** ouvre vos fichiers ; seul le nom du fichier est gardé, et la croix le retire. Touchez **Envoyer la demande** : s'il manque une réponse obligatoire, ou si un e-mail, une adresse web ou une date est mal écrit, l'app remonte à la première question à corriger et écrit en rouge ce qui ne va pas. Quand tout est bon, **Demande prête** affiche le récapitulatif : chaque question posée et votre réponse. Rien n'est envoyé : c'est une simulation. **Modifier les réponses** revient au formulaire, **Nouvelle demande** le vide.
 
 ![Le formulaire vide, avec le nombre de questions qui apparaîtront](captures/etape-20c-formulaire-vide.png)
 
@@ -91,6 +91,29 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 ![Un fichier joint, qu'on peut retirer](captures/etape-20c-formulaire-piece-jointe.png)
 
 ![Demande prête : le récapitulatif des réponses](captures/etape-20c-formulaire-recapitulatif.png)
+
+**Du formulaire au process.** L'app fait la différence toute seule :
+
+- **Un formulaire seul** (un template, sans workflow) se simule en formulaire : la simulation s'arrête à « Demande prête ».
+- **Un formulaire avec son workflow**, dans **un ou deux fichiers**. Dans **Nouveau process**, touchez **Formulaire et son workflow** et choisissez le template, et son workflow si vous l'avez (un classeur SLA / OLA, un schéma draw.io ou un tableau de process), ensemble, dans n'importe quel ordre : le formulaire s'ouvre tout de suite, prêt à remplir. Un seul classeur qui contient les deux marche aussi, depuis **Tableau Excel ou CSV** : le bouton du bas devient **Remplir le formulaire** (ses situations ne s'importent pas seules : c'est la réponse du formulaire qui choisit). Remplissez-le : sous « Demande prête », **La suite de la demande** montre la situation que votre réponse a choisie (« Cas 3 » mène à « Famille X · Cas 3 », avec son SLA, ses groupes et leurs OLA). Touchez **Simuler le parcours** pour la dérouler pas à pas, ou **Suivre la demande en vrai** : le suivi commence au ticket (le formulaire est déjà rempli), avec les échéances en jours ouvrés et vos réponses jointes.
+- **Lier un workflow plus tard.** Dans l'encadré **Workflow lié** du formulaire, touchez **Lier un workflow** et choisissez un classeur SLA / OLA, un schéma draw.io ou un tableau de process. L'app trouve seule la question dont les choix sont les situations (« Situation : Cas 1, Cas 2… »). Avec un schéma, c'est ce process qui suit chaque demande. **Changer de workflow** et **Retirer le lien** sont là aussi.
+- **Garder un formulaire.** **Garder ce formulaire** l'enregistre sur le téléphone, avec son workflow. Il se retrouve dans **Profil**, rubrique **Mes formulaires** : touchez-le pour le remplir à nouveau ou lui lier un workflow, **Retirer** pour l'effacer.
+
+Pour essayer : `template-formulaire.xlsx` et `workflow-sla-ola.xlsx` choisis ensemble (deux fichiers), `formulaire-et-workflow.xlsx` (les deux dans un classeur) ou `template-formulaire.xlsx` (formulaire seul, puis **Lier un workflow** avec `workflow-sla-ola.xlsx`).
+
+![La source « Formulaire et son workflow »](captures/etape-23-import.png)
+
+![Le formulaire ouvert depuis deux fichiers, avec son workflow lié](captures/etape-23-deux-fichiers.png)
+
+![Un classeur qui contient les deux : « Remplir le formulaire »](captures/etape-23-classeur.png)
+
+![Le formulaire et son workflow lié](captures/etape-22-lien-formulaire.png)
+
+![La suite de la demande : la situation choisie et son process](captures/etape-22-lien-suite.png)
+
+![La demande suivie en vrai, avec les réponses du formulaire](captures/etape-22-lien-suivi.png)
+
+![Mes formulaires, dans Profil](captures/etape-22-lien-mes-formulaires.png)
 
 ## Scanner un tableau · Disponible
 

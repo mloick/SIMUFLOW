@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import * as Updates from 'expo-updates';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
 import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
+import { removeSavedForm, showSavedForm, useSavedForms } from '@/data/form-store';
 import { describeRule } from '@/import';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
       <Account />
       <NotificationSettings />
       <ExamplesSetting />
+      <SavedForms />
       <ReadingRules />
       <About />
       {__DEV__ && <DemoScenarioPicker />}
@@ -120,6 +122,67 @@ function Account() {
         </ThemedText>
       )}
       {session && <DeleteAccount />}
+    </View>
+  );
+}
+
+/** Les formulaires gardés, à rouvrir (remplir, lier un workflow) ou à retirer. */
+function SavedForms() {
+  const theme = useTheme();
+  const forms = useSavedForms();
+  const open = (index: number) => {
+    showSavedForm(forms[index]);
+    router.push('/formulaire');
+  };
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+        Mes formulaires
+      </ThemedText>
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        {forms.length === 0 ? (
+          <ThemedText themeColor="textSecondary" style={styles.boxText}>
+            Aucun pour l’instant. Importez un template de formulaire (Excel), puis touchez « Garder ce formulaire » : vous
+            pourrez le remplir à nouveau et lui lier un workflow plus tard.
+          </ThemedText>
+        ) : (
+          forms.map((saved, index) => {
+            const name = saved.form.name ?? 'Formulaire sans nom';
+            const link = saved.workflow
+              ? `lié à ${saved.workflow.source || (saved.workflow.kind === 'process' ? saved.workflow.process.name : 'un workflow')}`
+              : 'sans workflow';
+            return (
+              <View key={saved.id}>
+                {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
+                <View style={[styles.row, styles.identity]}>
+                  <Pressable
+                    onPress={() => open(index)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ouvrir le formulaire ${name}, ${link}`}
+                    style={styles.flex}>
+                    <ThemedText style={{ color: theme.link }}>{name}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {saved.form.questions.length} questions · {link}
+                    </ThemedText>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => removeSavedForm(saved.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Retirer le formulaire ${name}`}
+                    hitSlop={8}>
+                    <ThemedText type="link" style={{ color: theme.danger }}>
+                      Retirer
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        Gardés sur ce téléphone, avec le workflow lié.
+      </ThemedText>
     </View>
   );
 }
