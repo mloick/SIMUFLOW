@@ -17,6 +17,7 @@ import { useSyncExternalStore } from 'react';
 import type { Process } from '@/domain';
 import type { FormAnswers, FormTemplate, Situation } from '@/import/tableau';
 
+import { anonymizeForm } from './form-anonymize';
 import { readSaved, writeSaved } from './saved-file';
 
 /** Le workflow lié à un formulaire, avec le nom du fichier d'où il vient. */
@@ -133,7 +134,12 @@ export function linkWorkflow(id: string, workflow: LinkedWorkflow | null) {
 
 /** Remplace le formulaire d'un formulaire gardé (après modification). */
 export function updateSavedForm(id: string, form: FormTemplate) {
-  setForms(forms.map((saved) => (saved.id === id ? touch({ ...saved, form }) : saved)));
+  replaceSavedForm(id, { form });
+}
+
+/** Remplace le formulaire, le workflow ou le nom du fichier d'un formulaire gardé. */
+export function replaceSavedForm(id: string, patch: Partial<Pick<SavedForm, 'form' | 'workflow' | 'source'>>) {
+  setForms(forms.map((saved) => (saved.id === id ? touch({ ...saved, ...patch }) : saved)));
 }
 
 export function removeSavedForm(id: string) {
@@ -215,7 +221,12 @@ export type ShownForm = {
   savedId: string | null;
   /** Clé des process créés depuis ce formulaire, pour ne pas les recréer à chaque demande. */
   key: string;
+  /** Les mots masqués, si le formulaire affiché est anonymisé. */
+  anonymous?: { hidden: string[]; actorCount: number };
 };
+
+/** Le formulaire tel qu'il était avant l'anonymisation, pour revenir en arrière. */
+let original: Pick<ShownForm, 'form' | 'workflow' | 'source'> | null = null;
 
 let shown: ShownForm | null = null;
 let sent: FormAnswers | null = null;
@@ -231,6 +242,7 @@ export function showForm(form: FormTemplate, options: { source?: string; workflo
     savedId: options.savedId ?? null,
     key: options.savedId ?? `apercu-${Date.now()}`,
   };
+  original = null;
   sent = null;
   notifyShown();
 }
@@ -243,8 +255,49 @@ export function showForm(form: FormTemplate, options: { source?: string; workflo
 export function editShownForm(form: FormTemplate) {
   if (!shown) return;
   shown = { ...shown, form, key: `${shown.savedId ?? 'apercu'}-${Date.now()}` };
+  // Modifié une fois anonymisé : la version anonymisée devient la référence.
+  original = null;
+  if (shown.anonymous) shown = { ...shown, anonymous: undefined };
   sent = null;
   if (shown.savedId) updateSavedForm(shown.savedId, form);
+  notifyShown();
+}
+
+/** Lie (ou délie) un workflow au formulaire affiché, et au formulaire gardé s'il l'est. */
+export function setShownWorkflow(workflow: LinkedWorkflow | null) {
+  if (!shown) return;
+  shown = { ...shown, workflow };
+  if (original) original = { ...original, workflow };
+  if (shown.savedId) linkWorkflow(shown.savedId, workflow);
+  notifyShown();
+}
+
+/**
+ * Anonymise le formulaire affiché et son workflow (`hidden` : les autres mots
+ * à masquer), ou, avec `null`, rend la version d'origine. Gardé, le
+ * formulaire de « Mes formulaires » suit.
+ */
+export function anonymizeShown(hidden: string[] | null) {
+  if (!shown) return;
+  const base = original ?? { form: shown.form, workflow: shown.workflow, source: shown.source };
+  let next: Pick<ShownForm, 'form' | 'workflow' | 'source' | 'anonymous'>;
+  if (hidden === null) {
+    if (!original) return;
+    next = { ...base, anonymous: undefined };
+    original = null;
+  } else {
+    const result = anonymizeForm(base.form, base.workflow, hidden);
+    original = base;
+    next = {
+      form: result.form,
+      workflow: result.workflow,
+      source: result.text(base.source),
+      anonymous: { hidden, actorCount: result.actorCount },
+    };
+  }
+  shown = { ...shown, ...next, key: `${shown.savedId ?? 'apercu'}-${Date.now()}` };
+  sent = null;
+  if (shown.savedId) replaceSavedForm(shown.savedId, { form: next.form, workflow: next.workflow, source: next.source });
   notifyShown();
 }
 

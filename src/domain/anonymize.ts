@@ -95,36 +95,58 @@ function maskContacts(value: string): string {
     .replace(PHONE, (match) => ((match.match(/\d/g)?.length ?? 0) >= 9 ? 'numéro masqué' : match));
 }
 
-export function anonymizeProcess(process: Process, options: AnonymizeOptions = {}): Anonymizer {
-  const actors = [
-    ...new Set(process.steps.map((step) => step.actor?.trim()).filter((actor): actor is string => !!actor)),
-  ];
+/** Les acteurs distincts, sans blancs autour, dans l'ordre où ils apparaissent. */
+export function distinctNames(values: (string | null | undefined)[]): string[] {
+  return [...new Set(values.map((value) => value?.trim()).filter((value): value is string => !!value))];
+}
+
+/**
+ * Le remplacement de texte commun aux process et aux formulaires : chaque
+ * acteur devient « Service A »…, chaque mot de `hidden` « [masqué] », et les
+ * e-mails, téléphones et liens sont masqués.
+ */
+export function textAnonymizer(actors: string[], hidden: string[] = []): (value: string) => string {
   const names = new Map(actors.map((actor, index) => [actor, serviceName(index)]));
-  const hidden = (options.hidden ?? []).map((word) => word.trim()).filter((word) => word.length > 1);
+  const words = hidden.map((word) => word.trim()).filter((word) => word.length > 1);
   const terms: [string, string][] = [
     ...actors.map((actor): [string, string] => [actor, names.get(actor)!]),
-    ...hidden.map((word): [string, string] => [word, MASKED]),
+    ...words.map((word): [string, string] => [word, MASKED]),
   ].sort((a, b) => b[0].length - a[0].length);
+  return (value: string) => replaceTerms(maskContacts(value), terms);
+}
 
-  const text = (value: string) => replaceTerms(maskContacts(value), terms);
+/** Champs techniques (identifiants, genres, cellules, dates) : jamais réécrits. */
+const KEPT_KEYS = new Set(['id', 'kind', 'type', 'variant', 'level', 'from', 'to', 'shape', 'cell', 'savedAt', 'updatedAt', 'editedAt']);
 
-  return {
-    process: {
-      ...process,
-      name: text(process.name),
-      steps: process.steps.map((step) => {
-        const actor = step.actor?.trim();
-        return {
-          ...step,
-          title: text(step.title),
-          ...(actor ? { actor: names.get(actor) } : {}),
-        };
-      }),
-      links: process.links.map((link) => (link.label ? { ...link, label: text(link.label) } : link)),
-    },
-    text,
-    actorCount: actors.length,
-  };
+/**
+ * Applique `text` à chaque texte d'une donnée (objets et listes compris), clés
+ * de `limits` comprises, sauf les champs techniques. Les mêmes textes donnent
+ * les mêmes remplacements : un choix de formulaire et le nom de sa situation
+ * restent reliés.
+ */
+export function anonymizeData<T>(value: T, text: (value: string) => string, key?: string): T {
+  if (typeof value === 'string') return (key && KEPT_KEYS.has(key) ? value : text(value)) as T;
+  if (Array.isArray(value)) return value.map((item) => anonymizeData(item, text)) as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([name, item]) => [
+        key === 'limits' ? text(name) : name,
+        anonymizeData(item, text, name),
+      ]),
+    ) as T;
+  }
+  return value;
+}
+
+export function anonymizeProcess(process: Process, options: AnonymizeOptions = {}): Anonymizer {
+  const actors = distinctNames(process.steps.map((step) => step.actor));
+  const text = textAnonymizer(actors, options.hidden);
+  return { process: anonymizeProcessWith(process, text), text, actorCount: actors.length };
+}
+
+/** Le process passé par `text`, son origine (draw.io, scan…) gardée telle quelle. */
+export function anonymizeProcessWith(process: Process, text: (value: string) => string): Process {
+  return { ...anonymizeData(process, text), ...(process.source ? { source: process.source } : {}) };
 }
 
 /** « Entreprise X, Client Y » → les mots à masquer, séparés par des virgules ou des retours à la ligne. */

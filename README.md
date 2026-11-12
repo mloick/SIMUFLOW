@@ -26,7 +26,7 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 
 - **Process**: your processes with their diagnostic status, then the sample processes in a collapsible section.
 - **Detail**: key figures, the diagnostic with a "Show" button on each problem, actors and steps; edit, export or follow a real request from here.
-- **Import**: pick a draw.io or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet. A checkbox anonymises the names (actors become Service A, B…; e-mails and chosen words are hidden).
+- **Import**: pick a draw.io or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet. A checkbox anonymises the names (actors become Service A, B…; e-mails and chosen words are hidden), for processes as well as forms and their workflow.
 - **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path. The diagram can be exported as a PDF, a draw.io file or JSON, anonymised if needed.
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 - **Follow**: a real request, step by step, with each deadline in working days and the delay so far.

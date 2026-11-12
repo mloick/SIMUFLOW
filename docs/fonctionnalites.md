@@ -101,6 +101,10 @@ Un onglet qui décrit un process (des colonnes Étape, Acteur, Délai, Suite, co
 
 **Modifier le formulaire.** Ce que la lecture ne peut pas deviner se corrige à la main. Dans le formulaire, touchez **Modifier le formulaire** : chaque question est une ligne ; touchez-la pour changer son intitulé, son type (texte, champs à remplir, oui / non, menu, cases à cocher, pièce jointe, date, e-mail, titre), la rendre obligatoire ou non, écrire ses choix, ses champs ou ses documents (un par ligne), son aide, et quand elle s'affiche (« si "Êtes-vous le signataire ?" = Oui »). Pour les fichiers : **Ajouter une pièce jointe après** crée directement une question « Pièce jointe », et, sur une pièce jointe qui liste plusieurs documents, **Une pièce jointe par document** la découpe en un titre suivi d'une pièce jointe par document. **Monter**, **Descendre**, **Ajouter une question après** et **Supprimer** sont en bas ; une question supprimée retire aussi les conditions qui en dépendaient. **Enregistrer** remplace le formulaire affiché, et le formulaire gardé dans **Mes formulaires** s'il l'est. Le fichier Excel d'origine n'est pas touché.
 
+**Anonymiser le formulaire.** Sous l'encadré du haut, cochez **Anonymiser le formulaire** : chaque groupe ou service cité (groupe du ticket, groupes des tasks, propriétaires et groupes du workflow lié) devient **Service A**, **Service B**…, dans le formulaire comme dans son workflow ; les e-mails, téléphones et liens sont masqués, et les mots écrits dans **Autres mots à masquer** deviennent « [masqué] ». Le choix qui mène à une situation reste relié à son process. Décochez pour revenir à la version d'origine. Si le formulaire est gardé, **Mes formulaires** suit.
+
+![Anonymiser le formulaire : la case et les mots masqués, puis les groupes devenus Service A, B, C](captures/etape-28-anonymiser-formulaire.png)
+
 ![Modifier le formulaire : la liste des questions, une question ouverte, une condition ajoutée, et le résultat dans le formulaire](captures/etape-25-editeur-formulaire.png)
 
 ![Nom et prénom séparés, longueurs appliquées, une pièce jointe par document, et les documents du choix coché, un par pièce jointe](captures/etape-24-regles-formulaire.png)
@@ -244,7 +248,7 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 ## Anonymiser un process · Disponible
 
-Pour montrer un process sans dévoiler de vrais noms, cochez **Anonymiser les noms**, à l'import (sous l'aperçu) ou à l'export (sous le choix du format).
+Pour montrer un process sans dévoiler de vrais noms, cochez **Anonymiser les noms**, à l'import (sous l'aperçu) ou à l'export (sous le choix du format). Un formulaire et son workflow s'anonymisent aussi, sur l'écran du formulaire (voir « Importer un tableau Excel ou CSV »).
 
 - Chaque acteur devient **Service A**, **Service B**… partout où son nom apparaît : dans les étapes, sur les flèches et dans le nom du process.
 - Les adresses e-mail, les numéros de téléphone et les liens sont masqués.
