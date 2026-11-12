@@ -16,11 +16,15 @@ Vos process apparaissent en premier. Dessous, la section **Exemples** contient q
 
 ## Ajouter un process depuis un fichier · Disponible
 
-Touchez le bouton **+** de la liste, puis **Fichier draw.io** ou **Fichier JSON**, et choisissez le fichier dans Fichiers, iCloud Drive ou Drive. L'app vous montre ce qu'elle a lu : le nombre d'étapes et d'acteurs, les problèmes éventuels, et ce qu'elle a dû deviner (par exemple une flèche qui n'était accrochée à rien). Si le schéma a plusieurs pages, choisissez celle à importer. Vérifiez le nom, puis touchez **Importer** : le process s'ouvre et rejoint la liste.
+Touchez le bouton **+** de la liste, puis **Fichier draw.io**, **Fichier BPMN** ou **Fichier JSON**, et choisissez le fichier dans Fichiers, iCloud Drive ou Drive. L'app vous montre ce qu'elle a lu : le nombre d'étapes et d'acteurs, les problèmes éventuels, et ce qu'elle a dû deviner (par exemple une flèche qui n'était accrochée à rien). Si le schéma a plusieurs pages, choisissez celle à importer. Vérifiez le nom, puis touchez **Importer** : le process s'ouvre et rejoint la liste.
 
 Votre schéma n'a pas besoin d'être dessiné d'une façon particulière : l'app s'appuie d'abord sur les flèches. Une étape d'où partent plusieurs flèches nommées (« oui », « non »…) est une décision, même si c'est un rectangle ; l'étape où tout commence est le départ, celles où tout s'arrête sont les fins.
 
 L'app trouve les acteurs de plusieurs façons : avec des couloirs (une bande par acteur), avec une légende de couleurs (une pastille de couleur suivie du nom de l'acteur), ou dans le texte des étapes (« Responsable : Comptabilité », « Assignee : … »). Elle garde le service plutôt que le nom des personnes.
+
+**Un schéma BPMN** (fichier `.bpmn` de Camunda, bpmn.io, Bizagi, Signavio…) se lit de la même façon : les événements de début et de fin, les tâches, les passerelles (un choix devient une décision, avec le nom ou la condition de chaque branche), et les couloirs pour les acteurs. La mise en page d'origine est gardée. Les éléments que l'app ne lit pas encore (annotations, données, messages entre participants) sont signalés. Pour essayer : `demande-achat.bpmn`. Pour en savoir plus sur BPMN : [BPMN 2.0 en bref](bpmn.md).
+
+![Import BPMN : l'aperçu de l'exemple, puis tous ses chemins dans la simulation](captures/etape-29-import-bpmn.png)
 
 ![Un schéma sans couleur ni losange : la décision, le départ et les acteurs sont trouvés](captures/etape-L1-lecture-indices.png)
 

@@ -10,7 +10,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 
 **What you can do**
 
-- **Add a process** from a draw.io or JSON file, or by **photographing a table** (step, actor, delay): the text is read on the phone by a native module (Swift with Vision on iOS, Kotlin with ML Kit on Android).
+- **Add a process** from a draw.io, BPMN 2.0 (`.bpmn`) or JSON file, or by **photographing a table** (step, actor, delay): the text is read on the phone by a native module (Swift with Vision on iOS, Kotlin with ML Kit on Android).
 - **Import an Excel or CSV table** (in progress): the workbook is read on the device, and the app says what each sheet holds (process table, workflow with SLA and OLA, form template, list). Process tables (step, actor, delay, next) are imported as processes, one per sheet. For a table the app does not recognise, you pick the header row and say which column is the step, the actor, the delay…; the app remembers those column titles for the next tables. A form template opens as the form the requester will see, cleaned of the notes meant for the team that will build it ("Name / First name" split into two fields, character-limit reminders applied to the fields instead of shown, one attachment per listed document, documents asked only when their option is ticked), and it can be corrected by hand in a form editor (rename, retype, make optional, add or remove questions, attachments and display conditions), and it can be filled in: conditional questions appear according to the answers, and sending checks required answers and formats (e-mail, date…) before showing a summary of the request. Nothing is sent. A form template alone is simulated as a form; a form with its workflow (picked together as one or two files, in the same workbook, or linked afterwards: SLA/OLA workbook, draw.io diagram or process table) is filled in first, then goes on into the process of the chosen situation, to simulate or to track for real with the answers attached. Forms can be kept on the phone (Profile, "My forms") and linked to a workflow later. In a workflow with SLA and OLA, each situation becomes a process ready to simulate (ticket, task 1 with its OLA, answer and result, escalation or not, closure by the owner), with a reading report per situation: read without ambiguity, to check or to fix, citing the cell and the question to ask the business.
 - **See what is wrong**: dead ends, unreachable steps, paths that can never finish, one-way decisions, unlabeled branches.
 - **Correct it** in an editor (steps, decisions, branches). The app learns reading rules from your corrections and reapplies them on the next imports.
@@ -26,7 +26,7 @@ Project managers and analysts who design IT service management (ITSM) workflows 
 
 - **Process**: your processes with their diagnostic status, then the sample processes in a collapsible section.
 - **Detail**: key figures, the diagnostic with a "Show" button on each problem, actors and steps; edit, export or follow a real request from here.
-- **Import**: pick a draw.io or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet. A checkbox anonymises the names (actors become Service A, B…; e-mails and chosen words are hidden), for processes as well as forms and their workflow.
+- **Import**: pick a draw.io, BPMN or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet. A checkbox anonymises the names (actors become Service A, B…; e-mails and chosen words are hidden), for processes as well as forms and their workflow.
 - **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path. The diagram can be exported as a PDF, a draw.io file or JSON, anonymised if needed.
 - **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
 - **Follow**: a real request, step by step, with each deadline in working days and the delay so far.
@@ -115,6 +115,7 @@ More detail, file by file, in [`docs/technique.md`](docs/technique.md) (French).
 - [Technical documentation](docs/technique.md) (French): architecture, structure, commands.
 - [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
 - [Security](docs/securite.md) (French): the filled-in security checklist (OWASP MASVS categories), then keys, access rules, accounts, data on the phone.
+- [BPMN 2.0 in brief](docs/bpmn.md) (French): the standard, its shapes, the `.bpmn` format, and what SimuFlow reads from it.
 - [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
 - [Web version of the app](https://mloick.github.io/SIMUFLOW/app/), [website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
 
