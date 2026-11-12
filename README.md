@@ -115,6 +115,7 @@ More detail, file by file, in [`docs/technique.md`](docs/technique.md) (French).
 - [Technical documentation](docs/technique.md) (French): architecture, structure, commands.
 - [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
 - [Security](docs/securite.md) (French): the filled-in security checklist (OWASP MASVS categories), then keys, access rules, accounts, data on the phone.
+- [BPMN 2.0 in brief](docs/bpmn.md) (French): the standard, its shapes, the `.bpmn` format, and what SimuFlow will read from it.
 - [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
 - [Web version of the app](https://mloick.github.io/SIMUFLOW/app/), [website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
 

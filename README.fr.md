@@ -115,6 +115,7 @@ Le détail, fichier par fichier, est dans [`docs/technique.md`](docs/technique.m
 - [Documentation technique](docs/technique.md) : architecture, structure, commandes.
 - [Guide des fonctionnalités](docs/fonctionnalites.md) : ce que fait l'application, en termes simples.
 - [Sécurité](docs/securite.md) : la checklist sécurité remplie (catégories OWASP MASVS), puis clés, règles d'accès, comptes, données sur le téléphone.
+- [BPMN 2.0 en bref](docs/bpmn.md) : la norme, ses formes, le format `.bpmn`, et ce que SimuFlow en lira.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, MCP) et comment nous travaillons avec.
 - [Version web de l'app](https://mloick.github.io/SIMUFLOW/app/), [site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/` et publiés par GitHub Pages.
 
