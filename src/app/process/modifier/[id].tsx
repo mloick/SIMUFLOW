@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { StateMessage } from '@/components/state-message';
@@ -23,6 +23,7 @@ import {
   type StepKind,
 } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { confirmAction } from '@/utils/confirm';
 import { plural } from '@/utils/format';
 
 const KINDS: { value: StepKind; label: string }[] = [
@@ -84,10 +85,13 @@ function Editor({ original }: { original: Process }) {
   };
   const cancel = () => {
     if (latest.current === original) return router.back();
-    Alert.alert('Abandonner les modifications ?', 'Le process restera tel qu’il était.', [
-      { text: 'Continuer à modifier', style: 'cancel' },
-      { text: 'Abandonner', style: 'destructive', onPress: () => router.back() },
-    ]);
+    confirmAction(
+      'Abandonner les modifications ?',
+      'Le process restera tel qu’il était.',
+      'Abandonner',
+      () => router.back(),
+      'Continuer à modifier',
+    );
   };
 
   return (
@@ -195,13 +199,12 @@ function StepEditor({
   };
   const remove = () => {
     const links = process.links.filter((link) => link.from === step.id || link.to === step.id).length;
-    Alert.alert(
+    confirmAction(
       `Supprimer « ${step.title || 'Sans titre'} » ?`,
       links > 0 ? `Ses ${plural(links, 'lien')} partent avec elle.` : 'Elle n’a aucun lien.',
-      [
-        { text: 'Garder', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => onChange(removeStep(process, step.id)) },
-      ],
+      'Supprimer',
+      () => onChange(removeStep(process, step.id)),
+      'Garder',
     );
   };
 

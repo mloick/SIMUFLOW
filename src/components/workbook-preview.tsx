@@ -165,7 +165,7 @@ export function WorkbookPreview({
 export function formNotice(importable: number, linked = false): string {
   const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
   if (linked) {
-    return `${local} Le formulaire et son workflow sont dans ce classeur : touchez la carte du formulaire, remplissez-le, et la situation choisie mène à son process. Chaque situation s’importe aussi seule, plus bas.`;
+    return `${local} Le formulaire et son workflow sont dans ce classeur : touchez « Remplir le formulaire », remplissez-le, et la situation choisie mène à son process, avec ses acteurs et ses délais.`;
   }
   const next = 'Touchez « Voir le formulaire » pour le remplir comme le demandeur.';
   return `${local} ${next}${importable > 0 ? '' : ' Formulaire seul : la simulation s’arrête à l’envoi, sauf si vous lui liez un workflow.'}`;

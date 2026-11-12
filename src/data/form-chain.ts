@@ -9,11 +9,15 @@ import type { DocumentPickerAsset } from 'expo-document-picker';
 import type { Process } from '@/domain';
 import { ImportError, importProcessFile } from '@/import';
 import {
+  describeWorkbook,
+  findFormLink,
+  readFormTemplate,
   readTableFile,
   situationToProcess,
   workbookToProcesses,
   workbookToSituations,
   type AnswerLine,
+  type FormTemplate,
 } from '@/import/tableau';
 import { completeStep, startTracking } from '@/tracking/tracking';
 import { readPickedBytes, readPickedFile } from '@/utils/read-file';
@@ -68,4 +72,44 @@ export async function readWorkflowFile(asset: DocumentPickerAsset): Promise<Link
   }
   const { result } = applyReadingRules(importProcessFile(asset.name, await readPickedFile(asset), prefix));
   return { kind: 'process', source: asset.name, process: result.processes[0] };
+}
+
+const TABLE_NAME = /\.(xlsx|xlsm|xls|csv)$/i;
+
+export type FormBundle = { form: FormTemplate; source: string; workflow: LinkedWorkflow | null };
+
+/**
+ * Un formulaire et son workflow, choisis ensemble : un seul classeur qui
+ * contient les deux, ou deux fichiers (le template, et le workflow en Excel,
+ * draw.io ou JSON), dans n'importe quel ordre. Le fichier qui contient un
+ * template de formulaire est le formulaire ; l'autre, son workflow.
+ */
+export async function readFormBundle(assets: DocumentPickerAsset[]): Promise<FormBundle> {
+  if (assets.length === 0) throw new ImportError('Choisissez le template du formulaire, et son workflow si vous l’avez.');
+  if (assets.length > 2) throw new ImportError('Choisissez deux fichiers au plus : le formulaire et son workflow.');
+  let found: { form: FormTemplate; asset: DocumentPickerAsset; workflow: LinkedWorkflow | null } | null = null;
+  const others: DocumentPickerAsset[] = [];
+  for (const asset of assets) {
+    if (!found && TABLE_NAME.test(asset.name)) {
+      const workbook = readTableFile(asset.name, await readPickedBytes(asset));
+      const { kind } = describeWorkbook(workbook, getLearnedHeaders());
+      const form = kind === 'formulaire' || kind === 'formulaire-workflow' ? readFormTemplate(workbook) : null;
+      if (form) {
+        const { situations } = workbookToSituations(workbook);
+        found = { form, asset, workflow: situations.length > 0 ? { kind: 'situations', source: asset.name, situations } : null };
+        continue;
+      }
+    }
+    others.push(asset);
+  }
+  if (!found) {
+    throw new ImportError('Aucun de ces fichiers n’est un template de formulaire (un classeur avec un onglet « Questions » ou « Variables »).');
+  }
+  let { workflow } = found;
+  // Un workflow dans un fichier à part passe avant celui du même classeur.
+  if (others[0]) workflow = await readWorkflowFile(others[0]);
+  if (workflow?.kind === 'situations' && !findFormLink(found.form, workflow.situations)) {
+    throw new ImportError(`Aucun choix du formulaire ne porte le nom d’une situation de « ${workflow.source} » : le lien est impossible.`);
+  }
+  return { form: found.form, source: found.asset.name, workflow };
 }
