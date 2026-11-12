@@ -10,6 +10,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ColumnPicker } from '@/components/column-picker';
+import { SituationList } from '@/components/situation-list';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { showForm } from '@/data/form-preview';
@@ -23,10 +24,13 @@ import {
   readTableFile,
   sheetGrid,
   sheetToProcessWithColumns,
+  situationsToProcesses,
   TABLE_FILE_TYPES,
   workbookToProcesses,
+  workbookToSituations,
   type ColumnChoice,
   type FormTemplate,
+  type Situation,
   type Workbook,
   type WorkbookReport,
 } from '@/import/tableau';
@@ -43,7 +47,13 @@ type FileKind = 'drawio' | 'json' | 'tableau';
 /** Préfixe unique des identifiants d'un import. */
 const newImportId = () => `import-${Date.now()}`;
 /** `applied` : les règles de lecture apprises qui ont corrigé la lecture. */
-type Picked = { fileName: string; result: ImportResult; applied: string[] };
+type Picked = {
+  fileName: string;
+  result: ImportResult;
+  applied: string[];
+  /** Index du premier process tiré d'une situation (workflow avec SLA et OLA), s'il y en a. */
+  situationsFrom?: number;
+};
 /** Tableau Excel ou CSV lu : ce que l'app y a reconnu. */
 type PickedTable = {
   fileName: string;
@@ -52,6 +62,10 @@ type PickedTable = {
   warnings: string[];
   /** Le formulaire décrit, quand le classeur est un template de formulaire. */
   form: FormTemplate | null;
+  /** Les situations des onglets « SLA / OLA » : chacune devient un process, après ceux des onglets « process ». */
+  situations: Situation[];
+  /** Lignes de situation pas encore décrites (ni SLA ni étape). */
+  skipped: number;
 };
 
 /**
@@ -114,18 +128,25 @@ export default function ImportScreen() {
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
       const learned = getLearnedHeaders();
       const report = describeWorkbook(workbook, learned);
+      const { situations, skipped } = workbookToSituations(workbook);
       setTable({
         fileName: asset.name,
         workbook,
         report,
         warnings: workbook.warnings,
         form: report.kind === 'formulaire' ? readFormTemplate(workbook) : null,
+        situations,
+        skipped,
       });
-      // Les onglets « process » deviennent des process à importer, comme les pages d'un draw.io.
-      const read = workbookToProcesses(workbook, newImportId(), learned);
+      // Les onglets « process » deviennent des process à importer, comme les pages d'un draw.io,
+      // puis chaque situation d'un workflow avec SLA et OLA.
+      const importId = newImportId();
+      const read = workbookToProcesses(workbook, importId, learned);
+      const situationsFrom = read.processes.length;
+      read.processes.push(...situationsToProcesses(situations, `${importId}-situation`).processes);
       if (read.processes.length > 0) {
         const { result, applied } = applyReadingRules(read);
-        setPicked({ fileName: asset.name, result, applied });
+        setPicked({ fileName: asset.name, result, applied, ...(situations.length > 0 ? { situationsFrom } : {}) });
         setPage(0);
         setName(result.processes[0].name);
         setNameMissing(false);
@@ -185,6 +206,9 @@ export default function ImportScreen() {
   };
 
   const pageCount = picked?.result.processes.length ?? 0;
+  /** Les situations viennent après les process des onglets « process ». */
+  const sheetPageCount = picked?.situationsFrom ?? pageCount;
+  const situationCount = pageCount - sheetPageCount;
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -301,7 +325,7 @@ export default function ImportScreen() {
           />
         )}
 
-        {picked && pageCount > 1 && (
+        {picked && (sheetPageCount > 1 || (sheetPageCount === 1 && situationCount > 0)) && (
           <View style={styles.sources}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
               {table ? 'Onglet à importer' : 'Page à importer'}
@@ -309,7 +333,7 @@ export default function ImportScreen() {
             <View
               style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
               accessibilityRole="radiogroup">
-              {picked.result.processes.map((process, index) => (
+              {picked.result.processes.slice(0, sheetPageCount).map((process, index) => (
                 <Pressable
                   key={process.id}
                   onPress={() => choosePage(index)}
@@ -337,6 +361,15 @@ export default function ImportScreen() {
               ))}
             </View>
           </View>
+        )}
+
+        {picked && table && situationCount > 0 && (
+          <SituationList
+            situations={table.situations}
+            selected={page - sheetPageCount}
+            onSelect={(index) => choosePage(sheetPageCount + index)}
+            skipped={table.skipped}
+          />
         )}
 
         {summary && (
@@ -410,7 +443,9 @@ export default function ImportScreen() {
         {picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             Fichier choisi : {picked.fileName}
-            {pageCount > 1 ? ` · ${plural(pageCount, table ? 'onglet' : 'page')}` : ''}
+            {pageCount > 1
+              ? ` · ${situationCount > 0 ? plural(pageCount, 'process', 'process') : plural(pageCount, table ? 'onglet' : 'page')}`
+              : ''}
           </ThemedText>
         )}
         {table && !picked && (

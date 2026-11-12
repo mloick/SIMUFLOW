@@ -63,7 +63,8 @@ export function WorkbookPreview({
   onShowForm?: () => void;
 }) {
   const theme = useTheme();
-  const later = report.sheets.some((sheet) => sheet.kind === 'sla-ola' || sheet.kind === 'formulaire');
+  const later = report.sheets.some((sheet) => sheet.kind === 'formulaire');
+  const situations = report.sheets.some((sheet) => sheet.kind === 'sla-ola');
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
@@ -144,7 +145,7 @@ export function WorkbookPreview({
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {form ? formNotice(importable) : importNotice(importable, later)}
+          {form ? formNotice(importable) : importNotice(importable, later, situations)}
         </ThemedText>
       </View>
     </View>
@@ -158,13 +159,17 @@ export function formNotice(importable: number): string {
   return importable > 0 ? `${local} ${next}` : `${local} ${next} Le process qui suit la demande arrive dans une prochaine version.`;
 }
 
-/** Ce qui s'importe, et ce qui viendra plus tard. */
-export function importNotice(importable: number, later: boolean): string {
+/** Ce qui s'importe, et ce qui viendra plus tard. `situations` : le classeur a des onglets « SLA / OLA ». */
+export function importNotice(importable: number, later: boolean, situations = false): string {
   const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
+  if (situations && importable > 0) {
+    return `${local} Chaque situation du workflow devient un process prêt à simuler : choisissez-la plus bas, avec son rapport de lecture.`;
+  }
   if (importable > 0) {
     return later ? `${local} Seuls les onglets « Process » s’importent pour l’instant.` : local;
   }
-  if (later) return `${local} L’import des workflows SLA / OLA et des formulaires arrive dans une prochaine version.`;
+  if (situations) return `${local} Aucune situation n’est encore décrite (ni SLA ni étape) : rien à importer.`;
+  if (later) return `${local} L’import des formulaires arrive dans une prochaine version.`;
   return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…) : touchez « Choisir les colonnes » sous un onglet pour dire à l’app où elles sont.`;
 }
 
