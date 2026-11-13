@@ -25,6 +25,7 @@ const SOURCE_TEXT: Record<ProcessSource, string> = {
   json: 'Importé depuis un fichier JSON',
   tableau: 'Importé depuis un tableau Excel ou CSV',
   bpmn: 'Importé depuis un schéma BPMN',
+  visio: 'Importé depuis un schéma Visio',
 };
 
 /**

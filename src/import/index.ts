@@ -9,6 +9,7 @@ import { parseProcessJson } from './json';
 
 export { looksLikeBpmn, parseBpmn } from './bpmn';
 export { parseDrawio } from './drawio';
+export { looksLikeVisio, parseVisio } from './visio';
 export { ImportError, type ImportResult } from './errors';
 export { parseProcessJson, processToJson } from './json';
 export {

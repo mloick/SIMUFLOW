@@ -20,7 +20,7 @@ export type ProcessRow = {
 /** Ce que l'app envoie pour créer ou modifier une ligne : la base remplit le reste (id, propriétaire, dates). */
 export type ProcessRowInput = Pick<ProcessRow, 'name' | 'source' | 'content'>;
 
-const SOURCES: ProcessSource[] = ['drawio', 'scan', 'json', 'tableau', 'bpmn'];
+const SOURCES: ProcessSource[] = ['drawio', 'scan', 'json', 'tableau', 'bpmn', 'visio'];
 
 export function toRow(process: Process): ProcessRowInput {
   return {
