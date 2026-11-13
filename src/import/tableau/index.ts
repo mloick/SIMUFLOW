@@ -38,7 +38,10 @@ export {
   answerText,
   checkAnswers,
   expectsAnswer,
+  groupOf,
+  groupText,
   isEmptyAnswer,
+  isFieldOptional,
   visibleQuestions,
   type AnswerLine,
   type FormAnswer,
@@ -62,6 +65,7 @@ export {
   removeCondition,
   removeQuestion,
   splitDocuments,
+  toggleAtLeastOne,
   typeLabel,
   updateQuestion,
 } from './modeles/edition';

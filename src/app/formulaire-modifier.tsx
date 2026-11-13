@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Dropdown } from '@/components/form-field';
+import { SymbolView } from '@/components/symbol';
 import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -25,6 +26,7 @@ import {
   removeCondition,
   removeQuestion,
   splitDocuments,
+  toggleAtLeastOne,
   typeLabel,
   updateQuestion,
   type FormQuestion,
@@ -333,6 +335,35 @@ function QuestionEditor({
                 accessibilityLabel={LIST_LABELS[kind].title}
                 multiline
               />
+              {kind === 'fields' && question.fields.filter((field) => field.trim()).length > 1 && (
+                <>
+                  <Label text="Au moins un de ces champs" />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    Cochez les champs dont un seul suffit (« N° client et/ou N° de contrat ») : dès que l’un est rempli, les autres deviennent facultatifs.
+                  </ThemedText>
+                  {question.fields
+                    .filter((field) => field.trim())
+                    .map((field) => {
+                      const checked = question.atLeastOne?.[0]?.includes(field) ?? false;
+                      return (
+                        <Pressable
+                          key={field}
+                          onPress={() => onChange(toggleAtLeastOne(form, question.n, field))}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked }}
+                          accessibilityLabel={`Au moins un : ${field}`}
+                          style={styles.switchRow}>
+                          <SymbolView
+                            name={checked ? { ios: 'checkmark.square.fill', android: 'check_box' } : { ios: 'square', android: 'check_box_outline_blank' }}
+                            size={22}
+                            tintColor={checked ? theme.primary : theme.textSecondary}
+                          />
+                          <ThemedText style={styles.flex}>{field}</ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                </>
+              )}
             </>
           )}
 

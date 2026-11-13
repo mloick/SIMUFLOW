@@ -80,6 +80,11 @@ export type FormQuestion = {
   single?: boolean;
   /** Champs à remplir annoncés dans l'explication (« Nom : », « Téléphone : »). */
   fields: string[];
+  /**
+   * Groupes de champs « et/ou » : dans chaque groupe, au moins un champ doit
+   * être rempli ; dès qu'il l'est, les autres du groupe deviennent facultatifs.
+   */
+  atLeastOne?: string[][];
   /** Documents attendus pour une pièce jointe. */
   documents: string[];
   /** Longueur maximale d'un champ, d'après un rappel « Nbre de caractères » du template. */
@@ -309,6 +314,56 @@ const OPTIONAL_DOCUMENT = /\b(uniquement|seulement|si|facultati\w*|optionnel\w*|
 /** Un choix « Autre », « Autres » ou « … (Préciser) » : la personne précise sa réponse. */
 const OTHER_OPTION = /^autres?\b|\bprecise[rz]\b/;
 
+/** « et/ou », « ou » seul sur sa ligne : les champs avant et après vont ensemble. */
+const CONNECTOR = /^(et\s*\/\s*ou|ou(\s+bien)?)$/;
+/** « N° client et/ou N° de contrat : » sur une seule ligne. */
+const INLINE_AND_OR = /\s+et\s*\/\s*ou\s+/i;
+/** Un champ à remplir : « Nom : », « Téléphone du contact : ». */
+const FIELD_LINE = /^[^:]{1,80}:\s*\**\s*$/;
+
+/** « Entrer le N° de compte : » devient « N° de compte » : la consigne n'est pas le nom du champ. */
+function fieldName(line: string): string {
+  const name = line
+    .replace(/\s*:\s*\**\s*$/, '')
+    .replace(/^(entrer|saisir|indiquer|renseigner|preciser|préciser)\s+(le|la|les|un|une|des|votre|vos|l['’])?\s*/i, '')
+    .trim();
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/**
+ * Champs d'un libellé, et groupes « et/ou » : deux lignes reliées par une
+ * ligne « et/ou » (ou « ou ») sont deux champs dont un au moins est à remplir.
+ */
+function readFields(all: string[]): { fields: string[]; groups: string[][] } {
+  const cleaned = all.map((line) => line.replace(BULLET, '').trim()).filter(Boolean);
+  const isConnector = (line: string | undefined) => line !== undefined && CONNECTOR.test(norm(line).replace(/[:.]\s*$/, '').trim());
+  const fields: string[] = [];
+  const groups: string[][] = [];
+  let group: string[] | null = null;
+  cleaned.forEach((line, index) => {
+    if (isConnector(line)) return;
+    const after = isConnector(cleaned[index - 1]) && index > 1;
+    const before = isConnector(cleaned[index + 1]) && index + 2 < cleaned.length;
+    if ((after || before) && line.length <= 100 && !/\?\s*$/.test(line)) {
+      const name = fieldName(line);
+      fields.push(name);
+      if (after && group) group.push(name);
+      else groups.push((group = [name]));
+      return;
+    }
+    group = null;
+    if (!FIELD_LINE.test(line)) return;
+    const parts = line.replace(/\s*:\s*\**\s*$/, '').split(INLINE_AND_OR).map(fieldName).filter(Boolean);
+    if (parts.length > 1) {
+      fields.push(...parts);
+      groups.push(parts);
+    } else {
+      fields.push(...splitField(fieldName(line)));
+    }
+  });
+  return { fields, groups: groups.filter((item) => item.length > 1) };
+}
+
 /** « Nom / Prénom du contact » : deux champs. */
 function splitField(field: string): string[] {
   const match = /^(nom|prenom)\s*\/\s*(nom|prenom)\b\s*(.*)$/i.exec(field.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
@@ -368,7 +423,7 @@ function readExplanation(type: QuestionType, explanation: string) {
   const stop = every.findIndex((line) => REMINDER.test(norm(line)));
   const all = stop >= 0 ? every.slice(0, stop) : every;
   const reminder = stop >= 0 ? every.slice(stop) : [];
-  const empty = { options: [] as string[], fields: [] as string[], documents: [] as string[], reminder, limits: {} as Record<string, number> };
+  const empty = { options: [] as string[], fields: [] as string[], documents: [] as string[], groups: [] as string[][], reminder, limits: {} as Record<string, number> };
   const bullets = (from: string[]) => from.filter((line) => BULLET.test(line)).map((line) => line.replace(BULLET, '').trim());
   if (type === 'select' || type === 'checkbox' || type === 'scale' || type === 'list') {
     const end = all.findIndex((line) => CASES_START.test(norm(line)));
@@ -385,13 +440,9 @@ function readExplanation(type: QuestionType, explanation: string) {
     return empty;
   }
   if (type === 'attachment') return { ...empty, documents: bullets(all) };
-  // « Nom : », « Téléphone du contact : » : un champ à remplir.
-  const fields = all
-    .map((line) => line.replace(BULLET, '').trim())
-    .filter((line) => /^[^:]{1,80}:\s*\**\s*$/.test(line))
-    .map((line) => line.replace(/\s*:\s*\**\s*$/, '').trim())
-    .flatMap(splitField);
-  return { ...empty, fields, limits: fieldLimits(fields, readLimits(reminder)) };
+  // « Nom : », « Téléphone du contact : » : un champ à remplir ; « A et/ou B » : un des deux au moins.
+  const { fields, groups } = readFields(all);
+  return { ...empty, fields, groups, limits: fieldLimits(fields, readLimits(reminder)) };
 }
 
 /** « Si Question 2 = Cas 3 », « Afficher si question 5 est Oui ». */
@@ -478,6 +529,7 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       options,
       ...(single ? { single } : {}),
       fields,
+      ...(read.groups.length > 0 ? { atLeastOne: read.groups } : {}),
       documents,
       ...(Object.keys(read.limits).length > 0 ? { limits: read.limits } : {}),
       help: help ?? null,

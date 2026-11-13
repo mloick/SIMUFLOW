@@ -6,7 +6,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { FormAnswer, FormQuestion } from '@/import/tableau';
+import { groupOf, groupText, isFieldOptional, type FormAnswer, type FormQuestion } from '@/import/tableau';
 
 export type { FormAnswer };
 
@@ -220,10 +220,25 @@ export function FormField({
 
       {(question.type === 'label' || question.type === 'richlabel') &&
         (question.fields.length > 0 ? (
-          question.fields.map((field) => (
+          question.fields.map((field) => {
+            const group = question.mandatory ? groupOf(question, field) : undefined;
+            const optional = group !== undefined && isFieldOptional(question, field, fieldValues);
+            const empty = !(fieldValues[field] ?? '').trim();
+            return (
             <View key={field} style={styles.subfield}>
+              {group?.[0] === field && (
+                <ThemedText type="small" themeColor="textSecondary" style={styles.groupNote}>
+                  Remplissez au moins l’un {group.length === 2 ? 'des deux' : 'de ces champs'} : {groupText(group)}.
+                </ThemedText>
+              )}
               <ThemedText type="small">
                 {field}
+                {question.mandatory && !optional && <ThemedText type="small" style={{ color: theme.danger }}> *</ThemedText>}
+                {group && optional && empty && (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {' (facultatif)'}
+                  </ThemedText>
+                )}
                 {question.limits?.[field] ? (
                   <ThemedText type="small" themeColor="textSecondary">
                     {` · ${question.limits[field]} caractères au plus`}
@@ -235,11 +250,19 @@ export function FormField({
                 onChangeText={(next) => onChange({ ...fieldValues, [field]: next })}
                 maxLength={question.limits?.[field]}
                 accessibilityLabel={`${title} : ${field}`}
-                accessibilityHint={question.limits?.[field] ? `${question.limits[field]} caractères au plus` : undefined}
+                accessibilityHint={
+                  [
+                    question.limits?.[field] ? `${question.limits[field]} caractères au plus` : null,
+                    group ? (optional ? 'Facultatif' : `Au moins l’un de ces champs : ${groupText(group)}`) : null,
+                  ]
+                    .filter(Boolean)
+                    .join('. ') || undefined
+                }
                 style={inputStyle}
               />
             </View>
-          ))
+            );
+          })
         ) : question.explanation ? (
           <ThemedText type="small" themeColor="textSecondary">
             {question.explanation}
@@ -405,6 +428,7 @@ export function Dropdown({
 }
 
 const styles = StyleSheet.create({
+  groupNote: { fontStyle: 'italic', marginBottom: Spacing.one },
   question: { gap: Spacing.two },
   label: { fontSize: 16 },
   help: { fontStyle: 'italic' },

@@ -6,6 +6,7 @@ import {
   answerSummary,
   checkAnswers,
   expectsAnswer,
+  isFieldOptional,
   readFormTemplate,
   readTableFile,
   visibleQuestions,
@@ -67,7 +68,7 @@ describe('questions affichées', () => {
 describe('vérification avant l’envoi', () => {
   it('signale les réponses obligatoires manquantes des seules questions affichées', () => {
     expect([...checkAnswers(template.questions, {}).entries()]).toEqual([
-      [1, 'Remplissez tous les champs.'],
+      [1, 'Remplissez les champs, dont au moins l’un de ceux-ci : N° de dossier ou N° de contrat.'],
       [2, 'Réponse obligatoire.'],
       [3, 'Réponse obligatoire.'],
       [5, 'Réponse obligatoire.'],
@@ -79,7 +80,22 @@ describe('vérification avant l’envoi', () => {
   });
 
   it('demande tous les champs d’un libellé obligatoire', () => {
-    expect(checkAnswers(template.questions, { ...complete, 1: { 'Nom du demandeur': 'Martin' } }).get(1)).toBe('Remplissez tous les champs.');
+    expect(checkAnswers(template.questions, { ...complete, 1: { 'N° de dossier': 'D-001', 'Nom du demandeur': 'Martin' } }).get(1)).toBe(
+      'Remplissez tous les champs.',
+    );
+  });
+
+  it('demande au moins l’un des champs « et/ou », puis rend l’autre facultatif', () => {
+    const coordonnees = template.questions[0];
+    const people = { 'Nom du demandeur': 'Martin', 'Prénom du demandeur': 'Paul', Téléphone: '0600000000' };
+    expect(checkAnswers(template.questions, { ...complete, 1: people }).get(1)).toBe(
+      'Remplissez au moins l’un de ces champs : N° de dossier ou N° de contrat.',
+    );
+    expect(isFieldOptional(coordonnees, 'N° de contrat', people)).toBe(false);
+    const withContract = { ...people, 'N° de contrat': 'C-42' };
+    expect(checkAnswers(template.questions, { ...complete, 1: withContract }).get(1)).toBeUndefined();
+    expect(isFieldOptional(coordonnees, 'N° de dossier', withContract)).toBe(true);
+    expect(checkAnswers(template.questions, { ...complete, 1: { ...withContract, 'N° de dossier': 'D-001' } }).get(1)).toBeUndefined();
   });
 
   it('vérifie le format des e-mails, adresses web, IP et dates', () => {

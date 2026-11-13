@@ -50,6 +50,26 @@ export function isEmptyAnswer(question: FormQuestion, answer: FormAnswer | undef
   return question.fields.every((field) => !(answer[field] ?? '').trim());
 }
 
+const filled = (answer: FormAnswer | undefined, field: string) =>
+  typeof answer === 'object' && !Array.isArray(answer) && (answer[field] ?? '').trim() !== '';
+
+/** Le groupe « au moins un » d'un champ, s'il en a un. */
+export function groupOf(question: FormQuestion, field: string): string[] | undefined {
+  return question.atLeastOne?.find((group) => group.includes(field));
+}
+
+/** Le champ peut-il rester vide ? Oui si la question est facultative, ou si un autre champ de son groupe est rempli. */
+export function isFieldOptional(question: FormQuestion, field: string, answer: FormAnswer | undefined): boolean {
+  if (!question.mandatory) return true;
+  const group = groupOf(question, field);
+  return group !== undefined && group.some((other) => other !== field && filled(answer, other));
+}
+
+/** « A ou B », « A, B ou C ». */
+export function groupText(group: string[]): string {
+  return group.length < 2 ? (group[0] ?? '') : `${group.slice(0, -1).join(', ')} ou ${group.at(-1)}`;
+}
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL = /^https?:\/\/[^\s.]+\.[^\s]+$/i;
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
@@ -69,12 +89,17 @@ export function answerProblem(question: FormQuestion, answer: FormAnswer | undef
   if (!expectsAnswer(question)) return null;
   if (isEmptyAnswer(question, answer)) {
     if (!question.mandatory) return null;
-    if (question.type === 'label' || question.type === 'richlabel') return 'Remplissez tous les champs.';
+    if (question.type === 'label' || question.type === 'richlabel') {
+      const group = question.atLeastOne?.[0];
+      return group ? `Remplissez les champs, dont au moins l’un de ceux-ci : ${groupText(group)}.` : 'Remplissez tous les champs.';
+    }
     if (question.type === 'attachment') return 'Ajoutez au moins un fichier.';
     return 'Réponse obligatoire.';
   }
   if (question.mandatory && (question.type === 'label' || question.type === 'richlabel') && typeof answer === 'object' && !Array.isArray(answer)) {
-    if (question.fields.some((field) => !(answer[field] ?? '').trim())) return 'Remplissez tous les champs.';
+    const empty = question.atLeastOne?.find((group) => group.every((field) => !filled(answer, field)));
+    if (empty) return `Remplissez au moins l’un de ces champs : ${groupText(empty)}.`;
+    if (question.fields.some((field) => !filled(answer, field) && !isFieldOptional(question, field, answer))) return 'Remplissez tous les champs.';
   }
   if (typeof answer !== 'string') return null;
   const text = answer.trim();
