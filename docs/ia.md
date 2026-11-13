@@ -1,6 +1,6 @@
 # Développer SimuFlow avec l'IA
 
-SimuFlow est développé avec Claude Code (Anthropic). Ce document dit ce qui a guidé l'IA, comment nous avons travaillé ensemble, et ce que je vérifie moi-même. État au 31 octobre 2026 : près de 60 pull requests, 216 tests automatiques.
+SimuFlow est développé avec Claude Code (Anthropic). Ce document dit ce qui a guidé l'IA, comment nous avons travaillé ensemble, et ce que je vérifie moi-même. État au 13 novembre 2026 : plus de 85 pull requests, 386 tests automatiques.
 
 ## Les outils
 
@@ -62,11 +62,12 @@ Je donne la direction en une phrase, souvent dictée ; les règles détaillées 
 - **Modèle d'e-mail Supabase** : le premier plan du mot de passe oublié reposait sur un code à 6 chiffres, mais l'offre gratuite de Supabase ne permet pas de modifier l'e-mail. Vu sur ma capture du tableau de bord ; Claude est passé à un lien qui rouvre l'app.
 - **Règle du mot de passe** : l'app demandait 8 caractères, mais j'avais choisi dans Supabase d'exiger aussi minuscule, majuscule, chiffre et symbole. Vu sur ma capture ; l'app a été alignée.
 - **Documentation Expo injoignable** depuis l'environnement de Claude : il lit alors les types des paquets installés (`node_modules`), qui correspondent exactement à la version du projet.
+- **Documentation qui dérive** : malgré la règle de `CLAUDE.md` et le robot de documentation, des phrases étaient restées périmées (export BPMN absent de la structure, module natif dit « futur », un message de l'app qui annonçait les formulaires « dans une prochaine version »). Vu lors d'une relecture complète du dépôt le 13 novembre ; corrigé et la documentation réorganisée.
 - **Captures prises sur la version web** : elles montrent la mise en page, pas le rendu exact de l'iPhone (icônes système absentes). Le test sur le téléphone reste nécessaire.
 
 ## Ce que je vérifie moi-même
 
 - Le comportement sur le téléphone : iPhone, mode sombre, VoiceOver, grands textes, appareil photo, notifications.
-- Les données dans Supabase (comptes, tables `processes` et `reading_rules`), avec deux comptes.
+- Les données dans Supabase (comptes, tables `processes`, `reading_rules` et `saved_forms`), avec deux comptes.
 - Les captures et la documentation avant chaque fusion.
 - L'icône et l'écran de démarrage : Claude les produit à partir du tracé du logo que j'ai choisi, sans IA générative d'images.
