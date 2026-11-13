@@ -155,11 +155,14 @@ export function FormField({
 
       {question.type === 'checkbox' &&
         (question.options.length > 0 ? (
-          <Checkboxes
-            options={question.options}
-            checked={checked}
-            onChange={onChange}
-          />
+          <>
+            {question.options.length > 1 && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {question.single ? 'Un seul choix possible' : 'Plusieurs choix possibles'}
+              </ThemedText>
+            )}
+            <Checkboxes options={question.options} checked={checked} onChange={onChange} single={question.single} />
+          </>
         ) : (
           <Checkboxes options={[title]} checked={checked} onChange={onChange} />
         ))}
@@ -292,29 +295,47 @@ function Choices({
   );
 }
 
+/**
+ * Cases à cocher. Avec `single`, un seul choix à la fois (boutons radio) :
+ * cocher un choix décoche l'autre ; la réponse reste une liste, d'un choix.
+ */
 function Checkboxes({
   options,
   checked,
   onChange,
+  single,
 }: {
   options: string[];
   checked: string[];
   onChange: (value: string[]) => void;
+  single?: boolean;
 }) {
   const theme = useTheme();
+  const toggle = (option: string, on: boolean) => {
+    if (on) onChange(checked.filter((item) => item !== option));
+    else onChange(single ? [option] : [...checked, option]);
+  };
+  const icon = (on: boolean) =>
+    single
+      ? on
+        ? ({ ios: 'largecircle.fill.circle', android: 'radio_button_checked' } as const)
+        : ({ ios: 'circle', android: 'radio_button_unchecked' } as const)
+      : on
+        ? ({ ios: 'checkmark.square.fill', android: 'check_box' } as const)
+        : ({ ios: 'square', android: 'check_box_outline_blank' } as const);
   return (
-    <View style={styles.options}>
+    <View style={styles.options} accessibilityRole={single ? 'radiogroup' : undefined}>
       {options.map((option) => {
         const on = checked.includes(option);
         return (
           <Pressable
             key={option}
-            onPress={() => onChange(on ? checked.filter((item) => item !== option) : [...checked, option])}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: on }}
+            onPress={() => toggle(option, on)}
+            accessibilityRole={single ? 'radio' : 'checkbox'}
+            accessibilityState={single ? { selected: on } : { checked: on }}
             style={styles.option}>
             <SymbolView
-              name={on ? { ios: 'checkmark.square.fill', android: 'check_box' } : { ios: 'square', android: 'check_box_outline_blank' }}
+              name={icon(on)}
               size={22}
               tintColor={on ? theme.primary : theme.textSecondary}
             />

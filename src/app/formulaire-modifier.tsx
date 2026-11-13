@@ -252,6 +252,7 @@ function QuestionEditor({
             {[
               question.partOf !== undefined ? `↳ complément de ${question.partOf}` : null,
               typeLabel(question.type),
+              question.type === 'checkbox' && question.single ? 'un seul choix' : null,
               question.conditions.length > 0 ? 'conditionnelle' : null,
             ]
               .filter(Boolean)
@@ -299,6 +300,23 @@ function QuestionEditor({
               trackColor={{ true: theme.primary }}
             />
           </View>
+
+          {question.type === 'checkbox' && (
+            <View style={styles.switchRow}>
+              <View style={styles.flex}>
+                <ThemedText>Plusieurs choix possibles</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {question.single ? 'Une seule case peut être cochée.' : 'On peut cocher plusieurs cases.'}
+                </ThemedText>
+              </View>
+              <Switch
+                value={!question.single}
+                onValueChange={(many) => update({ single: many ? undefined : true })}
+                accessibilityLabel="Plusieurs choix possibles"
+                trackColor={{ true: theme.primary }}
+              />
+            </View>
+          )}
 
           {kind && (
             <>
