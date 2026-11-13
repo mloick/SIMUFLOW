@@ -77,4 +77,15 @@ describe('FormEditorScreen', () => {
     expect(form.questions[3]).toMatchObject({ label: 'Pièce jointe', type: 'attachment', partOf: 3, mandatory: false });
     expect(form.questions).toHaveLength(template.questions.length + 1);
   });
+
+  it('règle des cases à cocher sur un seul choix', async () => {
+    showForm(template, { source: 'template-formulaire.xlsx' });
+    await render(<FormEditorScreen />);
+    // Question 5 : « Quel changement souhaitez-vous ? » (cases à cocher).
+    await fireEvent.press(screen.getAllByText('Modifier')[4]);
+    await fireEvent(screen.getByLabelText('Plusieurs choix possibles'), 'valueChange', false);
+    expect(screen.getByText('Une seule case peut être cochée.')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(getShownForm()!.form.questions[4]).toMatchObject({ type: 'checkbox', single: true });
+  });
 });

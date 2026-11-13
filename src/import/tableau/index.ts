@@ -22,6 +22,7 @@ export { readCsv, readXlsx };
 export {
   isQuestionVisible,
   QUESTION_TYPE_LABELS,
+  isSingleChoice,
   questionType,
   readFormTemplate,
   type FormCondition,

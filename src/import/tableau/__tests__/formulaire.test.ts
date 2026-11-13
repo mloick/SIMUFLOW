@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { lireExemple } from '../../../../jest/lire-exemple';
-import { isQuestionVisible, questionType, readFormTemplate, readTableFile, type Sheet, type Workbook } from '..';
+import { isQuestionVisible, isSingleChoice, questionType, readFormTemplate, readTableFile, type Sheet, type Workbook } from '..';
 
 const exemple = () => readFormTemplate(readTableFile('template-formulaire.xlsx', lireExemple('template-formulaire.xlsx')))!;
 const sheet = (name: string, rows: string[][]): Sheet => ({ name, rows, merges: [] });
@@ -155,6 +155,27 @@ describe('cas particuliers', () => {
       [],
       [{ question: 2, equals: 'Oui' }],
       [{ question: 2, equals: 'Non' }],
+    ]);
+  });
+
+  it('distingue les cases à choix unique des cases à choix multiples', () => {
+    expect(['Bouton radio', 'Choix unique', 'Multiple Choice', 'Case à cocher (un seul choix)'].map((text) => [questionType(text), isSingleChoice(text)])).toEqual([
+      ['checkbox', true],
+      ['checkbox', true],
+      ['checkbox', true],
+      ['checkbox', true],
+    ]);
+    expect(isSingleChoice('Case à cocher')).toBe(false);
+    expect(isSingleChoice('Cases à cocher, plusieurs réponses')).toBe(false);
+    expect(isSingleChoice('Case à cocher', 'Cochez une seule réponse')).toBe(true);
+    const template = questions([
+      ['Question', 'Type', 'Obligatoire', 'Valeurs'],
+      ['Lien entre les sociétés', 'Bouton radio', 'Oui', 'Filiale, Fusion'],
+      ['Documents fournis', 'Case à cocher', 'Non', 'Contrat, Facture'],
+    ]);
+    expect(template.questions.map(({ type, single }) => [type, single])).toEqual([
+      ['checkbox', true],
+      ['checkbox', undefined],
     ]);
   });
 

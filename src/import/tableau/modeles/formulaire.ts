@@ -76,6 +76,8 @@ export type FormQuestion = {
   explanation: string | null;
   /** Choix d'un menu déroulant, de cases à cocher ou d'une échelle. */
   options: string[];
+  /** Cases à cocher où un seul choix est possible (boutons radio). Sans ce drapeau, plusieurs choix sont possibles. */
+  single?: boolean;
   /** Champs à remplir annoncés dans l'explication (« Nom : », « Téléphone : »). */
   fields: string[];
   /** Documents attendus pour une pièce jointe. */
@@ -137,6 +139,19 @@ const lines = (text: string) =>
 
 const BULLET = /^[-•*–·]\s*/;
 
+/**
+ * Un seul choix possible ? Oui pour des boutons radio, un « choix unique », le
+ * « Multiple Choice » des outils de tickets (une seule réponse parmi
+ * plusieurs), ou une explication qui dit « une seule réponse » ; sinon,
+ * plusieurs cases peuvent être cochées.
+ */
+export function isSingleChoice(typeText: string, explanation = ''): boolean {
+  const format = norm(typeText);
+  if (/plusieurs|multiples?\s*(reponses|choix)|cases a cocher multiples|multi.?select/.test(format)) return false;
+  if (/radio|choix unique|choix multiple|multiple choice|un seul|une seule/.test(format)) return true;
+  return /\b(un seul (choix|element)|une seule (reponse|case|option))\b/.test(norm(explanation));
+}
+
 /** Type d'une question d'après son format, en français ou en anglais. */
 export function questionType(text: string): QuestionType | null {
   const plain = norm(text);
@@ -145,7 +160,7 @@ export function questionType(text: string): QuestionType | null {
     [/piece jointe|attachment/, 'attachment'],
     [/^pause|^break/, 'break'],
     [/contenant|container|division|^debut|^fin\b/, 'container'],
-    [/case a cocher|checkbox/, 'checkbox'],
+    [/case a cocher|checkbox|bouton radio|radio|choix (unique|multiple)|multiple choice/, 'checkbox'],
     [/date et heure|date\s*\/\s*time|date time/, 'datetime'],
     [/^date/, 'date'],
     [/e-?mail/, 'email'],
@@ -452,6 +467,7 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
     if (type === 'select' && options.length === 0) {
       warn('orange', `Menu déroulant « ${name.split('\n')[0]} » sans choix.`, record.cell, 'Quels choix le menu propose-t-il ?');
     }
+    const single = type === 'checkbox' && isSingleChoice(typeText, explanation);
     const question: FormQuestion = {
       n,
       label: name,
@@ -460,6 +476,7 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       mandatory: isYes(mandatory),
       explanation: explanation || null,
       options,
+      ...(single ? { single } : {}),
       fields,
       documents,
       ...(Object.keys(read.limits).length > 0 ? { limits: read.limits } : {}),

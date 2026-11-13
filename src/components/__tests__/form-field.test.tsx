@@ -52,6 +52,24 @@ describe('FormField', () => {
     expect(onChange).toHaveBeenCalledWith('Cas 2');
   });
 
+  it('ne garde qu’un choix quand une seule case peut être cochée', async () => {
+    const onChange = jest.fn();
+    await render(
+      <FormField
+        question={question({ label: 'Lien', type: 'checkbox', single: true, options: ['Filiale', 'Fusion', 'Autre'] })}
+        questions={[]}
+        value={['Filiale']}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText('Un seul choix possible')).toBeOnTheScreen();
+    expect(screen.getAllByRole('radio')).toHaveLength(3);
+    await fireEvent.press(screen.getByText('Fusion'));
+    expect(onChange).toHaveBeenLastCalledWith(['Fusion']);
+    await fireEvent.press(screen.getByText('Filiale'));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
   it('coche et décoche des cases', async () => {
     const onChange = jest.fn();
     await render(
