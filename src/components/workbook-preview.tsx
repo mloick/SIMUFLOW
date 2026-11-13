@@ -66,7 +66,7 @@ export function WorkbookPreview({
   linkedSituations?: number;
 }) {
   const theme = useTheme();
-  const later = report.sheets.some((sheet) => sheet.kind === 'formulaire');
+  const partialForm = report.sheets.some((sheet) => sheet.kind === 'formulaire');
   const situations = report.sheets.some((sheet) => sheet.kind === 'sla-ola');
   return (
     <View style={styles.section}>
@@ -154,7 +154,7 @@ export function WorkbookPreview({
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {form ? formNotice(importable, linkedSituations > 0) : importNotice(importable, later, situations)}
+          {form ? formNotice(importable, linkedSituations > 0) : importNotice(importable, partialForm, situations)}
         </ThemedText>
       </View>
     </View>
@@ -171,17 +171,25 @@ export function formNotice(importable: number, linked = false): string {
   return `${local} ${next}${importable > 0 ? '' : ' Formulaire seul : la simulation s’arrête à l’envoi, sauf si vous lui liez un workflow.'}`;
 }
 
-/** Ce qui s'importe, et ce qui viendra plus tard. `situations` : le classeur a des onglets « SLA / OLA ». */
-export function importNotice(importable: number, later: boolean, situations = false): string {
+/**
+ * Ce qui s'importe. `partialForm` : le classeur a des onglets de template de formulaire,
+ * mais aucun formulaire n'a pu y être lu (pas d'onglet « Questions »).
+ * `situations` : le classeur a des onglets « SLA / OLA ».
+ */
+export function importNotice(importable: number, partialForm: boolean, situations = false): string {
   const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
   if (situations && importable > 0) {
     return `${local} Chaque situation du workflow devient un process prêt à simuler : choisissez-la plus bas, avec son rapport de lecture.`;
   }
   if (importable > 0) {
-    return later ? `${local} Seuls les onglets « Process » s’importent pour l’instant.` : local;
+    return partialForm
+      ? `${local} Aucun formulaire n’a été lu (onglet « Questions » introuvable) : seuls les onglets « Process » s’importent.`
+      : local;
   }
   if (situations) return `${local} Aucune situation n’est encore décrite (ni SLA ni étape) : rien à importer.`;
-  if (later) return `${local} L’import des formulaires arrive dans une prochaine version.`;
+  if (partialForm) {
+    return `${local} Ce classeur ressemble à un template de formulaire, mais son onglet « Questions » est introuvable : aucun formulaire n’a pu être lu.`;
+  }
   return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…) : touchez « Choisir les colonnes » sous un onglet pour dire à l’app où elles sont.`;
 }
 
