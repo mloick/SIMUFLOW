@@ -105,7 +105,7 @@ def template(nom="template-formulaire.xlsx"):
         ["Le demandeur est-il obligé d'y répondre ?", "Impossible d'envoyer sans les questions obligatoires",
          "oui", "oui", "oui", "oui", "oui", "oui", "oui", "oui", "non", "oui", "oui"],
         ["Explication de la question / Type", "Choix d'un menu déroulant ou de cases à cocher",
-         "N° de dossier :\nNom / Prénom du demandeur :\nTéléphone :",
+         "Entrer le N° de dossier\net/ou\nEntrer un N° de contrat :\nNom / Prénom du demandeur :\nTéléphone :",
          "- Cas 1\n- Cas 2\n- Cas 3\n- Cas 4\n- Cas 5\n- Cas 6",
          None,
          "Nom du signataire :\nFonction :",

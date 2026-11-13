@@ -52,7 +52,8 @@ describe('template d’exemple', () => {
       [21, 'text', true],
     ]);
     const [coordonnees, situation, , , changement, adresse, , , domicile, , , date] = template.questions;
-    expect(coordonnees.fields).toEqual(['N° de dossier', 'Nom du demandeur', 'Prénom du demandeur', 'Téléphone']);
+    expect(coordonnees.fields).toEqual(['N° de dossier', 'N° de contrat', 'Nom du demandeur', 'Prénom du demandeur', 'Téléphone']);
+    expect(coordonnees.atLeastOne).toEqual([['N° de dossier', 'N° de contrat']]);
     expect(situation.options).toEqual(['Cas 1', 'Cas 2', 'Cas 3', 'Cas 4', 'Cas 5', 'Cas 6']);
     expect(situation.help).toBe('Choisissez la situation qui correspond à votre demande');
     expect(changement.options).toEqual(["MOTIF 1 : Changement d'adresse", 'MOTIF 2 : Changement de contact']);
@@ -234,6 +235,20 @@ describe('cas particuliers', () => {
     expect(vide.questions).toEqual([]);
     expect(vide.warnings[0].message).toBe('Aucune question remplie : le template est encore vide.');
     expect(readFormTemplate(workbook(sheet('Feuil1', [['a']])))).toBeNull();
+  });
+
+  it('lit « et/ou » comme des champs dont un au moins est à remplir', () => {
+    const template = questions([
+      ['', 'Question 1', 'Question 2'],
+      ['Nom de la question', 'Coordonnées', 'Contrat'],
+      ['Format', 'Libellé', 'Libellé'],
+      ['Explication', 'Entrer le N° client\net/ou\nEntrer un N° de commande :\n- Fonction :', 'N° de contrat et/ou N° de facture :\nSaisir votre email :'],
+    ]);
+    const [coordonnees, contrat] = template.questions;
+    expect(coordonnees.fields).toEqual(['N° client', 'N° de commande', 'Fonction']);
+    expect(coordonnees.atLeastOne).toEqual([['N° client', 'N° de commande']]);
+    expect(contrat.fields).toEqual(['N° de contrat', 'N° de facture', 'Email']);
+    expect(contrat.atLeastOne).toEqual([['N° de contrat', 'N° de facture']]);
   });
 
   it('reconnaît les formats en français et en anglais', () => {

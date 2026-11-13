@@ -103,6 +103,19 @@ describe('FormField', () => {
     expect(screen.getByText('• Pièce d’identité')).toBeOnTheScreen();
   });
 
+  it('demande au moins l’un des champs « et/ou » et rend l’autre facultatif', async () => {
+    const coordonnees = question({ label: 'Coordonnées', type: 'label', mandatory: true, fields: ['N° client', 'N° de contrat', 'Nom'], atLeastOne: [['N° client', 'N° de contrat']] });
+    const view = await render(<FormField question={coordonnees} questions={[]} value={{}} onChange={() => {}} />);
+    expect(screen.getByText('Remplissez au moins l’un des deux : N° client ou N° de contrat.')).toBeOnTheScreen();
+    // L'astérisque de la question, puis un par champ.
+    expect(screen.getAllByText(' *')).toHaveLength(4);
+    expect(screen.queryByText(' (facultatif)')).toBeNull();
+    await view.rerender(<FormField question={coordonnees} questions={[]} value={{ 'N° client': 'C-1' }} onChange={() => {}} />);
+    expect(screen.getByText(' (facultatif)')).toBeOnTheScreen();
+    // Le champ resté vide du groupe perd son astérisque.
+    expect(screen.getAllByText(' *')).toHaveLength(3);
+  });
+
   it('dit quand une question ne s’affiche que sous condition', async () => {
     const questions = [
       question({ n: 1, label: 'Êtes-vous le signataire ?', type: 'yesno' }),

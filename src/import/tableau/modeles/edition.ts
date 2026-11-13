@@ -221,6 +221,25 @@ export function removeCondition(form: FormTemplate, n: number, index: number): F
   return updateQuestion(form, n, { conditions: question.conditions.filter((_, position) => position !== index) });
 }
 
+/** Groupes « au moins un » dont les champs existent encore ; sans groupe de deux champs ou plus, rien. */
+function keepGroups(groups: string[][] | undefined, fields: string[]): string[][] | undefined {
+  const kept = (groups ?? []).map((group) => group.filter((field) => fields.includes(field))).filter((group) => group.length > 1);
+  return kept.length > 0 ? kept : undefined;
+}
+
+/**
+ * Coche ou décoche un champ dans le groupe « Au moins un de ces champs » de la
+ * question (le premier groupe ; les autres restent tels quels).
+ */
+export function toggleAtLeastOne(form: FormTemplate, n: number, field: string): FormTemplate {
+  const question = form.questions.find((item) => item.n === n);
+  if (!question) return form;
+  const [first = [], ...others] = question.atLeastOne ?? [];
+  const group = first.includes(field) ? first.filter((item) => item !== field) : question.fields.filter((item) => item === field || first.includes(item));
+  const groups = group.length > 0 ? [group, ...others] : others;
+  return updateQuestion(form, n, { atLeastOne: groups.length > 0 ? groups : undefined });
+}
+
 /** Avant d'enregistrer : retire les lignes vides des listes et les espaces autour des intitulés. */
 export function cleanForm(form: FormTemplate): FormTemplate {
   const clean = (items: string[]) => items.map((item) => item.trim()).filter(Boolean);
@@ -231,6 +250,7 @@ export function cleanForm(form: FormTemplate): FormTemplate {
       label: question.label.trim() || 'Question sans titre',
       options: clean(question.options),
       fields: clean(question.fields),
+      atLeastOne: keepGroups(question.atLeastOne, clean(question.fields)),
       documents: clean(question.documents),
       help: question.help?.trim() || null,
     })),

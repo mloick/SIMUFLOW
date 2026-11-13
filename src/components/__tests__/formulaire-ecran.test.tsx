@@ -33,7 +33,8 @@ describe('FormScreen', () => {
 
     await fireEvent.press(screen.getByText('Envoyer la demande'));
     expect(screen.getByText('6 réponses à corriger avant l’envoi.')).toBeOnTheScreen();
-    expect(screen.getAllByText('Remplissez tous les champs.')).toHaveLength(2);
+    expect(screen.getByText('Remplissez les champs, dont au moins l’un de ceux-ci : N° de dossier ou N° de contrat.')).toBeOnTheScreen();
+    expect(screen.getByText('Remplissez tous les champs.')).toBeOnTheScreen();
     expect(getSentAnswers()).toBeNull();
   });
 

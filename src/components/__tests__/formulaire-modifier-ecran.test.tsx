@@ -88,4 +88,16 @@ describe('FormEditorScreen', () => {
     await fireEvent.press(screen.getByText('Enregistrer'));
     expect(getShownForm()!.form.questions[4]).toMatchObject({ type: 'checkbox', single: true });
   });
+
+  it('choisit les champs dont un seul suffit', async () => {
+    showForm(template, { source: 'template-formulaire.xlsx' });
+    await render(<FormEditorScreen />);
+    // Question 1 : « Coordonnées du demandeur », lue avec « N° de dossier et/ou N° de contrat ».
+    await fireEvent.press(screen.getAllByText('Modifier')[0]);
+    expect(screen.getByLabelText('Au moins un : N° de dossier')).toBeChecked();
+    await fireEvent.press(screen.getByLabelText('Au moins un : N° de contrat'));
+    await fireEvent.press(screen.getByLabelText('Au moins un : Téléphone'));
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    expect(getShownForm()!.form.questions[0].atLeastOne).toEqual([['N° de dossier', 'Téléphone']]);
+  });
 });
