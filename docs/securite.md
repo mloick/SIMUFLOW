@@ -1,10 +1,10 @@
 # Sécurité
 
-Ce document rassemble les mesures de sécurité de SimuFlow : d'abord la checklist remplie, point par point, puis le détail de chaque mesure.
+Ce document rassemble les mesures de sécurité de SimuFlow : d'abord la checklist remplie, point par point, puis le détail de chaque mesure. En une phrase : l'app ne contient aucun secret, et tout ce qui protège les données d'un compte est appliqué par le serveur.
 
 ## Checklist sécurité
 
-La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité des apps mobiles), complétées par le backend et le dépôt. État au 31 octobre 2026.
+La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité des apps mobiles), complétées par le backend et le dépôt. Établie le 31 octobre 2026, mise à jour le 13 novembre 2026 (formats d'import, formulaires gardés, version web).
 
 ✅ fait et vérifié · ⚠️ à améliorer (voir plus bas) · ➖ sans objet pour SimuFlow
 
@@ -18,7 +18,8 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Données du compte retirées du téléphone à la déconnexion et à la suppression du compte | ✅ | `cloud-sync.ts` vide les copies du compte ; testé avec deux comptes sur le même téléphone |
 | Sauvegarde Android (`allowBackup`) exclue pour les données sensibles | ✅ | `android.allowBackup: false` dans `app.json` : aucune donnée de l'app n'est copiée dans la sauvegarde Google |
 | Pas de données personnelles dans les journaux | ✅ | Les `console.warn` ne montrent que des codes d'erreur, et la plupart seulement en développement (`__DEV__`) |
-| Photos du Scanner jamais envoyées | ✅ | Lecture sur le téléphone (Vision, ML Kit), image dans le dossier temporaire |
+| Photos du Scanner jamais envoyées | ✅ | Lecture sur le téléphone (Vision, ML Kit), image dans le dossier temporaire ; dans le navigateur, lecture par Tesseract servi avec l'app |
+| Fichiers importés jamais envoyés | ✅ | draw.io, BPMN, Visio, JSON, Excel et CSV lus sur l'appareil ; seul le process obtenu est synchronisé, si l'on est connecté |
 
 ### Chiffrement (MASVS-CRYPTO)
 
@@ -61,11 +62,11 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 
 | Point | État | Preuve |
 | --- | --- | --- |
-| Fichiers importés lus comme des données, refusés proprement s'ils sont abîmés | ✅ | Lecteurs draw.io et JSON testés avec des fichiers invalides ; jamais d'`eval` |
-| Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, listes d'étapes et de liens, au plus 500 règles |
+| Fichiers importés lus comme des données, refusés proprement s'ils sont abîmés | ✅ | Lecteurs draw.io, BPMN, Visio, JSON, Excel et CSV testés avec des fichiers invalides ou refusés (ancien .xls, classeur protégé) ; taille limitée (5 Mo, 20 Mo pour un classeur) ; jamais d'`eval` |
+| Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, listes d'étapes et de liens, au plus 500 règles, au plus 200 formulaires et 5 Mo |
 | Dépendances à jour, installées depuis le fichier verrou | ✅ | `npx expo install --check` avant chaque build iOS ; `npm ci` en CI |
-| Failles connues dans les dépendances | ✅ | `npm audit --omit=dev` (31 oct.) : 0 critique, 0 haute ; 14 modérées, toutes dans les outils de build d'Expo (`glob`, `minimatch`), qui ne sont pas embarqués dans l'app |
-| Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 210 tests |
+| Failles connues dans les dépendances | ✅ | `npm audit --omit=dev` (13 nov.) : 0 critique, 0 haute ; 26 modérées et 1 faible, toutes dans des outils Node de build et de test (Expo CLI, Jest, `glob`, `minimatch`, `node-forge` pour les certificats de signature d'EAS Update), qui ne sont pas embarqués dans l'app |
+| Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 386 tests |
 
 ### Résistance (MASVS-RESILIENCE)
 
@@ -111,7 +112,7 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Projet hébergé en Union européenne (région Paris).
 - Nouvelles tables non exposées automatiquement : chaque accès est donné explicitement (`grant`).
 - Row Level Security activée sur `processes` : chaque compte ne lit, ne crée, ne modifie et ne supprime que ses propres process (`(select auth.uid()) = owner_id`). Le rôle `anon` (sans connexion) n'a aucun droit.
-- La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, étapes et liens sous forme de listes.
+- La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, étapes et liens sous forme de listes.
 - Règles testées avec deux comptes sur un PostgreSQL local (`supabase/tests/processes_rls.sql`), y compris un test cassé exprès pour vérifier qu'il détecte une faille.
 - Règles de lecture apprises : table `reading_rules`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 500 règles en liste, supprimées avec le compte). Testée de la même façon (`supabase/tests/regles_lecture_rls.sql`).
 - Formulaires gardés : table `saved_forms`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 200 formulaires et 5 Mo, supprimés avec le compte). Testée de la même façon (`supabase/tests/formulaires_rls.sql`).
@@ -122,15 +123,21 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Mot de passe oublié : lien à usage unique envoyé par e-mail, valable une heure, qui ne rouvre que l'app (adresse `simuflow://` autorisée dans Supabase), puis nouveau mot de passe qui suit la même règle qu'à la création. L'app répond pareil que l'adresse ait un compte ou non, pour ne pas révéler qui est inscrit ; Supabase limite le nombre d'e-mails envoyés.
 - Mot de passe d'au moins 8 caractères à la création, avec une minuscule, une majuscule, un chiffre et un symbole (vérifié par l'app et par Supabase ; un compte plus ancien peut toujours se connecter avec son mot de passe). Les messages d'erreur ne révèlent pas si une adresse a déjà un compte quand la confirmation par e-mail est active.
 - La session (jeton) est gardée dans le trousseau chiffré du téléphone (Keychain, Keystore), jamais copiée vers un autre appareil, et renouvelée seulement tant que l'app est ouverte. Les données de l'app sont exclues de la sauvegarde Android.
-- Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).
+- Suppression du compte depuis l'app : fonction `delete_my_account()` (`security definer`, `search_path` vide), limitée au compte connecté et refusée sans connexion ; ses process, règles de lecture et formulaires gardés sont supprimés avec lui (`on delete cascade`). Testée avec deux comptes (`supabase/tests/suppression_compte.sql`).
 
 ## Sur le téléphone
 
 - Les process importés sont enregistrés dans le dossier Documents de l'app, inaccessible aux autres apps.
-- À la déconnexion ou à la suppression du compte, les copies des process et des règles de lecture du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
+- À la déconnexion ou à la suppression du compte, les copies des process, des règles de lecture et des formulaires gardés du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
 - Appareil photo : demandé seulement à l'ouverture du Scanner, avec un message qui dit à quoi il sert. Pas de micro ni de lecture de codes-barres (autorisations non demandées). Les photos restent dans le cache de l'app et ne sont envoyées nulle part. La lecture du texte se fait sur le téléphone (module natif : Vision sur iOS, ML Kit avec son modèle inclus dans l'app sur Android) : aucun service en ligne, aucun envoi de la photo ni du texte lu. L'image recadrée sur le document reste dans le dossier temporaire de l'app.
 - Notifications : uniquement locales, programmées par le téléphone ; aucun jeton push, aucun serveur de notifications (`enableRemoteNotifications: false`). L'autorisation n'est demandée qu'en activant les rappels, et peut être coupée dans le Profil.
-- Les fichiers importés (draw.io, JSON) sont lus comme des données : un fichier abîmé ou inattendu est refusé avec un message, sans planter l'app.
+- Les fichiers importés (draw.io, BPMN, Visio, JSON, Excel, CSV) sont lus sur l'appareil, comme des données : un fichier abîmé ou inattendu est refusé avec un message, sans planter l'app. Ils ne sont ni envoyés ni gardés.
+
+## Dans le navigateur
+
+- La version web n'a pas de trousseau chiffré : la session et les données sans compte sont dans le stockage local du navigateur (`localStorage`), comme sur la plupart des sites. La déconnexion efface la session.
+- Le Scanner lit la photo dans le navigateur (Tesseract en WebAssembly, servi avec l'app) : l'image ne quitte pas l'appareil.
+- Pour « Mot de passe oublié », l'adresse de retour de la version web doit être autorisée dans Supabase (`https://mloick.github.io/SIMUFLOW/**`), comme `simuflow://**` pour l'app.
 
 ## Confidentialité
 

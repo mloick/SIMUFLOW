@@ -1,6 +1,6 @@
 # BPMN 2.0 en bref
 
-Ce document explique ce qu'est BPMN, ce que contient un fichier `.bpmn`, et ce que SimuFlow en fera. L'import des fichiers `.bpmn` est disponible : **+**, puis **Fichier BPMN**.
+Ce document explique ce qu'est BPMN, ce que contient un fichier `.bpmn`, et ce que SimuFlow en lit et y écrit. L'import des fichiers `.bpmn` est disponible (**+**, puis **Fichier BPMN**), ainsi que l'export (bouton de partage de la simulation, puis **BPMN 2.0**).
 
 ## Ce que c'est
 
