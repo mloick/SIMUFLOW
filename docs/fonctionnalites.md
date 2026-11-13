@@ -40,7 +40,7 @@ Vos process importés sont enregistrés sur le téléphone : vous les retrouvez 
 
 ![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
 
-## Importer un tableau Excel ou CSV · En cours
+## Importer un tableau Excel ou CSV · Disponible
 
 Touchez **+**, puis **Tableau Excel ou CSV**, et choisissez un fichier .xlsx ou .csv. L'app le lit sur le téléphone, sans l'envoyer nulle part ni le garder, et vous montre ce qu'elle a compris de chaque onglet : un tableau de process (étape, acteur, délai), un workflow avec SLA et OLA (une ligne par situation), un template de formulaire, une simple liste, ou un onglet qu'elle ne reconnaît pas. Pas besoin de régler quoi que ce soit : elle trouve seule.
 

@@ -1,47 +1,47 @@
 <p align="center"><img src="docs/logo/simuflow-logo.svg" width="320" alt="SimuFlow"></p>
 
-# SimuFlow
+<p align="center"><b>Test a business workflow before your users do.</b><br>Import a diagram or photograph a table, see what is broken, then walk through it step by step.</p>
 
-[Français](README.fr.md) · English
+<p align="center">
+  <a href="https://github.com/mloick/SIMUFLOW/actions/workflows/verifications.yml"><img src="https://github.com/mloick/SIMUFLOW/actions/workflows/verifications.yml/badge.svg" alt="Checks"></a>
+  <a href="https://mloick.github.io/SIMUFLOW/app/"><img src="https://img.shields.io/badge/try_it-in_the_browser-007ec5" alt="Try it in the browser"></a>
+  <img src="https://img.shields.io/badge/Expo_SDK-58-000020" alt="Expo SDK 58">
+  <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript strict">
+  <img src="https://img.shields.io/badge/iOS_·_Android_·_Web-555" alt="iOS, Android, Web">
+</p>
 
-SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. Import a draw.io diagram or photograph a process table, see the anomalies, then replay the process step by step by choosing each branch.
+<p align="center"><a href="README.fr.md">Français</a> · English</p>
 
-> Status: version 1.0, feature-complete for the course (October 2026). Runs on iPhone (Xcode build), Android (EAS build) and in the browser ([web version](https://mloick.github.io/SIMUFLOW/app/)). All examples in the app and the docs are fictional.
+<p align="center"><img src="docs/captures/etape-6b-schema.png" width="840" alt="Step-by-step simulation: the diagram lights up and each decision asks which branch to follow, in light and dark mode"></p>
 
-**What you can do**
+SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. It runs on iPhone, Android and [in the browser](https://mloick.github.io/SIMUFLOW/app/). Version 1.0, built solo for a Master's mobile development course. All examples in the app and the docs are fictional.
 
-- **Add a process** from a draw.io, BPMN 2.0 (`.bpmn`), Visio (`.vsdx`) or JSON file, or by **photographing a table** (step, actor, delay): the text is read on the phone by a native module (Swift with Vision on iOS, Kotlin with ML Kit on Android).
-- **Import an Excel or CSV table** (in progress): the workbook is read on the device, and the app says what each sheet holds (process table, workflow with SLA and OLA, form template, list). Process tables (step, actor, delay, next) are imported as processes, one per sheet. For a table the app does not recognise, you pick the header row and say which column is the step, the actor, the delay…; the app remembers those column titles for the next tables. A form template opens as the form the requester will see, cleaned of the notes meant for the team that will build it ("Name / First name" split into two fields, character-limit reminders applied to the fields instead of shown, one attachment per listed document, documents asked only when their option is ticked, an "Other (specify)" option gets an attachment and its description, single-choice options shown as radio buttons, fields joined by "and/or" where at least one must be filled in), and it can be corrected by hand in a form editor (rename, retype, make optional, add or remove questions, attachments and display conditions, add a complement that matches the question's type: a description under an attachment, an attachment or a short text under an answer, always or for one option; tick the fields of which one is enough), and it can be filled in: conditional questions appear according to the answers, and sending checks required answers and formats (e-mail, date…) before showing a summary of the request. Nothing is sent. A form template alone is simulated as a form; a form with its workflow (picked together as one or two files, in the same workbook, or linked afterwards: SLA/OLA workbook, draw.io diagram or process table) is filled in first, then goes on into the process of the chosen situation, to simulate or to track for real with the answers attached. Forms can be kept on the phone (Profile, "My forms") and linked to a workflow later. In a workflow with SLA and OLA, each situation becomes a process ready to simulate (ticket, task 1 with its OLA, answer and result, escalation or not, closure by the owner), with a reading report per situation: read without ambiguity, to check or to fix, citing the cell and the question to ask the business.
-- **See what is wrong**: dead ends, unreachable steps, paths that can never finish, one-way decisions, unlabeled branches.
-- **Correct it** in an editor (steps, decisions, branches). The app learns reading rules from your corrections and reapplies them on the next imports.
-- **Replay it** step by step, or see every path at once with the critical path. Export it as a PDF, a draw.io file, BPMN 2.0 (for Camunda, bpmn.io, Bizagi, Signavio…) or JSON.
-- **Follow a real request**: each step gets its deadline in French working days, with a local reminder the morning of the deadline.
-- **Keep it everywhere** with an account: processes, reading rules and saved forms sync across devices, work offline, and are deleted with the account.
+## In five lines
 
-## Who it is for
+- **For whom**: project managers and analysts who design IT service management (ITSM) workflows with business teams.
+- **Problem**: a static diagram is hard to validate. Dead ends, one-way decisions and inconsistent delays show up too late, once the workflow is live.
+- **Promise**: SimuFlow makes them visible in under a minute, and lets you replay the process branch by branch.
+- **Three key screens**: Detail (diagnostic), Simulation (step by step), Scanner (from a photo to a process).
+- **Two phone features**: the camera with on-device text recognition (a native module in Swift and Kotlin), and local deadline reminders.
 
-Project managers and analysts who design IT service management (ITSM) workflows with business teams. A static diagram is hard to validate: dead ends, one-way decisions and inconsistent delays show up too late. SimuFlow makes them visible in under a minute.
+## Features
 
-## Key screens
+- **Import** a draw.io, BPMN 2.0, Visio (`.vsdx`), JSON, Excel or CSV file, or **photograph** a process table.
+- **Diagnose**: dead ends, unreachable steps, endless loops, one-way decisions, unlabelled branches.
+- **Correct** the process in an editor; the app learns reading rules from your corrections.
+- **Simulate** step by step, or see every path at once with the critical path.
+- **Export** as PDF, draw.io, BPMN 2.0 or JSON, anonymised if needed.
+- **Follow a real request** with deadlines in French working days and a reminder on the due date.
+- **Sync** across devices with an account, offline first; everything is deleted with the account.
 
-- **Process**: your processes with their diagnostic status, then the sample processes in a collapsible section.
-- **Detail**: key figures, the diagnostic with a "Show" button on each problem, actors and steps; edit, export or follow a real request from here.
-- **Import**: pick a draw.io, BPMN, Visio or JSON file (or a scan), check and correct the preview, then keep it. An Excel or CSV table is read sheet by sheet. A checkbox anonymises the names (actors become Service A, B…; e-mails and chosen words are hidden), for processes as well as forms and their workflow.
-- **Simulation**: the diagram lights up as you walk through it; each decision asks which branch to follow. The "Tous" (All) view shows every path, one colour per family, with the critical path. The diagram can be exported as a PDF, a draw.io file, a BPMN 2.0 file or JSON, anonymised if needed.
-- **Scanner**: photograph a table (step, actor, delay) and turn it into a workflow.
-- **Follow**: a real request, step by step, with each deadline in working days and the delay so far.
-- **Profile**: your account and sync, deadline reminders, the examples switch, learned reading rules, and an "About" section (server status, replay the welcome tour, privacy policy, app version).
+The full tour, with screenshots, is in the [features guide](docs/fonctionnalites.md) (French). The screen mockups are in [`docs/maquette/`](docs/maquette/).
 
-The full mockup is in [`docs/maquette/`](docs/maquette/).
-
-## Logo
-
-The logo is an S-shaped path: a starting point, two turns and an arrival arrow. It stands for a process walked through step by step, and draws the S of SimuFlow. Its story, colors and files are in [`docs/logo/`](docs/logo/) (French). It is also the app icon and the splash screen.
+<p align="center"><img src="docs/captures/etape-10d-process.png" width="640" alt="Scanner: a photographed table becomes a process with its key figures and diagnostic"></p>
 
 ## Phone features
 
-- Camera with on-device text recognition (native module in Kotlin and Swift).
-- Local notifications (no server): deadline reminders for each step of a process you follow for real: the morning of the deadline, then when it is missed; tapping one opens the request. The switch and a test notification are in the Profile tab.
+- **Camera with on-device text recognition.** A local Expo module written in Swift (Vision) and Kotlin (ML Kit) reads the photo on the phone; the rest of the scanner (rows, table, process) is TypeScript. On the web, the same screen uses Tesseract (WebAssembly). The photo never leaves the device.
+- **Local notifications, no server.** For a request you follow for real, a reminder arrives the morning of each step's deadline, then again once it is missed; tapping it opens the request. The switch and a test notification are in the Profile tab.
 
 ## Getting started
 
@@ -53,13 +53,18 @@ npm run ios:simulateur   # build and open in the iOS Simulator
 npm run ios:iphone       # build and install on an iPhone plugged in over USB
 ```
 
-The app is a development build compiled by Xcode, not Expo Go: it includes a local native module. The `ios/` and `android/` folders are generated (Continuous Native Generation) and never committed or edited by hand. After a change to `app.json` or a new native module: `npx expo prebuild --clean --platform ios`, then build again. Otherwise, once the app is installed, `npx expo start` is enough: JavaScript changes show up in a few seconds. `npm run nettoyer` deletes build files to free disk space.
+SimuFlow is a development build, not Expo Go, because it includes a local native module. The `ios/` and `android/` folders are generated (Continuous Native Generation) and never committed. After changing `app.json` or adding a native module, run `npx expo prebuild --clean --platform ios` and build again. Otherwise `npx expo start` is enough once the app is installed. `npm run nettoyer` deletes build files to free disk space.
 
-**Installable build (no Mac needed).** `npx eas-cli@latest build --platform android --profile preview` produces an Android APK that installs from a link or QR code. Installing an EAS build on an iPhone requires a paid Apple Developer account; with a free account, use the Xcode build above. JavaScript updates reach installed builds without a new build through EAS Update: `npx eas-cli@latest update --channel preview --message "..."`.
+| Target | Command |
+| --- | --- |
+| Android APK, no Mac needed | `npx eas-cli@latest build --platform android --profile preview` |
+| Over-the-air update of installed builds | `npx eas-cli@latest update --channel preview --message "..."` |
+| Web version, locally | `npm run web` |
+| Web version, export | `npm run export:web` (published to GitHub Pages on every merge to `main`) |
 
-**Web version.** The same codebase runs in a browser, with nothing to install: https://mloick.github.io/SIMUFLOW/app/. It is exported by `npm run export:web` (a single page, served under `/SIMUFLOW/app`, set by `experiments.baseUrl` in `app.json`) and published to GitHub Pages on every merge to `main`. It can be added to a phone's home screen like an app (web app: SimuFlow icon and name, full screen), thanks to `public/manifest.webmanifest` and the `public/index.html` page; on first launch in a browser, the welcome screens show the install steps for the visitor's device (iPhone, Android or computer). Everything works except reminders (phone notifications). In the browser the Scanner reads the photo with Tesseract (tesseract.js, WebAssembly), served with the app: the image never leaves the device. To try it locally: `npm run web`.
+Installing an EAS build on an iPhone requires a paid Apple Developer account; with a free account, use the Xcode build above. The web version can be added to a phone's home screen like an app; everything works there except reminders.
 
-**Checks.**
+**Checks**
 
 ```bash
 npx tsc --noEmit   # types
@@ -68,7 +73,7 @@ npm test           # unit and component tests (Jest)
 npm run e2e        # end-to-end test (Maestro, iOS Simulator)
 ```
 
-The backend is a Supabase project. Its address and publishable key are in `src/backend/config.ts` (public by design); the database schema and its access rules are versioned in `supabase/migrations/`, with tests in `supabase/tests/`.
+**Backend.** A Supabase project. Its address and publishable key are in `src/backend/config.ts` (public by design: access is decided by the server). The schema and its access rules are versioned in `supabase/migrations/`, with tests in `supabase/tests/`.
 
 ## Architecture
 
@@ -88,12 +93,12 @@ flowchart TB
   Data -- "HTTPS, signed-in user only" --> Backend
 ```
 
-- **Screens** only display and react. Every rule (diagnostic, paths, simulation, file reading, table detection, working-day deadlines) lives in **pure TypeScript** with no React or Expo import, so it is unit-tested in isolation.
-- **App state** (`src/data/`) keeps processes, settings and followed requests on the phone first (local-first), then syncs the account's processes, reading rules and saved forms with **Supabase** when signed in and online.
-- **Supabase** stores only what an account needs. Row Level Security makes each account see only its own rows; nothing is readable without signing in.
-- The **native module** reads text from a photo on the device; the rest of the scanner (rows, table, process) is TypeScript.
+- **Screens** only display and react. Every rule (diagnostic, paths, simulation, file reading, deadlines) lives in **pure TypeScript** with no React or Expo import, so it is unit-tested in isolation.
+- **App state** is local first: processes, settings and followed requests stay on the phone, then sync with Supabase when signed in and online.
+- **Supabase** stores only what an account needs. Row Level Security lets each account see only its own rows.
+- The **native module** only reads text from a photo; everything after that is shared TypeScript.
 
-More detail, file by file, in [`docs/technique.md`](docs/technique.md) (French).
+File-by-file detail is in the [technical documentation](docs/technique.md) (French).
 
 ## Technical choices
 
@@ -104,20 +109,23 @@ More detail, file by file, in [`docs/technique.md`](docs/technique.md) (French).
 | TypeScript strict, pure core | The simulator logic is the product: keeping it free of UI makes it testable and reusable (scanner, import and editor share it) |
 | Supabase (EU, Paris) | Real PostgreSQL with access rules enforced by the server (RLS), hosted auth, free plan; no custom server to secure |
 | Local-first storage | The app works without an account and offline; sync is an addition, not a requirement |
-| On-device text recognition (Vision, ML Kit) | Photos never leave the phone, works offline, no API key or cost; written as a local Expo module in Swift and Kotlin |
+| On-device text recognition (Vision, ML Kit) | Photos never leave the phone, works offline, no API key or cost |
 | Local notifications | Deadlines are known on the phone, so no push server, token or personal data to send |
 | `expo-secure-store` for the session | The sign-in token stays in the iOS Keychain or Android Keystore, never in a backup |
-| EAS Build and EAS Update | Installable Android build without Android Studio; fixes shipped over the air to installed builds |
-| Jest, React Native Testing Library, Maestro, GitHub Actions | Unit tests for the core, component tests read the screen like a user, one end-to-end flow on the Simulator, all checks on every pull request |
+| EAS Build and EAS Update | Installable Android build without Android Studio; fixes shipped over the air |
+| Jest, React Native Testing Library, Maestro, GitHub Actions | Unit tests for the core, component tests that read the screen like a user, one end-to-end flow, all checks on every pull request |
 
 ## Documentation
 
-- [Technical documentation](docs/technique.md) (French): architecture, structure, commands.
-- [Features guide](docs/fonctionnalites.md) (French): what the app does, in plain words.
-- [Security](docs/securite.md) (French): the filled-in security checklist (OWASP MASVS categories), then keys, access rules, accounts, data on the phone.
-- [BPMN 2.0 in brief](docs/bpmn.md) (French): the standard, its shapes, the `.bpmn` format, what SimuFlow reads from it and writes back (BPMN export); it also covers the Visio import.
-- [Working with AI](docs/ia.md) (French): what guides the AI (AGENTS.md, CLAUDE.md, MCP) and how we work with it.
-- [Web version of the app](https://mloick.github.io/SIMUFLOW/app/), [website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html) (French), built from `docs/site/` and published by GitHub Pages.
+All in French.
+
+- [Features guide](docs/fonctionnalites.md): what the app does, in plain words, with screenshots.
+- [Technical documentation](docs/technique.md): structure, commands, architecture, file by file.
+- [Security](docs/securite.md): the filled-in security checklist (OWASP MASVS), keys, access rules, data on the phone.
+- [Working with AI](docs/ia.md): what guides the AI (AGENTS.md, CLAUDE.md, skills, MCP) and how we work with it.
+- [BPMN 2.0 in brief](docs/bpmn.md): the standard, what SimuFlow reads and writes, and the Visio import.
+- [Logo](docs/logo/): an S-shaped path, a process walked step by step; also the app icon and splash screen.
+- [Website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html), built from `docs/site/`.
 
 ## Tech stack
 
