@@ -10,16 +10,18 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { editShownForm, getShownForm } from '@/data/form-store';
 import { useTheme } from '@/hooks/use-theme';
 import {
+  addComplement,
   addCondition,
   addQuestion,
   answersOf,
   changeType,
   cleanForm,
+  complementTypes,
   conditionSources,
   dependants,
   EDITABLE_TYPES,
   listKind,
-  moveQuestion,
+  moveBlock,
   removeCondition,
   removeQuestion,
   splitDocuments,
@@ -42,7 +44,9 @@ const LIST_LABELS = {
  * « Modifier le formulaire » : corriger à la main ce que la lecture du
  * template n'a pas pu deviner. Une question par ligne ; touchée, elle s'ouvre :
  * intitulé, type, obligatoire, choix / champs / documents, aide, conditions
- * d'affichage, monter, descendre, ajouter une question après, supprimer.
+ * d'affichage, compléments (une description sous une pièce jointe, une pièce
+ * jointe ou une précision sous une réponse, pour un choix précis ou toujours),
+ * monter, descendre, ajouter une question après, supprimer.
  * « Enregistrer » remplace le formulaire affiché (et le formulaire gardé).
  */
 export default function FormEditorScreen() {
@@ -140,8 +144,14 @@ function Editor({ original }: { original: FormTemplate }) {
               onToggle={() => setOpen((current) => (current === question.n ? null : question.n))}
               onChange={setDraft}
               onMove={(delta) => {
-                setDraft(moveQuestion(draft, question.n, delta));
-                setOpen(question.n + delta);
+                const moved = moveBlock(draft, question.n, delta);
+                setDraft(moved.form);
+                setOpen(moved.n);
+              }}
+              onAddComplement={(type, option) => {
+                const added = addComplement(draft, question.n, type, option);
+                setDraft(added.form);
+                setOpen(added.n);
               }}
               onAddAfter={(type) => add(question.n, type)}
               onRemove={() => {
@@ -173,6 +183,7 @@ function QuestionEditor({
   onChange,
   onMove,
   onAddAfter,
+  onAddComplement,
   onRemove,
 }: {
   question: FormQuestion;
@@ -183,10 +194,15 @@ function QuestionEditor({
   onChange: (next: FormTemplate) => void;
   onMove: (delta: -1 | 1) => void;
   onAddAfter: (type?: QuestionType) => void;
+  onAddComplement: (type: 'text' | 'attachment', option?: string) => void;
   onRemove: () => void;
 }) {
   const theme = useTheme();
   const [source, setSource] = useState<number | null>(null);
+  const [forOption, setForOption] = useState(ALWAYS);
+  const complements = complementTypes(question);
+  const choices = answersOf(question);
+  const blockEnd = form.questions.filter((item) => item.n === question.n || item.partOf === question.n).at(-1)?.n ?? question.n;
   const title = question.label.split('\n')[0] || 'Question sans titre';
   const kind = listKind(question.type);
   const sources = conditionSources(form, question.n);
@@ -195,12 +211,17 @@ function QuestionEditor({
   const update = (patch: Partial<Omit<FormQuestion, 'n'>>) => onChange(updateQuestion(form, question.n, patch));
 
   const remove = () => {
-    const linked = dependants(form, question.n).length;
-    confirmAction(
-      `Supprimer « ${title} » ?`,
+    const linked = dependants(form, question.n).filter((item) => item.partOf !== question.n).length;
+    const own = form.questions.filter((item) => item.partOf === question.n).length;
+    const parts = [
       linked > 0
         ? `${plural(linked, 'question')} ${linked > 1 ? 'dépendent' : 'dépend'} de sa réponse : ${linked > 1 ? 'elles s’afficheront' : 'elle s’affichera'} sans cette condition.`
         : 'Elle sera retirée du formulaire.',
+      own > 0 ? `${own > 1 ? `Ses ${own} compléments seront supprimés` : 'Son complément sera supprimé'} avec elle.` : null,
+    ];
+    confirmAction(
+      `Supprimer « ${title} » ?`,
+      parts.filter(Boolean).join(' '),
       'Supprimer',
       onRemove,
       'Garder',
@@ -208,7 +229,11 @@ function QuestionEditor({
   };
 
   return (
-    <View style={index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }}>
+    <View
+      style={[
+        index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+        question.partOf !== undefined && styles.complement,
+      ]}>
       <Pressable
         onPress={onToggle}
         accessibilityRole="button"
@@ -224,7 +249,13 @@ function QuestionEditor({
             {question.mandatory && <ThemedText style={{ color: theme.danger }}> *</ThemedText>}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {[typeLabel(question.type), question.conditions.length > 0 ? 'conditionnelle' : null].filter(Boolean).join(' · ')}
+            {[
+              question.partOf !== undefined ? `↳ complément de ${question.partOf}` : null,
+              typeLabel(question.type),
+              question.conditions.length > 0 ? 'conditionnelle' : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </ThemedText>
         </View>
         <ThemedText type="link" style={{ color: theme.link }}>
@@ -339,11 +370,46 @@ function QuestionEditor({
             </View>
           )}
 
+          {complements.length > 0 && (
+            <View style={[styles.newCondition, { borderColor: theme.border }]}>
+              <Label text="Compléter la question" />
+              <ThemedText type="small" themeColor="textSecondary">
+                Ajoute un champ qui s’affiche avec elle, par exemple la description d’un fichier joint, ou un fichier et une
+                précision quand on choisit « Autre ».
+              </ThemedText>
+              {choices.length > 0 && (
+                <Dropdown
+                  options={[ALWAYS, ...choices.map((choice) => `Si « ${choice} » est choisi`)]}
+                  value={forOption}
+                  onChange={setForOption}
+                  label="Quand afficher le complément"
+                  borderColor={theme.fieldBorder}
+                />
+              )}
+              <View style={styles.footer}>
+                {complements.map((item) => (
+                  <Action
+                    key={item.type}
+                    label={`Ajouter ${item.label.charAt(0).toLowerCase()}${item.label.slice(1)}`}
+                    onPress={() => {
+                      const option = choices.find((choice) => forOption === `Si « ${choice} » est choisi`);
+                      onAddComplement(item.type, option);
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
           <View style={styles.footer}>
-            <Action label="Monter" onPress={() => onMove(-1)} disabled={question.n === 1} />
-            <Action label="Descendre" onPress={() => onMove(1)} disabled={question.n === form.questions.length} />
-            <Action label="Ajouter une question après" onPress={() => onAddAfter()} />
-            <Action label="Ajouter une pièce jointe après" onPress={() => onAddAfter('attachment')} />
+            {question.partOf === undefined && (
+              <>
+                <Action label="Monter" onPress={() => onMove(-1)} disabled={question.n === 1} />
+                <Action label="Descendre" onPress={() => onMove(1)} disabled={blockEnd === form.questions.length} />
+                <Action label="Ajouter une question après" onPress={() => onAddAfter()} />
+                <Action label="Ajouter une pièce jointe après" onPress={() => onAddAfter('attachment')} />
+              </>
+            )}
             <Action label="Supprimer" onPress={remove} danger />
           </View>
         </View>
@@ -351,6 +417,9 @@ function QuestionEditor({
     </View>
   );
 }
+
+/** Un complément qui s'affiche toujours avec sa question. */
+const ALWAYS = 'Toujours, avec la question';
 
 function Action({ label, onPress, disabled, danger }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
   const theme = useTheme();
@@ -433,6 +502,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   number: { width: 24, textAlign: 'center' },
+  complement: { paddingLeft: Spacing.four },
   flex: { flex: 1 },
   form: { gap: Spacing.two, padding: Spacing.three, paddingTop: Spacing.one },
   input: { minHeight: 44, borderRadius: Radius.small, borderWidth: 1, paddingHorizontal: Spacing.three, fontSize: 16 },

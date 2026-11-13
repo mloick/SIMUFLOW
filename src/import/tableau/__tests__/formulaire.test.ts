@@ -48,6 +48,8 @@ describe('template d’exemple', () => {
       [17, 'attachment', true],
       [18, 'label', false],
       [19, 'attachment', true],
+      [20, 'attachment', true],
+      [21, 'text', true],
     ]);
     const [coordonnees, situation, , , changement, adresse, , , domicile, , , date] = template.questions;
     expect(coordonnees.fields).toEqual(['N° de dossier', 'Nom du demandeur', 'Prénom du demandeur', 'Téléphone']);
@@ -123,6 +125,20 @@ describe('règles de lecture', () => {
     expect(isQuestionVisible(acte, new Map<number, string[]>([[5, motif2], [lien.n, ['Même service']]]))).toBe(false);
     expect(isQuestionVisible(acte, new Map<number, string[]>([[5, motif2], [lien.n, ['Service repris']]]))).toBe(true);
   });
+
+  it('donne au choix « Autre (préciser) » une pièce jointe et sa description, quand les autres choix demandent des documents', () => {
+    const lien = byLabel("MOTIF 2 : Quel est le lien avec l'ancien contact ?");
+    const [fichier, description] = template.questions.filter((question) => question.partOf === lien.n);
+    expect([fichier, description].map(({ label, type, mandatory }) => [label, type, mandatory])).toEqual([
+      ['Document joint', 'attachment', true],
+      ['Description du document joint', 'text', true],
+    ]);
+    // Juste après les documents des autres choix, et seulement si « Autre » est coché.
+    expect(description.n).toBe(lien.n + 7);
+    const motif2 = ['MOTIF 2 : Changement de contact'];
+    expect(isQuestionVisible(fichier, new Map<number, string[]>([[5, motif2], [lien.n, ['Autre (préciser)']]]))).toBe(true);
+    expect(isQuestionVisible(fichier, new Map<number, string[]>([[5, motif2], [lien.n, ['Service repris']]]))).toBe(false);
+  });
 });
 
 describe('cas particuliers', () => {
@@ -139,6 +155,19 @@ describe('cas particuliers', () => {
       [],
       [{ question: 2, equals: 'Oui' }],
       [{ question: 2, equals: 'Non' }],
+    ]);
+  });
+
+  it('demande de préciser un choix « Autre » qui n’a pas de documents', () => {
+    const template = questions([
+      ['Question', 'Type', 'Obligatoire', 'Valeurs'],
+      ['Canal de contact', 'Menu déroulant', 'Oui', 'Téléphone, Courrier, Autres'],
+      ['Commentaire', 'Texte long', 'Non', ''],
+    ]);
+    expect(template.questions.map(({ n, label, type, mandatory, conditions, partOf }) => ({ n, label, type, mandatory, conditions, partOf }))).toEqual([
+      { n: 1, label: 'Canal de contact', type: 'select', mandatory: true, conditions: [], partOf: undefined },
+      { n: 2, label: 'Précisez « Autres »', type: 'text', mandatory: true, conditions: [{ question: 1, equals: 'Autres' }], partOf: 1 },
+      { n: 3, label: 'Commentaire', type: 'text', mandatory: false, conditions: [], partOf: undefined },
     ]);
   });
 

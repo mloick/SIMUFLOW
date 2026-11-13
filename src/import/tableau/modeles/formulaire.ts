@@ -27,7 +27,10 @@
  *   par document, obligatoire sauf si le document dit « uniquement », « si »,
  *   « facultatif » ou « optionnel » ;
  * - sous des choix, « Dans le cas de X » suivi de documents ajoute un titre
- *   et une pièce jointe par document, affichés quand le choix X est coché.
+ *   et une pièce jointe par document, affichés quand le choix X est coché ;
+ * - un choix « Autre » ou « (Préciser) » reçoit son complément, affiché quand
+ *   il est coché : une précision à écrire, ou, si les autres choix demandent
+ *   des documents, une pièce jointe et sa description.
  * Fonctions pures, testées dans __tests__/formulaire.test.ts.
  */
 
@@ -89,6 +92,12 @@ export type FormQuestion = {
   conditionText: string | null;
   /** Cellule de l'intitulé, comme dans Excel. */
   cell: string;
+  /**
+   * Complément de la question `partOf` (son numéro) : une description sous une
+   * pièce jointe, une pièce jointe sous un texte, une précision sous un choix…
+   * Il s'affiche avec elle, et la suit quand on la déplace ou la supprime.
+   */
+  partOf?: number;
 };
 
 export type FormTask = { n: number; description: string | null; group: string | null; sequence: string | null };
@@ -282,6 +291,8 @@ const REMINDER = /^!|nbre de caract|nombre (maximum |minimum |max |min )?de cara
 const CASES_START = /^(dans le cas|pieces? jointes?|documents?\b)/;
 /** Un document qui ne sert que dans certains cas. */
 const OPTIONAL_DOCUMENT = /\b(uniquement|seulement|si|facultati\w*|optionnel\w*|le cas echeant)\b/;
+/** Un choix « Autre », « Autres » ou « … (Préciser) » : la personne précise sa réponse. */
+const OTHER_OPTION = /^autres?\b|\bprecise[rz]\b/;
 
 /** « Nom / Prénom du contact » : deux champs. */
 function splitField(field: string): string[] {
@@ -533,6 +544,30 @@ function expandDocuments(
       for (const document of item.documents) out.push(attachment(question, document, cases.required, [], conditions));
     }
   }
+  // « Autre (Préciser) » : on ne sait pas ce que la personne choisira, elle le décrit.
+  const withOther = (index: number) => {
+    const { question } = out[index];
+    if (out[index].from === null || !(question.type === 'select' || question.type === 'checkbox')) return [];
+    const others = question.options.filter((option) => OTHER_OPTION.test(norm(option)));
+    return others.flatMap((option) => {
+      const conditions = [...question.conditions, { question: question.n, equals: option }];
+      const complement = (label: string, type: 'text' | 'attachment') => ({
+        question: { ...attachment(question, label, true, [], conditions).question, type, partOf: question.n },
+        from: null,
+      });
+      return casesOf.has(question.n)
+        ? [complement('Document joint', 'attachment'), complement('Description du document joint', 'text')]
+        : [complement(`Précisez « ${option.replace(/\s*\(.*\)\s*$/, '')} »`, 'text')];
+    });
+  };
+  for (let index = out.length - 1; index >= 0; index--) {
+    const added = withOther(index);
+    if (added.length === 0) continue;
+    // Juste après la question et ses documents par choix.
+    let end = index + 1;
+    while (end < out.length && out[end].from === null && out[end].question.conditions.some((c) => c.question === out[index].question.n)) end++;
+    out.splice(end, 0, ...added);
+  }
   const renumber = new Map<number, number>();
   out.forEach(({ from }, index) => {
     if (from !== null) renumber.set(from, index + 1);
@@ -541,6 +576,7 @@ function expandDocuments(
     ...question,
     n: index + 1,
     conditions: question.conditions.map((condition) => ({ ...condition, question: renumber.get(condition.question) ?? condition.question })),
+    ...(question.partOf !== undefined ? { partOf: renumber.get(question.partOf) ?? question.partOf } : {}),
   }));
 }
 

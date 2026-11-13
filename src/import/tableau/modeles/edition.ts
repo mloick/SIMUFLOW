@@ -61,8 +61,75 @@ function renumber(form: FormTemplate, questions: FormQuestion[]): FormTemplate {
       conditions: question.conditions
         .filter((condition) => next.has(condition.question))
         .map((condition) => ({ ...condition, question: next.get(condition.question)! })),
-    })),
+      ...(question.partOf !== undefined && next.has(question.partOf) ? { partOf: next.get(question.partOf) } : { partOf: undefined }),
+    })).map(({ partOf, ...question }) => (partOf === undefined ? question : { ...question, partOf })),
   };
+}
+
+/** La question et ses compléments, qui la suivent. */
+function blockOf(questions: FormQuestion[], n: number): FormQuestion[] {
+  const root = questions.find((question) => question.n === n);
+  if (!root) return [];
+  const parent = root.partOf ?? root.n;
+  return questions.filter((question) => question.n === parent || question.partOf === parent);
+}
+
+/**
+ * Les compléments qu'on peut ajouter à une question : seulement des types qui
+ * vont avec le sien. Une pièce jointe se décrit par un texte court ; une
+ * réponse écrite ou un choix se justifie par une pièce jointe ; un choix se
+ * précise par un texte court. Jamais deux façons de répondre à la même chose
+ * (oui / non avec un menu déroulant, par exemple).
+ */
+export function complementTypes(question: FormQuestion): { type: 'text' | 'attachment'; label: string }[] {
+  if (question.partOf !== undefined) return [];
+  const types: { type: 'text' | 'attachment'; label: string }[] = [];
+  if (['attachment', 'yesno', 'select', 'checkbox'].includes(question.type)) {
+    types.push({ type: 'text', label: question.type === 'attachment' ? 'Une description du fichier' : 'Une précision écrite' });
+  }
+  if (['text', 'multiline', 'label', 'yesno', 'select', 'checkbox', 'date', 'email'].includes(question.type)) {
+    types.push({ type: 'attachment', label: 'Une pièce jointe' });
+  }
+  return types;
+}
+
+/** Les compléments de la question `n`, dans l'ordre. */
+export function complementsOf(form: FormTemplate, n: number): FormQuestion[] {
+  return form.questions.filter((question) => question.partOf === n);
+}
+
+/**
+ * Ajoute un complément à la question `n`, après ses compléments déjà là. Avec
+ * `option`, il ne s'affiche que si ce choix est fait (« Autre » → précisez),
+ * et il est obligatoire. Renvoie aussi son numéro.
+ */
+export function addComplement(
+  form: FormTemplate,
+  n: number,
+  type: 'text' | 'attachment',
+  option?: string,
+): { form: FormTemplate; n: number } {
+  const parent = form.questions.find((question) => question.n === n);
+  if (!parent || parent.partOf !== undefined) return { form, n };
+  const last = complementsOf(form, n).at(-1)?.n ?? n;
+  const added = addQuestion(form, last, type);
+  const label =
+    type === 'attachment'
+      ? option
+        ? `Pièce jointe (${option})`
+        : 'Pièce jointe'
+      : parent.type === 'attachment'
+        ? 'Description du fichier'
+        : option
+          ? `Précisez « ${option} »`
+          : 'Précision';
+  const next = updateQuestion(added.form, added.n, {
+    label,
+    partOf: n,
+    mandatory: option !== undefined,
+    conditions: [...parent.conditions.map((condition) => ({ ...condition })), ...(option ? [{ question: n, equals: option }] : [])],
+  });
+  return { form: next, n: added.n };
 }
 
 export function updateQuestion(form: FormTemplate, n: number, patch: Partial<Omit<FormQuestion, 'n'>>): FormTemplate {
@@ -79,22 +146,37 @@ export function dependants(form: FormTemplate, n: number): FormQuestion[] {
   return form.questions.filter((question) => question.conditions.some((condition) => condition.question === n));
 }
 
-/** Supprime une question ; celles qui en dépendaient perdent cette condition. */
+/** Supprime une question et ses compléments ; celles qui en dépendaient perdent cette condition. */
 export function removeQuestion(form: FormTemplate, n: number): FormTemplate {
   return renumber(
     form,
-    form.questions.filter((question) => question.n !== n),
+    form.questions.filter((question) => question.n !== n && question.partOf !== n),
   );
 }
 
-/** Monte (-1) ou descend (+1) une question. */
+/**
+ * Monte (-1) ou descend (+1) une question, avec ses compléments, au-dessus ou
+ * au-dessous de la question voisine et des siens. Un complément reste sous sa
+ * question : il ne se déplace pas seul.
+ */
 export function moveQuestion(form: FormTemplate, n: number, delta: -1 | 1): FormTemplate {
-  const index = form.questions.findIndex((question) => question.n === n);
-  const target = index + delta;
-  if (index < 0 || target < 0 || target >= form.questions.length) return form;
-  const questions = [...form.questions];
-  [questions[index], questions[target]] = [questions[target], questions[index]];
-  return renumber(form, questions);
+  return moveBlock(form, n, delta).form;
+}
+
+/** Comme `moveQuestion`, et donne le nouveau numéro de la question déplacée. */
+export function moveBlock(form: FormTemplate, n: number, delta: -1 | 1): { form: FormTemplate; n: number } {
+  const block = blockOf(form.questions, n);
+  if (block.length === 0 || block[0].n !== n) return { form, n };
+  const first = form.questions.indexOf(block[0]);
+  const end = first + block.length;
+  const neighbour = delta < 0 ? form.questions[first - 1] : form.questions[end];
+  if (!neighbour) return { form, n };
+  const other = blockOf(form.questions, neighbour.n);
+  const rest = form.questions.filter((question) => !block.includes(question) && !other.includes(question));
+  const at = form.questions.indexOf(delta < 0 ? other[0] : block[0]);
+  const pair = delta < 0 ? [...block, ...other] : [...other, ...block];
+  const questions = [...rest.slice(0, at), ...pair, ...rest.slice(at)];
+  return { form: renumber(form, questions), n: questions.indexOf(block[0]) + 1 };
 }
 
 /**
@@ -102,7 +184,9 @@ export function moveQuestion(form: FormTemplate, n: number, delta: -1 | 1): Form
  * reprend ses conditions, pour rester dans le même cas. Renvoie aussi son numéro.
  */
 export function addQuestion(form: FormTemplate, after: number, type: QuestionType = 'text'): { form: FormTemplate; n: number } {
-  const previous = form.questions.find((question) => question.n === after);
+  // Après une question, la nouvelle passe après ses compléments et reprend les conditions de la question.
+  const block = blockOf(form.questions, after);
+  const previous = block[0];
   const added: FormQuestion = {
     n: -1,
     label: '',
@@ -119,7 +203,8 @@ export function addQuestion(form: FormTemplate, after: number, type: QuestionTyp
     conditionText: null,
     cell: '',
   };
-  const index = previous ? form.questions.indexOf(previous) + 1 : 0;
+  const last = block.at(-1);
+  const index = last ? form.questions.indexOf(last) + 1 : 0;
   const questions = [...form.questions.slice(0, index), added, ...form.questions.slice(index)];
   return { form: renumber(form, questions), n: index + 1 };
 }

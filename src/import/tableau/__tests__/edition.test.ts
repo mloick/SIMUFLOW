@@ -2,13 +2,17 @@ import { describe, expect, it } from '@jest/globals';
 
 import { lireExemple } from '../../../../jest/lire-exemple';
 import {
+  addComplement,
   addCondition,
   addQuestion,
   answersOf,
   changeType,
   cleanForm,
+  complementsOf,
+  complementTypes,
   conditionSources,
   dependants,
+  moveBlock,
   moveQuestion,
   readFormTemplate,
   readTableFile,
@@ -33,7 +37,7 @@ describe('modifier un formulaire', () => {
     expect(next.questions[2].conditions).toEqual([]);
     // Les conditions sur « Quel changement » (5, devenue 4) suivent.
     expect(next.questions[4].conditions).toEqual([{ question: 4, equals: "MOTIF 1 : Changement d'adresse" }]);
-    expect(form.questions).toHaveLength(19);
+    expect(form.questions).toHaveLength(21);
   });
 
   it('déplace une question, conditions comprises', () => {
@@ -87,5 +91,61 @@ describe('pièces jointes', () => {
     ]);
     expect(next.questions).toHaveLength(form.questions.length + 2);
     expect(splitDocuments(template(), 2)).toEqual(template());
+  });
+});
+
+describe('compléments', () => {
+  it('ne propose que des compléments qui vont avec le type de la question', () => {
+    const form = template();
+    const types = (n: number) => complementTypes(form.questions[n - 1]).map((item) => item.type);
+    expect(form.questions[8].type).toBe('attachment');
+    expect(types(9)).toEqual(['text']);
+    expect(types(3)).toEqual(['text', 'attachment']);
+    expect(types(6)).toEqual(['attachment']);
+    // Un complément ne reçoit pas de complément.
+    expect(complementTypes({ ...form.questions[5], partOf: 5 })).toEqual([]);
+  });
+
+  it('ajoute une description sous une pièce jointe, avec ses conditions', () => {
+    const form = template();
+    const { form: next, n } = addComplement(form, 9, 'text');
+    expect(n).toBe(10);
+    expect(next.questions[9]).toMatchObject({ label: 'Description du fichier', type: 'text', partOf: 9, mandatory: false, conditions: form.questions[8].conditions });
+    expect(next.questions).toHaveLength(form.questions.length + 1);
+    // Une question ajoutée après la pièce jointe passe après son complément.
+    const after = addQuestion(next, 9);
+    expect(after.n).toBe(11);
+    expect(after.form.questions[10].partOf).toBeUndefined();
+  });
+
+  it('ajoute une précision et une pièce jointe pour un choix précis', () => {
+    let form = template();
+    form = addComplement(form, 3, 'text', 'Non').form;
+    form = addComplement(form, 3, 'attachment', 'Non').form;
+    expect(complementsOf(form, 3).map(({ n, label, type, mandatory, conditions }) => ({ n, label, type, mandatory, conditions }))).toEqual([
+      { n: 4, label: 'Précisez « Non »', type: 'text', mandatory: true, conditions: [{ question: 3, equals: 'Non' }] },
+      { n: 5, label: 'Pièce jointe (Non)', type: 'attachment', mandatory: true, conditions: [{ question: 3, equals: 'Non' }] },
+    ]);
+    // La question suivante (« Si NON : indiquer le signataire ») garde sa condition, renumérotée.
+    expect(form.questions[5]).toMatchObject({ label: 'Si NON : indiquer le signataire', conditions: [{ question: 3, equals: 'Non' }] });
+  });
+
+  it('déplace et supprime une question avec ses compléments', () => {
+    let form = addComplement(template(), 3, 'text').form;
+    const moved = moveBlock(form, 3, -1);
+    expect(moved.n).toBe(2);
+    expect(labels(moved.form).slice(1, 4)).toEqual(['Êtes-vous le signataire du dossier ?', 'Précision', 'Situation']);
+    expect(moved.form.questions[2].partOf).toBe(2);
+    const down = moveBlock(moved.form, 2, 1);
+    expect(down.n).toBe(3);
+    expect(labels(down.form).slice(1, 4)).toEqual(['Situation', 'Êtes-vous le signataire du dossier ?', 'Précision']);
+    // Un complément ne se déplace pas seul.
+    expect(moveQuestion(form, 4, -1)).toBe(form);
+    form = removeQuestion(form, 3);
+    expect(form.questions.some((question) => question.label === 'Précision')).toBe(false);
+    expect(form.questions).toHaveLength(template().questions.length - 1);
+    // Supprimer le complément seul laisse sa question.
+    const alone = removeQuestion(addComplement(template(), 3, 'text').form, 4);
+    expect(alone).toEqual(template());
   });
 });

@@ -12,7 +12,8 @@ export type { FormAnswer };
 
 /** « Êtes-vous le signataire ? = Non » : la condition d'une question, lisible. */
 export function conditionText(question: FormQuestion, questions: FormQuestion[]): string | null {
-  if (question.conditions.length === 0) return null;
+  // Un complément suit sa question : la condition est déjà dite au-dessus.
+  if (question.conditions.length === 0 || question.partOf !== undefined) return null;
   return question.conditions
     .map(({ question: source, equals }) => {
       const label = questions.find((item) => item.n === source)?.label.split('\n')[0] ?? `Question ${source}`;

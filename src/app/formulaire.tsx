@@ -310,7 +310,13 @@ export default function FormScreen() {
             <View
               key={question.n}
               onLayout={(event) => positions.current.set(question.n, event.nativeEvent.layout.y)}
-              style={[styles.question, { borderTopColor: theme.border }, !shown && styles.hidden]}
+              style={[
+                styles.question,
+                { borderTopColor: theme.border },
+                // Un complément (description du fichier, précision…) fait corps avec sa question.
+                question.partOf !== undefined && [styles.complement, { borderLeftColor: theme.primaryBackground }],
+                !shown && styles.hidden,
+              ]}
               accessibilityElementsHidden={!shown}
               importantForAccessibility={shown ? 'auto' : 'no-hide-descendants'}
               pointerEvents={shown ? 'auto' : 'none'}>
@@ -582,6 +588,7 @@ const styles = StyleSheet.create({
   header: { gap: Spacing.two, padding: Spacing.three },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   question: { padding: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth },
+  complement: { borderTopWidth: 0, paddingTop: 0, marginLeft: Spacing.three, borderLeftWidth: 2 },
   submitArea: { gap: Spacing.two },
   center: { textAlign: 'center' },
   hidden: { opacity: 0.45 },

@@ -62,4 +62,19 @@ describe('FormEditorScreen', () => {
     expect(form.questions.some((question) => question.label === 'Date souhaitée')).toBe(false);
     expect(form.questions.at(-1)).toMatchObject({ label: 'Procuration', type: 'attachment' });
   });
+
+  it('complète une question oui / non par une pièce jointe, en retrait sous elle', async () => {
+    showForm(template, { source: 'template-formulaire.xlsx' });
+    await render(<FormEditorScreen />);
+    // Question 3 : « Êtes-vous le signataire du dossier ? » (oui / non).
+    await fireEvent.press(screen.getAllByText('Modifier')[2]);
+    expect(screen.getByText('Ajouter une précision écrite')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText('Ajouter une pièce jointe'));
+    expect(screen.getByText('↳ complément de 3', { exact: false })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByText('Enregistrer'));
+    const form = getShownForm()!.form;
+    expect(form.questions[3]).toMatchObject({ label: 'Pièce jointe', type: 'attachment', partOf: 3, mandatory: false });
+    expect(form.questions).toHaveLength(template.questions.length + 1);
+  });
 });
