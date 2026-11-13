@@ -1,28 +1,84 @@
 # Documentation technique
 
-Ce document décrit le code tel qu'il est aujourd'hui. Il est mis à jour à chaque modification du code (voir « Mise à jour de la documentation » en bas).
+Ce document décrit le code de SimuFlow tel qu'il est aujourd'hui, pour un développeur qui veut le comprendre ou le reprendre. Il est mis à jour à chaque modification du code (voir la [partie 10](#10-mise-à-jour-de-la-documentation)). Pour ce que fait l'app, en termes simples : [le guide des fonctionnalités](fonctionnalites.md).
 
-## État actuel
+**Sommaire**
 
-Version 1.0 (31 octobre 2026), complète pour le cours. Tous les écrans de la maquette sont construits : liste des process, détail, import (fichier draw.io ou JSON, aperçu corrigeable), éditeur, simulation (pas à pas et tous les chemins), export (PDF, draw.io, JSON), suivi d'une vraie demande, scanner (module natif de lecture de texte), connexion et mot de passe oublié, présentation du premier lancement et profil. Le backend Supabase garde les comptes, les process et les règles de lecture, avec synchronisation et hors connexion. L'app est testée (tests unitaires, de composants, de bout en bout) et vérifiée à chaque pull request. Depuis le 2 novembre 2026, la même base de code est aussi publiée en version web (voir « Version web »).
+- [En bref](#en-bref) · [Architecture](#architecture) · [Structure du dépôt](#structure-du-dépôt) · [Commandes](#commandes)
+1. [Cœur du simulateur](#1-cœur-du-simulateur) : modèle, diagnostic, chemins, moteur, schéma
+2. [Lire un process : import](#2-lire-un-process--import) : draw.io, BPMN, Visio, JSON, Excel et CSV, règles apprises
+3. [Scanner et module natif](#3-scanner-et-module-natif) : Swift avec Vision, Kotlin avec ML Kit, Tesseract sur le web
+4. [Écrans](#4-écrans) : navigation, liste, import, formulaire, détail, éditeur, simulation, export
+5. [Suivre une vraie demande](#5-suivre-une-vraie-demande) : jours ouvrés, rappels locaux
+6. [Données et backend](#6-données-et-backend) : stockage local, synchronisation, Supabase
+7. [Interface](#7-interface) : thème, identité, accessibilité
+8. [Tests et CI](#8-tests-et-ci)
+9. [Build et publication](#9-build-et-publication) : build de développement, EAS, version web, site
+10. [Mise à jour de la documentation](#10-mise-à-jour-de-la-documentation)
 
-| Élément | Version |
+Les passages les plus détaillés (règles de lecture fines, listes de tests) sont repliés sous **Détail** : ils se déplient au clic.
+
+## En bref
+
+Version 1.0, complète pour le cours depuis le 31 octobre 2026, enrichie depuis. Tous les écrans de la maquette sont construits : liste des process, détail, import (draw.io, BPMN, Visio, JSON, Excel et CSV, avec aperçu corrigeable), formulaires de demande, éditeur, simulation (pas à pas et tous les chemins), export (PDF, draw.io, BPMN, JSON), suivi d'une vraie demande, scanner (module natif de lecture du texte), connexion et mot de passe oublié, présentation du premier lancement et profil. Le backend Supabase garde les comptes, les process, les règles de lecture et les formulaires gardés, avec synchronisation et hors connexion. La même base de code est publiée en version web depuis le 2 novembre 2026. L'app est testée (unitaires, composants, bout en bout) et vérifiée à chaque pull request.
+
+| Élément | Version et rôle |
 | --- | --- |
 | Expo SDK | 58 |
-| React Native | 0.88 |
-| React | 19.3 |
-| Expo Router | 58 (routes dans `src/app/`) |
+| React Native · React | 0.88 · 19.3 |
+| Expo Router | 58, routes dans `src/app/` |
 | TypeScript | 6.0, mode `strict` |
-| Jest | 30, préréglage `jest-expo` |
-| react-native-svg | 15 (dessin du schéma) |
-| expo-print, expo-sharing | 58 (export en PDF, feuille de partage) |
-| @supabase/supabase-js | 2 (client du backend) |
-| expo-sqlite | 58 (`localStorage` : réglages, demandes suivies, règles de lecture) |
-| expo-secure-store | 58 (session Supabase dans le trousseau chiffré du téléphone ; module natif, l'app doit être recompilée) |
-| expo-network | 58 (état du réseau : hors connexion réel, synchronisation au retour du réseau ; module natif, l'app compilée par Xcode doit être recompilée) |
-| expo-camera | 58 (appareil photo de l'onglet Scanner ; module natif, l'app doit être recompilée) |
-| tesseract.js | 7 (lecture du texte d'une photo dans la version web, en WebAssembly ; données du français : `@tesseract.js-data/fra`, en dépendance de développement) |
-| expo-notifications | 58 (notifications locales : rappels d'échéance ; module natif, l'app doit être recompilée) |
+| Jest | 30, préréglage `jest-expo` ; React Native Testing Library ; Maestro pour le bout en bout |
+| `@supabase/supabase-js` | 2, client du backend |
+| `react-native-svg` | 15, dessin du schéma |
+| `react-native-reanimated` · `react-native-gesture-handler` | 4 · 3, animations, zoom et déplacement du schéma |
+| `@xmldom/xmldom` · `fflate` | lecture du XML (draw.io, BPMN, Visio, Excel) et décompression (zip, deflate), en JavaScript pur |
+| `expo-print`, `expo-sharing` | export en PDF, feuille de partage |
+| `expo-sqlite` | `localStorage` : réglages, demandes suivies |
+| `expo-secure-store` | session Supabase dans le trousseau chiffré du téléphone |
+| `expo-network` | état du réseau : hors connexion, synchronisation au retour du réseau |
+| `expo-camera` | appareil photo de l'onglet Scanner |
+| `expo-notifications` | notifications locales : rappels d'échéance |
+| `tesseract.js` | 7, lecture du texte d'une photo dans la version web (WebAssembly) ; données du français : `@tesseract.js-data/fra` |
+
+`expo-sqlite`, `expo-secure-store`, `expo-network`, `expo-camera` et `expo-notifications` contiennent du code natif : après leur ajout, l'app compilée par Xcode doit être recompilée (voir [Build de développement](#build-de-développement)).
+
+## Architecture
+
+```mermaid
+flowchart TB
+  UI["Écrans · src/app (Expo Router)<br/>composants · src/components"]
+  Data["État de l'app · src/data<br/>stockage, synchronisation, réglages"]
+  Core["TypeScript pur, testé<br/>domain · simulation · import · export · scan · tracking"]
+  Native["Module natif · modules/text-recognition<br/>Swift + Vision · Kotlin + ML Kit"]
+  Phone["Sur le téléphone<br/>fichiers, SQLite, trousseau chiffré, notifications locales"]
+  Backend["Supabase (Paris)<br/>Auth · PostgreSQL avec Row Level Security"]
+  UI --> Data
+  UI --> Core
+  UI --> Native
+  Data --> Core
+  Data --> Phone
+  Data -- "HTTPS, compte connecté uniquement" --> Backend
+```
+
+Trois règles tiennent l'ensemble :
+
+- **Le cœur ne dépend pas de l'écran.** Tout ce qui décide (diagnostic, chemins, simulation, lecture des fichiers, échéances) est écrit en TypeScript pur, sans React ni Expo, et testé à part. Les écrans affichent et réagissent.
+- **Les fonctions ne modifient rien.** Le moteur de simulation, l'éditeur, le suivi et les formulaires prennent un état et en renvoient un nouveau. L'écran garde l'état (`useState`, ou un petit magasin lu avec `useSyncExternalStore`).
+- **D'abord sur le téléphone.** L'app marche sans compte et hors connexion ; le serveur est une copie synchronisée, protégée par la Row Level Security.
+
+| Dossier | Rôle |
+| --- | --- |
+| `src/domain/` | Types du process, diagnostic, chemins, modifications de l'éditeur, anonymisation |
+| `src/simulation/` | Moteur de simulation (`step(état, choix)` renvoie le nouvel état), mise en page du schéma, familles de chemins |
+| `src/import/` | Lecture des fichiers draw.io, BPMN, Visio et JSON, règles de lecture apprises, tableaux Excel et CSV (`tableau/`) |
+| `src/scan/` | Tableau photographié transformé en process |
+| `src/export/` | Export en PDF, draw.io, BPMN 2.0 et JSON |
+| `src/tracking/`, `src/notifications/` | Échéances en jours ouvrés d'une vraie demande, rappels locaux |
+| `src/data/` | Stockage sur le téléphone, synchronisation, réglages, formulaires gardés |
+| `src/backend/` | Client Supabase, compte et session, tables du compte |
+| `modules/text-recognition/` | Module natif de lecture de texte (Swift avec Vision pour iOS, Kotlin avec ML Kit pour Android) |
+| `supabase/` | Schéma de la base (migrations SQL versionnées) et tests des règles d'accès |
 
 ## Structure du dépôt
 
@@ -34,7 +90,7 @@ src/
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io, BPMN, Visio et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/ ; tableaux Excel et CSV dans tableau/ (lecture du classeur, reconnaissance de chaque onglet, modèles de lecture dans modeles/)
-  export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io et JSON ; tests dans __tests__/
+  export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io, BPMN 2.0 et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts)
   hooks/        Hooks partagés (thème, mode sombre, grands textes)
@@ -75,41 +131,11 @@ app.json        Configuration Expo (nom, icônes, écran de démarrage, identifi
 
 Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
 
-## Thème
+## 1. Cœur du simulateur
 
-Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.ts` :
+Tout ce qui décide se trouve ici, en TypeScript pur : le modèle d'un process, son diagnostic, ses chemins, le moteur qui le rejoue et la mise en page de son schéma. Rien n'y dépend de React, d'Expo ou du format d'import.
 
-- `Brand` : les deux couleurs du logo, bleu `#007ec5` et marine `#0b2540`.
-- `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `surfaceMuted`, `field`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `primaryBackground`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
-- `Radius` (arrondis), `Spacing` (espacements), `Fonts` (polices système).
-
-Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
-
-Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
-
-## Identité de l'app : icône, écran de démarrage, identifiant
-
-**Identifiant.** `fr.simuflow.app`, le même sur iOS (`ios.bundleIdentifier`) et Android (`android.package`), dans `app.json`. C'est le nom unique de l'app pour le téléphone et pour les stores : il ne doit plus changer. Il remplace `com.anonymous.simuflow` du modèle Expo ; le téléphone voit donc une nouvelle app. L'ancienne, et les process gardés seulement sur le téléphone, ne sont pas repris. Les process synchronisés reviennent à la connexion.
-
-**Icônes** (`assets/images/`), tirées du tracé SVG du logo (`docs/logo/`) :
-
-| Fichier | Usage |
-| --- | --- |
-| `icon.png` (1024 px) | Icône iOS et icône par défaut : symbole sur fond blanc, iOS arrondit les coins |
-| `android-icon-foreground.png` | Icône adaptative Android : symbole sur fond transparent, réduit pour tenir dans la zone toujours visible (le téléphone découpe un rond, un carré arrondi…) ; le fond est la couleur `#ffffff` |
-| `android-icon-monochrome.png` | Icônes à thème d'Android 13 et plus : symbole noir, le système le recolore |
-| `splash-icon.png` | Logo de l'écran de démarrage : symbole dans sa tuile blanche arrondie |
-| `favicon.png` | Version web |
-
-Les images et le code du modèle Expo (logos Expo et React, `animated-icon`, `scripts/reset-project.js`) sont supprimés.
-
-**Écran de démarrage.** Le plugin `expo-splash-screen` (dans `app.json`) affiche `splash-icon.png` (120 de large) sur le fond de l'app : `#f2f6fa` en mode clair, `#0b1621` en mode sombre (option `dark`). C'est un écran natif, montré avant que le JavaScript soit chargé. Ensuite `SplashOverlay` (`src/components/splash-overlay.tsx`, monté dans `src/app/_layout.tsx`) affiche le même logo sur le même fond, cache l'écran natif (`SplashScreen.hideAsync()`) et s'efface en fondu de 300 ms. Avec « Réduire les animations », il disparaît sans fondu (`useReducedMotion`). Sur le web, il ne fait rien (`splash-overlay.web.tsx`).
-
-Une modification de ces fichiers ou d'`app.json` demande de régénérer le dossier `ios/` puis de recompiler l'app (voir « Build de développement »). L'écran de démarrage dure le temps du chargement, sans attente ajoutée : dans un build de développement, Metro charge vite et il ne reste visible qu'un instant.
-
-![L'icône sur iOS et Android, et l'écran de démarrage en mode clair et sombre](captures/etape-9-identite.png)
-
-## Cœur du simulateur
+### Le domaine (`src/domain/`)
 
 `src/domain/` ne dépend ni de React Native ni du format d'import : ce sont des fonctions TypeScript qui prennent un process et renvoient un résultat. Les règles sont reprises du prototype web (dossier de référence).
 
@@ -145,13 +171,89 @@ Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros s
 
 **Anonymisation** (`anonymize.ts`). `textAnonymizer(acteurs, mots)` construit le remplacement de texte, et `anonymizeData` l'applique à chaque texte d'une donnée, sauf les champs techniques ; les formulaires s'en servent aussi (voir « Anonymiser le formulaire »). `anonymizeProcess(process, { hidden })` renvoie le process anonymisé, une fonction `text` qui applique les mêmes remplacements à un autre texte (le nom tapé à l'import, les remarques de lecture), et le nombre d'acteurs renommés. Les acteurs distincts, dans l'ordre d'apparition, deviennent « Service A » … « Service Z », puis « Service 27 »… (`serviceName`). Leur nom est aussi remplacé dans le nom du process, les titres des étapes et les libellés des liens : mot entier, sans tenir compte des accents ni des majuscules, le terme le plus long d'abord ; « l'Équipe Achats » devient « le Service A ». Les mots de `hidden` (lus par `parseHiddenWords`, séparés par des virgules) deviennent « [masqué] ». Les e-mails, les liens et les numéros d'au moins 9 chiffres sont masqués ; un délai comme « 12 jours » reste. Les identifiants, rôles, délais et positions ne changent pas. Le composant `AnonymizeOption` (`src/components/anonymize-option.tsx`) affiche la case et le champ « Autres mots à masquer », à l'import et à l'export.
 
+<details>
+<summary>Tests</summary>
+
 **Tests** (`__tests__/`). Jest, avec le préréglage `jest-expo`. Les tests partent d'un process fictif, la demande de matériel de bureau (`exemples.ts`), et y créent chaque anomalie une par une.
 
-## Import de fichiers
+</details>
+
+### Moteur de simulation (`src/simulation/engine.ts`)
+
+`createSimulation(process)` prépare le graphe une fois (`buildGraph`) et renvoie des fonctions qui prennent un état et renvoient le nouvel état, sans rien modifier. L'écran garde l'état avec `useState`, le moteur calcule. L'état contient :
+
+- `trail` : les étapes parcourues, dans l'ordre, chacune avec le lien emprunté pour y arriver (même forme que les chemins de `paths.ts`) ;
+- `days` : le délai cumulé, en jours ouvrés ;
+- `status` : `running` (il reste des sorties), `finished` (une fin est atteinte), `stuck` (impasse : une étape sans sortie qui n'est pas une fin) ou `no-start` (aucun départ).
+
+Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorties de l'étape courante ; `step(état, lien)` avance par la sortie choisie (une sortie qui ne part pas de l'étape courante est ignorée) ; `back(état)` revient d'une étape ; `replay(chemin)` rejoue un chemin déjà calculé. Une boucle du schéma peut être parcourue plusieurs fois : c'est l'utilisateur qui choisit. Six tests couvrent le départ, l'avance, le retour, le rejeu, l'impasse et le process sans départ.
+
+### Schéma qui se construit (`src/simulation/layout.ts`, `src/components/process-diagram.tsx`)
+
+**Mise en page.** `layoutProcess(process)` donne la position de chaque étape et le tracé de chaque flèche :
+
+- si des étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original. Une étape ajoutée dans l'éditeur n'en a pas : `placeMissing` la pose sous l'étape qui y mène (sinon au-dessus de celle qui suit, sinon sous tout le schéma), puis la décale vers la droite tant qu'elle chevauche une autre forme. Les positions d'origine ne bougent pas ;
+- sinon (fichier JSON, tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
+- Les flèches descendent à angle droit et **ne traversent jamais une étape**. Pour chaque flèche, plusieurs tracés sont essayés dans l'ordre, et le premier qui ne touche aucune autre étape est gardé (`crosses`) : tout droit si les deux étapes sont alignées ; par le côté si l'étape d'arrivée est sur la ligne suivante, à gauche ou à droite (un côté ne sert qu'à une flèche, et le côté droit est gardé pour les boucles) ; par le bas puis dans l'espace vide au-dessus de l'étape d'arrivée ou sous l'étape de départ ; sinon en descendant par un couloir vertical libre entre deux colonnes (`verticalChannels`).
+- Plusieurs flèches qui arrivent sur une même étape (ou partent par son bas) ont chacune leur point, répartis sur le bord dans l'ordre de gauche à droite (`spread`) : elles ne se confondent pas.
+- Deux flèches qui passent dans le même couloir, à la même hauteur ou à la même abscisse, sont écartées de 10 points chacune sur sa voie (`separateTracks`). Les segments du départ et de l'arrivée ne bougent pas.
+- Une flèche qui remonte (boucle) passe par la droite. Le libellé se pose au milieu de la flèche (`midpoint`). Un process venu de draw.io garde ses positions : ses flèches restent des lignes droites d'un bord à l'autre.
+
+![Tous les cas, avant et après le nouveau tracé : la flèche « Ouvrir l'accès → Demande close » ne traverse plus « Expliquer le refus »](captures/etape-6c-fleches.png)
+
+<details>
+<summary>Détail</summary>
+
+<details>
+<summary>Tests</summary>
+
+Quinze tests vérifient les niveaux, les couloirs, les boucles, les étapes côte à côte, les positions draw.io, la géométrie, et, sur les quatre process de démonstration, qu'aucune flèche ne traverse une étape, que deux flèches vers une même étape arrivent en deux points distincts et que deux flèches ne se superposent pas dans un couloir.
+
+</details>
+
+**Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, pilule pour le départ et la fin. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
+
+**Vue.** Le schéma n'est pas dans des défilements : il est posé dans un cadre et déplacé par une transformation (décalage `x`, `y` et échelle `scale`), trois valeurs partagées Reanimated qui bougent sur le fil d'interface, sans repasser par React.
+
+- **Cadrage automatique.** À chaque étape (`focusKey` change), la vue glisse en 450 ms (`withTiming`) pour montrer l'étape en cours et toutes ses sorties possibles (`boxOf`), entre 55 % et 100 % de la taille réelle. Si tout ne tient pas, l'étape en cours reste dans le cadre (`keepInside`). À la fin du parcours, et dans les cas simple et complexe, la vue montre tout le chemin parcouru (jusqu'à 40 %). En vue « Tous », tout le schéma. Avec « Réduire les animations », la vue saute sans glisser.
+- **Gestes** (`react-native-gesture-handler` 3, inclus dans Expo Go) : glisser d'un doigt déplace le schéma (`usePanGesture`), pincer zoome autour des doigts (`usePinchGesture`), les deux en même temps (`useSimultaneousGestures`). Le schéma ne sort jamais du cadre (`bound`) ; plus petit que le cadre, il y est centré. L'app est enveloppée dans `GestureHandlerRootView` (`src/app/_layout.tsx`).
+- **Netteté.** Pendant un geste ou un glissement, l'image est étirée ; à la fin, le SVG est redessiné à la nouvelle taille (`renderScale`) pour que le texte reste net.
+- **Apparition.** Chaque étape et chaque flèche qui apparaît passe de transparente à visible en 350 ms (`FadeIn`, un `G` animé). Une étape fantôme qui devient parcourue garde la même clé : le fondu ne rejoue pas.
+- Les boutons « − » et « + » zooment autour du centre (de 30 à 200 %), « Tout » montre le schéma entier. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
+
+![Le schéma qui se construit : la vue se recadre à chaque étape, puis montre tout le chemin à la fin](captures/etape-6c-construction.png)
+
+</details>
+
+### Tous les cas (`src/simulation/families.ts`, maquette écran 11)
+
+**Calcul.** `allPaths(process)` liste tous les chemins sans boucle, de chaque départ jusqu'à une fin (ou jusqu'à une étape dont toutes les sorties reviennent en arrière), par un parcours en profondeur. Au-delà de 500 chemins, la liste s'arrête et le signale (`capped`). `overviewOf(process)` range ces chemins en **familles** : la famille d'un chemin est la sortie qu'il prend à la première étape qui en a plusieurs, nommée d'après la question et la réponse (« Urgent ? » + « oui » donne « Urgent : oui »). Sans aucune décision, il n'y a qu'une famille, « Chemin unique ». Pour chaque famille : ses chemins, ses délais mini et maxi, ses étapes et ses flèches. Le **chemin critique** est le plus long en jours ouvrés ; sa famille est marquée critique s'il y a plusieurs familles. La **charge** compte les étapes de chaque acteur. Six tests couvrent les chemins, les familles, le critique, la charge, le process sans décision, les boucles et le plafond.
+
+![Tous les cas : deux familles en couleur, puis la famille critique isolée](captures/etape-6b-tous.png)
+
+<details>
+<summary>Détail</summary>
+
+**Dessin.** En mode « Tous », `ProcessDiagram` reçoit `overview` au lieu de `progress` : tout le schéma est dessiné, en largeur entière, dans un cadre plus haut (il n'y a pas de panneau en bas). Chaque famille a sa couleur (`FamilyColors` dans `src/constants/theme.ts`, six couleurs en clair et en sombre, lues par `useFamilyColors()`). Une flèche partagée par plusieurs familles reçoit un trait par famille, côte à côte : `offsetPolyline` (`layout.ts`) décale la ligne brisée sur le côté en gardant ses angles droits. Une flèche qu'aucun chemin n'emprunte reste en pointillés gris. Les tâches sont claires (fond blanc, bordure) pour laisser la couleur aux chemins. Le chemin critique est en trait épais. Une pointe de flèche (`Marker`) est créée par couleur utilisée.
+
+**Légende.** Sous le schéma : le nombre de chemins et de familles, puis une ligne par famille (pastille de couleur, nom, badge « critique », nombre de chemins, délais). Toucher une ligne isole la famille : ses traits restent, le reste est estompé. Une phrase rappelle le chemin critique et l'acteur le plus chargé. Chaque ligne est un bouton qui annonce son état (choisi ou non), ses chiffres et ce que fait le toucher.
+
+</details>
+
+## 2. Lire un process : import
+
+`src/import/` transforme un fichier en `Process` du cœur, sans dépendre de l'écran. Chaque lecteur rend le même résultat (`ImportResult` : les process et des remarques), puis les règles apprises corrigent la lecture.
+
+### Fichiers draw.io, BPMN, Visio et JSON (`src/import/`)
 
 `src/import/` transforme un fichier en process (`Process` du cœur), sans dépendre de l'écran. `importProcessFile(nomDuFichier, contenu)` choisit le lecteur d'après l'extension, l'espace de noms BPMN ou le premier caractère, et renvoie les process trouvés et une liste de remarques. Un fichier illisible lève une `ImportError` avec un message en français, prêt à afficher.
 
 **draw.io** (`drawio.ts`, repris du prototype web). Un fichier draw.io est du XML : une balise `<diagram>` par page, contenant un `<mxGraphModel>` en clair ou compressé (base64 d'un flux *deflate* du XML encodé en URL). Le XML est lu avec `@xmldom/xmldom` et la décompression faite avec `fflate`, deux bibliothèques en JavaScript pur, sans code natif. Pour chaque page :
+
+![Import BPMN : l'aperçu de l'exemple, puis tous ses chemins dans la simulation](captures/etape-29-import-bpmn.png)
+
+<details>
+<summary>Détail</summary>
 
 - chaque `<mxCell>` est une forme (`vertex`) ou une flèche (`edge`) ; une forme enveloppée dans `<object>` ou `<UserObject>` prend son libellé là ;
 - les coordonnées sont rendues absolues (une forme dans un couloir est placée par rapport à lui) ;
@@ -165,9 +267,35 @@ Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros s
 - le délai est lu dans le texte (« 2 JO », « 1,5 jour ouvré », « 3 BD », « 5 jours », « 2 j ») ;
 - le libellé d'une flèche est son texte ou celui de l'étiquette posée dessus ; une flèche dessinée à l'envers est retournée ; une flèche dont un bout n'est accroché à rien est rattachée à l'étape la plus proche, avec une remarque.
 
-Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauche à droite) et gardent leur position (`layout`) pour un futur affichage du schéma. Un fichier de plusieurs pages donne un process par page, nommé « Fichier · Page ».
+Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauche à droite) et gardent leur position (`layout`), reprise par le schéma de la simulation. Un fichier de plusieurs pages donne un process par page, nommé « Fichier · Page ».
+
+**BPMN** (`bpmn.ts`, voir [`bpmn.md`](bpmn.md)). Un fichier `.bpmn` (BPMN 2.0, reconnu à son extension ou à l'espace de noms `omg.org/spec/BPMN/20100524/MODEL`) est lu avec `@xmldom/xmldom`, par le nom local des balises (les préfixes `bpmn:`, `bpmn2:`, `semantic:` varient d'un outil à l'autre). Un process par `<process>` qui a des éléments reliés : `startEvent` → départ, `endEvent` → fin, tâches (`task`, `userTask`, `serviceTask`…), sous-process et événements intermédiaires → étapes ; une passerelle exclusive, inclusive, complexe ou sur événement d'où partent plusieurs flux → décision (sans nom : « Décision ») ; une passerelle parallèle qui sépare → étape « En parallèle » ; une passerelle qui ne fait que réunir (un seul flux sortant) est retirée, ses flux arrivants vont à l'étape suivante. Le nom d'un `sequenceFlow`, sinon sa `conditionExpression`, devient le libellé du lien. Le couloir le plus précis (`lane`, `childLaneSet`) donne l'acteur ; sans couloir et avec plusieurs participants, le nom du participant. `shape` garde le genre d'élément (`userTask`…), pour les règles de lecture. La position vient du dessin (`BPMNShape`, `dc:Bounds`) ; un événement ou une passerelle (36 × 36, nom écrit à côté) est agrandi autour de son centre à 90 × 56 pour que son nom tienne. Un délai écrit dans le nom (« 2 JO ») est lu comme pour draw.io. Le nom du process est celui du `<process>`, sinon du participant, sinon du fichier ; à plusieurs process, « Fichier · Participant ». Remarques : événements attachés, données, annotations et flux de message, non lus. Tests (`__tests__/bpmn.test.ts`) : l'exemple fictif `docs/exemples/demande-achat.bpmn` (trois couloirs, décision, branches parallèles, attente, mise en page, trois chemins sans erreur), un fichier sans préfixe avec condition, sous-couloir et deux participants, et les fichiers refusés.
+
+**Visio** (`visio.ts`). Un `.vsdx` est une archive zip de XML : il est lu en octets (`readPickedBytes`), pas par `importProcessFile`. L'écran d'import appelle `parseVisio(octets, nomDuFichier)` pour la carte « Fichier Visio » ou un nom en `.vsdx`. L'archive est ouverte avec `fflate` (`unzipSync`, seuls les `.xml` et `.rels`), le XML lu avec `@xmldom/xmldom`. `visio/pages/pages.xml` donne les pages (nom, `PageHeight`, les pages d'arrière-plan sont sautées) ; `pages/_rels/pages.xml.rels` donne le fichier de chaque page ; `visio/masters/masters.xml` donne le nom de chaque forme de base (`NameU` : « Process », « Decision », « Start/End », « Swimlane », « Dynamic connector »…). Pour chaque page, les `<Shape>` (cellules `PinX`, `PinY`, `Width`, `Height`, texte sans mise en forme) ; les formes d'un groupe sont placées par rapport au coin du groupe (`PinX − LocPinX`). Un connecteur est une forme avec une cellule `BeginX` ou une forme de base « connector » ; les `<Connect>` (`FromSheet`, `FromCell` `BeginX` / `EndX`, `ToSheet`) donnent la forme de départ et d'arrivée ; son texte est le libellé du lien. Un process par page qui a au moins un connecteur accroché à deux formes. Rôle : forme de base « Decision » avec au moins deux sorties, ou deux sorties nommées, ou un titre en « ? » → décision ; « Start/End » ou « Terminator » → départ (aucune entrée) ou fin (aucune sortie) ; sinon le texte (« Début », « Clôturé »…) puis les flèches, comme pour draw.io. L'acteur est le texte du plus petit couloir (« Swimlane ») qui contient le centre de la forme, sinon « Responsable : … » dans le texte ; le délai est lu dans le texte. La position passe des pouces aux pixels (× 96), l'axe vertical retourné (Visio compte depuis le bas). `shape` garde le nom de la forme de base, pour les règles de lecture. Remarques : connecteurs non accrochés aux deux bouts, formes avec texte sans connecteur (titres, légendes), pages sans forme reliée. Tests (`__tests__/visio.test.ts`) : l'exemple fictif `docs/exemples/demande-conges.vsdx` (trois couloirs, décision « Oui » / « Non », délais, mise en page, titre signalé, deux chemins sans erreur), un fichier fabriqué en code sans formes de base (rôles lus au texte et aux flèches, forme dans un groupe, connecteur non accroché), et les fichiers refusés. L'exemple est fabriqué par `scripts/exemple-visio.py`.
+
+![Import Visio : la carte « Fichier Visio » et l'aperçu de l'exemple, puis ses deux chemins dans la simulation](captures/etape-30-import-visio.png)
+
+**JSON** (`json.ts`). Le format SimuFlow : `{ "format": "simuflow", "version": 1, "name", "steps": [{ "id", "kind", "title", "actor", "duration" }], "links": [{ "from", "to", "label" }] }`. Seuls `steps` et les `id` sont obligatoires ; le rôle vaut `task` par défaut. Chaque erreur dit où elle est (« Étape 2 : l'identifiant « a » est déjà utilisé. »). `processToJson` fait l'inverse, pour exporter un process.
+
+<details>
+<summary>Tests</summary>
+
+**Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé. Un schéma fictif d'achat de fournitures sans couloir (`__fixtures__/legende.ts`, aussi dans `docs/exemples/achats-fournitures.drawio`) teste la légende par couleur : acteurs lus, étape d'une couleur absente de la légende sans acteur, pastille isolée ignorée. `__fixtures__/varies.ts` dessine des process de façons très différentes : que des rectangles sans couleur ni « Début »/« Fin » avec les acteurs dans le texte (aussi dans `docs/exemples/validation-facture.drawio`), que des cercles, des personnes et des équipes écrites de plusieurs façons.
+
+</details>
+
+![Un schéma sans couleur ni losange : la décision, le départ et les acteurs sont trouvés](captures/etape-L1-lecture-indices.png)
+
+![Import d'un schéma dont les acteurs sont donnés par une légende de couleurs](captures/etape-9-acteurs-legende.png)
+
+</details>
+
+### Tableaux Excel et CSV (`src/import/tableau/`)
 
 **Tableaux Excel et CSV** (`tableau/`). Le fichier est lu sur l'appareil, en JavaScript pur, sans bibliothèque de plus ni module natif : il marche sur iPhone, Android et web, et rien n'est envoyé ni gardé. L'app lit le classeur, dit ce que contient chaque onglet, transforme en process les onglets « process », lit les situations des onglets « SLA / OLA » en un modèle normalisé puis en un process par situation (`modeles/parcours.ts`), et lit les templates de formulaire en un formulaire (questions, types, choix, conditions), que l'app affiche et fait remplir (`modeles/reponses.ts` pour les questions affichées et la vérification des réponses).
+
+<details>
+<summary>Détail</summary>
 
 - `readTableFile(nom, octets)` (`index.ts`) choisit le lecteur d'après l'extension, puis les premiers octets. Il rend un `Workbook` (`types.ts`) : des onglets, chacun une grille de textes (`rows`), ses cellules fusionnées (`merges`) et s'il est masqué.
 - **.xlsx, .xlsm** (`xlsx.ts`). Un classeur est un ZIP de fichiers XML : `fflate` ne décompresse que ceux qui servent (`workbook.xml`, ses relations, `sharedStrings.xml`, `styles.xml`, les feuilles), jamais les images. Chaque cellule donne sa **valeur affichée** : texte partagé, texte enrichi, texte en ligne, booléen (« VRAI »), valeur enregistrée d'une formule (non recalculée), date au format « 05/11/2026 » quand le style de la cellule est un format de date. Les retours à la ligne des cellules sont gardés. Les lignes et colonnes vides de la fin sont retirées ; au-delà de 5 000 lignes ou 500 colonnes, l'onglet est tronqué avec une remarque. Un onglet graphique (sans cellules) est sauté.
@@ -179,6 +307,9 @@ Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauch
 - **Modèle « process classique »** (`modeles/simple.ts`). `sheetToTable` cherche la ligne d'en-tête du scanner, garde une colonne par genre (le premier titre gagne), prend les lignes suivantes jusqu'à la première ligne vide, et le titre seul sur sa ligne dans les trois lignes au-dessus. `sheetToProcess` passe ce tableau à `tableToProcess` du scanner (`src/scan/to-process.ts`) : mêmes suites (« oui → 3 ; non → 5 », « fin »), mêmes délais, mêmes rôles. Le process prend le titre du tableau, sinon le nom de l'onglet (pour un CSV, le nom du fichier), et la source `tableau`.
 - **Colonnes choisies à la main** (`modeles/simple.ts`, `sheetToProcessWithColumns`). Pour un onglet « Non reconnu » ou « Liste », l'utilisateur donne la ligne des titres et le rôle de chaque colonne (`ColumnChoice` : un `ColumnKind` ou `null` par colonne) ; le tableau est construit comme ci-dessus à partir de cette ligne, puis passe par `tableToProcess`. Sans colonne Étape, rien n'est lu. `firstFilledRow` propose la première ligne remplie comme ligne des titres, `sheetGrid` donne la grille avec les fusions recopiées.
 - **Titres appris** (`src/scan/table.ts`, `learnedHeaderKind`). Les colonnes choisies deviennent des règles de lecture `column` (voir « Règles de lecture apprises ») ; `learnedHeaders(rules)` en tire une table titre → genre (titre comparé sans accents ni majuscules, `headerKey`), que `describeWorkbook`, `sheetToProcess` et `workbookToProcesses` consultent avant les synonymes du scanner. Un tableau aux mêmes titres est donc reconnu « Process » au prochain import, sans rien choisir.
+<details>
+<summary>Détail : workflows SLA / OLA, parcours et templates de formulaire</summary>
+
 - **Modèle « workflow avec SLA et OLA »** (`modeles/sla-ola.ts`, `readSlaOlaSheet`, `workbookToSituations`). Une ligne par situation (un choix du menu déroulant d'un formulaire de demande). Chaque situation devient ensuite un process (modèle « parcours », plus bas).
   - **Colonnes.** D'après leur titre, sans accents ni majuscules : SLA, propriétaire, texte d'aide (« Explicite »), situation (« sous rubrique », « Situation »…), famille, champs du formulaire (« Champs… »), description, commentaires (gardés en notes), et la **zone des étapes** à partir du premier titre « Étape », « Groupe », « Task » ou « OLA » jusqu'au bout de la ligne. Une colonne sans titre se juge à son contenu : « Menu déroulant » est ignoré, « Selection … » devient un champ de sélection ; parmi les autres avant les étapes, la dernière est la situation et la première la famille. La famille fusionnée ou laissée vide reprend celle du dessus ; sans colonne famille, c'est le nom de l'onglet.
   - **Zone des étapes, classée par contenu.** Les colonnes s'y décalent (sans étape 2, le texte de clôture tombe sous « Groupe de compétence 2 ») : chaque cellule est lue de gauche à droite et classée par `classifyStepCell`, jamais par sa colonne. « Task - … » est une task (une parenthèse qui fait phrase devient sa note) ; « 3 jours ouvrés … » un OLA, dont les lignes « Si … » portent les règles ; « Clôture service P » le groupe qui clôture ; « Solved/Not solved/No answer : clôture » la règle de clôture ; « … reprend la main » une reprise en main ; « Reopen » une note ; « Si pas complexe » une condition ; un texte de décision (« Si pas de retour… passe étape 2 ») une règle ; un nom court (huit mots au plus, première ligne) un groupe de compétence, avec « + assignee manuel » noté à part ; une phrase longue une note. Une étape est (groupe, task, OLA) : un renseignement déjà pris, ou un groupe ou une task après un OLA, ouvre l'étape suivante. Une étape sans groupe ni task n'existe pas.
@@ -186,7 +317,7 @@ Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauch
   - **Avertissements**, chacun avec sa cellule d'origine (« J3 ») et, quand il faut trancher, la question à poser au métier. Rouge : SLA absent ou illisible, pas de groupe ou pas d'OLA à l'étape 1. Orange : reprise en main sans task 2, étape 2 annoncée sans groupe ni task, étape 2 sans règle qui dit quand la créer, critère « complexe » non défini, « Si pas complexe » sans étape 2 (gardé en note), SLA différent de OLA 1 + OLA 2, SLA plus court que l'OLA seul, OLA de l'étape 2 absent. Information : colonnes décalées lues par contenu, SLA plus long que l'OLA seul (marge). Une ligne qui nomme une situation sans SLA ni étape n'est pas encore décrite : elle est comptée à part (`skipped`).
   - **Vérifié** en privé sur un vrai classeur de spécification (jamais versionné) : ses douze situations remplies sont lues avec la bonne variante (escalade avec assignee manuel, une étape, reprise en main, cas complexe, étape 2 si accord).
 - **Modèle « parcours »** (`modeles/parcours.ts`, `situationToProcess`, `situationsToProcesses`). Le process d'une situation, nommé « Famille · Situation » (`situationName`), source « tableau », toujours dans le même ordre : départ « Choisir la situation et remplir le formulaire » (Demandeur) ; « Ticket créé et attribué au propriétaire (SLA n JO) » (propriétaire) ; pour chaque task, « Task n : … (OLA n : n JO) » (groupe, délai = OLA, « · assignee à renseigner à la main » si besoin), décision « Réponse dans l'OLA n ? » (Non : non résolue, sans réponse = not solved), décision « Task n résolue ? », états « Task n résolue (solved) » et « Task n non résolue (not solved ou sans réponse) ». Puis selon la variante : une étape, les deux états vont à la clôture ; escalade, non résolue mène à la task 2 ; étape 2 si accord, résolue mène à la task 2 ; reprise en main, les deux états mènent à « Le propriétaire reprend la main », sans task 2 inventée ; cas complexe, non résolue mène à la décision « Cas complexe ? » (Oui : task 2, Non : clôture). Fin : « Ticket clôturé par le propriétaire » (groupe de clôture, sinon propriétaire). Les délais n'étant que sur les tasks, le chemin le plus long de la simulation est OLA 1 + OLA 2, à comparer au SLA. `situationLevel` donne le niveau le plus grave des avertissements d'une situation (`null` : lue sans ambiguïté).
-- **Modèle « template de formulaire »** (`modeles/formulaire.ts`, `readFormTemplate`). Le classeur qui décrit un formulaire de demande avant sa création dans l'outil de tickets. Il s'affiche et se remplit dans l'écran « Formulaire » (voir l'écran d'import), puis mène au process de la situation choisie (voir « Du formulaire au process »).
+- **Modèle « template de formulaire »** (`modeles/formulaire.ts`, `readFormTemplate`). Le classeur qui décrit un formulaire de demande avant sa création dans l'outil de tickets. Il s'affiche et se remplit dans l'écran « Formulaire » (voir l'écran Importer), puis mène au process de la situation choisie (voir « Du formulaire au process »).
   - **Onglets**, trouvés par leur nom sans numéro (`bareSheetName`) : « Basic info » (nom, description, type de ticket, mots clés), « Questions », « Fulfillment flow » (tasks : titre, groupe, séquence) et « Assignment & Summary » (groupe propriétaire, résumé du ticket). Dans « Basic info » et « Assignment », la valeur est lue dans la colonne « Your Value » (ou « Valeur »), sinon en seconde case d'une ligne de deux.
   - **Questions** (`readRecords`). Disposition d'un vrai template : une colonne par question (« Question 1 », « Question 2 »…, et les colonnes remplies d'après même sans titre), une ligne par propriété, reconnue à son intitulé : nom, format, obligatoire, explication, conditions, aide (« en italique »), exemple. La disposition inverse (une ligne par question, une colonne par propriété) est lue aussi. Les questions sans rien d'écrit sont ignorées.
   - **Types** (`questionType`), en français ou en anglais : texte sur une ligne ou plusieurs, oui / non, menu déroulant, cases à cocher, liste, échelle, référence, date, date et heure, email, lien, adresse IP, pièce jointe, libellé, texte mis en forme, section, séparateur. L'explication donne, selon le type, les **choix** (lignes à tiret, ou « Cas 1, Cas 2 » sur une ligne), les **champs à remplir** d'un libellé (lignes qui finissent par « : », comme « Téléphone : ») ou les **documents attendus** d'une pièce jointe.
@@ -194,285 +325,21 @@ Les étapes sont rangées dans l'ordre de lecture (de haut en bas, puis de gauch
   - **Conditions d'affichage** : la ligne « Conditions » (« Si Question 2 = Cas 3 », plusieurs reliées par « et ») ; sinon l'intitulé, où les vrais templates les écrivent : « Si OUI : … », « Si NON : … » et « Reprise = NON » suivent la question oui / non précédente ; « MOTIF 2 : … » suit le choix « MOTIF 2 » d'une question précédente (cases à cocher, menu). Toutes doivent être vraies. `isQuestionVisible(question, réponses)` dit si une question s'affiche (une réponse de cases à cocher est la liste des choix cochés).
   - **Avertissements**, avec l'onglet et la cellule : format inconnu (affiché comme un texte), question sans format (affichée comme un libellé, simple information), menu déroulant sans choix, condition non comprise, préfixe « MOTIF » ou « Si OUI » sans question qui lui réponde, template encore vide.
   - **Vérifié** en privé sur deux vrais templates (jamais versionnés) : les 21 questions du premier sont lues avec leur type, leurs champs, leurs documents et leurs conditions (28 après les règles de lecture : quatre pièces jointes pour les documents d'une cession, la dernière facultative, un titre et une pièce jointe obligatoire par document pour chaque lien juridique (trois, deux et une), nom et prénom séparés, quatre rappels de longueurs retirés) ; le second, vide, donne l'avertissement attendu.
+
+</details>
+
 - **Process d'un classeur** (`index.ts`, `workbookToProcesses`) : un process par onglet « process », avec des identifiants distincts ; les remarques d'un onglet sont précédées de son nom quand il y en a plusieurs.
+
+<details>
+<summary>Détail : tests des tableaux</summary>
 
 **Tests** (`tableau/__tests__/`). Un classeur fabriqué en code (`tableau/__fixtures__/classeur.ts`) avec textes partagés et enrichis, texte en ligne, booléen, formule, dates, fusion, onglet masqué écrit avec un préfixe d'espace de noms et onglet graphique ; les vrais classeurs fictifs de `docs/exemples/` enregistrés par un tableur ; les CSV (guillemets, encodages) ; la reconnaissance de chaque genre d'onglet et les fichiers refusés ; le tableau de process d'exemple en .xlsx et .csv (titre, rôles, acteurs, délais, branches « oui » / « non »), un acteur fusionné, un tableau suivi d'une note, plusieurs onglets avec leurs remarques ; `tableau-a-completer.xlsx` d'abord non reconnu, puis lu avec les colonnes choisies, refusé sans colonne Étape, et reconnu seul grâce aux titres appris ; pour les workflows SLA / OLA (`sla-ola.test.ts`), l'exemple fictif de la spécification (escalade, une étape avec colonnes décalées et reprise en main), chaque variante, les contrôles (SLA différent de la somme des OLA, étape 2 annoncée sans groupe, SLA ou groupe absent, marge, « Si pas complexe »), la famille fusionnée, les colonnes sans titre, le classement de chaque genre de cellule et les six situations de `workflow-sla-ola.xlsx` ; pour les parcours (`parcours.test.ts`), le process de chaque variante sur l'exemple (étapes, acteurs, délais, liens oui / non, pas de task 2 inventée pour une reprise en main, décision « Cas complexe ? »), une situation sans SLA ni groupe, le chemin critique simulé égal à OLA 1 + OLA 2, les noms et identifiants uniques, et le niveau de chaque situation ; pour les templates de formulaire (`formulaire.test.ts`), le template d'exemple (informations, tasks, type et contenu de chaque question, conditions, affichage selon les réponses), les règles de lecture (nom et prénom séparés, rappel de longueurs retiré et appliqué, une pièce jointe par document, documents d'un choix coché), les conditions « Si OUI » et « X = NON », une question sans titre de colonne, la disposition une ligne par question, les avertissements, un template vide et les formats en français et en anglais ; pour le remplissage (`reponses.test.ts`), les questions affichées selon les réponses (une réponse à une question cachée ne compte pas), les réponses obligatoires manquantes, les champs d'un libellé, les formats (e-mail, adresse web, IP, date, date et heure), les questions sans réponse attendue et le récapitulatif.
 
-**BPMN** (`bpmn.ts`, voir [`bpmn.md`](bpmn.md)). Un fichier `.bpmn` (BPMN 2.0, reconnu à son extension ou à l'espace de noms `omg.org/spec/BPMN/20100524/MODEL`) est lu avec `@xmldom/xmldom`, par le nom local des balises (les préfixes `bpmn:`, `bpmn2:`, `semantic:` varient d'un outil à l'autre). Un process par `<process>` qui a des éléments reliés : `startEvent` → départ, `endEvent` → fin, tâches (`task`, `userTask`, `serviceTask`…), sous-process et événements intermédiaires → étapes ; une passerelle exclusive, inclusive, complexe ou sur événement d'où partent plusieurs flux → décision (sans nom : « Décision ») ; une passerelle parallèle qui sépare → étape « En parallèle » ; une passerelle qui ne fait que réunir (un seul flux sortant) est retirée, ses flux arrivants vont à l'étape suivante. Le nom d'un `sequenceFlow`, sinon sa `conditionExpression`, devient le libellé du lien. Le couloir le plus précis (`lane`, `childLaneSet`) donne l'acteur ; sans couloir et avec plusieurs participants, le nom du participant. `shape` garde le genre d'élément (`userTask`…), pour les règles de lecture. La position vient du dessin (`BPMNShape`, `dc:Bounds`) ; un événement ou une passerelle (36 × 36, nom écrit à côté) est agrandi autour de son centre à 90 × 56 pour que son nom tienne. Un délai écrit dans le nom (« 2 JO ») est lu comme pour draw.io. Le nom du process est celui du `<process>`, sinon du participant, sinon du fichier ; à plusieurs process, « Fichier · Participant ». Remarques : événements attachés, données, annotations et flux de message, non lus. Tests (`__tests__/bpmn.test.ts`) : l'exemple fictif `docs/exemples/demande-achat.bpmn` (trois couloirs, décision, branches parallèles, attente, mise en page, trois chemins sans erreur), un fichier sans préfixe avec condition, sous-couloir et deux participants, et les fichiers refusés.
+</details>
 
-![Import BPMN : l'aperçu de l'exemple, puis tous ses chemins dans la simulation](captures/etape-29-import-bpmn.png)
+</details>
 
-**Visio** (`visio.ts`). Un `.vsdx` est une archive zip de XML : il est lu en octets (`readPickedBytes`), pas par `importProcessFile`. L'écran d'import appelle `parseVisio(octets, nomDuFichier)` pour la carte « Fichier Visio » ou un nom en `.vsdx`. L'archive est ouverte avec `fflate` (`unzipSync`, seuls les `.xml` et `.rels`), le XML lu avec `@xmldom/xmldom`. `visio/pages/pages.xml` donne les pages (nom, `PageHeight`, les pages d'arrière-plan sont sautées) ; `pages/_rels/pages.xml.rels` donne le fichier de chaque page ; `visio/masters/masters.xml` donne le nom de chaque forme de base (`NameU` : « Process », « Decision », « Start/End », « Swimlane », « Dynamic connector »…). Pour chaque page, les `<Shape>` (cellules `PinX`, `PinY`, `Width`, `Height`, texte sans mise en forme) ; les formes d'un groupe sont placées par rapport au coin du groupe (`PinX − LocPinX`). Un connecteur est une forme avec une cellule `BeginX` ou une forme de base « connector » ; les `<Connect>` (`FromSheet`, `FromCell` `BeginX` / `EndX`, `ToSheet`) donnent la forme de départ et d'arrivée ; son texte est le libellé du lien. Un process par page qui a au moins un connecteur accroché à deux formes. Rôle : forme de base « Decision » avec au moins deux sorties, ou deux sorties nommées, ou un titre en « ? » → décision ; « Start/End » ou « Terminator » → départ (aucune entrée) ou fin (aucune sortie) ; sinon le texte (« Début », « Clôturé »…) puis les flèches, comme pour draw.io. L'acteur est le texte du plus petit couloir (« Swimlane ») qui contient le centre de la forme, sinon « Responsable : … » dans le texte ; le délai est lu dans le texte. La position passe des pouces aux pixels (× 96), l'axe vertical retourné (Visio compte depuis le bas). `shape` garde le nom de la forme de base, pour les règles de lecture. Remarques : connecteurs non accrochés aux deux bouts, formes avec texte sans connecteur (titres, légendes), pages sans forme reliée. Tests (`__tests__/visio.test.ts`) : l'exemple fictif `docs/exemples/demande-conges.vsdx` (trois couloirs, décision « Oui » / « Non », délais, mise en page, titre signalé, deux chemins sans erreur), un fichier fabriqué en code sans formes de base (rôles lus au texte et aux flèches, forme dans un groupe, connecteur non accroché), et les fichiers refusés. L'exemple est fabriqué par `scripts/exemple-visio.py`.
-
-![Import Visio : la carte « Fichier Visio » et l'aperçu de l'exemple, puis ses deux chemins dans la simulation](captures/etape-30-import-visio.png)
-
-**JSON** (`json.ts`). Le format SimuFlow : `{ "format": "simuflow", "version": 1, "name", "steps": [{ "id", "kind", "title", "actor", "duration" }], "links": [{ "from", "to", "label" }] }`. Seuls `steps` et les `id` sont obligatoires ; le rôle vaut `task` par défaut. Chaque erreur dit où elle est (« Étape 2 : l'identifiant « a » est déjà utilisé. »). `processToJson` fait l'inverse, pour exporter un process.
-
-**Tests.** Un schéma fictif de demande de congés (`__fixtures__/conges.ts`), avec deux couloirs, une décision, une note, une étiquette de flèche posée à part et une flèche mal accrochée, en clair et compressé. Un schéma fictif d'achat de fournitures sans couloir (`__fixtures__/legende.ts`, aussi dans `docs/exemples/achats-fournitures.drawio`) teste la légende par couleur : acteurs lus, étape d'une couleur absente de la légende sans acteur, pastille isolée ignorée. `__fixtures__/varies.ts` dessine des process de façons très différentes : que des rectangles sans couleur ni « Début »/« Fin » avec les acteurs dans le texte (aussi dans `docs/exemples/validation-facture.drawio`), que des cercles, des personnes et des équipes écrites de plusieurs façons.
-
-![Un schéma sans couleur ni losange : la décision, le départ et les acteurs sont trouvés](captures/etape-L1-lecture-indices.png)
-
-![Import d'un schéma dont les acteurs sont donnés par une légende de couleurs](captures/etape-9-acteurs-legende.png)
-
-## Navigation
-
-Expo Router associe chaque fichier de `src/app/` à un écran.
-
-| Fichier | Route | Écran |
-| --- | --- | --- |
-| `_layout.tsx` | | Pile de navigation principale (thème clair ou sombre, écran de démarrage) |
-| `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Profil |
-| `(tabs)/index.tsx` | `/` | Liste des process |
-| `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
-| `(tabs)/profil.tsx` | `/profil` | Profil : compte, réglages, à propos |
-| `process/[id].tsx` | `/process/:id` | Détail d'un process |
-| `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
-| `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
-| `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
-| `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
-| `formulaire.tsx` | `/formulaire` | Formulaire décrit par un template, à remplir comme le demandeur (fenêtre modale) |
-| `formulaire-modifier.tsx` | `/formulaire-modifier` | Modifier le formulaire affiché : questions, types, pièces jointes, conditions (fenêtre modale) |
-| `connexion.tsx` | `/connexion` | Connexion (fenêtre modale), avec « Mot de passe oublié » |
-| `nouveau-mot-de-passe.tsx` | `/nouveau-mot-de-passe` | Nouveau mot de passe, ouvert par le lien de l'e-mail |
-| `bienvenue.tsx` | `/bienvenue` | Présentation du premier lancement (plein écran) |
-
-**Premier lancement** (`bienvenue.tsx`, `src/data/welcome-setting.ts`). Tant que la présentation n'a pas été vue (clé `simuflow.bienvenue` sur le téléphone), la liste l'ouvre par-dessus elle (`router.push('/bienvenue')`, `presentation: 'fullScreenModal'`). Quatre pages : bienvenue (logo), ajouter ses process, rejouer et corriger, suivre une vraie demande. Dans un navigateur, une page « Installez SimuFlow » s'ajoute en deuxième (voir « Version web »). « Suivant », « Précédent » (toujours à sa place, invisible sur la première page, pour que les boutons ne bougent pas), « Passer » et, à la fin, « Commencer » ; les points annoncent « Page 2 sur 4 » ; chaque page arrive en fondu, sauf avec « Réduire les animations ». « Commencer » ou « Passer » la marquent vue. Elles referment l'écran par `router.dismissTo('/')`, et `unstable_settings = { anchor: '(tabs)' }` dans `_layout.tsx` garde les onglets sous les écrans modaux : le retour fonctionne même si la présentation est le premier écran affiché. Le Profil propose « Revoir la présentation ». Le test Maestro passe la présentation si elle s'affiche (`runFlow` avec `when: visible`).
-
-![Premier lancement : la bienvenue, ajouter ses process, suivre une vraie demande, puis « Revoir la présentation » dans le Profil](captures/etape-13c-bienvenue.png)
-
-**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis cinq sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, synchronisation, suppression), **Notifications** (rappels d'échéance), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
-
-![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
-
-Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android, et tourne aussi dans le navigateur. Sur le web, les onglets natifs deviendraient une barre flottante en haut qui recouvre les titres : `(tabs)/_layout.web.tsx` les remplace par une barre en bas, construite avec les onglets sans style d'Expo Router (`expo-router/ui` : `Tabs`, `TabSlot`, `TabList`, `TabTrigger`), avec les mêmes icônes. Les icônes passent toutes par `src/components/symbol.tsx` : `expo-symbols` n'affiche rien dans le navigateur sans clé `web`, le composant y reprend le nom Material Symbols d'Android.
-
-## Écran Liste des process
-
-`src/app/(tabs)/index.tsx` reprend l'écran 2 de la maquette : titre, champ de recherche, une carte par process et un bouton « + » qui ouvre l'import. Chaque carte (`process-card.tsx`) affiche le nombre d'étapes, de décisions et d'acteurs, une pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie ») et la source (draw.io ou Scan). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
-
-**Données.** `useProcessList()` (`src/data/process-list.ts`) affiche les process importés (et ceux du compte, voir « Synchronisation avec le serveur »), puis les quatre process d'exemple de `demo-processes.ts`. Deux exemples contiennent des anomalies exprès.
-
-**Exemples à part** (`src/data/examples.ts`, testé ; `examples-setting.ts`). `splitExamples` sépare vos process des exemples (reconnus à leur identifiant). L'écran affiche d'abord vos process, puis un titre repliable « Exemples · 4 » (`accessibilityState.expanded`) et les exemples dessous. Sans aucun process à vous, une invitation en pointillés dit où ils apparaîtront. Le réglage « Afficher les exemples » du Profil (gardé sur le téléphone, clé `simuflow.exemples`, activé par défaut) les retire de la liste ; leur lien direct (`/process/demande-acces`) marche toujours. Le test de bout en bout (Maestro) touche « Demande d’accès » : il faut que les exemples soient affichés.
-
-![Liste : sans process à vous (invitation et exemples), avec vos process et les exemples repliés, puis le réglage du Profil](captures/etape-13b-exemples.png)
-
-**Les 5 états** (maquette, écran 10), calculés à partir de l'état réel de l'app par `listState` (`src/data/list-state.ts`, testé) :
-
-| État | Quand | Affichage |
-| --- | --- | --- |
-| Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
-| Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
-| Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
-| Vide | Aucun process : rien d'importé, et les exemples masqués dans le Profil | Message et bouton « Ajouter un process » (`state-message.tsx`) |
-| Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
-
-Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.
-
-En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états (`useSimulatedProcessList`, `src/data/process-store.ts`) ; « Contenu » revient à la liste réelle. Ce choix n'existe pas dans l'app publiée (`__DEV__`).
-
-![États réels : chargement du compte, erreur du serveur, contenu, hors connexion](captures/etape-8-etats.png)
-
-**Animations** (Reanimated). Deux animations, toutes deux coupées quand « Réduire les animations » est activé dans les réglages du téléphone (`useReducedMotion`) :
-
-- le squelette de chargement « respire » : son opacité va et vient entre 1 et 0,5 en boucle (`withRepeat` + `withTiming`, 0,8 s) ;
-- à l'arrivée de la liste, les cartes apparaissent l'une après l'autre en glissant vers le haut (`FadeInDown`, 0,3 s, 60 ms d'écart entre deux cartes).
-
-**Recherche.** Elle ignore les accents et les majuscules (`normalizeForSearch`, `src/utils/format.ts`) : « materiel » trouve « Commande de matériel ».
-
-![Écran Liste : chargement, contenu, vide, erreur, hors connexion, et l'onglet Profil avec le choix de l'état de démo](captures/etape-4a-liste.png)
-
-**Accessibilité.** Chaque carte est un bouton dont VoiceOver et TalkBack lisent tout le contenu en une phrase. Le champ de recherche et le bouton « + » ont un libellé. Le squelette est annoncé « Chargement des process », le bandeau hors connexion comme une alerte. Les zones à toucher font au moins 44 points.
-
-## Écran Importer
-
-`src/app/import.tsx` reprend l'écran 5 de la maquette, en fenêtre modale ouverte par le bouton « + » de la liste.
-
-1. **Source** : « Fichier draw.io », « Formulaire et son workflow » (voir « Du formulaire au process »), « Tableau Excel ou CSV » et « Fichier JSON » ouvrent le sélecteur de fichiers du téléphone (`expo-document-picker`, qui accède à Fichiers, iCloud Drive, Drive, pièces jointes enregistrées). « Scanner un tableau » ouvre l'onglet Scanner. Le sélecteur copie le fichier dans le cache de l'app ; `readPickedFile` (`src/utils/read-file.ts`) en lit le texte avec `File` d'`expo-file-system`. Un fichier de plus de 5 Mo est refusé. Pour un tableau, `readPickedBytes` en lit les octets (`File.bytes()` sur le téléphone, `arrayBuffer()` du fichier dans le navigateur), jusqu'à 20 Mo (un classeur peut contenir des images, qui ne sont pas lues) ; le sélecteur propose les types .xlsx, .xlsm, .xls et .csv. L'écran affiche alors « Ce que l'app a lu » (`src/components/workbook-preview.tsx`) : le genre de classeur, puis chaque onglet avec ce qui y a été reconnu (pastille), son nombre d'étapes, de situations ou de lignes, de colonnes et de cellules fusionnées. Les onglets « process » deviennent des process (`workbookToProcesses`) qui passent par les règles de lecture apprises, puis par la même suite que les pages d'un draw.io : choix de l'onglet (« Onglet à importer ») s'il y en a plusieurs, aperçu, nom, Importer. Sous un onglet « Non reconnu » ou « Liste », le lien « Choisir les colonnes » ouvre `ColumnPicker` (`src/components/column-picker.tsx`) sous l'aperçu du classeur : ligne des titres (Précédente / Suivante, avec le nombre de lignes dessous), puis pour chaque colonne remplie (30 au plus) son titre, un exemple de valeur et des pastilles Ignorer / Étape / Acteur / Délai / Suite / N° (un rôle ne va qu'à une colonne ; au départ, ce que l'app reconnaît déjà). « Lire ce tableau » reste grisé sans colonne Étape. L'écran lit alors l'onglet (`sheetToProcessWithColumns`), retient les titres (`learnColumnRules`, `addReadingRules`), passe le process par les règles de lecture et affiche l'aperçu ; l'onglet devient « Process ». Les situations des onglets « SLA / OLA » (`workbookToSituations`) deviennent aussi des process (`situationsToProcesses`), ajoutés après ceux des onglets « process » (`Picked.situationsFrom` dit où elles commencent) ; `SituationList` (`src/components/situation-list.tsx`) remplace alors pour elles la liste des onglets : en-tête « Situation à importer », un résumé (nombre de situations, à corriger, à vérifier, lignes pas encore décrites ignorées), puis une carte par famille, une ligne radio par situation (libellé, `situationMeta` : « SLA 6 JO · Groupe A (3 JO) → Groupe B (3 JO) », variante, pastille d'après `situationLevel` : À corriger, À vérifier, Lue, avec une info, Lue sans ambiguïté) ; sous la situation choisie, ses avertissements (onglet, cellule ou ligne, message, question à poser, liseré de la couleur du niveau). Test de composant `situation-list.test.tsx` : résumé, pastilles, avertissements de la situation choisie seulement, choix d'une autre situation, `situationMeta`. L'aperçu, le nom et Importer sont ceux de toute importation. L'encadré d'information dit ce qui s'importe : pour un workflow, que chaque situation devient un process à choisir plus bas, ou, sans situation décrite, qu'il n'y a rien à importer ; sans onglet « process » ni situation, Importer reste grisé et l'encadré dit que les formulaires arriveront dans une prochaine version, ou qu'aucun onglet ne ressemble à un tableau de process. La fiche du process indique « Importé depuis un tableau Excel ou CSV ».
-2. **Lecture** : `importProcessFile` (voir « Import de fichiers »). Si le fichier est illisible, son message d'erreur s'affiche en rouge sous les sources, et rien n'est ajouté.
-3. **Page à importer** : si le fichier draw.io a plusieurs pages, une liste à choix unique permet d'en garder une.
-4. **Aperçu** : nombre d'étapes, de décisions et d'acteurs, pastille de diagnostic, et remarques de la lecture (par exemple une flèche rattachée).
-5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
-6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
-7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
-
-`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, des tableaux à ouvrir avec « Tableau Excel ou CSV » (`workflow-sla-ola.xlsx` : deux onglets de situations à SLA et OLA, famille fusionnée, colonnes décalées, un onglet de liste ; `template-formulaire.xlsx` : un template de formulaire disposé comme un vrai, sept onglets, onze questions de types variés avec choix, champs, documents et conditions dans l'intitulé ou dans leur ligne, un « Nom / Prénom », un rappel de longueurs, une pièce jointe à trois documents et des documents par choix coché, deux tasks ; `formulaire-et-workflow.xlsx` : ce template et les onglets de situations de `workflow-sla-ola.xlsx` dans un seul classeur, le choix « Situation » (Cas 1 à 6) menant au process de chaque situation ; `demande-materiel.xlsx` et `demande-materiel.csv` : un tableau de process classique ; `tableau-a-completer.xlsx` : un tableau aux titres inconnus, Intitulé, Pilote, Durée prévue, pour essayer « Choisir les colonnes »), et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
-
-![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
-
-![La source « Tableau Excel ou CSV » sur l'écran Importer](captures/etape-19a-tableau-source.png)
-
-![Un classeur de workflow lu : deux onglets SLA / OLA et un onglet de liste](captures/etape-19a-tableau-workflow.png)
-
-![Un template de formulaire reconnu à ses sept onglets](captures/etape-19a-tableau-formulaire.png)
-
-![Un tableau de process en Excel : onglet reconnu, aperçu, Importer actif](captures/etape-19b-tableau-apercu.png)
-
-![Le process importé depuis le tableau Excel](captures/etape-19b-tableau-importe.png)
-
-![Un onglet non reconnu, avec le lien « Choisir les colonnes »](captures/etape-19c-colonnes-non-reconnu.png)
-
-![ColumnPicker : ligne des titres et rôle de chaque colonne](captures/etape-19c-colonnes-choix.png)
-
-![Le même fichier réimporté : reconnu « Process » grâce aux titres appris](captures/etape-19c-colonnes-reconnu.png)
-
-![Profil : les règles de colonnes](captures/etape-19c-colonnes-regles.png)
-
-![Un workflow avec SLA et OLA lu : l'encadré annonce un process par situation](captures/etape-21-situations-lu.png)
-
-![SituationList : situations par famille, SLA, groupes et OLA, variante, pastille](captures/etape-21-situations-liste.png)
-
-![Une situation choisie et ses avertissements, avec cellule et question à poser](captures/etape-21-situations-avertissements.png)
-
-![Le process d'une situation (escalade) dans la simulation « Tous »](captures/etape-21-situations-simulation.png)
-
-**Formulaire** (`src/app/formulaire.tsx`, `src/components/form-field.tsx`). Quand le classeur est un template de formulaire, l'écran d'import le lit (`readFormTemplate`) et `WorkbookPreview` affiche en haut une carte « Voir le formulaire » (nom, nombre de questions) ; l'encadré d'information invite à la toucher. Le formulaire est déposé dans `src/data/form-store.ts` (`showForm`, en mémoire) et la modale `/formulaire` s'ouvre. Elle montre un encadré d'information, puis une carte : nom, description, type de ticket, nombre de questions, « * Réponse obligatoire », et une question par bloc. `FormField` dessine chaque type : champ de texte (clavier adapté pour email, lien, date ; exemple en texte d'attente), texte sur plusieurs lignes, oui / non et échelle en pastilles, menu déroulant qui s'ouvre sur ses choix (`combobox`), cases à cocher, pièce jointe (cadre pointillé « Ajouter un fichier » et documents attendus), libellé avec un champ par champ annoncé (et sa longueur maximale s'il en a une), liste ou référence (choix dans les données de l'outil, encadré), section et séparateur. Astérisque rouge pour une question obligatoire, aide en italique, et pour une question conditionnelle une pastille « S'affiche si « Intitulé » = réponse » (`conditionText`). Le remplissage est décrit ci-dessous. Sous la carte : « Après l'envoi » (groupe propriétaire, résumé du ticket, tasks avec groupe et séquence), puis « Points à vérifier dans le template » (niveau, onglet, cellule, message, question à poser). Sans formulaire (écran ouvert directement), un message d'état propose de fermer.
-
-**Tests** (`src/components/__tests__/form-field.test.tsx`) : question obligatoire avec aide et exemple, menu déroulant ouvert puis choix, cases cochées et décochées, champs d'un libellé et documents d'une pièce jointe, texte d'une condition, erreur écrite sous la question et fichier joint retiré.
-
-![« Voir le formulaire » en haut de ce que l'app a lu](captures/etape-20b-formulaire-import.png)
-
-![Aperçu du formulaire : en-tête et premières questions](captures/etape-20b-formulaire-apercu.png)
-
-![Menu déroulant ouvert](captures/etape-20b-formulaire-menu.png)
-
-![Oui / non, conditions et cases à cocher](captures/etape-20b-formulaire-conditions.png)
-
-![Pièce jointe, question conditionnelle, « Après l'envoi »](captures/etape-20b-formulaire-piece-jointe.png)
-
-**Remplir le formulaire** (`src/import/tableau/modeles/reponses.ts`, `src/app/formulaire.tsx`). L'écran s'intitule « Formulaire ». Les réponses (`FormAnswers` : un texte, une liste de choix cochés ou de noms de fichiers, ou un texte par champ d'un libellé, par numéro de question) restent dans l'état de l'écran. `visibleQuestions` parcourt les questions dans l'ordre et ne garde que celles dont les conditions sont remplies (`isQuestionVisible`), en ne tenant compte que des réponses aux questions déjà affichées : une ancienne réponse à une question devenue cachée ne fait rien apparaître. Les questions cachées ne sont pas dessinées ; l'encadré du haut donne leur nombre et « Montrer aussi les questions cachées » les dessine en grisé, sans qu'on puisse les toucher ni que le lecteur d'écran les lise. `expectsAnswer` écarte les sections, séparateurs, listes de l'outil et libellés sans champ. « Envoyer la demande » appelle `checkAnswers` sur les questions affichées : `answerProblem` renvoie « Réponse obligatoire. », « Remplissez tous les champs. » (libellé obligatoire), « Ajoutez au moins un fichier. », ou une erreur de format pour un e-mail, une adresse web en http(s), une adresse IPv4, une date jj/mm/aaaa existante, une date et heure jj/mm/aaaa hh:mm. S'il y a des problèmes, chaque `FormField` concerné a un cadre rouge et son message (`error`, annoncé au lecteur d'écran), un résumé « N réponses à corriger » s'affiche au-dessus du bouton, et l'écran défile jusqu'à la première question en cause (positions relevées par `onLayout`). Les messages se mettent à jour à chaque réponse. Sinon, les réponses aux questions affichées sont gardées dans `form-store.ts` (`keepSentAnswers`) et l'écran montre « Demande prête » : le récapitulatif `answerSummary` (intitulé, réponse sur une ligne, `answerText`), « La suite de la demande » (voir plus bas), l'encadré « Workflow lié », « Modifier les réponses » et « Nouvelle demande ». Pour une pièce jointe, « Ajouter un fichier » ouvre `expo-document-picker` (plusieurs fichiers, sans copie) et ne garde que les noms ; chaque fichier a une croix pour le retirer. Rien n'est envoyé.
-
-**Tests** : `src/import/tableau/__tests__/reponses.test.ts` (voir les tests des tableaux) et `src/components/__tests__/formulaire-ecran.test.tsx` (écran : « Non » fait apparaître la question du signataire, l'envoi à vide affiche les cinq réponses à corriger et ne garde rien ; une demande complète affiche le récapitulatif et garde les réponses).
-
-![Le formulaire vide et le nombre de questions qui apparaîtront](captures/etape-20c-formulaire-vide.png)
-
-![Envoi sans réponse : cadres rouges et messages](captures/etape-20c-formulaire-erreurs.png)
-
-![Une question qui apparaît après « Non »](captures/etape-20c-formulaire-condition.png)
-
-![Pièce jointe avec un fichier ajouté](captures/etape-20c-formulaire-piece-jointe.png)
-
-![Demande prête : récapitulatif](captures/etape-20c-formulaire-recapitulatif.png)
-
-**Du formulaire au process** (`src/import/tableau/modeles/lien.ts`, `src/data/form-store.ts`, `src/data/form-chain.ts`, `src/app/formulaire.tsx`).
-
-- **Reconnaissance.** `describeWorkbook` donne « Formulaire et son workflow » (`formulaire-workflow`) quand un classeur a à la fois les onglets d'un template et des onglets « SLA / OLA » ; un template seul reste « Template de formulaire ». L'écran d'import lit alors le formulaire et les situations ; la carte du formulaire dit « Remplir le formulaire, puis suivre son process » et « lié à N situations » (sinon « formulaire seul »), et `showForm` reçoit le workflow (`LinkedWorkflow` `situations`). Un classeur qui contient un formulaire n'importe aucun process : le bouton du bas devient « Remplir le formulaire », car c'est la réponse au formulaire qui choisit la situation.
-- **Un ou deux fichiers.** La source « Formulaire et son workflow » de l'écran d'import ouvre le sélecteur en choix multiple (`multiple: true`, comme « Tableau Excel ou CSV », où choisir deux fichiers mène au même chemin). `readFormBundle` (`form-chain.ts`) prend un ou deux fichiers dans n'importe quel ordre : le classeur où `describeWorkbook` voit un template est le formulaire (avec ses situations s'il en a) ; l'autre fichier, lu par `readWorkflowFile`, est son workflow et passe avant celui du même classeur. Erreur claire si aucun fichier n'est un template, s'il y en a plus de deux, ou si aucun choix ne correspond à une situation. Le formulaire s'ouvre aussitôt (`showForm`, `/formulaire`), workflow lié.
-- **Lien.** `findFormLink` cherche, parmi les questions à choix (menu, cases, échelle), celle dont le plus de choix correspondent à une situation (`situationOfOption` : sans accents, majuscules ni ponctuation, et « Cas 4 : … » vaut « Cas 4 »). `chosenSituation` lit la réponse : `situation` (index et choix), `unmatched`, `unanswered` ou `no-link`.
-- **Workflow lié** (encadré de l'écran, en haut puis sous « Demande prête »). Nom du fichier, nombre de situations, question de lien et nombre de choix reliés ; ou le process lié ; ou « Formulaire seul ». « Lier un workflow » / « Changer de workflow » ouvre le sélecteur de fichiers : `readWorkflowFile` lit un classeur (ses situations, sinon son premier tableau de process) ou un draw.io / JSON (premier process, règles de lecture appliquées) ; un classeur dont aucune situation ne correspond à un choix est refusé avec un message. « Retirer le lien » ; « Garder ce formulaire (et son workflow) » appelle `saveForm`.
-- **La suite de la demande.** Sans workflow : un encadré dit que la simulation s'arrête au formulaire. Avec des situations : la réponse choisie, le nom « Famille · Situation », `situationMeta` et la variante ; un message si la réponse ne correspond à aucune situation. Avec un process : son nom. « Simuler le parcours » et « Suivre la demande en vrai » passent par `processForForm`, qui crée le process une seule fois (identifiant `<clé du formulaire>-situation-<n>` ou `<clé>-process`, la clé étant l'identifiant du formulaire gardé, sinon celle de l'aperçu) et l'ajoute aux process importés ; puis `/simulation/[id]`, ou `startFormTracking` : suivi nommé « Nom du formulaire · date », réponses jointes (`Tracking.answers`, affichées sous « Réponses du formulaire » dans l'écran de suivi), étape « remplir le formulaire » déjà terminée pour une situation, puis `/suivi/[id]`.
-- **Modifier le formulaire** (`src/app/formulaire-modifier.tsx`, modale ouverte par « Modifier le formulaire » dans l'encadré du haut ; fonctions pures dans `src/import/tableau/modeles/edition.ts`). Une ligne par question (numéro, intitulé, astérisque, type, « conditionnelle ») ; touchée, elle s'ouvre : intitulé, type (`EDITABLE_TYPES`, `changeType` garde choix, champs et documents), interrupteur « Réponse obligatoire », interrupteur « Plusieurs choix possibles » sur des cases à cocher (`single`), liste selon le type (`listKind` : choix, champs ou documents, un par ligne), « Au moins un de ces champs » sous des champs (une case par champ, `toggleAtLeastOne` coche ou décoche un champ du premier groupe ; `cleanForm` retire les champs qui n'existent plus et les groupes de moins de deux champs), aide, conditions (`addCondition` avec deux menus : une question précédente à choix, `conditionSources`, puis une de ses réponses, `answersOf` ; `removeCondition`), Monter / Descendre (`moveQuestion`), Ajouter une question après (`addQuestion`, qui reprend les conditions de la précédente), Ajouter une pièce jointe après (même chose, type pièce jointe), Une pièce jointe par document (sur une pièce jointe à plusieurs documents : `splitDocuments`, un titre de section puis une pièce jointe par document, mêmes conditions et même obligation), Compléter la question et Supprimer (`removeQuestion`, confirmation qui dit combien de questions en dépendaient, `dependants`). **Compléments.** Une question peut avoir des compléments (`FormQuestion.partOf`, le numéro de sa question), placés juste après elle : `complementTypes` ne propose que des types qui vont avec le sien (sous une pièce jointe, un texte « Description du fichier » ; sous un texte, des champs, une date ou un e-mail, une pièce jointe ; sous un oui / non, un menu ou des cases à cocher, une précision écrite et une pièce jointe ; rien sous un complément). `addComplement(form, n, type, choix?)` l'ajoute après les compléments déjà là, avec les conditions de la question, plus « = choix » si un choix est donné (il est alors obligatoire). Le bloc question + compléments reste groupé : `addQuestion` insère après le bloc et reprend les conditions de sa question, `moveBlock` (et `moveQuestion`) déplace le bloc entier au-dessus ou au-dessous du bloc voisin et donne le nouveau numéro, un complément ne se déplace pas seul, et `removeQuestion` supprime la question avec ses compléments (la confirmation le dit). Dans la liste, un complément est en retrait (« ↳ complément de 3 ») ; dans le formulaire, il est en retrait sous sa question, avec un filet à gauche, sans la pastille « S'affiche si » (`conditionText` renvoie `null`). Après chaque ajout, suppression ou déplacement, les questions sont renumérotées et les conditions et `partOf` suivent ; une condition sur une question supprimée est retirée. « Enregistrer » nettoie le brouillon (`cleanForm` : lignes vides retirées) et appelle `editShownForm`, qui remplace le formulaire affiché (nouvelle clé : ses process sont recréés) et le formulaire gardé s'il l'est (`updateSavedForm`, `markShownSaved` après « Garder ») ; « Annuler » demande confirmation s'il a changé. L'écran du formulaire lit le formulaire affiché avec `useShownForm` et repart de réponses vides quand il change. Tests : `edition.test.ts` (supprimer avec conditions, déplacer, ajouter dans le même cas, type et conditions, nettoyage, une pièce jointe par document ; compléments : types proposés, description sous une pièce jointe, précision et pièce jointe pour un choix, déplacer et supprimer le bloc) et `formulaire-modifier-ecran.test.tsx` (renommer, rendre facultative, supprimer, ajouter une pièce jointe, enregistrer ; compléter un oui / non par une pièce jointe, régler des cases sur un seul choix, choisir les champs dont un seul suffit).
-- **Anonymiser le formulaire** (`src/data/form-anonymize.ts`, case `AnonymizeOption` sous l'encadré du haut). `formActors` réunit les groupes cités : groupe du ticket, groupes des tasks, et selon le workflow lié, propriétaires, groupes des étapes et de clôture des situations, ou acteurs du process. `anonymizeForm` les passe par le même `textAnonymizer` que les process (`src/domain/anonymize.ts`), puis `anonymizeData` réécrit chaque texte du formulaire et du workflow (clés de `limits` comprises), sauf les champs techniques (`id`, `kind`, `type`, `variant`, `level`, `cell`, dates) : un même texte donne le même remplacement, donc le choix « Situation » et le nom de chaque situation restent reliés (`findFormLink` trouve les mêmes liens, ce que vérifie le test). Dans le store, `anonymizeShown(hidden)` garde la version d'origine (`original`) et remplace le formulaire affiché, son workflow et le nom du fichier ; `anonymizeShown(null)` la rend ; le formulaire gardé suit (`replaceSavedForm`). Le workflow lié vit maintenant dans le formulaire affiché (`setShownWorkflow`), et non plus dans l'état de l'écran. Tests : `form-anonymize.test.ts` (groupes renommés, mots masqués, lien gardé, forme gardée, aller-retour). Vérifié en privé sur un vrai template et un vrai classeur : 7 groupes, aucun ne reste.
-
-  ![Anonymiser le formulaire : la case, puis les groupes devenus Service A, B, C](captures/etape-28-anonymiser-formulaire.png)
-
-  ![Modifier le formulaire : la liste des questions, une question ouverte, une condition ajoutée, et le résultat](captures/etape-25-editeur-formulaire.png)
-
-  ![Au moins un des deux : les deux numéros obligatoires, puis l'un facultatif dès que l'autre est rempli ; dans l'éditeur, « Au moins un de ces champs »](captures/etape-34-champs-au-moins-un.png)
-
-- **Formulaires gardés** (`form-store.ts`). `SavedForm` : identifiant, formulaire, fichier, date, date de modification, workflow lié, marque `cloud` ; enregistrés dans `formulaires.json` (`saved-file.ts`, stockage local sur le web), relus au démarrage (`parseSavedForms` écarte un fichier abîmé ou inconnu). `saveForm`, `linkWorkflow`, `removeSavedForm`, `useSavedForms`. Profil, rubrique « Mes formulaires » : nom, nombre de questions, workflow lié ; toucher rouvre le formulaire (`showSavedForm`), « Retirer » l'efface. Connecté, ils sont aussi gardés sur le compte (voir « Table des formulaires gardés »).
-
-**Tests** : `form-bundle.test.ts` (deux fichiers dans les deux ordres, un classeur avec les deux, formulaire seul, workflow draw.io, refus sans template), `lien.test.ts` (classeur `formulaire-et-workflow.xlsx` reconnu, question de lien, situation choisie, correspondances, template seul sans lien), `src/data/__tests__/form-store.test.ts` (garder, lier, rouvrir, retirer, relire le fichier), et dans `formulaire-ecran.test.tsx` : avec le workflow lié, « Cas 3 » mène à « Famille X · Cas 3 » et « Simuler le parcours » crée ce process ; seul, le formulaire s'arrête à l'envoi.
-
-![La source « Formulaire et son workflow »](captures/etape-23-import.png)
-
-![Le formulaire ouvert depuis deux fichiers, avec son workflow lié](captures/etape-23-deux-fichiers.png)
-
-![Un classeur qui contient les deux : « Remplir le formulaire »](captures/etape-23-classeur.png)
-
-![L'encadré « Workflow lié » en haut du formulaire](captures/etape-22-lien-formulaire.png)
-
-![La suite de la demande : situation choisie, simuler ou suivre](captures/etape-22-lien-suite.png)
-
-![Le suivi en vrai lancé depuis le formulaire, réponses jointes](captures/etape-22-lien-suivi.png)
-
-![Profil : Mes formulaires](captures/etape-22-lien-mes-formulaires.png)
-
-**Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
-
-### Process importés enregistrés sur le téléphone
-
-`src/data/process-store.ts` garde la liste des process importés dans un petit magasin lu avec `useSyncExternalStore`, et l'enregistre à chaque changement (ajout, suppression) :
-
-- sur iOS et Android, dans le fichier `process-importes.json` du dossier Documents de l'app (`src/data/saved-file.ts`, avec `File` et `Paths.document` d'`expo-file-system`). Le système ne vide pas ce dossier ; le fichier disparaît seulement si l'app est désinstallée ;
-- sur le web, dans le stockage local du navigateur (`saved-file.web.ts`).
-
-Le fichier contient `{ "format": "simuflow-imports", "version": 2, "entries": [...] }` : chaque entrée est un process, avec son identifiant sur le serveur (`cloudId`) une fois envoyé, et une marque `deleted` tant que sa suppression n'est pas faite sur le serveur. Un fichier de la version 1 (`processes`, une simple liste) est encore relu. Il est relu au démarrage de l'app : un fichier abîmé ou d'un autre format donne une liste vide, et une entrée qui n'a pas la forme d'un process est ignorée (`parseSaved`). Si l'écriture échoue, l'app continue et le signale dans la console.
-
-Un process importé a un bouton « Supprimer ce process » en bas de son détail. Il demande une confirmation (`confirmAction` : `Alert` sur téléphone, `window.confirm` sur le web, qui précise « et de votre compte » si le process est sur le serveur), retire le process de la liste et du fichier, puis revient à la liste. Les process d'exemple n'ont pas ce bouton.
-
-![Process importé relu après redémarrage, en tête de liste, et son bouton Supprimer en clair et en sombre](captures/etape-5c-garder.png)
-
-### Synchronisation avec le serveur (`src/data/sync.ts`, `src/data/cloud-sync.ts`)
-
-Connecté, les process importés sont aussi enregistrés sur le compte (table `processes`, étape 7) : on les retrouve sur un autre téléphone.
-
-**Le principe** (`syncEntries`, sans dépendance, testé avec un faux serveur). Une synchronisation lit les process du compte, puis :
-
-1. supprime sur le serveur ceux retirés du téléphone (`deleted`) ;
-2. envoie ceux qui n'y sont pas encore (pas de `cloudId`) ;
-3. envoie les modifications faites sur le téléphone (`modified`, posé par l'éditeur) avec `updateCloudProcess` ;
-4. reprend la version du serveur des autres, modifiés peut-être depuis un autre appareil ;
-5. retire du téléphone ceux supprimés depuis un autre appareil (un `cloudId` absent du serveur) ;
-6. ajoute ceux créés ailleurs (leur identifiant sur le téléphone est celui du serveur).
-
-Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. Modifié sur deux téléphones entre deux synchronisations, la dernière version envoyée l'emporte.
-
-**Changements pendant l'envoi.** Si l'on importe, modifie ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
-
-**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, quand le réseau revient (`addNetworkStateListener` d'`expo-network`), après chaque import, modification ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
-
-**Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
-
-**Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ».
-
-**Tests.** Quatre tests pour l'état de la liste (`list-state.ts`), onze pour `sync.ts` (envoi, pas de double envoi, suppression, récupération et disparition depuis un autre appareil, serveur injoignable, changements pendant l'envoi) et trois pour le fichier (relecture de la version 1, marque « à supprimer » gardée au redémarrage, oubli immédiat d'un process jamais envoyé).
-
-![Synchronisation : un process venu du compte dans la liste, le Profil synchronisé, hors connexion, le mode sombre](captures/etape-8-synchro.png)
-
-## Écran Détail d'un process
-
-`src/app/process/[id].tsx` reprend l'écran 3 de la maquette. Il lit le process avec `getProcess(id)` (`src/data/process-store.ts`) ; un identifiant inconnu affiche « Process introuvable » avec un bouton de retour.
-
-- **En-tête** : retour « Process » et bouton de partage (`Share` de React Native, qui envoie un résumé en texte).
-- **Chiffres** : étapes, décisions, chemins possibles (`countPaths`, affiché « 2000+ » au-delà du plafond) et points à corriger (erreurs + avertissements). Cette dernière tuile est rouge s'il y a une erreur, orange s'il n'y a que des avertissements, verte sinon.
-- **Acteurs** : une pastille par acteur distinct.
-- **Diagnostic** : erreurs et avertissements, avec un titre court et une phrase qui nomme l'étape (`explainIssue`, `src/domain/diagnostic.ts`). Les informations sont repliées sous « N informations repliées ».
-- **Étapes** : la liste dans l'ordre du process, avec rôle, acteur et délai. « Voir » fait défiler jusqu'à l'étape concernée et la surligne : chaque ligne mémorise sa position (`onLayout`), puis `scrollTo` y descend.
-- **Bouton « Lancer la simulation »**, fixé en bas, qui ouvre `/simulation/[id]`.
-- **« Modifier le process »** (process importés seulement) ouvre l'éditeur. L'écran relit le process à chaque changement (`useImportedProcesses`).
-
-![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
-
-**Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
-
-## Éditeur de process (`src/app/process/modifier/[id].tsx`)
-
-Pour corriger un process pendant sa validation, sans retoucher le fichier d'origine. Les modifications sont des fonctions pures (`src/domain/edit.ts`) qui renvoient un nouveau process : l'écran garde un brouillon, et « Annuler » l'abandonne (avec confirmation s'il a changé).
-
-- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai en jours ouvrés (vide = aucun).
-- **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
-- **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
-- **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
-- **Ajouter un cas** (`addBranch`, sur une décision) : un nom et une cible, une nouvelle étape (qui porte le nom du cas) ou une étape existante.
-- **Relier à une autre étape** (`addBranch` sans nom, sur une tâche ou un départ) : une suite de plus vers une étape existante, par exemple un retour en arrière.
-- **Retirer** une branche (`removeLink`).
-- **Supprimer l'étape** (`removeStep`, après confirmation) : ses liens partent avec elle ; une étape de simple passage (une entrée, une sortie) laisse l'étape d'avant reliée à celle d'après. Les nouveaux identifiants (`etape-1`, `lien-1`…) ne reprennent jamais un identifiant pris.
-- En haut, le nombre d'étapes, de décisions et de points à corriger suit le brouillon en direct (`summarize`).
-- Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
-
-« Enregistrer » remplace le process (`updateImportedProcess`), le date (`editedAt`, date ISO) et le marque `modified` : il part au serveur à la prochaine synchronisation, la date dans la colonne `content` avec les étapes. La fiche affiche « Corrigé dans l'app le … », le PDF le reprend dans son pied de page, et le fichier draw.io l'écrit dans l'attribut `modified` de `<mxfile>`. L'export draw.io de la version corrigée reprend les positions d'origine et celles des étapes ajoutées (voir **Mise en page**). Les process d'exemple ne se modifient pas.
-
-**Tests.** Dix tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs, étape insérée ou ajoutée en suite, cas vers une étape nouvelle ou existante, étape de passage supprimée avec pont, décision supprimée avec ses branches) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi). Trois de plus pour la version corrigée : positions d'origine gardées et étapes ajoutées sans chevauchement, nouvelle étape sous celle qui y mène (`layout.test.ts`), export draw.io d'un process corrigé qui se réimporte avec sa date (`drawio.test.ts`) ; et un pour la date gardée par le serveur (`process-row.test.ts`).
-
-**Web (développement).** Avec le chargement des écrans à la demande (`asyncRoutes`), la fiche n'affiche la modification qu'après rechargement de la page ; l'app iOS et Android, en un seul paquet, n'est pas concernée.
-
-![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
-
-![« Importer et corriger », un cas ajouté à une décision, puis une étape ajoutée après](captures/etape-L2b-ajout.png)
-
-![Une tâche reliée à une étape existante, la fiche datée de la correction, puis le schéma avec les étapes ajoutées à leur place](captures/etape-L2c-corrige.png)
-
-## Règles de lecture apprises (`src/import/rules.ts`, `src/data/rules-store.ts`)
+### Règles de lecture apprises (`src/import/rules.ts`, `src/data/rules-store.ts`)
 
 SimuFlow apprend des corrections faites dans l'éditeur, pour ne pas les redemander au prochain import. À l'enregistrement, `learnRules(avant, après)` compare chaque étape à elle-même (par identifiant ; une étape supprimée ne compte pas) et ne garde que ce qui vaut pour **tout** le schéma :
 
@@ -480,19 +347,33 @@ SimuFlow apprend des corrections faites dans l'éditeur, pour ne pas les redeman
 - **colonne** (tableaux Excel et CSV) : apprise non pas dans l'éditeur, mais quand l'utilisateur choisit les colonnes d'un onglet non reconnu (`learnColumnRules(titres, choix)`, ajoutée par `addReadingRules`). Une règle par titre choisi, sauf les titres vides, les colonnes ignorées et les titres que l'app comprenait déjà pareil (« Étape » lu comme l'étape). Elle ne change pas les process lus : elle sert à reconnaître les colonnes (`learnedHeaders`). Phrase : « Colonne « Pilote » lue comme l'acteur » ;
 - **rôle** : toutes les étapes d'une même forme ont changé de rôle, toutes pour le même. La forme est lue à l'import (`shapeOf` dans `drawio.ts` : `shape=…`, sinon `rhombus`, `ellipse`, `hexagon`…, sinon rectangle arrondi ou non) et gardée dans `Step.shape`. Pour un rectangle, forme la plus courante, il faut au moins deux étapes corrigées pareil ; une forme particulière (hexagone…) suffit une fois.
 
+![Import corrigé d'après les règles apprises, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
+
+<details>
+<summary>Détail</summary>
+
 Les règles sont enregistrées sur le téléphone dans `regles-lecture.json` (même mécanisme que les process, `saved-file.ts` prend désormais un nom de fichier ; sur le web, `simuflow.regles-lecture` dans le stockage local), au format `{ "format": "simuflow-regles", "version": 2, "rules": [...], "pending": false, "forgotten": [] }` (la version 1, sans `pending` ni `forgotten`, est relue comme « tout reste à envoyer »), les règles étant relues par `parseRules`. Une nouvelle règle sur le même acteur, la même forme ou le même titre de colonne remplace l'ancienne (`mergeRules`).
 
 **Sur le compte.** Connecté, les règles suivent la synchronisation des process (`syncReadingRules`, appelée par `cloud-sync.ts` après les process, et dès qu'une règle est apprise ou oubliée). Le magasin garde `pending` (un changement pas encore envoyé) et `forgotten` (les règles oubliées ici). `reconcileRules` décide : sans changement local, les règles du compte remplacent celles du téléphone ; sinon, celles du compte, moins les oubliées, plus celles apprises ici (qui gagnent sur le même acteur ou la même forme), et le résultat est envoyé. Un échec (réseau, table pas encore créée) n'empêche pas la synchronisation des process : les règles restent marquées et repartent la fois suivante. À la déconnexion, les règles déjà sur le compte quittent le téléphone ; celles pas encore envoyées restent et partiront avec le prochain compte connecté, comme les process.
 
 À l'import, `applyReadingRules` applique les règles à chaque page lue (`applyRules`) avant l'aperçu, qui affiche « Corrigé d'après vos corrections précédentes » avec la phrase de chaque règle qui a servi (`describeRule`). L'onglet Profil liste les règles, chacune avec « Oublier ». L'export JSON n'écrit pas `shape`.
 
+<details>
+<summary>Tests</summary>
+
 **Tests.** Douze tests dans `rules.test.ts` : acteur renommé partout, acteur changé sur une seule étape (rien d'appris), forme particulière vue une fois, rectangles (deux exigés), étapes supprimées, application et phrases, process rendu tel quel sans règle utile, remplacement d'une règle, relecture d'un fichier abîmé, accord téléphone-compte, règles de colonnes (ce qui est appris, phrase, relecture, remplacement). Six dans `rules-store.test.ts` : relecture au démarrage, envoi et reprise des règles du compte, rien d'envoyé sans changement, oubli propagé au compte, déconnexion, application à un import.
 
-![Import corrigé d'après les règles apprises, puis la liste des règles dans Profil](captures/etape-L3a-regles.png)
+</details>
 
 ![Profil : les règles, gardées sur le téléphone tant qu'on n'est pas connecté](captures/etape-L3b-compte.png)
 
-## Écran Scanner (`src/app/(tabs)/scanner.tsx`)
+</details>
+
+## 3. Scanner et module natif
+
+La fonction téléphone principale : photographier un tableau de process et le transformer en workflow. La lecture du texte se fait sur l'appareil, par un module natif écrit pour l'app (Swift et Kotlin), ou par Tesseract dans le navigateur ; le reste est du TypeScript partagé.
+
+### Écran Scanner (`src/app/(tabs)/scanner.tsx`)
 
 Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par information : étape, acteur, délai »), viseur aux quatre coins, déclencheur rond et bouton de lampe. L'écran reste sombre dans les deux thèmes, comme une app photo (couleurs fixes `SCAN`).
 
@@ -501,16 +382,21 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 - **Photo** : `takePictureAsync({ quality: 0.8 })` ; la photo (fichier dans le cache de l'app) remplace l'aperçu, avec « Reprendre la photo ». Elle n'est envoyée nulle part.
 - **Configuration** (`app.json`, plugin `expo-camera`) : message d'autorisation iOS en français ; ni micro, ni lecture de codes-barres (`microphonePermission: false`, `recordAudioAndroid: false`, `barcodeScannerEnabled: false`), ce qui évite des autorisations inutiles. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
 
+![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
+
+<details>
+<summary>Détail</summary>
+
 - **Lecture du texte** : juste après la photo, `recognizeText` (module `modules/text-recognition`, voir plus bas) lit le texte sur le téléphone. Un voile et un indicateur couvrent la photo pendant la lecture. Si le module a recadré la photo sur le document, c'est l'image recadrée qui s'affiche. Le texte lu est rangé en lignes par `groupRows` (`src/scan/rows.ts`), puis `findTable` (`src/scan/table.ts`) n'en garde que le tableau : « Tableau trouvé : 4 étapes. Texte autour ignoré : 8 lignes. », et un aperçu en colonnes (titres en bleu, « – » pour une case vide). Sans ligne de titres reconnue, l'écran le dit et montre tout le texte lu, cellules séparées par « · ». Sans texte trouvé ou en cas d'échec, un message invite à reprendre la photo. Dans Expo Go, où le module n'existe pas, l'écran dit que la lecture n'est pas encore disponible. Sur le web, l'écran ne montre pas de viseur : voir « Scanner dans la version web » plus bas.
 - **Créer le process** : sous un tableau trouvé, « Créer le process » le transforme en process (`tableToProcess`, voir plus bas), applique les règles de lecture apprises (`applyReadingRules`, comme à l'import d'un fichier), l'ajoute à la liste (`addImportedProcess` : enregistré sur le téléphone et synchronisé avec le compte) et ouvre sa fiche. « Créer et corriger » ouvre en plus l'éditeur par-dessus la fiche. Le nom est le titre écrit au-dessus du tableau, sinon « Tableau scanné du 31/10/2026 ». Le Scanner revient ensuite au viseur. « Reprendre la photo » reste à côté.
 
 **Accessibilité.** Le déclencheur est un bouton « Prendre la photo », annoncé désactivé tant que l'appareil n'est pas prêt ; la lampe est un interrupteur qui annonce son état. Les messages sous le viseur sont lus dès qu'ils changent.
 
-![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
-
 ![Scanner : le tableau 1 des exemples photographié, puis le texte lu rangé en lignes et en colonnes](captures/etape-10b-lecture.png)
 
 ![Scanner : la photo recadrée sur le document, puis le tableau seul, sans le texte autour](captures/etape-10b-plus-cadrage.png)
+
+</details>
 
 ### Du tableau au process (`src/scan/to-process.ts`)
 
@@ -521,7 +407,12 @@ TypeScript pur, testé. `tableToProcess(tableau, nom, préfixe)` rend le même r
 - **Liens** : avec une colonne « Suite » (`nextOf`), un numéro (« 2 »), plusieurs (« 3, 4 »), des cas (« oui → 3 ; non → 4 », aussi « oui -> 3 », « oui : 3 », ou sans « ; » quand la lecture l'a perdu), ou « fin ». Une case vide mène à la ligne suivante, comme l'absence de colonne Suite. Une suite vers un numéro absent du tableau, ou illisible, donne une remarque.
 - **Rôles**, d'après les liens : plusieurs sorties, décision ; rien n'arrive, départ ; rien ne part, fin ; sinon tâche. Sans aucun départ (le premier pas est dans une boucle), la première étape le devient.
 
+<details>
+<summary>Tests</summary>
+
 Neuf tests : les délais, la colonne Suite, une suite vers une ligne absente, puis les six tableaux d'exemple, de la photo (positions relevées) jusqu'au process. On retrouve ce que chaque tableau annonce dans « Attendu » : 6,5 JO pour le tableau 1, 4,5 JO pour le 2, une décision et deux chemins pour le 3, les délais du 4, la boucle et l'acteur manquant du 5, deux décisions, deux fins et trois chemins pour le 6.
+
+</details>
 
 ![Scanner : le tableau trouvé, « Créer le process », puis la fiche du process créé](captures/etape-10d-process.png)
 
@@ -582,57 +473,276 @@ Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de 
 
 Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), le nombre de lignes de texte ignorées, et le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes (au plus 3 fois la hauteur du texte), qui n'est pas lui-même un titre de colonne. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
 
-## Suivre un process en vrai (`src/tracking/`, `src/app/suivi/[id].tsx`)
+## 4. Écrans
 
-La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie demande** : chaque étape a une échéance réelle, calculée en jours ouvrés.
+Expo Router associe chaque fichier de `src/app/` à un écran. Chaque section dit d'où viennent les données, ce que fait l'écran et comment il est rendu accessible.
 
-**Calendrier** (`calendar.ts`, TypeScript pur, testé). Jours ouvrés français : du lundi au vendredi, sans les onze jours fériés de métropole. Pâques est calculé chaque année (`easterSunday`, méthode de Meeus) ; le lundi de Pâques, l'Ascension (Pâques + 39 jours) et le lundi de Pentecôte (+ 50) en découlent. Une journée de travail va de 9 h à 17 h : un délai de 0,5 jour ouvré fait 4 heures de travail. `addWorkingDays(début, jours)` avance dans ces heures seulement (1 jour ouvré commencé le vendredi à 14 h finit le lundi à 14 h ; commencé un samedi, il part du lundi 9 h). `workingDaysBetween` mesure le temps de travail écoulé entre deux moments, en jours ouvrés arrondis au dixième.
+### Navigation
 
-**Suivi** (`tracking.ts`, TypeScript pur, testé). Un suivi (`Tracking`) garde la demande (nom, début, fin) et la liste des étapes passées (`TrackedStep` : étape, lien emprunté, début, échéance, fin), en dates ISO. Comme le moteur de simulation, chaque fonction prend un suivi et en renvoie un nouveau :
+Expo Router associe chaque fichier de `src/app/` à un écran.
 
-- `startTracking` commence au premier départ du process ; l'échéance de l'étape vaut début + délai (`addWorkingDays`), absente si l'étape n'a pas de délai ;
-- `completeStep` termine l'étape en cours. S'il n'y a qu'une suite, la demande y passe ; à une décision, il faut choisir la branche (sans choix, rien ne bouge) ; sans suite, la demande est close (`finishedAt`) ;
-- `timingOf` dit où en est une étape : `late` (échéance dépassée, ou terminée après), `soon` (échéance dans moins d'une demi-journée de travail), `on-time`, ou `none` (pas de délai). `timingBadge` (`format.ts`) en fait une pastille : « À l'heure », « Échéance proche », « En retard de 0,4 jour ouvré », « Terminée avec 0,5 jour ouvré de retard ».
+| Fichier | Route | Écran |
+| --- | --- | --- |
+| `_layout.tsx` | | Pile de navigation principale (thème clair ou sombre, écran de démarrage) |
+| `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Profil |
+| `(tabs)/index.tsx` | `/` | Liste des process |
+| `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
+| `(tabs)/profil.tsx` | `/profil` | Profil : compte, réglages, à propos |
+| `process/[id].tsx` | `/process/:id` | Détail d'un process |
+| `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
+| `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
+| `import.tsx` | `/import` | Import d'un process (fenêtre modale) |
+| `export/[id].tsx` | `/export/:id` | Export du schéma (fenêtre modale) |
+| `formulaire.tsx` | `/formulaire` | Formulaire décrit par un template, à remplir comme le demandeur (fenêtre modale) |
+| `formulaire-modifier.tsx` | `/formulaire-modifier` | Modifier le formulaire affiché : questions, types, pièces jointes, conditions (fenêtre modale) |
+| `connexion.tsx` | `/connexion` | Connexion (fenêtre modale), avec « Mot de passe oublié » |
+| `nouveau-mot-de-passe.tsx` | `/nouveau-mot-de-passe` | Nouveau mot de passe, ouvert par le lien de l'e-mail |
+| `bienvenue.tsx` | `/bienvenue` | Présentation du premier lancement (plein écran) |
 
-**Stockage** (`src/data/tracking-store.ts`). Les suivis sont gardés sur le téléphone (`localStorage`, clé `simuflow.suivis`), pas sur le serveur : ce sont les rappels de ce téléphone. `useTrackings(processId)` les donne en cours d'abord, puis du plus récent au plus ancien.
+![Premier lancement : la bienvenue, ajouter ses process, suivre une vraie demande, puis « Revoir la présentation » dans le Profil](captures/etape-13c-bienvenue.png)
 
-**Écrans.** Sur la fiche d'un process, la section « Suivi en vrai » liste ses demandes (étape en cours, échéance, pastille) et propose « Suivre une demande », qui en commence une (nommée « Demande du 31 oct. à 15:42 ») et ouvre son écran. L'écran de suivi (`/suivi/[id]`) montre l'étape en cours (acteur, échéance, pastille) avec « Étape terminée », ou un bouton par branche à une décision (« oui → Faire viser »), puis les étapes passées, la plus récente en haut, chacune avec sa date de fin et sa pastille. Une demande close affiche sa durée totale en jours ouvrés. « Arrêter ce suivi » le retire, après confirmation. Les échéances sont relues chaque minute.
+<details>
+<summary>Détail</summary>
 
-Tests : 6 sur le calendrier (Pâques, jours fériés mobiles, week-end, jour férié, demi-journées, temps écoulé), 4 sur le suivi (départ et échéance, avance et branche, fin, état d'une étape), 2 sur les pastilles.
+**Premier lancement** (`bienvenue.tsx`, `src/data/welcome-setting.ts`). Tant que la présentation n'a pas été vue (clé `simuflow.bienvenue` sur le téléphone), la liste l'ouvre par-dessus elle (`router.push('/bienvenue')`, `presentation: 'fullScreenModal'`). Quatre pages : bienvenue (logo), ajouter ses process, rejouer et corriger, suivre une vraie demande. Dans un navigateur, une page « Installez SimuFlow » s'ajoute en deuxième (voir « Version web »). « Suivant », « Précédent » (toujours à sa place, invisible sur la première page, pour que les boutons ne bougent pas), « Passer » et, à la fin, « Commencer » ; les points annoncent « Page 2 sur 4 » ; chaque page arrive en fondu, sauf avec « Réduire les animations ». « Commencer » ou « Passer » la marquent vue. Elles referment l'écran par `router.dismissTo('/')`, et `unstable_settings = { anchor: '(tabs)' }` dans `_layout.tsx` garde les onglets sous les écrans modaux : le retour fonctionne même si la présentation est le premier écran affiché. Le Profil propose « Revoir la présentation ». Le test Maestro passe la présentation si elle s'affiche (`runFlow` avec `when: visible`).
 
-![Suivi en vrai : la section de la fiche, une demande en cours avec ses étapes passées, puis l'étape suivante](captures/etape-11b-suivi.png)
+**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis cinq sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, synchronisation, suppression), **Notifications** (rappels d'échéance), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
 
-## Notifications (`src/notifications/`)
+![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 
-Des **notifications locales** : le téléphone les programme et les affiche lui-même, sans serveur, avec `expo-notifications`. Elles servent aux rappels d'échéance des demandes suivies en vrai (voir « Suivre un process en vrai »). Pas de notification « push » envoyée par un serveur : sur iPhone, il faudrait un compte Apple Developer payant. Le plugin est donc configuré sans elles.
+Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pas est signalé par TypeScript. Les onglets utilisent les icônes système (SF Symbols sur iOS, Material Symbols sur Android). L'app vise iOS et Android, et tourne aussi dans le navigateur. Sur le web, les onglets natifs deviendraient une barre flottante en haut qui recouvre les titres : `(tabs)/_layout.web.tsx` les remplace par une barre en bas, construite avec les onglets sans style d'Expo Router (`expo-router/ui` : `Tabs`, `TabSlot`, `TabList`, `TabTrigger`), avec les mêmes icônes. Les icônes passent toutes par `src/components/symbol.tsx` : `expo-symbols` n'affiche rien dans le navigateur sans clé `web`, le composant y reprend le nom Material Symbols d'Android.
 
-- **Configuration** (`app.json`, plugin `expo-notifications`) : `enableRemoteNotifications: false`, ce qui évite l'autorisation « Push Notifications » qu'un compte Apple gratuit ne peut pas signer. Sur Android, `icon` (l'icône monochrome de l'app) et `color` (#007ec5) pour la barre d'état. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
-- **Au démarrage** (`configureNotifications`, appelé dans `src/app/_layout.tsx`) : `setNotificationHandler` affiche aussi les notifications quand l'app est ouverte (bannière, liste, son). Sur Android, un canal « Échéances des process » (`echeances`, importance haute) que l'utilisateur peut régler dans les réglages du téléphone.
-- **Autorisation** : `getNotificationPermission` la lit sans rien demander, `requestNotificationPermission` affiche la fenêtre du système (une seule fois). Les deux rendent `granted`, `denied` (refusée pour de bon) ou `undetermined` (pas encore demandée). Une autorisation « provisoire » d'iOS compte comme accordée.
-- **Notification d'essai** (`sendTestNotification`) : programmée 5 secondes plus tard (`TIME_INTERVAL`), le temps de verrouiller le téléphone.
-- **Web** : `notifications.web.ts` répond `unavailable` ; le Profil le dit.
+</details>
 
-**Rappels d'échéance** (`src/tracking/reminders.ts`, TypeScript pur, testé). Pour l'étape en cours de chaque demande suivie qui a une échéance, `remindersFor` prévoit deux rappels : le jour de l'échéance à 9 h (« Aujourd'hui : Commander », « Demande du 31 oct. · échéance à 14:00. »), puis à l'échéance (« En retard : Commander »). Un rappel déjà passé n'est pas prévu. Chaque rappel a un identifiant stable (suivi, rang de l'étape, « jour » ou « retard »). `allReminders` les réunit pour toutes les demandes en cours dont le process existe encore. Quatre tests.
+### Liste des process
 
-**Programmation** (`useDeadlineReminders`, `src/notifications/use-deadline-reminders.ts`, appelé dans `src/app/_layout.tsx`). À chaque changement d'une demande suivie (étape terminée, suivi commencé ou arrêté), d'un process ou du réglage « Rappels d'échéance », `scheduleReminders` retire les rappels programmés (reconnus à `data.kind = 'echeance'`, les autres notifications restent) et programme les nouveaux à leur date (`SchedulableTriggerInputTypes.DATE`, canal Android « Échéances »). Rappels coupés dans le Profil : aucun. L'autorisation est demandée au premier rappel à programmer, si elle ne l'a jamais été. Toucher un rappel ouvre l'écran de suivi de la demande (`useLastNotificationResponse`, aussi quand le rappel lance l'app).
+`src/app/(tabs)/index.tsx` reprend l'écran 2 de la maquette : titre, champ de recherche, une carte par process et un bouton « + » qui ouvre l'import. Chaque carte (`process-card.tsx`) affiche le nombre d'étapes, de décisions et d'acteurs, une pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie ») et la source (draw.io ou Scan). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
 
-**Profil, section « Notifications ».** Un interrupteur « Rappels d'échéance », activé par défaut et gardé sur le téléphone (`settings.ts`, `localStorage`). L'activer demande l'autorisation si elle n'a jamais été demandée ; le couper retire les notifications programmées (`cancelAllScheduledNotificationsAsync`). Quand tout est accordé, « Envoyer une notification d'essai ». Une phrase dit l'état : autorisation refusée (avec « Ouvrir les réglages »), à demander, notification envoyée. L'autorisation est relue au retour dans l'app (`AppState`), si l'utilisateur l'a changée dans les réglages.
+**Données.** `useProcessList()` (`src/data/process-list.ts`) affiche les process importés (et ceux du compte, voir « Synchronisation avec le serveur »), puis les quatre process d'exemple de `demo-processes.ts`. Deux exemples contiennent des anomalies exprès.
 
-![Profil : la section Notifications, notification d'essai envoyée (clair) et mode sombre](captures/etape-11a-notifications.png)
+![Liste : sans process à vous (invitation et exemples), avec vos process et les exemples repliés, puis le réglage du Profil](captures/etape-13b-exemples.png)
 
-## Écran Simulation
+<details>
+<summary>Détail</summary>
 
-### Moteur (`src/simulation/engine.ts`)
+**Exemples à part** (`src/data/examples.ts`, testé ; `examples-setting.ts`). `splitExamples` sépare vos process des exemples (reconnus à leur identifiant). L'écran affiche d'abord vos process, puis un titre repliable « Exemples · 4 » (`accessibilityState.expanded`) et les exemples dessous. Sans aucun process à vous, une invitation en pointillés dit où ils apparaîtront. Le réglage « Afficher les exemples » du Profil (gardé sur le téléphone, clé `simuflow.exemples`, activé par défaut) les retire de la liste ; leur lien direct (`/process/demande-acces`) marche toujours. Le test de bout en bout (Maestro) touche « Demande d’accès » : il faut que les exemples soient affichés.
 
-`createSimulation(process)` prépare le graphe une fois (`buildGraph`) et renvoie des fonctions qui prennent un état et renvoient le nouvel état, sans rien modifier. L'écran garde l'état avec `useState`, le moteur calcule. L'état contient :
+**Les 5 états** (maquette, écran 10), calculés à partir de l'état réel de l'app par `listState` (`src/data/list-state.ts`, testé) :
 
-- `trail` : les étapes parcourues, dans l'ordre, chacune avec le lien emprunté pour y arriver (même forme que les chemins de `paths.ts`) ;
-- `days` : le délai cumulé, en jours ouvrés ;
-- `status` : `running` (il reste des sorties), `finished` (une fin est atteinte), `stuck` (impasse : une étape sans sortie qui n'est pas une fin) ou `no-start` (aucun départ).
+| État | Quand | Affichage |
+| --- | --- | --- |
+| Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
+| Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
+| Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
+| Vide | Aucun process : rien d'importé, et les exemples masqués dans le Profil | Message et bouton « Ajouter un process » (`state-message.tsx`) |
+| Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
 
-Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorties de l'étape courante ; `step(état, lien)` avance par la sortie choisie (une sortie qui ne part pas de l'étape courante est ignorée) ; `back(état)` revient d'une étape ; `replay(chemin)` rejoue un chemin déjà calculé. Une boucle du schéma peut être parcourue plusieurs fois : c'est l'utilisateur qui choisit. Six tests couvrent le départ, l'avance, le retour, le rejeu, l'impasse et le process sans départ.
+Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.
 
-### Écran (`src/app/simulation/[id].tsx`)
+En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états (`useSimulatedProcessList`, `src/data/process-store.ts`) ; « Contenu » revient à la liste réelle. Ce choix n'existe pas dans l'app publiée (`__DEV__`).
+
+![États réels : chargement du compte, erreur du serveur, contenu, hors connexion](captures/etape-8-etats.png)
+
+**Animations** (Reanimated). Deux animations, toutes deux coupées quand « Réduire les animations » est activé dans les réglages du téléphone (`useReducedMotion`) :
+
+- le squelette de chargement « respire » : son opacité va et vient entre 1 et 0,5 en boucle (`withRepeat` + `withTiming`, 0,8 s) ;
+- à l'arrivée de la liste, les cartes apparaissent l'une après l'autre en glissant vers le haut (`FadeInDown`, 0,3 s, 60 ms d'écart entre deux cartes).
+
+**Recherche.** Elle ignore les accents et les majuscules (`normalizeForSearch`, `src/utils/format.ts`) : « materiel » trouve « Commande de matériel ».
+
+![Écran Liste : chargement, contenu, vide, erreur, hors connexion, et l'onglet Profil avec le choix de l'état de démo](captures/etape-4a-liste.png)
+
+**Accessibilité.** Chaque carte est un bouton dont VoiceOver et TalkBack lisent tout le contenu en une phrase. Le champ de recherche et le bouton « + » ont un libellé. Le squelette est annoncé « Chargement des process », le bandeau hors connexion comme une alerte. Les zones à toucher font au moins 44 points.
+
+</details>
+
+### Importer (`src/app/import.tsx`)
+
+`src/app/import.tsx` reprend l'écran 5 de la maquette, en fenêtre modale ouverte par le bouton « + » de la liste.
+
+1. **Source** : « Fichier draw.io », « Fichier BPMN », « Fichier Visio », « Formulaire et son workflow » (voir « Du formulaire au process »), « Tableau Excel ou CSV » et « Fichier JSON » ouvrent le sélecteur de fichiers du téléphone (`expo-document-picker`, qui accède à Fichiers, iCloud Drive, Drive, pièces jointes enregistrées). « Scanner un tableau » ouvre l'onglet Scanner. Le sélecteur copie le fichier dans le cache de l'app ; `readPickedFile` (`src/utils/read-file.ts`) en lit le texte avec `File` d'`expo-file-system`. Un fichier de plus de 5 Mo est refusé. Pour un tableau, `readPickedBytes` en lit les octets (`File.bytes()` sur le téléphone, `arrayBuffer()` du fichier dans le navigateur), jusqu'à 20 Mo (un classeur peut contenir des images, qui ne sont pas lues) ; le sélecteur propose les types .xlsx, .xlsm, .xls et .csv. L'écran affiche alors « Ce que l'app a lu » (`src/components/workbook-preview.tsx`) : le genre de classeur, puis chaque onglet avec ce qui y a été reconnu (pastille), son nombre d'étapes, de situations ou de lignes, de colonnes et de cellules fusionnées. Les onglets « process » deviennent des process (`workbookToProcesses`) qui passent par les règles de lecture apprises, puis par la même suite que les pages d'un draw.io : choix de l'onglet (« Onglet à importer ») s'il y en a plusieurs, aperçu, nom, Importer. Sous un onglet « Non reconnu » ou « Liste », le lien « Choisir les colonnes » ouvre `ColumnPicker` (`src/components/column-picker.tsx`) sous l'aperçu du classeur : ligne des titres (Précédente / Suivante, avec le nombre de lignes dessous), puis pour chaque colonne remplie (30 au plus) son titre, un exemple de valeur et des pastilles Ignorer / Étape / Acteur / Délai / Suite / N° (un rôle ne va qu'à une colonne ; au départ, ce que l'app reconnaît déjà). « Lire ce tableau » reste grisé sans colonne Étape. L'écran lit alors l'onglet (`sheetToProcessWithColumns`), retient les titres (`learnColumnRules`, `addReadingRules`), passe le process par les règles de lecture et affiche l'aperçu ; l'onglet devient « Process ». Les situations des onglets « SLA / OLA » (`workbookToSituations`) deviennent aussi des process (`situationsToProcesses`), ajoutés après ceux des onglets « process » (`Picked.situationsFrom` dit où elles commencent) ; `SituationList` (`src/components/situation-list.tsx`) remplace alors pour elles la liste des onglets : en-tête « Situation à importer », un résumé (nombre de situations, à corriger, à vérifier, lignes pas encore décrites ignorées), puis une carte par famille, une ligne radio par situation (libellé, `situationMeta` : « SLA 6 JO · Groupe A (3 JO) → Groupe B (3 JO) », variante, pastille d'après `situationLevel` : À corriger, À vérifier, Lue, avec une info, Lue sans ambiguïté) ; sous la situation choisie, ses avertissements (onglet, cellule ou ligne, message, question à poser, liseré de la couleur du niveau). Test de composant `situation-list.test.tsx` : résumé, pastilles, avertissements de la situation choisie seulement, choix d'une autre situation, `situationMeta`. L'aperçu, le nom et Importer sont ceux de toute importation. L'encadré d'information dit ce qui s'importe : pour un workflow, que chaque situation devient un process à choisir plus bas, ou, sans situation décrite, qu'il n'y a rien à importer ; sans onglet « process » ni situation, Importer reste grisé et l'encadré dit que les formulaires arriveront dans une prochaine version, ou qu'aucun onglet ne ressemble à un tableau de process. La fiche du process indique « Importé depuis un tableau Excel ou CSV ».
+2. **Lecture** : `importProcessFile` (voir « Fichiers draw.io, BPMN, Visio et JSON »). Si le fichier est illisible, son message d'erreur s'affiche en rouge sous les sources, et rien n'est ajouté.
+3. **Page à importer** : si le fichier draw.io a plusieurs pages, une liste à choix unique permet d'en garder une.
+4. **Aperçu** : nombre d'étapes, de décisions et d'acteurs, pastille de diagnostic, et remarques de la lecture (par exemple une flèche rattachée).
+5. **Nom du process** : rempli à partir du fichier, modifiable. Vide, il passe en rouge avec « Le nom est obligatoire. ».
+6. **Importer** (grisé tant qu'aucun fichier n'est lu) : `addImportedProcess` (`src/data/process-store.ts`) ajoute le process en tête de liste, puis l'écran Détail du process s'ouvre à la place de la modale.
+7. **Importer et corriger** (une fois un fichier lu) : même import, puis l'éditeur s'ouvre par-dessus la fiche du process ; « Enregistrer » ou « Annuler » ramène à la fiche.
+
+![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
+
+<details>
+<summary>Détail</summary>
+
+`docs/exemples/` contient des fichiers fictifs pour essayer : `demandes-rh.drawio` (deux pages, Congés et Note de frais, acteurs en couloirs), `achats-fournitures.drawio` (acteurs donnés par une légende de couleurs), `validation-facture.drawio` (que des rectangles, acteurs écrits dans le texte), `accueil-arrivant.json`, des tableaux à ouvrir avec « Tableau Excel ou CSV » (`workflow-sla-ola.xlsx` : deux onglets de situations à SLA et OLA, famille fusionnée, colonnes décalées, un onglet de liste ; `template-formulaire.xlsx` : un template de formulaire disposé comme un vrai, sept onglets, onze questions de types variés avec choix, champs, documents et conditions dans l'intitulé ou dans leur ligne, un « Nom / Prénom », un rappel de longueurs, une pièce jointe à trois documents et des documents par choix coché, deux tasks ; `formulaire-et-workflow.xlsx` : ce template et les onglets de situations de `workflow-sla-ola.xlsx` dans un seul classeur, le choix « Situation » (Cas 1 à 6) menant au process de chaque situation ; `demande-materiel.xlsx` et `demande-materiel.csv` : un tableau de process classique ; `tableau-a-completer.xlsx` : un tableau aux titres inconnus, Intitulé, Pilote, Durée prévue, pour essayer « Choisir les colonnes »), et `tableaux-a-scanner.html` : six tableaux à afficher ou imprimer pour tester le Scanner (en-têtes variés, colonne « Suite » pour les décisions et les boucles, délais écrits de plusieurs façons), chacun avec ce que l'app doit en tirer. Pour les mettre sur l'iPhone : AirDrop, ou les enregistrer dans Fichiers.
+
+![La source « Tableau Excel ou CSV » sur l'écran Importer](captures/etape-19a-tableau-source.png)
+
+![Un classeur de workflow lu : deux onglets SLA / OLA et un onglet de liste](captures/etape-19a-tableau-workflow.png)
+
+![Un template de formulaire reconnu à ses sept onglets](captures/etape-19a-tableau-formulaire.png)
+
+![Un tableau de process en Excel : onglet reconnu, aperçu, Importer actif](captures/etape-19b-tableau-apercu.png)
+
+![Le process importé depuis le tableau Excel](captures/etape-19b-tableau-importe.png)
+
+![Un onglet non reconnu, avec le lien « Choisir les colonnes »](captures/etape-19c-colonnes-non-reconnu.png)
+
+![ColumnPicker : ligne des titres et rôle de chaque colonne](captures/etape-19c-colonnes-choix.png)
+
+![Le même fichier réimporté : reconnu « Process » grâce aux titres appris](captures/etape-19c-colonnes-reconnu.png)
+
+![Profil : les règles de colonnes](captures/etape-19c-colonnes-regles.png)
+
+![Un workflow avec SLA et OLA lu : l'encadré annonce un process par situation](captures/etape-21-situations-lu.png)
+
+![SituationList : situations par famille, SLA, groupes et OLA, variante, pastille](captures/etape-21-situations-liste.png)
+
+![Une situation choisie et ses avertissements, avec cellule et question à poser](captures/etape-21-situations-avertissements.png)
+
+![Le process d'une situation (escalade) dans la simulation « Tous »](captures/etape-21-situations-simulation.png)
+
+**Accessibilité.** Chaque source est un bouton qui lit son titre et sa description, et annonce s'il est choisi. Les pages forment un groupe de boutons radio. Le champ du nom annonce l'erreur, et le message d'erreur du fichier est lu dès qu'il apparaît. Le bouton Importer est annoncé comme désactivé tant qu'il n'y a pas de fichier.
+
+</details>
+
+### Formulaire (`src/app/formulaire.tsx`, `src/app/formulaire-modifier.tsx`)
+
+**Formulaire** (`src/app/formulaire.tsx`, `src/components/form-field.tsx`). Quand le classeur est un template de formulaire, l'écran Importer le lit (`readFormTemplate`) et `WorkbookPreview` affiche en haut une carte « Voir le formulaire » (nom, nombre de questions) ; l'encadré d'information invite à la toucher. Le formulaire est déposé dans `src/data/form-store.ts` (`showForm`, en mémoire) et la modale `/formulaire` s'ouvre. Elle montre un encadré d'information, puis une carte : nom, description, type de ticket, nombre de questions, « * Réponse obligatoire », et une question par bloc. `FormField` dessine chaque type : champ de texte (clavier adapté pour email, lien, date ; exemple en texte d'attente), texte sur plusieurs lignes, oui / non et échelle en pastilles, menu déroulant qui s'ouvre sur ses choix (`combobox`), cases à cocher, pièce jointe (cadre pointillé « Ajouter un fichier » et documents attendus), libellé avec un champ par champ annoncé (et sa longueur maximale s'il en a une), liste ou référence (choix dans les données de l'outil, encadré), section et séparateur. Astérisque rouge pour une question obligatoire, aide en italique, et pour une question conditionnelle une pastille « S'affiche si « Intitulé » = réponse » (`conditionText`). Le remplissage est décrit ci-dessous. Sous la carte : « Après l'envoi » (groupe propriétaire, résumé du ticket, tasks avec groupe et séquence), puis « Points à vérifier dans le template » (niveau, onglet, cellule, message, question à poser). Sans formulaire (écran ouvert directement), un message d'état propose de fermer.
+
+![« Voir le formulaire » en haut de ce que l'app a lu](captures/etape-20b-formulaire-import.png)
+
+<details>
+<summary>Détail</summary>
+
+<details>
+<summary>Tests</summary>
+
+**Tests** (`src/components/__tests__/form-field.test.tsx`) : question obligatoire avec aide et exemple, menu déroulant ouvert puis choix, cases cochées et décochées, champs d'un libellé et documents d'une pièce jointe, texte d'une condition, erreur écrite sous la question et fichier joint retiré.
+
+</details>
+
+![Aperçu du formulaire : en-tête et premières questions](captures/etape-20b-formulaire-apercu.png)
+
+![Menu déroulant ouvert](captures/etape-20b-formulaire-menu.png)
+
+![Oui / non, conditions et cases à cocher](captures/etape-20b-formulaire-conditions.png)
+
+![Pièce jointe, question conditionnelle, « Après l'envoi »](captures/etape-20b-formulaire-piece-jointe.png)
+
+<details>
+<summary>Détail : remplir le formulaire</summary>
+
+**Remplir le formulaire** (`src/import/tableau/modeles/reponses.ts`, `src/app/formulaire.tsx`). L'écran s'intitule « Formulaire ». Les réponses (`FormAnswers` : un texte, une liste de choix cochés ou de noms de fichiers, ou un texte par champ d'un libellé, par numéro de question) restent dans l'état de l'écran. `visibleQuestions` parcourt les questions dans l'ordre et ne garde que celles dont les conditions sont remplies (`isQuestionVisible`), en ne tenant compte que des réponses aux questions déjà affichées : une ancienne réponse à une question devenue cachée ne fait rien apparaître. Les questions cachées ne sont pas dessinées ; l'encadré du haut donne leur nombre et « Montrer aussi les questions cachées » les dessine en grisé, sans qu'on puisse les toucher ni que le lecteur d'écran les lise. `expectsAnswer` écarte les sections, séparateurs, listes de l'outil et libellés sans champ. « Envoyer la demande » appelle `checkAnswers` sur les questions affichées : `answerProblem` renvoie « Réponse obligatoire. », « Remplissez tous les champs. » (libellé obligatoire), « Ajoutez au moins un fichier. », ou une erreur de format pour un e-mail, une adresse web en http(s), une adresse IPv4, une date jj/mm/aaaa existante, une date et heure jj/mm/aaaa hh:mm. S'il y a des problèmes, chaque `FormField` concerné a un cadre rouge et son message (`error`, annoncé au lecteur d'écran), un résumé « N réponses à corriger » s'affiche au-dessus du bouton, et l'écran défile jusqu'à la première question en cause (positions relevées par `onLayout`). Les messages se mettent à jour à chaque réponse. Sinon, les réponses aux questions affichées sont gardées dans `form-store.ts` (`keepSentAnswers`) et l'écran montre « Demande prête » : le récapitulatif `answerSummary` (intitulé, réponse sur une ligne, `answerText`), « La suite de la demande » (voir plus bas), l'encadré « Workflow lié », « Modifier les réponses » et « Nouvelle demande ». Pour une pièce jointe, « Ajouter un fichier » ouvre `expo-document-picker` (plusieurs fichiers, sans copie) et ne garde que les noms ; chaque fichier a une croix pour le retirer. Rien n'est envoyé.
+
+**Tests** : `src/import/tableau/__tests__/reponses.test.ts` (voir les tests des tableaux) et `src/components/__tests__/formulaire-ecran.test.tsx` (écran : « Non » fait apparaître la question du signataire, l'envoi à vide affiche les cinq réponses à corriger et ne garde rien ; une demande complète affiche le récapitulatif et garde les réponses).
+
+![Le formulaire vide et le nombre de questions qui apparaîtront](captures/etape-20c-formulaire-vide.png)
+
+![Envoi sans réponse : cadres rouges et messages](captures/etape-20c-formulaire-erreurs.png)
+
+![Une question qui apparaît après « Non »](captures/etape-20c-formulaire-condition.png)
+
+![Pièce jointe avec un fichier ajouté](captures/etape-20c-formulaire-piece-jointe.png)
+
+![Demande prête : récapitulatif](captures/etape-20c-formulaire-recapitulatif.png)
+
+</details>
+
+**Du formulaire au process** (`src/import/tableau/modeles/lien.ts`, `src/data/form-store.ts`, `src/data/form-chain.ts`, `src/app/formulaire.tsx`).
+
+<details>
+<summary>Détail : du formulaire au process, éditeur, anonymisation, formulaires gardés</summary>
+
+- **Reconnaissance.** `describeWorkbook` donne « Formulaire et son workflow » (`formulaire-workflow`) quand un classeur a à la fois les onglets d'un template et des onglets « SLA / OLA » ; un template seul reste « Template de formulaire ». L'écran d'import lit alors le formulaire et les situations ; la carte du formulaire dit « Remplir le formulaire, puis suivre son process » et « lié à N situations » (sinon « formulaire seul »), et `showForm` reçoit le workflow (`LinkedWorkflow` `situations`). Un classeur qui contient un formulaire n'importe aucun process : le bouton du bas devient « Remplir le formulaire », car c'est la réponse au formulaire qui choisit la situation.
+- **Un ou deux fichiers.** La source « Formulaire et son workflow » de l'écran Importer ouvre le sélecteur en choix multiple (`multiple: true`, comme « Tableau Excel ou CSV », où choisir deux fichiers mène au même chemin). `readFormBundle` (`form-chain.ts`) prend un ou deux fichiers dans n'importe quel ordre : le classeur où `describeWorkbook` voit un template est le formulaire (avec ses situations s'il en a) ; l'autre fichier, lu par `readWorkflowFile`, est son workflow et passe avant celui du même classeur. Erreur claire si aucun fichier n'est un template, s'il y en a plus de deux, ou si aucun choix ne correspond à une situation. Le formulaire s'ouvre aussitôt (`showForm`, `/formulaire`), workflow lié.
+- **Lien.** `findFormLink` cherche, parmi les questions à choix (menu, cases, échelle), celle dont le plus de choix correspondent à une situation (`situationOfOption` : sans accents, majuscules ni ponctuation, et « Cas 4 : … » vaut « Cas 4 »). `chosenSituation` lit la réponse : `situation` (index et choix), `unmatched`, `unanswered` ou `no-link`.
+- **Workflow lié** (encadré de l'écran, en haut puis sous « Demande prête »). Nom du fichier, nombre de situations, question de lien et nombre de choix reliés ; ou le process lié ; ou « Formulaire seul ». « Lier un workflow » / « Changer de workflow » ouvre le sélecteur de fichiers : `readWorkflowFile` lit un classeur (ses situations, sinon son premier tableau de process) ou un draw.io / JSON (premier process, règles de lecture appliquées) ; un classeur dont aucune situation ne correspond à un choix est refusé avec un message. « Retirer le lien » ; « Garder ce formulaire (et son workflow) » appelle `saveForm`.
+- **La suite de la demande.** Sans workflow : un encadré dit que la simulation s'arrête au formulaire. Avec des situations : la réponse choisie, le nom « Famille · Situation », `situationMeta` et la variante ; un message si la réponse ne correspond à aucune situation. Avec un process : son nom. « Simuler le parcours » et « Suivre la demande en vrai » passent par `processForForm`, qui crée le process une seule fois (identifiant `<clé du formulaire>-situation-<n>` ou `<clé>-process`, la clé étant l'identifiant du formulaire gardé, sinon celle de l'aperçu) et l'ajoute aux process importés ; puis `/simulation/[id]`, ou `startFormTracking` : suivi nommé « Nom du formulaire · date », réponses jointes (`Tracking.answers`, affichées sous « Réponses du formulaire » dans l'écran de suivi), étape « remplir le formulaire » déjà terminée pour une situation, puis `/suivi/[id]`.
+- **Modifier le formulaire** (`src/app/formulaire-modifier.tsx`, modale ouverte par « Modifier le formulaire » dans l'encadré du haut ; fonctions pures dans `src/import/tableau/modeles/edition.ts`). Une ligne par question (numéro, intitulé, astérisque, type, « conditionnelle ») ; touchée, elle s'ouvre : intitulé, type (`EDITABLE_TYPES`, `changeType` garde choix, champs et documents), interrupteur « Réponse obligatoire », interrupteur « Plusieurs choix possibles » sur des cases à cocher (`single`), liste selon le type (`listKind` : choix, champs ou documents, un par ligne), « Au moins un de ces champs » sous des champs (une case par champ, `toggleAtLeastOne` coche ou décoche un champ du premier groupe ; `cleanForm` retire les champs qui n'existent plus et les groupes de moins de deux champs), aide, conditions (`addCondition` avec deux menus : une question précédente à choix, `conditionSources`, puis une de ses réponses, `answersOf` ; `removeCondition`), Monter / Descendre (`moveQuestion`), Ajouter une question après (`addQuestion`, qui reprend les conditions de la précédente), Ajouter une pièce jointe après (même chose, type pièce jointe), Une pièce jointe par document (sur une pièce jointe à plusieurs documents : `splitDocuments`, un titre de section puis une pièce jointe par document, mêmes conditions et même obligation), Compléter la question et Supprimer (`removeQuestion`, confirmation qui dit combien de questions en dépendaient, `dependants`). **Compléments.** Une question peut avoir des compléments (`FormQuestion.partOf`, le numéro de sa question), placés juste après elle : `complementTypes` ne propose que des types qui vont avec le sien (sous une pièce jointe, un texte « Description du fichier » ; sous un texte, des champs, une date ou un e-mail, une pièce jointe ; sous un oui / non, un menu ou des cases à cocher, une précision écrite et une pièce jointe ; rien sous un complément). `addComplement(form, n, type, choix?)` l'ajoute après les compléments déjà là, avec les conditions de la question, plus « = choix » si un choix est donné (il est alors obligatoire). Le bloc question + compléments reste groupé : `addQuestion` insère après le bloc et reprend les conditions de sa question, `moveBlock` (et `moveQuestion`) déplace le bloc entier au-dessus ou au-dessous du bloc voisin et donne le nouveau numéro, un complément ne se déplace pas seul, et `removeQuestion` supprime la question avec ses compléments (la confirmation le dit). Dans la liste, un complément est en retrait (« ↳ complément de 3 ») ; dans le formulaire, il est en retrait sous sa question, avec un filet à gauche, sans la pastille « S'affiche si » (`conditionText` renvoie `null`). Après chaque ajout, suppression ou déplacement, les questions sont renumérotées et les conditions et `partOf` suivent ; une condition sur une question supprimée est retirée. « Enregistrer » nettoie le brouillon (`cleanForm` : lignes vides retirées) et appelle `editShownForm`, qui remplace le formulaire affiché (nouvelle clé : ses process sont recréés) et le formulaire gardé s'il l'est (`updateSavedForm`, `markShownSaved` après « Garder ») ; « Annuler » demande confirmation s'il a changé. L'écran du formulaire lit le formulaire affiché avec `useShownForm` et repart de réponses vides quand il change. Tests : `edition.test.ts` (supprimer avec conditions, déplacer, ajouter dans le même cas, type et conditions, nettoyage, une pièce jointe par document ; compléments : types proposés, description sous une pièce jointe, précision et pièce jointe pour un choix, déplacer et supprimer le bloc) et `formulaire-modifier-ecran.test.tsx` (renommer, rendre facultative, supprimer, ajouter une pièce jointe, enregistrer ; compléter un oui / non par une pièce jointe, régler des cases sur un seul choix, choisir les champs dont un seul suffit).
+- **Anonymiser le formulaire** (`src/data/form-anonymize.ts`, case `AnonymizeOption` sous l'encadré du haut). `formActors` réunit les groupes cités : groupe du ticket, groupes des tasks, et selon le workflow lié, propriétaires, groupes des étapes et de clôture des situations, ou acteurs du process. `anonymizeForm` les passe par le même `textAnonymizer` que les process (`src/domain/anonymize.ts`), puis `anonymizeData` réécrit chaque texte du formulaire et du workflow (clés de `limits` comprises), sauf les champs techniques (`id`, `kind`, `type`, `variant`, `level`, `cell`, dates) : un même texte donne le même remplacement, donc le choix « Situation » et le nom de chaque situation restent reliés (`findFormLink` trouve les mêmes liens, ce que vérifie le test). Dans le store, `anonymizeShown(hidden)` garde la version d'origine (`original`) et remplace le formulaire affiché, son workflow et le nom du fichier ; `anonymizeShown(null)` la rend ; le formulaire gardé suit (`replaceSavedForm`). Le workflow lié vit maintenant dans le formulaire affiché (`setShownWorkflow`), et non plus dans l'état de l'écran. Tests : `form-anonymize.test.ts` (groupes renommés, mots masqués, lien gardé, forme gardée, aller-retour). Vérifié en privé sur un vrai template et un vrai classeur : 7 groupes, aucun ne reste.
+
+  ![Anonymiser le formulaire : la case, puis les groupes devenus Service A, B, C](captures/etape-28-anonymiser-formulaire.png)
+
+  ![Modifier le formulaire : la liste des questions, une question ouverte, une condition ajoutée, et le résultat](captures/etape-25-editeur-formulaire.png)
+
+  ![Au moins un des deux : les deux numéros obligatoires, puis l'un facultatif dès que l'autre est rempli ; dans l'éditeur, « Au moins un de ces champs »](captures/etape-34-champs-au-moins-un.png)
+
+- **Formulaires gardés** (`form-store.ts`). `SavedForm` : identifiant, formulaire, fichier, date, date de modification, workflow lié, marque `cloud` ; enregistrés dans `formulaires.json` (`saved-file.ts`, stockage local sur le web), relus au démarrage (`parseSavedForms` écarte un fichier abîmé ou inconnu). `saveForm`, `linkWorkflow`, `removeSavedForm`, `useSavedForms`. Profil, rubrique « Mes formulaires » : nom, nombre de questions, workflow lié ; toucher rouvre le formulaire (`showSavedForm`), « Retirer » l'efface. Connecté, ils sont aussi gardés sur le compte (voir « Table des formulaires gardés »).
+
+**Tests** : `form-bundle.test.ts` (deux fichiers dans les deux ordres, un classeur avec les deux, formulaire seul, workflow draw.io, refus sans template), `lien.test.ts` (classeur `formulaire-et-workflow.xlsx` reconnu, question de lien, situation choisie, correspondances, template seul sans lien), `src/data/__tests__/form-store.test.ts` (garder, lier, rouvrir, retirer, relire le fichier), et dans `formulaire-ecran.test.tsx` : avec le workflow lié, « Cas 3 » mène à « Famille X · Cas 3 » et « Simuler le parcours » crée ce process ; seul, le formulaire s'arrête à l'envoi.
+
+![La source « Formulaire et son workflow »](captures/etape-23-import.png)
+
+![Le formulaire ouvert depuis deux fichiers, avec son workflow lié](captures/etape-23-deux-fichiers.png)
+
+![Un classeur qui contient les deux : « Remplir le formulaire »](captures/etape-23-classeur.png)
+
+![L'encadré « Workflow lié » en haut du formulaire](captures/etape-22-lien-formulaire.png)
+
+![La suite de la demande : situation choisie, simuler ou suivre](captures/etape-22-lien-suite.png)
+
+![Le suivi en vrai lancé depuis le formulaire, réponses jointes](captures/etape-22-lien-suivi.png)
+
+![Profil : Mes formulaires](captures/etape-22-lien-mes-formulaires.png)
+
+</details>
+
+</details>
+
+### Détail d'un process (`src/app/process/[id].tsx`)
+
+`src/app/process/[id].tsx` reprend l'écran 3 de la maquette. Il lit le process avec `getProcess(id)` (`src/data/process-store.ts`) ; un identifiant inconnu affiche « Process introuvable » avec un bouton de retour.
+
+- **En-tête** : retour « Process » et bouton de partage (`Share` de React Native, qui envoie un résumé en texte).
+- **Chiffres** : étapes, décisions, chemins possibles (`countPaths`, affiché « 2000+ » au-delà du plafond) et points à corriger (erreurs + avertissements). Cette dernière tuile est rouge s'il y a une erreur, orange s'il n'y a que des avertissements, verte sinon.
+- **Acteurs** : une pastille par acteur distinct.
+- **Diagnostic** : erreurs et avertissements, avec un titre court et une phrase qui nomme l'étape (`explainIssue`, `src/domain/diagnostic.ts`). Les informations sont repliées sous « N informations repliées ».
+- **Étapes** : la liste dans l'ordre du process, avec rôle, acteur et délai. « Voir » fait défiler jusqu'à l'étape concernée et la surligne : chaque ligne mémorise sa position (`onLayout`), puis `scrollTo` y descend.
+- **Bouton « Lancer la simulation »**, fixé en bas, qui ouvre `/simulation/[id]`.
+- **« Modifier le process »** (process importés seulement) ouvre l'éditeur. L'écran relit le process à chaque changement (`useImportedProcesses`).
+
+![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
+
+**Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
+
+### Éditeur de process (`src/app/process/modifier/[id].tsx`)
+
+Pour corriger un process pendant sa validation, sans retoucher le fichier d'origine. Les modifications sont des fonctions pures (`src/domain/edit.ts`) qui renvoient un nouveau process : l'écran garde un brouillon, et « Annuler » l'abandonne (avec confirmation s'il a changé).
+
+- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai en jours ouvrés (vide = aucun).
+- **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
+- **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
+- **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
+- **Ajouter un cas** (`addBranch`, sur une décision) : un nom et une cible, une nouvelle étape (qui porte le nom du cas) ou une étape existante.
+- **Relier à une autre étape** (`addBranch` sans nom, sur une tâche ou un départ) : une suite de plus vers une étape existante, par exemple un retour en arrière.
+- **Retirer** une branche (`removeLink`).
+- **Supprimer l'étape** (`removeStep`, après confirmation) : ses liens partent avec elle ; une étape de simple passage (une entrée, une sortie) laisse l'étape d'avant reliée à celle d'après. Les nouveaux identifiants (`etape-1`, `lien-1`…) ne reprennent jamais un identifiant pris.
+- En haut, le nombre d'étapes, de décisions et de points à corriger suit le brouillon en direct (`summarize`).
+- Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
+
+![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
+<details>
+<summary>Détail</summary>
+
+« Enregistrer » remplace le process (`updateImportedProcess`), le date (`editedAt`, date ISO) et le marque `modified` : il part au serveur à la prochaine synchronisation, la date dans la colonne `content` avec les étapes. La fiche affiche « Corrigé dans l'app le … », le PDF le reprend dans son pied de page, et le fichier draw.io l'écrit dans l'attribut `modified` de `<mxfile>`. L'export draw.io de la version corrigée reprend les positions d'origine et celles des étapes ajoutées (voir **Mise en page**). Les process d'exemple ne se modifient pas.
+
+<details>
+<summary>Tests</summary>
+
+**Tests.** Dix tests pour `edit.ts` (modification sans toucher à l'original, acteur et délai retirés, branches renommées, décision avec branches nommées, liste des acteurs, étape insérée ou ajoutée en suite, cas vers une étape nouvelle ou existante, étape de passage supprimée avec pont, décision supprimée avec ses branches) et quatre de plus pour la synchronisation (envoi d'une modification, version du serveur reprise, modification pendant l'envoi gardée, marque effacée après envoi). Trois de plus pour la version corrigée : positions d'origine gardées et étapes ajoutées sans chevauchement, nouvelle étape sous celle qui y mène (`layout.test.ts`), export draw.io d'un process corrigé qui se réimporte avec sa date (`drawio.test.ts`) ; et un pour la date gardée par le serveur (`process-row.test.ts`).
+
+</details>
+
+**Web (développement).** Avec le chargement des écrans à la demande (`asyncRoutes`), la fiche n'affiche la modification qu'après rechargement de la page ; l'app iOS et Android, en un seul paquet, n'est pas concernée.
+
+![« Importer et corriger », un cas ajouté à une décision, puis une étape ajoutée après](captures/etape-L2b-ajout.png)
+
+![Une tâche reliée à une étape existante, la fiche datée de la correction, puis le schéma avec les étapes ajoutées à leur place](captures/etape-L2c-corrige.png)
+
+</details>
+
+### Simulation (`src/app/simulation/[id].tsx`)
 
 Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
 
@@ -642,50 +752,20 @@ Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depu
 - **Panneau du bas** : le rôle, l'acteur et le titre de l'étape en cours, puis « Étape suivante » s'il n'y a qu'une sortie, ou un bouton par sortie à une décision. À la fin : « Fin atteinte » avec le nombre d'étapes et de jours. Dans une impasse : « Impasse » et le nom de l'étape. « Revenir en arrière » et « Recommencer pas à pas » selon le cas.
 - Un process sans départ affiche « Rien à simuler ».
 
-Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber` (`src/utils/format.ts`), aussi utilisé par `plural` : le détail d'un process en profite.
-
 ![Écran Simulation : une décision, une impasse, le cas complexe jusqu'à la fin, et le mode sombre](captures/etape-6-simulation.png)
+
+<details>
+<summary>Détail</summary>
+
+Pas encore fait : « Suivre les deux branches » (maquette, écran 4).
+
+Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber` (`src/utils/format.ts`), aussi utilisé par `plural` : le détail d'un process en profite.
 
 ![Le schéma qui se construit : une décision avec ses sorties en pointillés, une impasse, le cas complexe arrivé à la fin, et le mode sombre](captures/etape-6b-schema.png)
 
 **Accessibilité.** Les modes sont des onglets qui annoncent celui qui est choisi. Chaque ligne du déroulé est lue d'un bloc (titre, sortie, acteur, délai, « étape en cours »). À chaque nouvelle étape, le lecteur d'écran l'annonce (`AccessibilityInfo.announceForAccessibility`). Les boutons de sortie disent où ils mènent (« Choisir oui : aller à … »).
 
-### Schéma qui se construit (`src/simulation/layout.ts`, `src/components/process-diagram.tsx`)
-
-**Mise en page.** `layoutProcess(process)` donne la position de chaque étape et le tracé de chaque flèche :
-
-- si des étapes ont une position (`layout`, lue dans le fichier draw.io), elle est gardée : le schéma ressemble à l'original. Une étape ajoutée dans l'éditeur n'en a pas : `placeMissing` la pose sous l'étape qui y mène (sinon au-dessus de celle qui suit, sinon sous tout le schéma), puis la décale vers la droite tant qu'elle chevauche une autre forme. Les positions d'origine ne bougent pas ;
-- sinon (fichier JSON, tableau scanné), elle est calculée. Chaque acteur a sa colonne (un couloir, dans l'ordre d'apparition), et chaque étape sa ligne : son **niveau** est la longueur du plus long chemin qui y mène depuis le départ (`computeRanks`). Les boucles sont repérées par un parcours en profondeur (une flèche qui revient vers une étape en cours de visite) et ne comptent pas, sinon les niveaux grimperaient sans fin. Deux étapes d'un même niveau et d'un même acteur sont mises côte à côte.
-- Les flèches descendent à angle droit et **ne traversent jamais une étape**. Pour chaque flèche, plusieurs tracés sont essayés dans l'ordre, et le premier qui ne touche aucune autre étape est gardé (`crosses`) : tout droit si les deux étapes sont alignées ; par le côté si l'étape d'arrivée est sur la ligne suivante, à gauche ou à droite (un côté ne sert qu'à une flèche, et le côté droit est gardé pour les boucles) ; par le bas puis dans l'espace vide au-dessus de l'étape d'arrivée ou sous l'étape de départ ; sinon en descendant par un couloir vertical libre entre deux colonnes (`verticalChannels`).
-- Plusieurs flèches qui arrivent sur une même étape (ou partent par son bas) ont chacune leur point, répartis sur le bord dans l'ordre de gauche à droite (`spread`) : elles ne se confondent pas.
-- Deux flèches qui passent dans le même couloir, à la même hauteur ou à la même abscisse, sont écartées de 10 points chacune sur sa voie (`separateTracks`). Les segments du départ et de l'arrivée ne bougent pas.
-- Une flèche qui remonte (boucle) passe par la droite. Le libellé se pose au milieu de la flèche (`midpoint`). Un process venu de draw.io garde ses positions : ses flèches restent des lignes droites d'un bord à l'autre.
-
-Quinze tests vérifient les niveaux, les couloirs, les boucles, les étapes côte à côte, les positions draw.io, la géométrie, et, sur les quatre process de démonstration, qu'aucune flèche ne traverse une étape, que deux flèches vers une même étape arrivent en deux points distincts et que deux flèches ne se superposent pas dans un couloir.
-
-![Tous les cas, avant et après le nouveau tracé : la flèche « Ouvrir l'accès → Demande close » ne traverse plus « Expliquer le refus »](captures/etape-6c-fleches.png)
-
-**Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, pilule pour le départ et la fin. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
-
-**Vue.** Le schéma n'est pas dans des défilements : il est posé dans un cadre et déplacé par une transformation (décalage `x`, `y` et échelle `scale`), trois valeurs partagées Reanimated qui bougent sur le fil d'interface, sans repasser par React.
-
-- **Cadrage automatique.** À chaque étape (`focusKey` change), la vue glisse en 450 ms (`withTiming`) pour montrer l'étape en cours et toutes ses sorties possibles (`boxOf`), entre 55 % et 100 % de la taille réelle. Si tout ne tient pas, l'étape en cours reste dans le cadre (`keepInside`). À la fin du parcours, et dans les cas simple et complexe, la vue montre tout le chemin parcouru (jusqu'à 40 %). En vue « Tous », tout le schéma. Avec « Réduire les animations », la vue saute sans glisser.
-- **Gestes** (`react-native-gesture-handler` 3, inclus dans Expo Go) : glisser d'un doigt déplace le schéma (`usePanGesture`), pincer zoome autour des doigts (`usePinchGesture`), les deux en même temps (`useSimultaneousGestures`). Le schéma ne sort jamais du cadre (`bound`) ; plus petit que le cadre, il y est centré. L'app est enveloppée dans `GestureHandlerRootView` (`src/app/_layout.tsx`).
-- **Netteté.** Pendant un geste ou un glissement, l'image est étirée ; à la fin, le SVG est redessiné à la nouvelle taille (`renderScale`) pour que le texte reste net.
-- **Apparition.** Chaque étape et chaque flèche qui apparaît passe de transparente à visible en 350 ms (`FadeIn`, un `G` animé). Une étape fantôme qui devient parcourue garde la même clé : le fondu ne rejoue pas.
-- Les boutons « − » et « + » zooment autour du centre (de 30 à 200 %), « Tout » montre le schéma entier. Pour le lecteur d'écran, le schéma est une image décrite (« 4 étapes affichées sur 10. Étape en cours : … ») ; le déroulé en dessous porte le détail.
-
-![Le schéma qui se construit : la vue se recadre à chaque étape, puis montre tout le chemin à la fin](captures/etape-6c-construction.png)
-
-### Tous les cas (`src/simulation/families.ts`, maquette écran 11)
-
-**Calcul.** `allPaths(process)` liste tous les chemins sans boucle, de chaque départ jusqu'à une fin (ou jusqu'à une étape dont toutes les sorties reviennent en arrière), par un parcours en profondeur. Au-delà de 500 chemins, la liste s'arrête et le signale (`capped`). `overviewOf(process)` range ces chemins en **familles** : la famille d'un chemin est la sortie qu'il prend à la première étape qui en a plusieurs, nommée d'après la question et la réponse (« Urgent ? » + « oui » donne « Urgent : oui »). Sans aucune décision, il n'y a qu'une famille, « Chemin unique ». Pour chaque famille : ses chemins, ses délais mini et maxi, ses étapes et ses flèches. Le **chemin critique** est le plus long en jours ouvrés ; sa famille est marquée critique s'il y a plusieurs familles. La **charge** compte les étapes de chaque acteur. Six tests couvrent les chemins, les familles, le critique, la charge, le process sans décision, les boucles et le plafond.
-
-**Dessin.** En mode « Tous », `ProcessDiagram` reçoit `overview` au lieu de `progress` : tout le schéma est dessiné, en largeur entière, dans un cadre plus haut (il n'y a pas de panneau en bas). Chaque famille a sa couleur (`FamilyColors` dans `src/constants/theme.ts`, six couleurs en clair et en sombre, lues par `useFamilyColors()`). Une flèche partagée par plusieurs familles reçoit un trait par famille, côte à côte : `offsetPolyline` (`layout.ts`) décale la ligne brisée sur le côté en gardant ses angles droits. Une flèche qu'aucun chemin n'emprunte reste en pointillés gris. Les tâches sont claires (fond blanc, bordure) pour laisser la couleur aux chemins. Le chemin critique est en trait épais. Une pointe de flèche (`Marker`) est créée par couleur utilisée.
-
-**Légende.** Sous le schéma : le nombre de chemins et de familles, puis une ligne par famille (pastille de couleur, nom, badge « critique », nombre de chemins, délais). Toucher une ligne isole la famille : ses traits restent, le reste est estompé. Une phrase rappelle le chemin critique et l'acteur le plus chargé. Chaque ligne est un bouton qui annonce son état (choisi ou non), ses chiffres et ce que fait le toucher.
-
-![Tous les cas : deux familles en couleur, puis la famille critique isolée](captures/etape-6b-tous.png)
+</details>
 
 ### Export (`src/export/`, `src/app/export/[id].tsx`, maquette écran 12)
 
@@ -698,6 +778,9 @@ Le bouton de partage en haut à droite de la simulation ouvre la modale « Expor
 
 ![Export BPMN : le choix « BPMN 2.0 », puis le fichier exporté ouvert dans bpmn.io](captures/etape-31-export-bpmn.png)
 
+<details>
+<summary>Détail</summary>
+
 `exportFileName` tire le nom du fichier du nom du process (« Gestion d’un incident » → `gestion-d-un-incident.pdf`). `src/utils/share-file.ts` écrit le fichier dans le cache de l'app (`Paths.cache`), puis appelle `Sharing.shareAsync`. Sur iOS, on ne passe pas de type MIME : il ajouterait une seconde extension (`.drawio.xml`). Sur le web, `share-file.web.ts` télécharge le fichier, et le PDF s'ouvre dans une fenêtre d'impression (« Enregistrer en PDF »). Neuf tests couvrent l'aller-retour draw.io (avec et sans couloirs, caractères spéciaux), les couleurs, le contenu du PDF, le nom du fichier et le JSON.
 
 **Anonymiser.** La case « Anonymiser les noms » passe le process par `anonymizeProcess` avant l'export : le fichier et son nom ne gardent ni les acteurs ni les mots masqués, et le process enregistré ne change pas. Le même choix existe à l'import, sous l'aperçu : le process gardé est alors l'anonymisé, nom compris. Un test d'écran (`export-anonyme-ecran.test.tsx`) partage un JSON anonymisé et vérifie qu'aucun acteur ni mot masqué n'y reste.
@@ -708,9 +791,120 @@ Le bouton de partage en haut à droite de la simulation ouvre la modale « Expor
 
 ![Anonymiser : à l'import, le process importé, puis à l'export](captures/etape-26-anonymisation.png)
 
-Pas encore fait : « Suivre les deux branches » (écran 4).
+</details>
 
-## Backend Supabase (`src/backend/`)
+## 5. Suivre une vraie demande
+
+La simulation rejoue un process sur le papier ; le suivi accompagne une vraie demande, avec des échéances en jours ouvrés et des rappels programmés par le téléphone lui-même.
+
+### Suivi en vrai (`src/tracking/`, `src/app/suivi/[id].tsx`)
+
+La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie demande** : chaque étape a une échéance réelle, calculée en jours ouvrés.
+
+**Calendrier** (`calendar.ts`, TypeScript pur, testé). Jours ouvrés français : du lundi au vendredi, sans les onze jours fériés de métropole. Pâques est calculé chaque année (`easterSunday`, méthode de Meeus) ; le lundi de Pâques, l'Ascension (Pâques + 39 jours) et le lundi de Pentecôte (+ 50) en découlent. Une journée de travail va de 9 h à 17 h : un délai de 0,5 jour ouvré fait 4 heures de travail. `addWorkingDays(début, jours)` avance dans ces heures seulement (1 jour ouvré commencé le vendredi à 14 h finit le lundi à 14 h ; commencé un samedi, il part du lundi 9 h). `workingDaysBetween` mesure le temps de travail écoulé entre deux moments, en jours ouvrés arrondis au dixième.
+
+![Suivi en vrai : la section de la fiche, une demande en cours avec ses étapes passées, puis l'étape suivante](captures/etape-11b-suivi.png)
+
+<details>
+<summary>Détail</summary>
+
+**Suivi** (`tracking.ts`, TypeScript pur, testé). Un suivi (`Tracking`) garde la demande (nom, début, fin) et la liste des étapes passées (`TrackedStep` : étape, lien emprunté, début, échéance, fin), en dates ISO. Comme le moteur de simulation, chaque fonction prend un suivi et en renvoie un nouveau :
+
+- `startTracking` commence au premier départ du process ; l'échéance de l'étape vaut début + délai (`addWorkingDays`), absente si l'étape n'a pas de délai ;
+- `completeStep` termine l'étape en cours. S'il n'y a qu'une suite, la demande y passe ; à une décision, il faut choisir la branche (sans choix, rien ne bouge) ; sans suite, la demande est close (`finishedAt`) ;
+- `timingOf` dit où en est une étape : `late` (échéance dépassée, ou terminée après), `soon` (échéance dans moins d'une demi-journée de travail), `on-time`, ou `none` (pas de délai). `timingBadge` (`format.ts`) en fait une pastille : « À l'heure », « Échéance proche », « En retard de 0,4 jour ouvré », « Terminée avec 0,5 jour ouvré de retard ».
+
+**Stockage** (`src/data/tracking-store.ts`). Les suivis sont gardés sur le téléphone (`localStorage`, clé `simuflow.suivis`), pas sur le serveur : ce sont les rappels de ce téléphone. `useTrackings(processId)` les donne en cours d'abord, puis du plus récent au plus ancien.
+
+**Écrans.** Sur la fiche d'un process, la section « Suivi en vrai » liste ses demandes (étape en cours, échéance, pastille) et propose « Suivre une demande », qui en commence une (nommée « Demande du 31 oct. à 15:42 ») et ouvre son écran. L'écran de suivi (`/suivi/[id]`) montre l'étape en cours (acteur, échéance, pastille) avec « Étape terminée », ou un bouton par branche à une décision (« oui → Faire viser »), puis les étapes passées, la plus récente en haut, chacune avec sa date de fin et sa pastille. Une demande close affiche sa durée totale en jours ouvrés. « Arrêter ce suivi » le retire, après confirmation. Les échéances sont relues chaque minute.
+
+<details>
+<summary>Tests</summary>
+
+Tests : 6 sur le calendrier (Pâques, jours fériés mobiles, week-end, jour férié, demi-journées, temps écoulé), 4 sur le suivi (départ et échéance, avance et branche, fin, état d'une étape), 2 sur les pastilles.
+
+</details>
+
+</details>
+
+### Notifications (`src/notifications/`)
+
+Des **notifications locales** : le téléphone les programme et les affiche lui-même, sans serveur, avec `expo-notifications`. Elles servent aux rappels d'échéance des demandes suivies en vrai (voir « Suivi en vrai »). Pas de notification « push » envoyée par un serveur : sur iPhone, il faudrait un compte Apple Developer payant. Le plugin est donc configuré sans elles.
+
+- **Configuration** (`app.json`, plugin `expo-notifications`) : `enableRemoteNotifications: false`, ce qui évite l'autorisation « Push Notifications » qu'un compte Apple gratuit ne peut pas signer. Sur Android, `icon` (l'icône monochrome de l'app) et `color` (#007ec5) pour la barre d'état. Après ce changement : `npx expo prebuild --clean --platform ios`, puis recompiler.
+- **Au démarrage** (`configureNotifications`, appelé dans `src/app/_layout.tsx`) : `setNotificationHandler` affiche aussi les notifications quand l'app est ouverte (bannière, liste, son). Sur Android, un canal « Échéances des process » (`echeances`, importance haute) que l'utilisateur peut régler dans les réglages du téléphone.
+- **Autorisation** : `getNotificationPermission` la lit sans rien demander, `requestNotificationPermission` affiche la fenêtre du système (une seule fois). Les deux rendent `granted`, `denied` (refusée pour de bon) ou `undetermined` (pas encore demandée). Une autorisation « provisoire » d'iOS compte comme accordée.
+- **Notification d'essai** (`sendTestNotification`) : programmée 5 secondes plus tard (`TIME_INTERVAL`), le temps de verrouiller le téléphone.
+- **Web** : `notifications.web.ts` répond `unavailable` ; le Profil le dit.
+
+![Profil : la section Notifications, notification d'essai envoyée (clair) et mode sombre](captures/etape-11a-notifications.png)
+
+<details>
+<summary>Détail</summary>
+
+**Rappels d'échéance** (`src/tracking/reminders.ts`, TypeScript pur, testé). Pour l'étape en cours de chaque demande suivie qui a une échéance, `remindersFor` prévoit deux rappels : le jour de l'échéance à 9 h (« Aujourd'hui : Commander », « Demande du 31 oct. · échéance à 14:00. »), puis à l'échéance (« En retard : Commander »). Un rappel déjà passé n'est pas prévu. Chaque rappel a un identifiant stable (suivi, rang de l'étape, « jour » ou « retard »). `allReminders` les réunit pour toutes les demandes en cours dont le process existe encore. Quatre tests.
+
+**Programmation** (`useDeadlineReminders`, `src/notifications/use-deadline-reminders.ts`, appelé dans `src/app/_layout.tsx`). À chaque changement d'une demande suivie (étape terminée, suivi commencé ou arrêté), d'un process ou du réglage « Rappels d'échéance », `scheduleReminders` retire les rappels programmés (reconnus à `data.kind = 'echeance'`, les autres notifications restent) et programme les nouveaux à leur date (`SchedulableTriggerInputTypes.DATE`, canal Android « Échéances »). Rappels coupés dans le Profil : aucun. L'autorisation est demandée au premier rappel à programmer, si elle ne l'a jamais été. Toucher un rappel ouvre l'écran de suivi de la demande (`useLastNotificationResponse`, aussi quand le rappel lance l'app).
+
+**Profil, section « Notifications ».** Un interrupteur « Rappels d'échéance », activé par défaut et gardé sur le téléphone (`settings.ts`, `localStorage`). L'activer demande l'autorisation si elle n'a jamais été demandée ; le couper retire les notifications programmées (`cancelAllScheduledNotificationsAsync`). Quand tout est accordé, « Envoyer une notification d'essai ». Une phrase dit l'état : autorisation refusée (avec « Ouvrir les réglages »), à demander, notification envoyée. L'autorisation est relue au retour dans l'app (`AppState`), si l'utilisateur l'a changée dans les réglages.
+
+</details>
+
+## 6. Données et backend
+
+Les données vivent d'abord sur le téléphone. Connecté, le compte en garde une copie sur Supabase, synchronisée dans les deux sens.
+
+### Process importés enregistrés sur le téléphone
+
+`src/data/process-store.ts` garde la liste des process importés dans un petit magasin lu avec `useSyncExternalStore`, et l'enregistre à chaque changement (ajout, suppression) :
+
+- sur iOS et Android, dans le fichier `process-importes.json` du dossier Documents de l'app (`src/data/saved-file.ts`, avec `File` et `Paths.document` d'`expo-file-system`). Le système ne vide pas ce dossier ; le fichier disparaît seulement si l'app est désinstallée ;
+- sur le web, dans le stockage local du navigateur (`saved-file.web.ts`).
+
+Le fichier contient `{ "format": "simuflow-imports", "version": 2, "entries": [...] }` : chaque entrée est un process, avec son identifiant sur le serveur (`cloudId`) une fois envoyé, et une marque `deleted` tant que sa suppression n'est pas faite sur le serveur. Un fichier de la version 1 (`processes`, une simple liste) est encore relu. Il est relu au démarrage de l'app : un fichier abîmé ou d'un autre format donne une liste vide, et une entrée qui n'a pas la forme d'un process est ignorée (`parseSaved`). Si l'écriture échoue, l'app continue et le signale dans la console.
+
+Un process importé a un bouton « Supprimer ce process » en bas de son détail. Il demande une confirmation (`confirmAction` : `Alert` sur téléphone, `window.confirm` sur le web, qui précise « et de votre compte » si le process est sur le serveur), retire le process de la liste et du fichier, puis revient à la liste. Les process d'exemple n'ont pas ce bouton.
+
+![Process importé relu après redémarrage, en tête de liste, et son bouton Supprimer en clair et en sombre](captures/etape-5c-garder.png)
+
+### Synchronisation avec le serveur (`src/data/sync.ts`, `src/data/cloud-sync.ts`)
+
+Connecté, les process importés sont aussi enregistrés sur le compte (table `processes`, étape 7) : on les retrouve sur un autre téléphone.
+
+**Le principe** (`syncEntries`, sans dépendance, testé avec un faux serveur). Une synchronisation lit les process du compte, puis :
+
+1. supprime sur le serveur ceux retirés du téléphone (`deleted`) ;
+2. envoie ceux qui n'y sont pas encore (pas de `cloudId`) ;
+3. envoie les modifications faites sur le téléphone (`modified`, posé par l'éditeur) avec `updateCloudProcess` ;
+4. reprend la version du serveur des autres, modifiés peut-être depuis un autre appareil ;
+5. retire du téléphone ceux supprimés depuis un autre appareil (un `cloudId` absent du serveur) ;
+6. ajoute ceux créés ailleurs (leur identifiant sur le téléphone est celui du serveur).
+
+![Synchronisation : un process venu du compte dans la liste, le Profil synchronisé, hors connexion, le mode sombre](captures/etape-8-synchro.png)
+
+<details>
+<summary>Détail</summary>
+
+Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. Modifié sur deux téléphones entre deux synchronisations, la dernière version envoyée l'emporte.
+
+**Changements pendant l'envoi.** Si l'on importe, modifie ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
+
+**Quand** (`useCloudSync`, appelé une fois dans `src/app/_layout.tsx`) : à la connexion, au retour de l'app au premier plan, quand le réseau revient (`addNetworkStateListener` d'`expo-network`), après chaque import, modification ou suppression, et avec « Synchroniser » dans le Profil. Une seule synchronisation tourne à la fois. Sans réseau, l'erreur est affichée dans le Profil et rien n'est perdu : les changements partent la fois suivante.
+
+**Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
+
+**Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ».
+
+<details>
+<summary>Tests</summary>
+
+**Tests.** Quatre tests pour l'état de la liste (`list-state.ts`), onze pour `sync.ts` (envoi, pas de double envoi, suppression, récupération et disparition depuis un autre appareil, serveur injoignable, changements pendant l'envoi) et trois pour le fichier (relecture de la version 1, marque « à supprimer » gardée au redémarrage, oubli immédiat d'un process jamais envoyé).
+
+</details>
+
+</details>
+
+### Backend Supabase (`src/backend/`, `supabase/`)
 
 Supabase fournit le backend : une base PostgreSQL, l'authentification et une API générée automatiquement à partir des tables. Le projet est hébergé dans la région West EU (Paris), sur l'offre gratuite.
 
@@ -728,7 +922,7 @@ Supabase fournit le backend : une base PostgreSQL, l'authentification et une API
 
 ![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
 
-### Compte : connexion, création, déconnexion (`auth.ts`, `src/app/connexion.tsx`)
+#### Compte : connexion, création, déconnexion (`auth.ts`, `src/app/connexion.tsx`)
 
 Supabase Auth, par adresse e-mail et mot de passe.
 
@@ -743,7 +937,7 @@ Supabase Auth, par adresse e-mail et mot de passe.
 - **Profil.** Section « Compte » : pendant la lecture, un indicateur ; sans compte, un lien « Se connecter ou créer un compte » ; connecté, les initiales (pastille de 48 points, texte limité à ×1,4 pour qu'il y tienne), l'adresse et « Se déconnecter ».
 - **Tests.** Quatorze tests : vérification des champs (dont le nouveau mot de passe et la lecture du lien « Mot de passe oublié »), traduction des erreurs, et la session (lecture au démarrage, connexion puis déconnexion, pas de retour en arrière si la connexion arrive avant la lecture).
 
-### Suppression du compte (`supabase/migrations/20261030170000_suppression_compte.sql`)
+#### Suppression du compte (`supabase/migrations/20261030170000_suppression_compte.sql`)
 
 L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droit de toucher à `auth.users`, et sa clé secrète ne doit jamais être dans l'app. La fonction SQL `delete_my_account()` le fait à sa place :
 
@@ -753,7 +947,12 @@ L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droi
 - seul le rôle `authenticated` peut l'appeler (`revoke` pour `public` et `anon`, puis `grant`) ;
 - les process du compte partent avec lui (`on delete cascade` de la table `processes`).
 
+<details>
+<summary>Tests</summary>
+
 **Test** (`supabase/tests/suppression_compte.sql`) : sans connexion, l'appel est refusé ; un compte connecté ne peut toujours pas effacer `auth.users` directement ; quand A supprime son compte, A et ses process disparaissent, B et son process restent. Lancé avec PostgreSQL 16 : tout passe, et si la fonction efface tous les comptes au lieu du seul appelant, le test échoue bien.
+
+</details>
 
 **Côté app.** `deleteAccount()` (`auth.ts`) appelle la fonction (`supabase.rpc('delete_my_account')`), puis efface la session du téléphone (`signOut({ scope: 'local' })`, le compte n'existant plus sur le serveur). Dans le Profil, connecté, « Supprimer mon compte » ouvre un encadré rouge qui dit ce qui sera effacé ; seul « Supprimer » dans cet encadré supprime. La confirmation est dans l'écran plutôt qu'une alerte système : elle est lue par VoiceOver et TalkBack (`accessibilityRole="alert"`). Les copies des process sur le téléphone disparaissent aussi (voir « Synchronisation avec le serveur »).
 
@@ -761,23 +960,38 @@ L'app ne peut pas effacer un compte elle-même : seul l'administrateur a le droi
 
 ![Connexion : l'écran vide, un mot de passe incorrect, la création de compte, le Profil connecté, le mode sombre](captures/etape-7c-connexion.png)
 
-### Table des règles de lecture (`supabase/migrations/20261031120000_regles_lecture.sql`)
+#### Table des règles de lecture (`supabase/migrations/20261031120000_regles_lecture.sql`)
 
 Une ligne par compte : `owner_id` (clé, rempli avec le compte connecté, `on delete cascade`), `rules` (`jsonb`, une liste d'au plus 500 règles, au format de l'app) et `updated_at` (tenue à jour par le même déclencheur `set_updated_at` que les process : appliquer d'abord la migration des process). Mêmes règles de sécurité que les process : RLS, rien pour `anon`, et pour `authenticated` une règle par action limitée à `(select auth.uid()) = owner_id`. L'app lit la ligne (`getCloudRules`, une liste vide s'il n'y en a pas) et la remplace en entier (`saveCloudRules`, `upsert`) : `src/backend/reading-rules.ts`.
 
+<details>
+<summary>Tests</summary>
+
 **Test** (`supabase/tests/regles_lecture_rls.sql`), même méthode que pour les process : A crée puis remplace sa ligne, ne peut ni écrire au nom de B, ni enregistrer autre chose qu'une liste, ni donner sa ligne à B ; B ne voit ni ne change rien ; sans connexion, refusé ; supprimer A supprime ses règles. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
-### Table des formulaires gardés (`supabase/migrations/20261112230000_formulaires.sql`)
+</details>
+
+#### Table des formulaires gardés (`supabase/migrations/20261112230000_formulaires.sql`)
 
 Même forme que la table des règles : une ligne par compte, `owner_id` (clé, `on delete cascade`), `forms` (`jsonb`, une liste d'au plus 200 formulaires et de 5 Mo au plus, au format de l'app : formulaire, fichier d'origine, workflow lié, dates) et `updated_at`. Mêmes règles de sécurité : RLS, rien pour `anon`, une règle par action limitée à `(select auth.uid()) = owner_id`. L'app lit la ligne (`getCloudForms`) et la remplace en entier (`saveCloudForms`, `upsert`) : `src/backend/saved-forms.ts`. **À coller dans Supabase** (SQL Editor) comme les autres migrations ; tant qu'elle n'y est pas, les formulaires restent sur le téléphone, sans erreur affichée.
 
+![Mes formulaires dans Profil, avec la phrase qui dit où ils sont gardés](captures/etape-27-formulaires-compte.png)
+
+<details>
+<summary>Détail</summary>
+
 **Synchronisation** (`syncSavedForms`, `reconcileForms`, `src/data/form-store.ts`, lancée par `cloud-sync.ts` après les règles). Le fichier du téléphone (version 2) garde, en plus des formulaires, `pending` (un changement pas encore envoyé) et `removed` (les formulaires déjà envoyés puis retirés ici). Chaque formulaire porte `updatedAt` (posé à chaque modification, toujours après la version modifiée) et `cloud` (déjà envoyé, propre au téléphone : pas envoyé au serveur). L'accord se fait formulaire par formulaire : présent des deux côtés, le plus récent gagne ; seulement sur le compte, il arrive, sauf s'il vient d'être retiré ici ; seulement sur le téléphone, il part s'il est nouveau, et disparaît s'il avait déjà été envoyé (retiré sur un autre appareil). La liste n'est renvoyée que si elle a changé. Sans compte, `forgetCloudForms` retire du téléphone les formulaires déjà envoyés et garde les autres.
+
+<details>
+<summary>Tests</summary>
 
 **Tests.** `form-store.test.ts` : l'accord (chaque cas), puis un aller-retour avec un faux serveur (envoi, réception, modification qui repart, rien de renvoyé sans changement, retrait, déconnexion). `supabase/tests/formulaires_rls.sql`, même méthode que pour les règles, plus le refus de plus de 200 formulaires. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
 
-![Mes formulaires dans Profil, avec la phrase qui dit où ils sont gardés](captures/etape-27-formulaires-compte.png)
+</details>
 
-### Table des process (`supabase/migrations/20261030150000_processes.sql`)
+</details>
+
+#### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
 La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
 
@@ -794,11 +1008,59 @@ Un index sur `owner_id` accélère la lecture des process d'un compte. Les étap
 
 **Sécurité.** La RLS est activée. Le rôle `anon` (sans connexion) n'a aucun droit sur la table ; le rôle `authenticated` (connecté) a `select`, `insert`, `update` et `delete`, chacun limité par une règle : `(select auth.uid()) = owner_id`. Un compte ne voit, ne crée, ne modifie et ne supprime que ses propres process ; il ne peut pas non plus donner un process à un autre compte (`with check` sur la modification). `auth.uid()` est écrit `(select auth.uid())` pour être calculé une fois par requête, et non une fois par ligne.
 
+<details>
+<summary>Tests</summary>
+
 **Test des règles** (`supabase/tests/processes_rls.sql`). Sur un PostgreSQL vide, le script imite Supabase (rôles, `auth.users`, `auth.uid()`), applique la migration deux fois, puis vérifie avec deux faux comptes : A voit son process et `owner_id` est rempli seul ; A ne peut ni créer au nom de B, ni enregistrer un contenu ou un nom invalide, ni donner son process à B ; B ne voit rien et ses modifications ou suppressions n'ont aucun effet ; sans connexion, la lecture est refusée ; supprimer le compte A supprime ses process. Lancé avec PostgreSQL 16 : tout passe, et en remplaçant les règles par `using (true)`, le test échoue bien.
+
+</details>
 
 **Côté app.** `process-row.ts` convertit un process en ligne (`toRow` : nom nettoyé, origine, contenu ; l'identifiant, le propriétaire et les dates sont laissés à la base) et une ligne en process (`fromRow`, qui refuse une ligne sans étapes ni liens). Quatre tests couvrent l'aller-retour. `processes.ts` lit, crée, modifie et supprime les process du compte connecté avec le client Supabase ; la synchronisation (`src/data/cloud-sync.ts`) s'en sert.
 
-## Accessibilité : vérifications
+## 7. Interface
+
+Couleurs, icône, écran de démarrage et vérifications d'accessibilité.
+
+### Thème
+
+Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.ts` :
+
+- `Brand` : les deux couleurs du logo, bleu `#007ec5` et marine `#0b2540`.
+- `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `surfaceMuted`, `field`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `primaryBackground`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
+- `Radius` (arrondis), `Spacing` (espacements), `Fonts` (polices système).
+
+Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
+
+Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
+
+### Identité de l'app : icône, écran de démarrage, identifiant
+
+**Identifiant.** `fr.simuflow.app`, le même sur iOS (`ios.bundleIdentifier`) et Android (`android.package`), dans `app.json`. C'est le nom unique de l'app pour le téléphone et pour les stores : il ne doit plus changer. Il remplace `com.anonymous.simuflow` du modèle Expo ; le téléphone voit donc une nouvelle app. L'ancienne, et les process gardés seulement sur le téléphone, ne sont pas repris. Les process synchronisés reviennent à la connexion.
+
+**Icônes** (`assets/images/`), tirées du tracé SVG du logo (`docs/logo/`) :
+
+| Fichier | Usage |
+| --- | --- |
+| `icon.png` (1024 px) | Icône iOS et icône par défaut : symbole sur fond blanc, iOS arrondit les coins |
+| `android-icon-foreground.png` | Icône adaptative Android : symbole sur fond transparent, réduit pour tenir dans la zone toujours visible (le téléphone découpe un rond, un carré arrondi…) ; le fond est la couleur `#ffffff` |
+| `android-icon-monochrome.png` | Icônes à thème d'Android 13 et plus : symbole noir, le système le recolore |
+| `splash-icon.png` | Logo de l'écran de démarrage : symbole dans sa tuile blanche arrondie |
+| `favicon.png` | Version web |
+
+![L'icône sur iOS et Android, et l'écran de démarrage en mode clair et sombre](captures/etape-9-identite.png)
+
+<details>
+<summary>Détail</summary>
+
+Les images et le code du modèle Expo (logos Expo et React, `animated-icon`, `scripts/reset-project.js`) sont supprimés.
+
+**Écran de démarrage.** Le plugin `expo-splash-screen` (dans `app.json`) affiche `splash-icon.png` (120 de large) sur le fond de l'app : `#f2f6fa` en mode clair, `#0b1621` en mode sombre (option `dark`). C'est un écran natif, montré avant que le JavaScript soit chargé. Ensuite `SplashOverlay` (`src/components/splash-overlay.tsx`, monté dans `src/app/_layout.tsx`) affiche le même logo sur le même fond, cache l'écran natif (`SplashScreen.hideAsync()`) et s'efface en fondu de 300 ms. Avec « Réduire les animations », il disparaît sans fondu (`useReducedMotion`). Sur le web, il ne fait rien (`splash-overlay.web.tsx`).
+
+Une modification de ces fichiers ou d'`app.json` demande de régénérer le dossier `ios/` puis de recompiler l'app (voir « Build de développement »). L'écran de démarrage dure le temps du chargement, sans attente ajoutée : dans un build de développement, Metro charge vite et il ne reste visible qu'un instant.
+
+</details>
+
+### Accessibilité
 
 À refaire à chaque nouvel écran, et pour l'audit croisé du TP.
 
@@ -815,13 +1077,71 @@ Un index sur `owner_id` accélère la lecture des process d'un compte. Les étap
 
 Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > Accessibilité > Affichage et taille du texte > Police plus grande ; Réglages > Accessibilité > Mouvement > Réduire les animations.
 
-## Build de développement
+## 8. Tests et CI
 
-L'app se teste avec un build de développement compilé par Xcode, et non avec Expo Go : le futur module natif de lecture de texte (Kotlin et Swift) ne peut pas tourner dans Expo Go. `npx expo run:ios` génère le dossier `ios/` (génération native continue), le compile et lance l'app. Les dossiers `ios/` et `android/` ne sont pas versionnés : la configuration native passe par `app.json` et les plugins de configuration.
+Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les dossiers `__tests__/` à côté du code, décrits dans chaque partie), tests de composants qui lisent l'écran comme un utilisateur, et un test de bout en bout sur la vraie app. Les règles d'accès de la base ont leurs propres tests SQL (`supabase/tests/`, voir [Backend Supabase](#backend-supabase-srcbackend-supabase)). Tout ce qui tourne sans téléphone est lancé à chaque pull request.
 
-### Compilation et nettoyage
+### Tests de composants (`src/components/__tests__/`)
+
+Les tests unitaires vérifient des fonctions ; un test de composant affiche un vrai composant, comme sur le téléphone, puis le lit et le touche comme le ferait un utilisateur : par son texte et son rôle d'accessibilité (« bouton », « titre »), jamais par son code. Bibliothèque : React Native Testing Library (`@testing-library/react-native`, avec `test-renderer`), dans Jest avec `jest-expo`.
+
+- **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
+- **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (trois tests).
+- **`situation-list.test.tsx`** : la liste des situations d'un workflow SLA / OLA (voir [Importer](#importer-srcappimporttsx)).
+- **`form-field.test.tsx`**, **`formulaire-ecran.test.tsx`**, **`formulaire-modifier-ecran.test.tsx`** : une question de formulaire, l'écran du formulaire et son éditeur (voir [Formulaire](#formulaire-srcappformulairetsx-srcappformulaire-modifiertsx)).
+- **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).
+
+`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). Ces tests tournent avec les autres : `npm test`, et dans la CI.
+
+### Test de bout en bout (`.maestro/`)
+
+Un test de bout en bout pilote la vraie app, installée dans le Simulateur iOS, comme le ferait un utilisateur : il touche l'écran et vérifie ce qui s'affiche. Outil : [Maestro](https://maestro.dev), qui lit un fichier YAML d'actions et trouve les éléments par leur texte ou leur libellé d'accessibilité.
+
+**`simuler-un-process.yaml`** : ouvrir l'app, passer la présentation du premier lancement si elle s'affiche, attendre la liste, toucher « Demande d’accès », descendre jusqu'à « Lancer la simulation », avancer deux fois (« Étape suivante »), choisir « oui » à « Accès justifié ? », avancer encore, puis vérifier « Fin atteinte » et « 5 étapes · 2 JO ». Le parcours traverse trois écrans (Liste, Détail, Simulation), la navigation, le moteur de simulation et le calcul des délais. Il ne vide pas les données de l'app : les process de démonstration sont toujours dans la liste.
+
+<details>
+<summary>Détail</summary>
+
+**Lancer sur le Mac** (une fois : Java et Maestro, avec Homebrew) :
+
+```bash
+brew install openjdk@17
+brew tap mobile-dev-inc/tap
+brew install mobile-dev-inc/tap/maestro
+```
+
+Puis, l'app installée dans le Simulateur (`npm run ios:simulateur`) et `npx expo start` en marche dans un terminal, dans un autre terminal : `npm run e2e`. Maestro affiche chaque action en vert ou en rouge.
+
+Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`. Le parcours avait d'abord été rejoué dans la version web avec Playwright (mêmes libellés). Un disque presque plein empêche de compiler pour le Simulateur (« No space left on device ») : il faut environ 10 Go libres. Maestro ne tourne pas dans la CI GitHub, qui n'a pas de Simulateur iOS.
+
+</details>
+
+### Vérifications automatiques (CI)
+
+`.github/workflows/verifications.yml` lance, à chaque pull request et à chaque push sur `main`, sur un serveur GitHub (Ubuntu, Node 22), avec un accès en lecture seule au dépôt (`permissions: contents: read`) :
+
+1. `npm ci` : installe exactement les versions de `package-lock.json` ;
+2. crée `expo-env.d.ts`, qui n'est pas versionné (en local, `npx expo start` le crée) ;
+3. `npx tsc --noEmit` : les types ;
+4. `npx expo lint` : l'analyse du code ;
+5. `npx jest --ci` : les tests.
+
+Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : vert, on peut fusionner ; rouge, le journal du job dit quelle étape a échoué. Les types des routes (`.expo/types/`) ne sont pas générés en CI ; sans eux, les liens sont vérifiés comme du texte simple.
+
+## 9. Build et publication
+
+Comment l'app est compilée, installée, mise à jour et publiée sur le web.
+
+### Build de développement
+
+L'app se teste avec un build de développement compilé par Xcode, et non avec Expo Go : le module natif de lecture de texte (Kotlin et Swift) ne peut pas tourner dans Expo Go. `npx expo run:ios` génère le dossier `ios/` (génération native continue), le compile et lance l'app. Les dossiers `ios/` et `android/` ne sont pas versionnés : la configuration native passe par `app.json` et les plugins de configuration.
+
+#### Compilation et nettoyage
 
 Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrête si des paquets ne correspondent pas aux versions attendues par le SDK Expo (vérification sautée sans réseau). Sans ce contrôle, la compilation réussit mais l'app plante au lancement : les modules natifs Expo sont précompilés, et un module construit pour une version plus récente d'`ExpoModulesCore` ne trouve pas ses symboles (« Symbol not found … ExpoModulesCore » dans le rapport de crash). Correction : `npx expo install --fix`, puis `cd ios && pod install`.
+
+<details>
+<summary>Détail</summary>
 
 `scripts/ios.sh` lance ensuite `npx expo run:ios` (avec les options passées, par exemple `--device`). Les fichiers intermédiaires de Xcode (plusieurs Go) sont gardés : la compilation suivante ne recompile que ce qui a changé, en une minute environ au lieu de plusieurs. Si le disque a moins de 10 Go libres, le script le signale avant de compiler.
 
@@ -836,7 +1156,9 @@ Avant de compiler, `scripts/ios.sh` lance `npx expo install --check` et s'arrêt
 
 Il affiche ensuite l'espace libéré. Le dossier `ios/` et ses `Pods` sont gardés : `ios/` contient la signature (équipe Apple choisie dans Xcode), et garder les `Pods` évite de les retélécharger. Contrepartie : la compilation suivante repart de zéro et prend quelques minutes.
 
-## Build installable (EAS Build)
+</details>
+
+### Build installable (EAS Build)
 
 EAS Build compile l'app sur les serveurs d'Expo, sans Xcode ni Android Studio. Le projet appartient au compte Expo `milock` (`owner` dans `app.json`) ; `npx eas-cli@latest init` le relie à un projet EAS et ajoute son identifiant (`extra.eas.projectId`) dans `app.json`.
 
@@ -857,7 +1179,7 @@ npx eas-cli@latest build --platform android --profile preview
 
 À la fin, EAS affiche un lien et un QR code : ouvert sur un téléphone Android, il télécharge l'APK à installer (autoriser l'installation depuis le navigateur). La clé de signature Android est créée et gardée par EAS, pas dans le dépôt.
 
-### Mises à jour à distance (EAS Update)
+#### Mises à jour à distance (EAS Update)
 
 `expo-updates` permet d'envoyer un nouveau JavaScript (code et images) à l'app déjà installée, sans nouveau build. Dans `app.json` :
 
@@ -876,79 +1198,17 @@ Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arri�
 
 **Limite iOS.** Installer un build EAS sur un iPhone (distribution interne ou TestFlight) demande un compte Apple Developer payant (99 $ par an). Avec le compte Apple gratuit, l'iPhone garde le build de développement compilé par Xcode, valable 7 jours.
 
-## Fichiers exclus du dépôt
-
-Le `.gitignore` exclut, en plus des fichiers générés :
-
-- les secrets : `.env` et ses variantes (sauf `.env.example`), clés et certificats (`*.key`, `*.p8`, `*.p12`, `*.pem`, `*.jks`, `*.keystore`, `*.mobileprovision`), `credentials.json`, `google-services.json`, `GoogleService-Info.plist` ;
-- l'état local de Claude Code : le dossier `.claude/` et `CLAUDE.local.md`. `CLAUDE.md` et `AGENTS.md` restent versionnés, car ils portent les règles du projet.
-
-## Architecture
-
-Le schéma d'ensemble et les choix techniques sont dans le README. Le cœur du simulateur ne dépend pas de l'écran : il est écrit en TypeScript pur et testé séparément (voir « Cœur du simulateur »).
-
-| Dossier | Rôle |
-| --- | --- |
-| `src/domain/` | Types du process, règles du diagnostic, calcul des chemins, modifications de l'éditeur |
-| `src/import/` | Lecture des fichiers draw.io, BPMN, Visio et JSON, règles de lecture apprises, lecture des tableaux Excel et CSV (`tableau/`) ; les tableaux scannés passent par `src/scan/` |
-| `src/export/` | Export en PDF, draw.io et JSON |
-| `src/simulation/` | Moteur de simulation : `step(état, choix)` renvoie le nouvel état ; mise en page du schéma ; familles de chemins |
-| `src/scan/`, `src/tracking/` | Tableau photographié transformé en process ; échéances en jours ouvrés d'une vraie demande |
-| `modules/` | Module natif de lecture de texte (Kotlin avec ML Kit pour Android, Swift avec Vision pour iOS) |
-
-Backend : Supabase (voir « Backend Supabase ») : comptes, tables `processes`, `reading_rules` et `saved_forms` protégées par la Row Level Security, suppression du compte, synchronisation.
-
-## Tests de composants (`src/components/__tests__/`)
-
-Les tests unitaires vérifient des fonctions ; un test de composant affiche un vrai composant, comme sur le téléphone, puis le lit et le touche comme le ferait un utilisateur : par son texte et son rôle d'accessibilité (« bouton », « titre »), jamais par son code. Bibliothèque : React Native Testing Library (`@testing-library/react-native`, avec `test-renderer`), dans Jest avec `jest-expo`.
-
-- **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
-- **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (trois tests).
-
-`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). Ces tests tournent avec les autres : `npm test`, et dans la CI.
-
-## Test de bout en bout (`.maestro/`)
-
-Un test de bout en bout pilote la vraie app, installée dans le Simulateur iOS, comme le ferait un utilisateur : il touche l'écran et vérifie ce qui s'affiche. Outil : [Maestro](https://maestro.dev), qui lit un fichier YAML d'actions et trouve les éléments par leur texte ou leur libellé d'accessibilité.
-
-**`simuler-un-process.yaml`** : ouvrir l'app, passer la présentation du premier lancement si elle s'affiche, attendre la liste, toucher « Demande d’accès », descendre jusqu'à « Lancer la simulation », avancer deux fois (« Étape suivante »), choisir « oui » à « Accès justifié ? », avancer encore, puis vérifier « Fin atteinte » et « 5 étapes · 2 JO ». Le parcours traverse trois écrans (Liste, Détail, Simulation), la navigation, le moteur de simulation et le calcul des délais. Il ne vide pas les données de l'app : les process de démonstration sont toujours dans la liste.
-
-**Lancer sur le Mac** (une fois : Java et Maestro, avec Homebrew) :
-
-```bash
-brew install openjdk@17
-brew tap mobile-dev-inc/tap
-brew install mobile-dev-inc/tap/maestro
-```
-
-Puis, l'app installée dans le Simulateur (`npm run ios:simulateur`) et `npx expo start` en marche dans un terminal, dans un autre terminal : `npm run e2e`. Maestro affiche chaque action en vert ou en rouge.
-
-Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`. Le parcours avait d'abord été rejoué dans la version web avec Playwright (mêmes libellés). Un disque presque plein empêche de compiler pour le Simulateur (« No space left on device ») : il faut environ 10 Go libres. Maestro ne tourne pas dans la CI GitHub, qui n'a pas de Simulateur iOS.
-
-## Vérifications automatiques (CI)
-
-`.github/workflows/verifications.yml` lance, à chaque pull request et à chaque push sur `main`, sur un serveur GitHub (Ubuntu, Node 22), avec un accès en lecture seule au dépôt (`permissions: contents: read`) :
-
-1. `npm ci` : installe exactement les versions de `package-lock.json` ;
-2. crée `expo-env.d.ts`, qui n'est pas versionné (en local, `npx expo start` le crée) ;
-3. `npx tsc --noEmit` : les types ;
-4. `npx expo lint` : l'analyse du code ;
-5. `npx jest --ci` : les tests.
-
-Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : vert, on peut fusionner ; rouge, le journal du job dit quelle étape a échoué. Les types des routes (`.expo/types/`) ne sont pas générés en CI ; sans eux, les liens sont vérifiés comme du texte simple.
-
-## Site et politique de confidentialité (`docs/site/`)
-
-Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
-
-**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
-
-## Version web (`https://mloick.github.io/SIMUFLOW/app/`)
+### Version web (`https://mloick.github.io/SIMUFLOW/app/`)
 
 Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `npx expo export -p web` (React Native Web). Ce qui la règle, dans `app.json` :
 
 - `web.output: "single"` : une seule page `index.html` et ses scripts, sans serveur. L'app n'a pas de route d'API, un hébergement de fichiers suffit.
 - `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. Il ne change rien sur téléphone.
+
+![Le guide d'installation dans la présentation : iPhone (clair) et Android (sombre)](captures/etape-18-installer-web.png)
+
+<details>
+<summary>Détail</summary>
 
 **Web app (ajout à l'écran d'accueil).** Le dossier `public/` est copié tel quel dans l'export :
 
@@ -957,8 +1217,6 @@ Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `
 - `public/icones/` : les icônes, tirées de `assets/images/icon.png` (180 px pour l'iPhone, 192 et 512 px).
 
 **Guide d'installation.** Dans un navigateur, la présentation du premier lancement a une deuxième page, « Installez SimuFlow », avec les gestes pour ajouter l'app à l'écran d'accueil. `src/utils/install-guide-platform.web.ts` lit l'appareil dans `navigator` et `src/utils/install-guide.ts` (fonctions pures, testées) choisit les étapes : iPhone ou iPad (Safari : ••• puis Partager, « Sur l'écran d'accueil », « Ajouter » ; un iPad récent se présente comme un Mac tactile), Android (Chrome : ⋮, « Ajouter à l'écran d'accueil » ou « Installer l'application »), ou ordinateur (ouvrir le lien sur le téléphone, ou « Installer » dans Chrome et Edge). La page n'apparaît pas quand la web app est déjà ouverte depuis l'écran d'accueil (`display-mode: standalone`, ou `navigator.standalone` sur iPhone), ni sur téléphone dans l'app native (`install-guide-platform.ts` rend `null`). Elle n'a pas d'icône, pour que les trois étapes tiennent sur l'écran d'un téléphone.
-
-![Le guide d'installation dans la présentation : iPhone (clair) et Android (sombre)](captures/etape-18-installer-web.png)
 
 Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page sert aussi de `404.html` à la racine du site, où un chemin relatif ne marcherait pas. Chrome confirme que l'app est installable (aucune erreur d'installabilité ni de manifeste). Il n'y a pas de service worker : l'app web a besoin du réseau pour s'ouvrir.
 
@@ -976,7 +1234,22 @@ Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page ser
 
 ![Dans l'app : le lien du Profil, et la phrase sous « Créer mon compte »](captures/etape-14a-liens-app.png)
 
-## Mise à jour de la documentation
+</details>
+
+### Site et politique de confidentialité (`docs/site/`)
+
+Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
+
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
+
+### Fichiers exclus du dépôt
+
+Le `.gitignore` exclut, en plus des fichiers générés :
+
+- les secrets : `.env` et ses variantes (sauf `.env.example`), clés et certificats (`*.key`, `*.p8`, `*.p12`, `*.pem`, `*.jks`, `*.keystore`, `*.mobileprovision`), `credentials.json`, `google-services.json`, `GoogleService-Info.plist` ;
+- l'état local de Claude Code : le dossier `.claude/` et `CLAUDE.local.md`. `CLAUDE.md` et `AGENTS.md` restent versionnés, car ils portent les règles du projet.
+
+## 10. Mise à jour de la documentation
 
 Les fichiers `README.md`, `README.fr.md`, `docs/technique.md` et `docs/fonctionnalites.md` sont tenus à jour de deux façons :
 
