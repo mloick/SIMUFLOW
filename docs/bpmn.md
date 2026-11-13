@@ -78,4 +78,18 @@ Ce qui n'est pas encore lu : les flux de message entre pools, les événements a
 
 Visio enregistre ses schémas en `.vsdx`, son propre format (une archive zip de XML), pas en BPMN. SimuFlow le lit aussi : **+**, puis **Fichier Visio**. Un diagramme fonctionnel croisé s'y lit comme un schéma BPMN à couloirs : le losange est la décision, les couloirs donnent les acteurs, le texte d'un connecteur devient le nom de la branche (voir [`fonctionnalites.md`](fonctionnalites.md)).
 
-Plus tard, l'**export BPMN** fera le chemin inverse : renvoyer un process vérifié dans SimuFlow vers ces outils.
+## L'export BPMN
+
+L'**export BPMN** fait le chemin inverse : il renvoie un process vérifié dans SimuFlow vers ces outils. Dans la simulation, touchez le bouton de partage, puis **BPMN 2.0**. Le fichier `.bpmn` contient :
+
+| SimuFlow | BPMN |
+| --- | --- |
+| Le process | Un participant (*pool*) à son nom |
+| Chaque acteur | Un couloir (*lane*) ; les étapes sans acteur vont dans un couloir sans nom |
+| Départ, fin | `startEvent`, `endEvent` |
+| Décision | `exclusiveGateway` (losange avec un « X ») |
+| Étape | `task`, ou son genre d'origine si le process vient d'un fichier BPMN (`userTask`, `serviceTask`…) |
+| Lien | `sequenceFlow`, avec le libellé de la branche comme nom |
+| Délai | Dans le nom (« Diagnostiquer (2 JO) »), et exact dans l'attribut `simuflow:duree` |
+
+Le dessin est fait à la manière des outils BPMN : les couloirs en bandes horizontales, le process se lit de gauche à droite. Le fichier s'ouvre tel quel dans bpmn.io et Camunda Modeler, et SimuFlow le réimporte sans perte. Les attributs `simuflow:…` sont ignorés des autres outils.

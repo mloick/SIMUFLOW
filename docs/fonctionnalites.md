@@ -248,11 +248,14 @@ Dans la simulation, touchez le bouton de partage en haut à droite. Choisissez l
 
 - **PDF** : le schéma en couleur, les familles de chemins avec leurs délais, et le diagnostic. À envoyer ou à imprimer.
 - **draw.io** : un fichier à rouvrir et à retoucher dans draw.io, rangé en couloirs par acteur. Pratique après un scan de tableau. SimuFlow sait aussi le réimporter.
+- **BPMN 2.0** : un fichier `.bpmn` à ouvrir dans Camunda Modeler, bpmn.io, Bizagi, Signavio… Le process y est dessiné à la norme : un couloir par acteur, de gauche à droite, avec les décisions (losanges) et le nom de chaque branche. Le délai est écrit dans le nom de l'étape (« Diagnostiquer (2 JO) »). SimuFlow sait aussi le réimporter, sans perte.
 - **JSON** : pour l'importer dans un autre SimuFlow.
 
 « Colorer les familles de chemins » met une couleur par famille sur le schéma, comme dans la vue Tous. Touchez **Partager** pour l'envoyer par mail, le ranger dans Fichiers ou l'envoyer par AirDrop.
 
 ![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
+
+![Export BPMN : le choix « BPMN 2.0 », puis le fichier exporté ouvert dans bpmn.io](captures/etape-31-export-bpmn.png)
 
 ## Anonymiser un process · Disponible
 

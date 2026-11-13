@@ -25,6 +25,12 @@ const FORMATS: { value: ExportFormat; badge: string; title: string; description:
     title: 'draw.io',
     description: 'À rouvrir et retoucher dans draw.io, idéal après un scan',
   },
+  {
+    value: 'bpmn',
+    badge: '.bpmn',
+    title: 'BPMN 2.0',
+    description: 'Pour Camunda, bpmn.io, Bizagi, Signavio… : un couloir par acteur',
+  },
   { value: 'json', badge: '{ }', title: 'JSON', description: 'Pour l’importer dans un autre SimuFlow' },
 ];
 
@@ -67,8 +73,8 @@ function Exporter({ process }: { process: Process }) {
     [process, anonymous, hiddenWords],
   );
   const pathCount = useMemo(() => overviewOf(process).pathCount, [process]);
-  // Le JSON ne garde que les étapes et les liens : pas de couleurs.
-  const colorable = format !== 'json';
+  // Le JSON et le BPMN ne gardent que les étapes et les liens : pas de couleurs.
+  const colorable = format !== 'json' && format !== 'bpmn';
 
   const submit = async () => {
     setBusy(true);

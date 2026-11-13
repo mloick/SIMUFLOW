@@ -120,7 +120,20 @@ function boundsOf(root: Element): Map<string, NonNullable<Step['layout']>> {
   return bounds;
 }
 
-type Node = { id: string; type: string; name: string };
+type Node = { id: string; type: string; name: string; duration?: number };
+
+/** Espace de noms de SimuFlow : le titre et le délai exacts d'une étape exportée (`simuflow:titre`, `simuflow:duree`). */
+const SIMUFLOW_NS = 'https://mloick.github.io/SIMUFLOW/bpmn';
+
+const simuflowAttribute = (element: Element, name: string) =>
+  element.getAttributeNS(SIMUFLOW_NS, name) || element.getAttribute(`simuflow:${name}`) || '';
+
+/** Délai gardé par l'export de SimuFlow, s'il y en a un. */
+function exportedDuration(element: Element): number | undefined {
+  const value = simuflowAttribute(element, 'duree');
+  const duration = value ? Number(value) : NaN;
+  return Number.isFinite(duration) && duration >= 0 ? duration : undefined;
+}
 type Flow = { id: string; from: string; to: string; label?: string };
 
 function readProcess(
@@ -145,7 +158,11 @@ function readProcess(
       const label = cellText(element.getAttribute('name')).trim() || textOf(condition) || undefined;
       flows.push({ id: elementId ?? `${from}-${to}`, from, to, ...(label ? { label } : {}) });
     } else if (elementId && (type === 'startEvent' || type === 'endEvent' || TASKS.has(type) || EVENTS.has(type) || GATEWAYS.has(type))) {
-      nodes.push({ id: elementId, type, name: cellText(element.getAttribute('name')).trim() });
+      const name = cellText(element.getAttribute('name')).trim();
+      const duration = exportedDuration(element);
+      // L'export de SimuFlow ajoute le délai au nom (« Valider (2 JO) ») et garde le titre exact à part.
+      const title = cellText(simuflowAttribute(element, 'titre')).trim() || name;
+      nodes.push({ id: elementId, type, name: title, ...(duration !== undefined ? { duration } : {}) });
     } else if (SKIPPED[type]) {
       skipped.set(type, (skipped.get(type) ?? 0) + 1);
     }
@@ -193,7 +210,7 @@ function readProcess(
                 : 'Étape sans nom');
       const step: Step = { id: node.id, kind, title, shape: node.type };
       const actor = lanes.get(node.id) ?? pool;
-      const duration = durationOf(node.name);
+      const duration = node.duration ?? durationOf(node.name);
       const layout = bounds.get(node.id);
       if (actor) step.actor = actor;
       if (duration !== undefined) step.duration = duration;
