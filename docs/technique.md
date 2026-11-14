@@ -87,7 +87,7 @@ src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
   components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
-  data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
+  data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), membres et avis d'un process pour son propriétaire (validation-data.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
   import/       Lecture des fichiers draw.io, BPMN, Visio et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/ ; tableaux Excel et CSV dans tableau/ (lecture du classeur, reconnaissance de chaque onglet, modèles de lecture dans modeles/)
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io, BPMN 2.0 et JSON ; tests dans __tests__/
@@ -1047,6 +1047,22 @@ Côté membre : voir les process partagés avec soi et donner son avis sur chaqu
 - `src/domain/__tests__/review.test.ts` : partie d'un acteur, avancement, commentaire obligatoire ;
 - `src/backend/__tests__/shared.test.ts` : identifiant sur le téléphone, nom du propriétaire, process mal enregistré ;
 - le test d'écran `ma-partie-ecran.test.tsx` : avis chargé, une étape validée, « à revoir » refusé sans commentaire puis enregistré.
+
+#### Suivi de la validation (côté propriétaire)
+
+Pas de nouveau script SQL : la règle « Lire ses avis, ou ceux sur ses process » de `step_reviews` donne déjà au propriétaire tous les avis de ses process, et `members_of` le nom et l'acteur de chaque membre.
+
+- **Lecture** : `listProcessReviews` (`src/backend/sharing.ts`) lit les avis d'un process. `useValidationData` (`src/data/validation-data.ts`) lit ensemble les membres et les avis, avec un état chargement / erreur / prêt et `reload`.
+- **Calcul** (pur, `src/domain/validation.ts`) : `validationOverview(process, members, reviews)` donne pour chaque membre sa partie (`myPartSteps`, ou tout le process si son acteur n'a plus d'étape), ses étapes validées et à revoir, et son état (`termine`, `en_cours`, `pas_commence`). Pour chaque étape : qui l'a validée, et qui l'a mise à revoir avec quel commentaire. Les avis d'un ancien membre sont ignorés. `fullyValidated` est vrai quand il y a au moins un membre, que tous ont fini et que rien n'est à revoir.
+- **Fiche** (`src/app/process/[id].tsx`) : sous « Partager avec les acteurs », `ValidationCard` (`src/components/validation-card.tsx`) affiche `validationSummary` (« 2 membres sur 3 ont fini · 1 étape à revoir », ou « Process entièrement validé par les 3 membres. ») avec une pastille. La carte n'apparaît qu'une fois connecté, sur un process déjà sur le compte, et quand quelqu'un est invité.
+- **Écran** `src/app/validation/[id].tsx`, réservé au propriétaire (process importé, connecté, sur le compte). `ValidationPanel` (`src/components/validation-panel.tsx`) contient :
+  - l'encadré de synthèse (vert si tout est validé, orange s'il y a des étapes à revoir), avec **Actualiser** ;
+  - la liste **Membres** : acteur, `2/2 validées`, et une pastille Terminé, À revoir, En cours ou Pas commencé ;
+  - **Étapes** avec le filtre **Toutes** / **À revoir** (boutons radio) : une carte par étape avec les commentaires « à revoir » et leur auteur, puis « Validée par … ».
+
+![Suivi de la validation : la carte sur la fiche, les membres et leur avancement, une étape à revoir avec son commentaire, puis « Process entièrement validé »](captures/etape-41-suivi-validation.png)
+
+**Tests.** `src/domain/__tests__/validation.test.ts` vérifie l'avancement de trois membres, dont un sans acteur. Il vérifie aussi le passage à « entièrement validé », le refus sans membre ou avec une étape à revoir, et les cas d'un acteur sans étape et d'un ancien membre. Le test d'écran `validation-ecran.test.tsx` vérifie la synthèse, les membres, le commentaire à revoir et le filtre, puis « Process entièrement validé » après **Actualiser**.
 
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 

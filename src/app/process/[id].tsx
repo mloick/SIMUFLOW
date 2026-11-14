@@ -3,13 +3,22 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useSession } from '@/backend/auth';
 import { Badge } from '@/components/badge';
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
+import { ValidationCard } from '@/components/validation-card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
+import {
+  getProcess,
+  isImported,
+  isInCloud,
+  removeImportedProcess,
+  useCloudId,
+  useImportedProcesses,
+} from '@/data/process-store';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process, type ProcessSource } from '@/domain';
@@ -69,6 +78,8 @@ function ProcessDetail({ process }: { process: Process }) {
   const cardY = useRef(0);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const shared = useShared(process.id);
+  const cloudId = useCloudId(process.id);
+  const session = useSession();
 
   const summary = useMemo(() => summarize(process), [process]);
   const paths = useMemo(() => countPaths(process), [process]);
@@ -182,6 +193,7 @@ function ProcessDetail({ process }: { process: Process }) {
                 tintColor={theme.textSecondary}
               />
             </Pressable>
+            {session && cloudId && <ValidationCard process={process} cloudId={cloudId} />}
           </Section>
         )}
 

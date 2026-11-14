@@ -64,6 +64,7 @@ export default function RootLayout() {
           <Stack.Screen name="export/[id]" options={{ title: 'Exporter le schéma', presentation: 'modal' }} />
           <Stack.Screen name="partage/[id]" options={{ title: 'Partager', presentation: 'modal' }} />
           <Stack.Screen name="ma-partie/[id]" options={{ title: 'Ma partie' }} />
+          <Stack.Screen name="validation/[id]" options={{ title: 'Suivi de la validation' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

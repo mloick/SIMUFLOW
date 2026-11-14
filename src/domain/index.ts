@@ -7,3 +7,4 @@ export * from './summary';
 export * from './types';
 export * from './profile';
 export * from './review';
+export * from './validation';
