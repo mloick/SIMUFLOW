@@ -1,11 +1,12 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors } from '@/constants/theme';
 import { useCloudSync } from '@/data/cloud-sync';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { configureNotifications } from '@/notifications/notifications';
 import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
 

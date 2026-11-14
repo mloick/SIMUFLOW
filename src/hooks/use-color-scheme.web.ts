@@ -1,24 +1,23 @@
 import { useSyncExternalStore } from 'react';
-import { useColorScheme as useRNColorScheme } from 'react-native';
+import { useColorScheme as useSystemColorScheme } from 'react-native';
+
+import { resolveScheme, useThemeMode } from '@/data/theme-setting';
 
 const subscribe = () => () => {};
 
 /**
- * To support static rendering, this value needs to be re-calculated on the client side for web
+ * Clair ou sombre : le choix du Profil (« Apparence »), sinon celui du
+ * navigateur. Pendant le rendu statique, toujours clair, puis recalculé une
+ * fois la page chargée.
  */
-export function useColorScheme() {
+export function useColorScheme(): 'light' | 'dark' {
   // false during static rendering / hydration, true once running on the client
   const hasHydrated = useSyncExternalStore(
     subscribe,
     () => true,
-    () => false
+    () => false,
   );
-
-  const colorScheme = useRNColorScheme();
-
-  if (hasHydrated) {
-    return colorScheme;
-  }
-
-  return 'light';
+  const mode = useThemeMode();
+  const system = useSystemColorScheme();
+  return hasHydrated ? resolveScheme(mode, system) : 'light';
 }
