@@ -10,6 +10,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, isImported, isInCloud, removeImportedProcess, useImportedProcesses } from '@/data/process-store';
+import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, summarize, type Issue, type Process, type ProcessSource } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
@@ -67,6 +68,7 @@ function ProcessDetail({ process }: { process: Process }) {
   const sectionY = useRef(0);
   const cardY = useRef(0);
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  const shared = useShared(process.id);
 
   const summary = useMemo(() => summarize(process), [process]);
   const paths = useMemo(() => countPaths(process), [process]);
@@ -125,6 +127,12 @@ function ProcessDetail({ process }: { process: Process }) {
             {process.name}
           </ThemedText>
           {process.source && <ThemedText themeColor="textSecondary">{SOURCE_TEXT[process.source]}</ThemedText>}
+          {shared && (
+            <ThemedText themeColor="textSecondary">
+              Partagé par {shared.ownerName}
+              {shared.actor ? ` · votre partie : ${shared.actor}` : ''}
+            </ThemedText>
+          )}
           {process.editedAt && (
             <ThemedText themeColor="textSecondary">Corrigé dans l’app le {formatDate(process.editedAt)}</ThemedText>
           )}
@@ -166,6 +174,30 @@ function ProcessDetail({ process }: { process: Process }) {
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   Invitez-les par leur identifiant ou leur e-mail : ils voient le process sur leur compte.
+                </ThemedText>
+              </View>
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right' }}
+                size={16}
+                tintColor={theme.textSecondary}
+              />
+            </Pressable>
+          </Section>
+        )}
+
+        {shared && (
+          <Section title="Ma partie">
+            <Pressable
+              onPress={() => router.push({ pathname: '/ma-partie/[id]', params: { id: process.id } })}
+              accessibilityRole="button"
+              style={[styles.card, styles.shareRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <SymbolView name={{ ios: 'checkmark.circle', android: 'task_alt' }} size={22} tintColor={theme.link} />
+              <View style={styles.issueText}>
+                <ThemedText type="link" style={{ color: theme.link }}>
+                  Relire et valider ma partie
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Pour chaque étape : validée, ou à revoir avec un commentaire. {shared.ownerName} verra vos avis.
                 </ThemedText>
               </View>
               <SymbolView

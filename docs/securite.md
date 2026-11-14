@@ -34,7 +34,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | --- | --- | --- |
 | Authentification par un service éprouvé, pas maison | ✅ | Supabase Auth (e-mail et mot de passe), mots de passe hachés côté serveur |
 | Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes`, `reading_rules`, `saved_forms` (`(select auth.uid()) = owner_id`) `profiles` (`(select auth.uid()) = id`) et `process_members` (propriétaire du process ou membre lui-même) |
-| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `profils_rls.sql`, `partage_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
+| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `profils_rls.sql`, `partage_rls.sql`, `avis_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
 | Aucun droit sans connexion | ✅ | Rôle `anon` sans aucun droit sur les tables |
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
@@ -118,6 +118,7 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Formulaires gardés : table `saved_forms`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 200 formulaires et 5 Mo, supprimés avec le compte). Testée de la même façon (`supabase/tests/formulaires_rls.sql`).
 - Profils : table `profiles`, une ligne par compte (prénom, nom, identifiant unique, rôle déclaré), mêmes protections (RLS sur le compte, rien sans connexion, identifiant vérifié par la base, supprimé avec le compte). Personne ne lit le profil d'un autre compte directement. Testée de la même façon (`supabase/tests/profils_rls.sql`).
 - Partage d'un process : table `process_members`. Un membre invité lit le process, sans pouvoir le modifier ni le supprimer ; seul le propriétaire invite, change l'acteur d'un membre ou le retire (un membre peut se retirer). L'invitation et la liste des membres passent par des fonctions `security definer` (`invite_member`, `members_of`) qui vérifient le propriétaire ou le membre, et ne renvoient que le nom et l'identifiant : l'app ne lit jamais la liste des comptes ni leurs adresses. Limite connue : inviter par adresse e-mail dit au propriétaire si cette adresse a un compte. Testé avec trois comptes (`supabase/tests/partage_rls.sql`).
+- Avis des membres : table `step_reviews`. Un membre ne donne, change ou retire que ses propres avis, et seulement sur un process dont il est membre (clé étrangère vers `process_members` et règles RLS). Ses avis ne sont lisibles que par lui et par le propriétaire du process. « À revoir » demande un commentaire (1 000 caractères au plus). La liste des process partagés passe par `shared_with_me()` (`security definer`), qui ne renvoie que les process du compte et le nom du propriétaire. Testé avec quatre comptes (`supabase/tests/avis_rls.sql`).
 
 ## Comptes
 

@@ -20,6 +20,7 @@ import type { Process } from '@/domain';
 
 import { demoProcesses } from './demo-processes';
 import { readSaved, writeSaved } from './saved-file';
+import { getShared } from './shared-store';
 import type { SyncEntry } from './sync';
 
 export type DemoScenario = 'contenu' | 'chargement' | 'vide' | 'erreur' | 'hors-ligne';
@@ -169,7 +170,11 @@ export function getCloudId(id: string): string | undefined {
 
 /** Comme `getCloudId`, et se met à jour après une synchronisation. */
 export function useCloudId(id: string): string | undefined {
-  return useSyncExternalStore(subscribeImports, () => getCloudId(id), () => getCloudId(id));
+  return useSyncExternalStore(
+    subscribeImports,
+    () => getCloudId(id),
+    () => getCloudId(id),
+  );
 }
 
 export function useImportedProcesses(): Process[] {
@@ -238,7 +243,11 @@ export function useSimulatedProcessList(): ProcessListState & { reload: () => vo
   return { ...state, reload };
 }
 
-/** Un process par son identifiant (écran Détail). */
+/** Un process par son identifiant (écran Détail) : importé, partagé avec moi, ou exemple. */
 export function getProcess(id: string): Process | undefined {
-  return imported.find((process) => process.id === id) ?? demoProcesses.find((process) => process.id === id);
+  return (
+    imported.find((process) => process.id === id) ??
+    getShared(id)?.process ??
+    demoProcesses.find((process) => process.id === id)
+  );
 }
