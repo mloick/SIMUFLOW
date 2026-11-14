@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { readPickedFile } from '@/utils/read-file';
+import { useT } from '@/i18n';
 
 /** Exemple fictif proposé par « Voir un exemple » : il montre tout le format. */
 export const TEXT_EXAMPLE = `Process : Demande de matériel
@@ -33,6 +34,8 @@ export function TextSource({
   onRead: (text: string, fileName?: string) => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const x = t.textSource;
 
   const pickFile = async () => {
     const selection = await DocumentPicker.getDocumentAsync({
@@ -49,8 +52,7 @@ export function TextSource({
   return (
     <View style={styles.box}>
       <ThemedText type="small" themeColor="textSecondary">
-        Une ligne par étape : « 2. Acteur : intitulé (2 JO) → 4 ». Sous une question, une ligne par cas : « oui → 3 ».
-        Sans flèche, l’étape mène à la ligne suivante.
+        {x.help}
       </ThemedText>
       <TextInput
         value={value}
@@ -59,9 +61,9 @@ export function TextSource({
         textAlignVertical="top"
         autoCorrect={false}
         autoCapitalize="sentences"
-        placeholder={'1. Employé : Faire la demande\n2. Responsable : Valider (2 JO)\n3. Fin : Demande close'}
+        placeholder={x.placeholder}
         placeholderTextColor={theme.textSecondary}
-        accessibilityLabel="Texte du process, une ligne par étape"
+        accessibilityLabel={x.label}
         style={[
           styles.input,
           {
@@ -71,16 +73,16 @@ export function TextSource({
           },
         ]}
       />
-      <PrimaryButton label="Lire le texte" onPress={() => onRead(value)} disabled={!value.trim()} />
+      <PrimaryButton label={x.read} onPress={() => onRead(value)} disabled={!value.trim()} />
       <View style={styles.row}>
         <Pressable onPress={() => onChange(TEXT_EXAMPLE)} accessibilityRole="button" style={styles.link} hitSlop={8}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Voir un exemple
+            {x.example}
           </ThemedText>
         </Pressable>
         <Pressable onPress={pickFile} accessibilityRole="button" style={styles.link} hitSlop={8}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Choisir un fichier .txt
+            {x.pickFile}
           </ThemedText>
         </Pressable>
       </View>

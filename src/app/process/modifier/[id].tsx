@@ -24,14 +24,9 @@ import {
 } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { confirmAction } from '@/utils/confirm';
-import { plural } from '@/utils/format';
+import { useT } from '@/i18n';
 
-const KINDS: { value: StepKind; label: string }[] = [
-  { value: 'start', label: 'Départ' },
-  { value: 'task', label: 'Tâche' },
-  { value: 'decision', label: 'Décision' },
-  { value: 'end', label: 'Fin' },
-];
+const KINDS: StepKind[] = ['start', 'task', 'decision', 'end'];
 
 /**
  * Éditeur d'un process importé : titre, rôle, acteur et délai de chaque étape,
@@ -42,6 +37,7 @@ export default function EditProcessScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const process = getProcess(id);
   const theme = useTheme();
+  const t = useT();
 
   if (!process || !isImported(id)) {
     return (
@@ -49,9 +45,9 @@ export default function EditProcessScreen() {
         <StateMessage
           icon={{ ios: 'exclamationmark.circle', android: 'error' }}
           tone="danger"
-          title="Process introuvable"
-          message="Seuls les process importés se modifient."
-          action={{ label: 'Revenir', onPress: () => router.back() }}
+          title={t.detail.notFound}
+          message={t.editor.notFoundText}
+          action={{ label: t.tracking.back, onPress: () => router.back() }}
         />
       </View>
     );
@@ -61,6 +57,7 @@ export default function EditProcessScreen() {
 
 function Editor({ original }: { original: Process }) {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(original);
   const [open, setOpen] = useState<string | null>(null);
@@ -86,11 +83,11 @@ function Editor({ original }: { original: Process }) {
   const cancel = () => {
     if (latest.current === original) return router.back();
     confirmAction(
-      'Abandonner les modifications ?',
-      'Le process restera tel qu’il était.',
-      'Abandonner',
+      t.editor.discardTitle,
+      t.editor.discardText,
+      t.editor.discard,
       () => router.back(),
-      'Continuer à modifier',
+      t.editor.keepEditing,
     );
   };
 
@@ -98,18 +95,18 @@ function Editor({ original }: { original: Process }) {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Modifier',
+          title: t.titles.edit,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerLeft: () => (
             <Pressable onPress={cancel} accessibilityRole="button" hitSlop={12}>
-              <ThemedText style={{ color: theme.link }}>Annuler</ThemedText>
+              <ThemedText style={{ color: theme.link }}>{t.common.cancel}</ThemedText>
             </Pressable>
           ),
           headerRight: () => (
             <Pressable onPress={save} accessibilityRole="button" hitSlop={12}>
               <ThemedText type="link" style={{ color: theme.link }}>
-                Enregistrer
+                {t.common.save}
               </ThemedText>
             </Pressable>
           ),
@@ -126,11 +123,11 @@ function Editor({ original }: { original: Process }) {
         <ThemedText
           accessibilityLiveRegion="polite"
           style={{ color: toFix > 0 ? (summary.errorCount > 0 ? theme.danger : theme.warning) : theme.success }}>
-          {plural(summary.stepCount, 'étape')} · {plural(summary.decisionCount, 'décision')} ·{' '}
-          {toFix > 0 ? `${plural(toFix, 'point')} à corriger` : 'aucune anomalie'}
+          {t.format.count(summary.stepCount, t.words.step)} · {t.format.count(summary.decisionCount, t.words.decision)}{' '}
+          · {toFix > 0 ? t.editor.toFix(t.format.count(toFix, t.editor.point)) : t.editor.noIssue}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Touchez une étape pour la modifier.
+          {t.editor.tapStep}
         </ThemedText>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -173,17 +170,19 @@ function StepEditor({
   onChange: (next: Process) => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const e = t.editor;
   const [caseName, setCaseName] = useState('');
   // Cible du nouveau cas : une étape existante, ou une nouvelle étape (undefined).
   const [caseTarget, setCaseTarget] = useState<string | undefined>();
   const exits = process.links.filter((link) => link.from === step.id);
-  const titleOf = (id: string) => process.steps.find((other) => other.id === id)?.title || 'Sans titre';
+  const titleOf = (id: string) => process.steps.find((other) => other.id === id)?.title || t.untitled;
   const unnamed = exits.filter((link) => !link.label?.trim()).length;
-  const kindLabel = KINDS.find((kind) => kind.value === step.kind)?.label;
+  const kindLabel = t.kinds[step.kind];
   const others = process.steps.filter((other) => other.id !== step.id);
   const isDecision = step.kind === 'decision';
   const targets: { id: string | undefined; title: string }[] = isDecision
-    ? [{ id: undefined, title: 'Une nouvelle étape' }, ...others]
+    ? [{ id: undefined, title: e.newStep }, ...others]
     : others.filter((other) => !exits.some((link) => link.to === other.id));
   const canAdd = isDecision ? caseName.trim() !== '' : caseTarget !== undefined;
 
@@ -200,11 +199,11 @@ function StepEditor({
   const remove = () => {
     const links = process.links.filter((link) => link.from === step.id || link.to === step.id).length;
     confirmAction(
-      `Supprimer « ${step.title || 'Sans titre'} » ?`,
-      links > 0 ? `Ses ${plural(links, 'lien')} partent avec elle.` : 'Elle n’a aucun lien.',
-      'Supprimer',
+      e.deleteTitle(step.title || t.untitled),
+      links > 0 ? e.deleteLinks(t.format.count(links, t.words.link)) : e.noLinks,
+      e.delete,
       () => onChange(removeStep(process, step.id)),
-      'Garder',
+      e.keep,
     );
   };
 
@@ -214,41 +213,41 @@ function StepEditor({
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityHint={open ? 'Replie l’étape' : 'Ouvre l’étape pour la modifier'}
+        accessibilityHint={open ? e.collapse : e.expand}
         style={[styles.row, open && { backgroundColor: theme.primaryBackground }]}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.number}>
           {index + 1}
         </ThemedText>
         <View style={styles.flex}>
-          <ThemedText>{step.title || 'Sans titre'}</ThemedText>
+          <ThemedText>{step.title || t.untitled}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {[kindLabel, step.actor, step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null]
+            {[kindLabel, step.actor, step.duration ? t.format.count(step.duration, t.words.workingDay) : null]
               .filter(Boolean)
               .join(' · ')}
           </ThemedText>
         </View>
         <ThemedText type="link" style={{ color: theme.link }}>
-          {open ? 'Fermer' : 'Modifier'}
+          {open ? e.close : e.edit}
         </ThemedText>
       </Pressable>
 
       {open && (
         <View style={styles.form}>
-          <Label text="Titre" />
+          <Label text={e.title} />
           <Field
             value={step.title}
             onCommit={(title) => onChange(updateStep(process, step.id, { title }))}
-            accessibilityLabel="Titre de l’étape"
+            accessibilityLabel={e.titleLabel}
           />
 
-          <Label text="Rôle" />
+          <Label text={e.role} />
           <View style={styles.options} accessibilityRole="radiogroup">
             {KINDS.map((kind) => {
-              const selected = step.kind === kind.value;
+              const selected = step.kind === kind;
               return (
                 <Pressable
-                  key={kind.value}
-                  onPress={() => onChange(updateStep(process, step.id, { kind: kind.value }))}
+                  key={kind}
+                  onPress={() => onChange(updateStep(process, step.id, { kind }))}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   style={[
@@ -259,19 +258,19 @@ function StepEditor({
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {kind.label}
+                    {t.kinds[kind]}
                   </ThemedText>
                 </Pressable>
               );
             })}
           </View>
 
-          <Label text="Acteur" />
+          <Label text={e.actor} />
           <Field
             value={step.actor ?? ''}
-            placeholder="Service, équipe ou rôle"
+            placeholder={e.actorPlaceholder}
             onCommit={(actor) => onChange(updateStep(process, step.id, { actor }))}
-            accessibilityLabel="Acteur de l’étape"
+            accessibilityLabel={e.actorLabel}
           />
           {actors.filter((actor) => actor !== step.actor).length > 0 && (
             <View style={styles.options}>
@@ -282,7 +281,7 @@ function StepEditor({
                     key={actor}
                     onPress={() => onChange(updateStep(process, step.id, { actor }))}
                     accessibilityRole="button"
-                    accessibilityLabel={`Choisir l’acteur ${actor}`}
+                    accessibilityLabel={e.chooseActor(actor)}
                     style={[styles.option, { backgroundColor: theme.primaryBackground, borderColor: 'transparent' }]}>
                     <ThemedText type="small">{actor}</ThemedText>
                   </Pressable>
@@ -290,41 +289,41 @@ function StepEditor({
             </View>
           )}
 
-          <Label text="Délai (jours ouvrés)" />
+          <Label text={e.delay} />
           <Field
-            value={step.duration !== undefined ? String(step.duration).replace('.', ',') : ''}
-            placeholder="Aucun"
+            value={step.duration !== undefined ? t.format.num(step.duration) : ''}
+            placeholder={e.delayPlaceholder}
             keyboardType="decimal-pad"
             onCommit={(text) => {
               const value = text.trim().replace(',', '.');
               onChange(updateStep(process, step.id, { duration: value ? Number(value) : null }));
             }}
-            accessibilityLabel="Délai de l’étape, en jours ouvrés"
+            accessibilityLabel={e.delayLabel}
           />
 
-          {exits.length > 0 && <Label text={exits.length > 1 ? 'Branches' : 'Étape suivante'} />}
+          {exits.length > 0 && <Label text={exits.length > 1 ? e.branches : e.nextStep} />}
           {exits.map((link) => (
             <View key={link.id} style={styles.branch}>
               <View style={styles.branchHead}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                  Vers « {titleOf(link.to)} »
+                  {e.to(titleOf(link.to))}
                 </ThemedText>
                 <Pressable
                   onPress={() => onChange(removeLink(process, link.id))}
                   accessibilityRole="button"
-                  accessibilityLabel={`Retirer la branche vers ${titleOf(link.to)}`}
+                  accessibilityLabel={e.removeBranch(titleOf(link.to))}
                   hitSlop={8}>
                   <ThemedText type="small" style={{ color: theme.danger }}>
-                    Retirer
+                    {e.remove}
                   </ThemedText>
                 </Pressable>
               </View>
               {exits.length > 1 && (
                 <Field
                   value={link.label ?? ''}
-                  placeholder="Nom de la branche (oui, non, refus…)"
+                  placeholder={e.branchPlaceholder}
                   onCommit={(label) => onChange(renameLink(process, link.id, label))}
-                  accessibilityLabel={`Nom de la branche vers ${titleOf(link.to)}`}
+                  accessibilityLabel={e.branchLabel(titleOf(link.to))}
                 />
               )}
             </View>
@@ -335,8 +334,7 @@ function StepEditor({
               accessibilityRole="button"
               style={[styles.action, { borderColor: theme.link }]}>
               <ThemedText type="smallBold" style={{ color: theme.link }}>
-                C’est un choix : en faire une décision
-                {unnamed > 0 ? ` et nommer ${plural(unnamed, 'branche')}` : ''}
+                {e.makeDecision(unnamed > 0 ? t.format.count(unnamed, e.branch) : null)}
               </ThemedText>
             </Pressable>
           )}
@@ -344,17 +342,17 @@ function StepEditor({
           {/* Une décision gagne un cas nommé ; une tâche se relie à une étape existante (un retour, par exemple). */}
           {step.kind !== 'end' && (
             <View style={[styles.newCase, { borderColor: theme.border }]}>
-              <Label text={isDecision ? 'Ajouter un cas' : 'Relier à une autre étape'} />
+              <Label text={isDecision ? e.addCase : e.linkTo} />
               {isDecision && (
                 <Field
                   value={caseName}
-                  placeholder="Nom du cas (à compléter, urgent…)"
+                  placeholder={e.casePlaceholder}
                   onCommit={setCaseName}
-                  accessibilityLabel="Nom du nouveau cas"
+                  accessibilityLabel={e.caseLabel}
                 />
               )}
               <ThemedText type="small" themeColor="textSecondary">
-                Mène vers :
+                {e.leadsTo}
               </ThemedText>
               <View style={styles.options} accessibilityRole="radiogroup">
                 {targets.map((target) => {
@@ -373,7 +371,7 @@ function StepEditor({
                         },
                       ]}>
                       <ThemedText type="small" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                        {target.title || 'Sans titre'}
+                        {target.title || t.untitled}
                       </ThemedText>
                     </Pressable>
                   );
@@ -386,7 +384,7 @@ function StepEditor({
                 accessibilityState={{ disabled: !canAdd }}
                 style={[styles.action, { borderColor: theme.link, opacity: canAdd ? 1 : 0.5 }]}>
                 <ThemedText type="smallBold" style={{ color: theme.link }}>
-                  {isDecision ? 'Ajouter ce cas' : 'Relier'}
+                  {isDecision ? e.addThisCase : e.link}
                 </ThemedText>
               </Pressable>
             </View>
@@ -398,10 +396,10 @@ function StepEditor({
               <Pressable
                 onPress={addAfter}
                 accessibilityRole="button"
-                accessibilityHint="Crée une étape juste après celle-ci"
+                accessibilityHint={e.addAfterHint}
                 style={[styles.action, styles.flex, { borderColor: theme.link }]}>
                 <ThemedText type="smallBold" style={{ color: theme.link }}>
-                  Ajouter une étape après
+                  {e.addAfter}
                 </ThemedText>
               </Pressable>
             )}
@@ -410,7 +408,7 @@ function StepEditor({
               accessibilityRole="button"
               style={[styles.action, { borderColor: theme.danger }]}>
               <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                Supprimer l’étape
+                {e.deleteStep}
               </ThemedText>
             </Pressable>
           </View>

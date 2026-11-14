@@ -8,6 +8,7 @@
 import type { MemberReview } from '@/domain';
 
 import { supabase } from './client';
+import { getT } from '@/i18n';
 
 export type Member = {
   id: string;
@@ -46,25 +47,25 @@ export class SharingError extends Error {
 export function sharingErrorMessage(error: { code?: string; message?: string }): SharingError {
   switch (error.code) {
     case 'P0002':
-      return new SharingError('Aucun compte SimuFlow avec cet identifiant ou cette adresse.');
+      return new SharingError(getT().errors.noAccount);
     case '42501':
-      return new SharingError('Seul le propriétaire du process peut inviter ou retirer des membres.');
+      return new SharingError(getT().errors.ownerOnly);
     case '22023':
-      return new SharingError('C’est vous : vous êtes déjà le propriétaire de ce process.');
+      return new SharingError(getT().errors.itsYou);
     case '54000':
-      return new SharingError('Un process compte au plus 100 membres.');
+      return new SharingError(getT().errors.tooMany);
     case '23505':
-      return new SharingError('Cet acteur a déjà un lien.');
+      return new SharingError(getT().errors.linkExists);
     case '23503':
-      return new SharingError('Vous n’êtes plus membre de ce process : son propriétaire vous en a retiré.');
+      return new SharingError(getT().errors.notMember);
     case '23514':
-      return new SharingError('Avis incomplet : dites ce qui est à revoir (1 000 caractères au plus).');
+      return new SharingError(getT().errors.reviewIncomplete);
     case 'PGRST202':
     case '42883':
     case '42P01':
-      return new SharingError('Le serveur n’a pas encore le partage : le script SQL est à appliquer.');
+      return new SharingError(getT().errors.noSharingTable);
     default:
-      return new SharingError('Le partage n’a pas pu se faire. Vérifiez la connexion et réessayez.');
+      return new SharingError(getT().errors.sharingFailed);
   }
 }
 
@@ -80,7 +81,7 @@ export async function inviteMember(cloudId: string, who: string, actor: string |
   const { data, error } = await supabase.rpc('invite_member', { p_process: cloudId, p_who: who, p_actor: actor });
   if (error) throw sharingErrorMessage(error);
   const rows = (data ?? []) as MemberRow[];
-  if (!rows[0]) throw new SharingError('Le partage n’a pas pu se faire. Réessayez.');
+  if (!rows[0]) throw new SharingError(getT().errors.sharingRetry);
   return fromRow(rows[0]);
 }
 
@@ -93,7 +94,7 @@ export async function removeMember(cloudId: string, memberId: string): Promise<v
 /** Nom affiché d'un membre : « Julie Martin », sinon son identifiant, sinon « Membre sans profil ». */
 export function memberName(member: Member): string {
   const name = [member.firstName, member.lastName].filter(Boolean).join(' ').trim();
-  return name || (member.username ? `@${member.username}` : 'Membre sans profil');
+  return name || (member.username ? `@${member.username}` : getT().errors.memberNoProfile);
 }
 
 type ProcessReviewRow = { member_id: string; step_id: string; status: 'valide' | 'a_revoir'; comment: string | null };

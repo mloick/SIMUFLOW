@@ -45,8 +45,8 @@ import {
   type WorkbookReport,
 } from '@/import/tableau';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/utils/format';
 import { readPickedBytes, readPickedFile } from '@/utils/read-file';
+import { getT, useT } from '@/i18n';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
@@ -86,6 +86,7 @@ type PickedTable = {
  */
 export default function ImportScreen() {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<FileKind | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
@@ -125,7 +126,7 @@ export default function ImportScreen() {
       showForm(bundle.form, { source: bundle.source, workflow: bundle.workflow });
       router.push('/formulaire');
     } catch (cause) {
-      setError(cause instanceof ImportError ? cause.message : 'Les fichiers n’ont pas pu être lus.');
+      setError(cause instanceof ImportError ? cause.message : getT().importer.filesUnreadable);
     }
   };
 
@@ -150,7 +151,7 @@ export default function ImportScreen() {
     setTable(null);
     try {
       if (asset.size && asset.size > MAX_FILE_SIZE)
-        throw new ImportError('Ce fichier est trop volumineux (5 Mo au plus).');
+        throw new ImportError(getT().importer.tooBig(5));
       // Un .vsdx est une archive zip : il se lit en octets, pas en texte.
       const read =
         nextKind === 'visio' || /\.vsdx$/i.test(asset.name)
@@ -164,7 +165,7 @@ export default function ImportScreen() {
       setError(null);
     } catch (cause) {
       setPicked(null);
-      setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+      setError(cause instanceof ImportError ? cause.message : getT().importer.fileUnreadable);
     }
   };
 
@@ -180,7 +181,7 @@ export default function ImportScreen() {
   const readText = (content: string, fileName?: string) => {
     setTable(null);
     try {
-      const fallback = fileName ? fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') : 'Process écrit';
+      const fallback = fileName ? fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') : getT().importer.writtenProcess;
       const { result, applied } = applyReadingRules(parseProcessText(content, fallback, newImportId()));
       setPicked({ fileName: fileName ?? 'Texte', result, applied });
       setPage(0);
@@ -189,7 +190,7 @@ export default function ImportScreen() {
       setError(null);
     } catch (cause) {
       setPicked(null);
-      setError(cause instanceof ImportError ? cause.message : 'Le texte n’a pas pu être lu.');
+      setError(cause instanceof ImportError ? cause.message : getT().importer.textUnreadable);
     }
   };
 
@@ -198,7 +199,7 @@ export default function ImportScreen() {
     setChoosing(null);
     try {
       if (asset.size && asset.size > MAX_TABLE_SIZE)
-        throw new ImportError('Ce fichier est trop volumineux (20 Mo au plus).');
+        throw new ImportError(getT().importer.tooBig(20));
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
       const learned = getLearnedHeaders();
       const report = describeWorkbook(workbook, learned);
@@ -231,7 +232,7 @@ export default function ImportScreen() {
       setError(null);
     } catch (cause) {
       setTable(null);
-      setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+      setError(cause instanceof ImportError ? cause.message : getT().importer.fileUnreadable);
     }
   };
 
@@ -301,12 +302,12 @@ export default function ImportScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Nouveau process',
+          title: t.importer.title,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerLeft: () => (
             <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-              <ThemedText style={{ color: theme.link }}>Annuler</ThemedText>
+              <ThemedText style={{ color: theme.link }}>{t.common.cancel}</ThemedText>
             </Pressable>
           ),
         }}
@@ -314,7 +315,7 @@ export default function ImportScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="nom-label">
-            Nom du process
+            {t.importer.name}
           </ThemedText>
           <TextInput
             value={name}
@@ -322,10 +323,10 @@ export default function ImportScreen() {
               setName(text);
               if (text.trim()) setNameMissing(false);
             }}
-            placeholder={picked ? undefined : 'Rempli à partir du fichier'}
+            placeholder={picked ? undefined : t.importer.namePlaceholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Nom du process"
-            accessibilityHint={nameMissing ? 'Le nom est obligatoire.' : undefined}
+            accessibilityLabel={t.importer.name}
+            accessibilityHint={nameMissing ? t.importer.nameRequired : undefined}
             aria-invalid={nameMissing}
             returnKeyType="done"
             style={[
@@ -340,69 +341,69 @@ export default function ImportScreen() {
           />
           {nameMissing && (
             <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
-              Le nom est obligatoire.
+              {t.importer.nameRequired}
             </ThemedText>
           )}
         </View>
 
         <View style={styles.sources}>
           <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-            Source
+            {t.importer.source}
           </ThemedText>
           <SourceCard
             icon={{ ios: 'doc', android: 'description' }}
-            title="Fichier draw.io"
-            description="Depuis Fichiers, un mail ou Drive"
+            title={t.importer.sources.drawio[0]}
+            description={t.importer.sources.drawio[1]}
             selected={kind === 'drawio'}
             onPress={() => pick('drawio')}
           />
           <SourceCard
             icon={{ ios: 'point.3.connected.trianglepath.dotted', android: 'account_tree' }}
-            title="Fichier BPMN"
-            description="Un .bpmn de Camunda, Bizagi, Signavio, bpmn.io…"
+            title={t.importer.sources.bpmn[0]}
+            description={t.importer.sources.bpmn[1]}
             selected={kind === 'bpmn'}
             onPress={() => pick('bpmn')}
           />
           <SourceCard
             icon={{ ios: 'square.on.circle', android: 'schema' }}
-            title="Fichier Visio"
-            description="Un .vsdx de Microsoft Visio (2013 et après)"
+            title={t.importer.sources.visio[0]}
+            description={t.importer.sources.visio[1]}
             selected={kind === 'visio'}
             onPress={() => pick('visio')}
           />
           <SourceCard
             icon={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}
-            title="Formulaire et son workflow"
-            description="Le template, et son workflow si vous l’avez : un ou deux fichiers"
+            title={t.importer.sources.formulaire[0]}
+            description={t.importer.sources.formulaire[1]}
             selected={kind === 'formulaire'}
             onPress={() => pick('formulaire')}
           />
           <SourceCard
             icon={{ ios: 'tablecells', android: 'table_chart' }}
-            title="Tableau Excel ou CSV"
-            description="Process, workflow avec SLA et OLA, formulaire"
+            title={t.importer.sources.tableau[0]}
+            description={t.importer.sources.tableau[1]}
             selected={kind === 'tableau'}
             onPress={() => pick('tableau')}
           />
           <SourceCard
             icon={{ ios: 'viewfinder', android: 'document_scanner' }}
-            title="Scanner un tableau"
-            description="Photo d’un tableau étape, acteur, délai"
+            title={t.importer.sources.scan[0]}
+            description={t.importer.sources.scan[1]}
             selected={false}
             onPress={() => router.replace('/scanner')}
           />
           <SourceCard
             icon={{ ios: 'text.alignleft', android: 'notes' }}
-            title="Texte"
-            description="Un process écrit, une ligne par étape : collé ou en .txt"
+            title={t.importer.sources.texte[0]}
+            description={t.importer.sources.texte[1]}
             selected={kind === 'texte'}
             onPress={chooseText}
           />
           {kind === 'texte' && <TextSource value={text} onChange={setText} onRead={readText} />}
           <SourceCard
             icon={{ ios: 'curlybraces', android: 'data_object' }}
-            title="Fichier JSON"
-            description="Export d’un autre SimuFlow"
+            title={t.importer.sources.json[0]}
+            description={t.importer.sources.json[1]}
             selected={kind === 'json'}
             onPress={() => pick('json')}
           />
@@ -441,7 +442,7 @@ export default function ImportScreen() {
         {picked && (sheetPageCount > 1 || (sheetPageCount === 1 && situationCount > 0)) && (
           <View style={styles.sources}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              {table ? 'Onglet à importer' : 'Page à importer'}
+              {table ? t.importer.sheetToImport : t.importer.pageToImport}
             </ThemedText>
             <View
               style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
@@ -468,7 +469,7 @@ export default function ImportScreen() {
                   />
                   <ThemedText style={styles.flex}>{process.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {plural(process.steps.length, 'étape')}
+                    {t.format.count(process.steps.length, t.words.step)}
                   </ThemedText>
                 </Pressable>
               ))}
@@ -488,14 +489,14 @@ export default function ImportScreen() {
         {summary && (
           <View style={styles.sources}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              Aperçu
+              {t.importer.preview}
             </ThemedText>
             <View style={[styles.card, styles.preview, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <ThemedText>
                 {[
-                  plural(summary.stepCount, 'étape'),
-                  plural(summary.decisionCount, 'décision'),
-                  plural(summary.actors.length, 'acteur'),
+                  t.format.count(summary.stepCount, t.words.step),
+                  t.format.count(summary.decisionCount, t.words.decision),
+                  t.format.count(summary.actors.length, t.words.actor),
                 ].join(' · ')}
               </ThemedText>
               {summary.actors.length > 0 && (
@@ -504,7 +505,7 @@ export default function ImportScreen() {
                 </ThemedText>
               )}
               <View style={styles.badges}>
-                <Badge {...diagnosticBadge(summary)} />
+                <Badge {...diagnosticBadge(t, summary)} />
               </View>
             </View>
             <AnonymizeOption
@@ -514,7 +515,10 @@ export default function ImportScreen() {
               onChangeHidden={setHiddenWords}
               result={
                 anonymizer
-                  ? `${plural(anonymizer.actorCount, 'acteur renommé', 'acteurs renommés')} · importé sous le nom « ${anonymizer.text(name.trim())} »`
+                  ? t.importer.anonymized(
+                      t.format.count(anonymizer.actorCount, t.importer.renamedActor),
+                      anonymizer.text(name.trim()),
+                    )
                   : undefined
               }
             />
@@ -522,7 +526,7 @@ export default function ImportScreen() {
               <View
                 style={[styles.notice, { backgroundColor: theme.primaryBackground }]}
                 accessible
-                accessibilityLabel={`Corrigé d’après vos corrections précédentes : ${picked.applied.join(', ')}`}>
+                accessibilityLabel={t.importer.correctedLabel(picked.applied.join(', '))}>
                 <SymbolView
                   name={{ ios: 'wand.and.stars', android: 'auto_fix_high' }}
                   size={20}
@@ -530,7 +534,7 @@ export default function ImportScreen() {
                 />
                 <View style={styles.noticeText}>
                   <ThemedText type="smallBold" style={{ color: theme.link }}>
-                    Corrigé d’après vos corrections précédentes
+                    {t.importer.corrected}
                   </ThemedText>
                   {picked.applied.map((line) => (
                     <ThemedText key={line} type="small">
@@ -549,7 +553,7 @@ export default function ImportScreen() {
                 />
                 <View style={styles.noticeText}>
                   <ThemedText type="smallBold" style={{ color: theme.warning }}>
-                    Lu avec des remarques
+                    {t.importer.remarks}
                   </ThemedText>
                   {picked.result.warnings.map((warning) => (
                     <ThemedText key={warning} type="small" style={{ color: theme.warning }}>
@@ -566,35 +570,35 @@ export default function ImportScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, borderTopColor: theme.border }]}>
         {picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {kind === 'texte' && picked.fileName === 'Texte' ? 'Source : texte collé' : `Fichier choisi : ${picked.fileName}`}
+            {kind === 'texte' && picked.fileName === 'Texte' ? t.importer.pastedText : t.importer.chosenFile(picked.fileName)}
             {pageCount > 1
-              ? ` · ${situationCount > 0 ? plural(pageCount, 'process', 'process') : plural(pageCount, table ? 'onglet' : 'page')}`
+              ? ` · ${t.format.count(pageCount, situationCount > 0 ? t.importer.process : table ? t.importer.sheet : t.importer.page)}`
               : ''}
           </ThemedText>
         )}
         {table && !picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            Fichier choisi : {table.fileName}
+            {t.importer.chosenFile(table.fileName)}
           </ThemedText>
         )}
         {table?.form && !chosen ? (
-          <PrimaryButton label="Remplir le formulaire" onPress={openTableForm} />
+          <PrimaryButton label={t.importer.fillForm} onPress={openTableForm} />
         ) : (
           <PrimaryButton
-            label="Importer"
+            label={t.importer.import}
             onPress={() => submit()}
             disabled={!chosen}
-            accessibilityLabel={chosen ? 'Importer le process' : 'Importer, choisissez d’abord un fichier'}
+            accessibilityLabel={chosen ? t.importer.importLabel : t.importer.importDisabled}
           />
         )}
         {chosen && (
           <Pressable
             onPress={() => submit(true)}
             accessibilityRole="button"
-            accessibilityHint="Importe le process puis ouvre l’éditeur pour corriger la lecture"
+            accessibilityHint={t.importer.importAndFixHint}
             style={styles.secondary}>
             <ThemedText type="link" style={{ color: theme.link }}>
-              Importer et corriger
+              {t.importer.importAndFix}
             </ThemedText>
           </Pressable>
         )}

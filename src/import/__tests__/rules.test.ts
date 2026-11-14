@@ -91,7 +91,7 @@ describe('appliquer les règles', () => {
 
   it('remplace une règle sur le même acteur ou la même forme', () => {
     const merged = mergeRules(rules, [{ type: 'actor', from: 'Serv. Compta', to: 'Compta fournisseurs' }]);
-    expect(merged.map(describeRule)).toEqual([
+    expect(merged.map((rule) => describeRule(rule))).toEqual([
       'Forme hexagone lue comme une décision',
       'Acteur « Achats » lu comme « Service achats »',
       'Acteur « Serv. Compta » lu comme « Compta fournisseurs »',

@@ -22,6 +22,7 @@ import { demoProcesses } from './demo-processes';
 import { readSaved, writeSaved } from './saved-file';
 import { getShared } from './shared-store';
 import type { SyncEntry } from './sync';
+import { getT } from '@/i18n';
 
 export type DemoScenario = 'contenu' | 'chargement' | 'vide' | 'erreur' | 'hors-ligne';
 
@@ -195,7 +196,7 @@ async function fetchProcesses(current: DemoScenario): Promise<FetchResult> {
     case 'chargement':
       return new Promise(() => {}); // ne répond jamais : le squelette reste affiché
     case 'erreur':
-      throw new Error('Le serveur n’a pas répondu.');
+      throw new Error(getT().errors.noResponse);
     case 'vide':
       return { processes: [], offline: false };
     case 'hors-ligne':

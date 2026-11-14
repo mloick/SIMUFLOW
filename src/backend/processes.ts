@@ -8,6 +8,7 @@ import type { Process } from '@/domain';
 
 import { supabase } from './client';
 import { fromRow, toRow, type ProcessRow } from './process-row';
+import { getT } from '@/i18n';
 
 const TABLE = 'processes';
 
@@ -19,7 +20,7 @@ const TABLE = 'processes';
 export async function listCloudProcesses(): Promise<Process[]> {
   const { data: auth } = await supabase.auth.getSession();
   const userId = auth.session?.user.id;
-  if (!userId) throw new Error('Connexion requise.');
+  if (!userId) throw new Error(getT().errors.signInRequired);
   const { data, error } = await supabase
     .from(TABLE)
     .select('*')

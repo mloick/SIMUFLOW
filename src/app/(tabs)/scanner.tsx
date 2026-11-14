@@ -15,7 +15,7 @@ import { groupRows, type TableRow } from '@/scan/rows';
 import { findTable, type ScannedTable } from '@/scan/table';
 import { tableToProcess } from '@/scan/to-process';
 import { pickPhoto } from '@/utils/pick-photo';
-import { plural } from '@/utils/format';
+import { useT, type Messages } from '@/i18n';
 
 import { isTextRecognitionAvailable, recognizeText } from '../../../modules/text-recognition';
 
@@ -46,6 +46,8 @@ const SCAN = {
 
 export default function ScannerScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
+  const s = t.scanner;
   const [permission, requestPermission] = useCameraPermissions();
   const focused = useIsFocused();
   const camera = useRef<CameraView>(null);
@@ -71,7 +73,7 @@ export default function ScannerScreen() {
 
   /** Crée le process du tableau trouvé et ouvre sa fiche ; avec `correct`, ouvre l'éditeur par-dessus. */
   const create = (table: ScannedTable, correct: boolean) => {
-    const process = saveScannedProcess(table);
+    const process = saveScannedProcess(table, t);
     retake();
     router.push({ pathname: '/process/[id]', params: { id: process.id } });
     if (correct) router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } });
@@ -92,7 +94,7 @@ export default function ScannerScreen() {
       setPhoto(picture.uri);
       read(picture.uri);
     } catch {
-      setError('La photo n’a pas pu être prise. Réessayez.');
+      setError(s.shotError);
     } finally {
       setBusy(false);
     }
@@ -116,7 +118,7 @@ export default function ScannerScreen() {
             source={{ uri: done?.cropped ?? photo }}
             style={StyleSheet.absoluteFill}
             contentFit={done?.cropped ? 'contain' : 'cover'}
-            accessibilityLabel={done?.cropped ? 'Photo recadrée sur le document' : 'Photo du tableau'}
+            accessibilityLabel={done?.cropped ? s.croppedLabel : s.photoLabel}
           />
           {reading.state === 'reading' && (
             <View style={styles.veil}>
@@ -127,11 +129,11 @@ export default function ScannerScreen() {
         <ThemedText
           style={[styles.status, (reading.state === 'error' || done?.rows.length === 0) && styles.error]}
           accessibilityLiveRegion="polite">
-          {readingText(reading)}
+          {readingText(reading, t)}
         </ThemedText>
-        {done?.table && done.table.rows.length > 0 && <TablePreview table={done.table} />}
+        {done?.table && done.table.rows.length > 0 && <TablePreview table={done.table} label={s.tableFound} />}
         {done && !done.table && done.rows.length > 0 && (
-          <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel="Texte lu">
+          <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel={s.textRead}>
             {done.rows.map((row, index) => (
               <ThemedText key={index} type="small" style={styles.light} numberOfLines={2}>
                 {row.cells.join('  ·  ')}
@@ -141,28 +143,28 @@ export default function ScannerScreen() {
         )}
         {done?.table && done.table.rows.length > 0 ? (
           <View style={styles.actions}>
-            <PrimaryButton label="Créer le process" onPress={() => create(done.table!, false)} />
+            <PrimaryButton label={s.create} onPress={() => create(done.table!, false)} />
             <View style={styles.links}>
               <Pressable onPress={retake} accessibilityRole="button" hitSlop={8} style={styles.link}>
                 <ThemedText type="link" style={styles.accent}>
-                  Reprendre la photo
+                  {s.retake}
                 </ThemedText>
               </Pressable>
               <Pressable
                 onPress={() => create(done.table!, true)}
                 accessibilityRole="button"
-                accessibilityHint="Crée le process puis ouvre l’éditeur pour corriger la lecture"
+                accessibilityHint={s.createFixHint}
                 hitSlop={8}
                 style={styles.link}>
                 <ThemedText type="link" style={styles.accent}>
-                  Créer et corriger
+                  {s.createFix}
                 </ThemedText>
               </Pressable>
             </View>
           </View>
         ) : (
           <View style={styles.full}>
-            <PrimaryButton label="Reprendre la photo" onPress={retake} />
+            <PrimaryButton label={s.retake} onPress={retake} />
           </View>
         )}
       </>
@@ -177,16 +179,13 @@ export default function ScannerScreen() {
           <SymbolView name={{ ios: 'camera', android: 'photo_camera' }} size={32} tintColor={SCAN.accent} />
         </View>
         <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
-          Photographier un tableau
+          {s.webTitle}
         </ThemedText>
-        <ThemedText style={[styles.muted, styles.centerText]}>
-          Prenez le tableau en photo, ou choisissez une image (photo, capture d’écran). Le texte est lu dans votre
-          navigateur : l’image n’est envoyée nulle part.
-        </ThemedText>
-        <PrimaryButton label="Prendre ou choisir une photo" onPress={pick} />
+        <ThemedText style={[styles.muted, styles.centerText]}>{s.webText}</ThemedText>
+        <PrimaryButton label={s.pick} onPress={pick} />
         <Pressable onPress={() => router.push('/import')} accessibilityRole="button" hitSlop={8} style={styles.link}>
           <ThemedText type="link" style={[styles.accent, styles.centerText]}>
-            Importer un fichier draw.io ou JSON
+            {s.importFile}
           </ThemedText>
         </Pressable>
       </View>
@@ -200,15 +199,13 @@ export default function ScannerScreen() {
           <SymbolView name={{ ios: 'camera', android: 'photo_camera' }} size={32} tintColor={SCAN.accent} />
         </View>
         <ThemedText type="subtitle" style={[styles.light, styles.centerText]} accessibilityRole="header">
-          Autoriser l’appareil photo
+          {s.allowTitle}
         </ThemedText>
         <ThemedText style={[styles.muted, styles.centerText]}>
-          {permission.canAskAgain
-            ? 'SimuFlow utilise l’appareil photo seulement pour lire un tableau de process. Les photos restent sur votre téléphone.'
-            : 'L’accès a été refusé. Autorisez l’appareil photo pour SimuFlow dans les réglages du téléphone.'}
+          {permission.canAskAgain ? s.allowText : s.deniedText}
         </ThemedText>
         <PrimaryButton
-          label={permission.canAskAgain ? 'Autoriser' : 'Ouvrir les réglages'}
+          label={permission.canAskAgain ? s.allow : s.openSettings}
           onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
         />
       </View>
@@ -224,8 +221,8 @@ export default function ScannerScreen() {
               facing="back"
               enableTorch={torch}
               onCameraReady={() => setReady(true)}
-              onMountError={() => setError('L’appareil photo n’a pas pu démarrer.')}
-              accessibilityLabel="Aperçu de l’appareil photo"
+              onMountError={() => setError(s.cameraError)}
+              accessibilityLabel={s.preview}
             />
           )}
           <Corners />
@@ -234,7 +231,7 @@ export default function ScannerScreen() {
           style={[styles.status, error && styles.error]}
           accessibilityLiveRegion="polite"
           accessibilityRole={error ? 'alert' : undefined}>
-          {error ?? 'Tenez le téléphone au-dessus du tableau, bien à plat.'}
+          {error ?? s.hold}
         </ThemedText>
         <View style={styles.controls}>
           <View style={styles.side} />
@@ -242,7 +239,7 @@ export default function ScannerScreen() {
             onPress={shoot}
             disabled={!ready || busy}
             accessibilityRole="button"
-            accessibilityLabel="Prendre la photo"
+            accessibilityLabel={s.shoot}
             accessibilityState={{ disabled: !ready || busy }}
             style={({ pressed }) => [styles.shutter, { opacity: !ready || busy ? 0.5 : pressed ? 0.8 : 1 }]}>
             <View style={styles.shutterInner} />
@@ -250,7 +247,7 @@ export default function ScannerScreen() {
           <Pressable
             onPress={() => setTorch((on) => !on)}
             accessibilityRole="switch"
-            accessibilityLabel="Lampe"
+            accessibilityLabel={s.torch}
             accessibilityState={{ checked: torch }}
             style={[styles.side, styles.sideButton, torch && { backgroundColor: SCAN.accent }]}>
             <SymbolView
@@ -272,11 +269,9 @@ export default function ScannerScreen() {
       ]}>
       <View style={styles.content}>
         <ThemedText type="title" style={styles.light} accessibilityRole="header">
-          Scanner
+          {s.title}
         </ThemedText>
-        <ThemedText style={styles.muted}>
-          Cadrez un tableau avec une colonne par information : étape, acteur, délai.
-        </ThemedText>
+        <ThemedText style={styles.muted}>{s.intro}</ThemedText>
         {body}
       </View>
     </View>
@@ -284,8 +279,8 @@ export default function ScannerScreen() {
 }
 
 /** Transforme le tableau en process (règles de lecture apprises comprises) et l'ajoute à la liste. */
-function saveScannedProcess(table: ScannedTable) {
-  const name = table.title ?? `Tableau scanné du ${new Date().toLocaleDateString('fr-FR')}`;
+function saveScannedProcess(table: ScannedTable, t: Messages) {
+  const name = table.title ?? t.scanner.defaultName(new Date().toLocaleDateString(t.common.locale));
   const { result } = applyReadingRules(tableToProcess(table, name, `scan-${Date.now()}`));
   const process = result.processes[0];
   addImportedProcess(process);
@@ -296,36 +291,34 @@ type Reading =
   | { state: 'idle' | 'reading' | 'error' | 'unavailable' }
   | { state: 'done'; rows: TableRow[]; table: ScannedTable | null; cropped?: string };
 
-function readingText(reading: Reading): string {
+function readingText(reading: Reading, t: Messages): string {
+  const s = t.scanner;
   switch (reading.state) {
     case 'reading':
-      return Platform.OS === 'web'
-        ? 'Lecture du tableau… La première fois, le navigateur charge aussi le moteur de lecture.'
-        : 'Lecture du tableau…';
+      return Platform.OS === 'web' ? s.readingWeb : s.reading;
     case 'error':
-      return 'Le texte n’a pas pu être lu. Reprenez la photo, bien de face et nette.';
+      return s.readError;
     case 'unavailable':
-      return 'Photo prise. La lecture du texte n’est pas encore disponible sur cet appareil.';
+      return s.unavailable;
     case 'done': {
       const { table, rows } = reading;
-      if (rows.length === 0) return 'Aucun texte trouvé. Rapprochez-vous du tableau et reprenez la photo.';
-      if (!table) return 'Pas de ligne de titres trouvée (Étape, Acteur, Délai…). Voici tout le texte lu :';
-      if (table.rows.length === 0) return 'Titres trouvés, mais aucune ligne en dessous. Reprenez la photo.';
-      const around = table.ignored > 0 ? ` Texte autour ignoré : ${plural(table.ignored, 'ligne')}.` : '';
-      const title = table.title ? ` « ${table.title} »` : '';
-      return `Tableau${title} trouvé : ${plural(table.rows.length, 'étape')}.${around}`;
+      if (rows.length === 0) return s.noText;
+      if (!table) return s.noHeader;
+      if (table.rows.length === 0) return s.noRows;
+      const around = table.ignored > 0 ? s.ignored(t.format.count(table.ignored, t.words.row)) : '';
+      return s.found(table.title ?? null, t.format.count(table.rows.length, t.words.step)) + around;
     }
     default:
-      return 'Photo prise.';
+      return s.taken;
   }
 }
 
 /** Le tableau trouvé : les titres de colonnes, puis une ligne par étape. */
-function TablePreview({ table }: { table: ScannedTable }) {
+function TablePreview({ table, label }: { table: ScannedTable; label: string }) {
   const flex = (index: number) =>
     table.columns[index].kind === 'step' ? 2.2 : table.columns[index].kind === 'number' ? 0.5 : 1;
   return (
-    <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel="Tableau trouvé">
+    <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel={label}>
       <View style={styles.tableRow}>
         {table.columns.map((column, index) => (
           <ThemedText key={index} type="smallBold" style={[styles.accent, { flex: flex(index) }]} numberOfLines={1}>

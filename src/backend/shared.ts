@@ -8,6 +8,7 @@ import type { Process, ReviewStatus, StepReview } from '@/domain';
 import { supabase } from './client';
 import { fromRow as processFromRow, type ProcessRow } from './process-row';
 import { sharingErrorMessage } from './sharing';
+import { getT } from '@/i18n';
 
 /** Un process partagé avec le compte connecté. */
 export type SharedProcess = {
@@ -55,7 +56,7 @@ export function toShared(row: SharedRow): SharedProcess {
     process: { ...process, id: sharedLocalId(row.process_id) },
     cloudId: row.process_id,
     actor: row.actor?.trim() || null,
-    ownerName: name || (row.owner_username ? `@${row.owner_username}` : 'un autre compte'),
+    ownerName: name || (row.owner_username ? `@${row.owner_username}` : getT().errors.otherAccount),
     updatedAt: row.updated_at,
   };
 }

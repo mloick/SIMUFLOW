@@ -5,24 +5,24 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { situationLevel, VARIANT_LABELS, type Situation, type WarningLevel } from '@/import/tableau';
-import { plural } from '@/utils/format';
+import { getT, useT, type Messages } from '@/i18n';
+import { situationLevel, type Situation, type WarningLevel } from '@/import/tableau';
 
-const LEVELS: Record<WarningLevel | 'ok', { label: string; tone: BadgeTone }> = {
-  rouge: { label: 'À corriger', tone: 'danger' },
-  orange: { label: 'À vérifier', tone: 'warning' },
-  info: { label: 'Lue, avec une info', tone: 'success' },
-  ok: { label: 'Lue sans ambiguïté', tone: 'success' },
+const TONES: Record<WarningLevel | 'ok', BadgeTone> = {
+  rouge: 'danger',
+  orange: 'warning',
+  info: 'success',
+  ok: 'success',
 };
 
-const days = (value: number) => `${String(value).replace('.', ',')} JO`;
-
 /** « SLA 6 JO · Groupe A (3 JO) → Groupe B (3 JO) » : le résumé d'une situation, comme une ligne du récapitulatif. */
-export function situationMeta(situation: Situation): string {
+export function situationMeta(situation: Situation, t: Messages = getT()): string {
+  const s = t.situations;
+  const days = (value: number) => s.wd(t.format.num(value));
   const steps = situation.steps
-    .map((step) => `${step.group ?? 'groupe ?'}${step.olaDays !== null ? ` (${days(step.olaDays)})` : ''}`)
+    .map((step) => `${step.group ?? s.unknownGroup}${step.olaDays !== null ? ` (${days(step.olaDays)})` : ''}`)
     .join(' → ');
-  return [situation.slaDays !== null ? `SLA ${days(situation.slaDays)}` : 'SLA ?', steps || 'aucune étape'].join(' · ');
+  return [situation.slaDays !== null ? `SLA ${days(situation.slaDays)}` : 'SLA ?', steps || s.noStep].join(' · ');
 }
 
 /**
@@ -45,6 +45,8 @@ export function SituationList({
   skipped: number;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const s = t.situations;
   const levels = situations.map((situation) => situationLevel(situation.warnings));
   const red = levels.filter((level) => level === 'rouge').length;
   const orange = levels.filter((level) => level === 'orange').length;
@@ -53,17 +55,17 @@ export function SituationList({
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Situation à importer
+        {s.toImport}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {[
-          `${plural(situations.length, 'situation')} : chacune devient un process`,
-          red > 0 && `${red} à corriger`,
-          orange > 0 && `${orange} à vérifier`,
+          s.eachBecomes(t.format.count(situations.length, t.words.situation)),
+          red > 0 && s.toFix(red),
+          orange > 0 && s.toCheck(orange),
         ]
           .filter(Boolean)
           .join(' · ')}
-        .{skipped > 0 && ` ${plural(skipped, 'ligne')} sans SLA ni étape, pas encore ${skipped > 1 ? 'décrites' : 'décrite'}, ${skipped > 1 ? 'sont ignorées' : 'est ignorée'}.`}
+        .{skipped > 0 && s.skipped(skipped)}
       </ThemedText>
 
       {families.map((family) => (
@@ -77,14 +79,17 @@ export function SituationList({
             {situations.map((situation, index) => {
               if (situation.family !== family) return null;
               const on = index === selected;
-              const level = LEVELS[levels[index] ?? 'ok'];
+              const key = levels[index] ?? 'ok';
+              const level = { label: s.levels[key], tone: TONES[key] };
               return (
-                <View key={`${situation.sheet}-${situation.row}`} style={[styles.item, { borderTopColor: theme.border }]}>
+                <View
+                  key={`${situation.sheet}-${situation.row}`}
+                  style={[styles.item, { borderTopColor: theme.border }]}>
                   <Pressable
                     onPress={() => onSelect(index)}
                     accessibilityRole="radio"
                     accessibilityState={{ checked: on }}
-                    accessibilityLabel={`${situation.label}, ${situationMeta(situation)}, ${level.label}`}
+                    accessibilityLabel={`${situation.label}, ${situationMeta(situation, t)}, ${level.label}`}
                     style={[styles.row, on && { backgroundColor: theme.primaryBackground }]}>
                     <SymbolView
                       name={
@@ -98,10 +103,10 @@ export function SituationList({
                     <View style={styles.text}>
                       <ThemedText>{situation.label}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
-                        {situationMeta(situation)}
+                        {situationMeta(situation, t)}
                       </ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
-                        {VARIANT_LABELS[situation.variant]}
+                        {s.variants[situation.variant]}
                       </ThemedText>
                       <View style={styles.badge}>
                         <Badge label={level.label} tone={level.tone} />
@@ -113,15 +118,25 @@ export function SituationList({
                       {situation.warnings.map((warning, position) => (
                         <View
                           key={`${warning.cell}-${position}`}
-                          style={[styles.warning, { borderLeftColor: warning.level === 'rouge' ? theme.danger : warning.level === 'orange' ? theme.warning : theme.border }]}>
+                          style={[
+                            styles.warning,
+                            {
+                              borderLeftColor:
+                                warning.level === 'rouge'
+                                  ? theme.danger
+                                  : warning.level === 'orange'
+                                    ? theme.warning
+                                    : theme.border,
+                            },
+                          ]}>
                           <ThemedText type="small" themeColor="textSecondary">
                             {situation.sheet}
-                            {warning.cell ? ` · ${warning.cell}` : ` · ligne ${situation.row}`}
+                            {warning.cell ? ` · ${warning.cell}` : s.row(situation.row)}
                           </ThemedText>
                           <ThemedText type="small">{warning.message}</ThemedText>
                           {warning.question && (
                             <ThemedText type="small" themeColor="textSecondary" style={styles.italic}>
-                              Question à poser : {warning.question}
+                              {s.question(warning.question)}
                             </ThemedText>
                           )}
                         </View>

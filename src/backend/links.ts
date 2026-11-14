@@ -11,6 +11,7 @@ import type { MemberReview, Process, StepReview } from '@/domain';
 import { supabase } from './client';
 import { fromRow as processFromRow, type ProcessRow } from './process-row';
 import { sharingErrorMessage, SharingError } from './sharing';
+import { getT } from '@/i18n';
 
 export type ActorLink = { id: string; processId: string; actor: string; token: string };
 
@@ -132,7 +133,7 @@ export async function openLink(token: string): Promise<LinkView> {
   return {
     process,
     actor: row.actor,
-    ownerName: name || (row.owner_username ? `@${row.owner_username}` : 'Le responsable du process'),
+    ownerName: name || (row.owner_username ? `@${row.owner_username}` : getT().errors.processOwner),
     reviews: row.reviews.map((review) => ({ stepId: review.step_id, status: review.status, comment: review.comment })),
     reviewerName: row.reviews[0]?.reviewer_name ?? null,
   };
@@ -158,9 +159,9 @@ export async function unreviewByLink(token: string, stepId: string): Promise<voi
 export function linkErrorMessage(error: { code?: string; message?: string }): SharingError {
   switch (error.code) {
     case 'P0002':
-      return new SharingError('Ce lien n’existe pas ou a été retiré. Demandez un nouveau lien à qui vous l’a envoyé.');
+      return new SharingError(getT().errors.linkGone);
     case '22023':
-      return new SharingError('Cette étape n’est plus dans le process : rechargez la page.');
+      return new SharingError(getT().errors.stepGone);
     default:
       return sharingErrorMessage(error);
   }

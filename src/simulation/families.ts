@@ -9,6 +9,7 @@
  */
 
 import { buildGraph, isTerminal, type Path, type PathStep, type Process, type ProcessGraph } from '@/domain';
+import { getT, type Messages } from '@/i18n';
 
 export type PathFamily = {
   /** Lien de sortie qui définit la famille, ou « unique » sans décision. */
@@ -88,13 +89,13 @@ export function allPaths(process: Process, max = MAX_LISTED_PATHS): { paths: Pat
   return { paths, capped };
 }
 
-export function overviewOf(process: Process): ProcessOverview {
+export function overviewOf(process: Process, t: Messages = getT()): ProcessOverview {
   const graph = buildGraph(process);
   const { paths, capped } = allPaths(process);
 
   const families = new Map<string, PathFamily>();
   for (const path of paths) {
-    const { id, label } = familyOf(graph, path);
+    const { id, label } = familyOf(graph, path, t);
     let family = families.get(id);
     if (!family) {
       family = {
@@ -147,17 +148,17 @@ export function overviewOf(process: Process): ProcessOverview {
 }
 
 /** Famille d'un chemin : la sortie prise à la première étape qui en a plusieurs. */
-function familyOf(graph: ProcessGraph, path: Path): { id: string; label: string } {
+function familyOf(graph: ProcessGraph, path: Path, t: Messages): { id: string; label: string } {
   for (let i = 0; i < path.steps.length - 1; i++) {
     const step = graph.steps.get(path.steps[i].stepId)!;
     const exits = graph.outgoing.get(step.id)!;
     if (exits.length < 2) continue;
     const link = exits.find((item) => item.id === path.steps[i + 1].linkId)!;
-    const exit = link.label || graph.steps.get(link.to)?.title || 'Sortie';
-    const question = step.title.replace(/\s*\?\s*$/, '') || 'Décision';
+    const exit = link.label || graph.steps.get(link.to)?.title || t.simulation.exit;
+    const question = step.title.replace(/\s*\?\s*$/, '') || t.simulation.decision;
     return { id: link.id, label: `${question} : ${exit}` };
   }
-  return { id: 'unique', label: 'Chemin unique' };
+  return { id: 'unique', label: t.simulation.uniquePath };
 }
 
 /** Trait d'une famille sur une flèche du schéma. */

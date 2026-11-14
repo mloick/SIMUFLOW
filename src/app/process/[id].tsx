@@ -21,23 +21,13 @@ import {
 } from '@/data/process-store';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
-import { countPaths, explainIssue, summarize, type Issue, type Process, type ProcessSource } from '@/domain';
+import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
-import { plural } from '@/utils/format';
-
-const SOURCE_TEXT: Record<ProcessSource, string> = {
-  drawio: 'Importé depuis draw.io',
-  scan: 'Créé à partir d’un tableau scanné',
-  json: 'Importé depuis un fichier JSON',
-  tableau: 'Importé depuis un tableau Excel ou CSV',
-  bpmn: 'Importé depuis un schéma BPMN',
-  visio: 'Importé depuis un schéma Visio',
-  texte: 'Lu dans un texte',
-};
+import { useT, type Messages } from '@/i18n';
 
 /**
  * Détail d'un process (maquette, écran 3) : chiffres clés, acteurs, diagnostic
@@ -48,6 +38,7 @@ export default function ProcessDetailScreen() {
   useImportedProcesses(); // relit le process après une modification
   const process = getProcess(id);
   const theme = useTheme();
+  const t = useT();
 
   if (!process) {
     return (
@@ -56,9 +47,9 @@ export default function ProcessDetailScreen() {
         <StateMessage
           icon={{ ios: 'exclamationmark.circle', android: 'error' }}
           tone="danger"
-          title="Process introuvable"
-          message="Ce process n’existe plus ou n’a pas encore été synchronisé."
-          action={{ label: 'Revenir à la liste', onPress: () => router.back() }}
+          title={t.detail.notFound}
+          message={t.detail.notFoundText}
+          action={{ label: t.detail.backToList, onPress: () => router.back() }}
         />
       </View>
     );
@@ -69,6 +60,7 @@ export default function ProcessDetailScreen() {
 
 function ProcessDetail({ process }: { process: Process }) {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const stepY = useRef(new Map<string, number>());
@@ -96,20 +88,19 @@ function ProcessDetail({ process }: { process: Process }) {
 
   const share = () =>
     Share.share({
-      message: `${process.name} : ${plural(summary.stepCount, 'étape')}, ${plural(toFix, 'point')} à corriger (SimuFlow).`,
+      message: t.detail.shareMessage(process.name, t.format.count(summary.stepCount, t.words.step), toFix),
     });
 
   const confirmDelete = () =>
     confirmAction(
-      'Supprimer ce process ?',
-      isInCloud(process.id)
-        ? `« ${process.name} » sera retiré de cet appareil et de votre compte.`
-        : `« ${process.name} » sera retiré de cet appareil.`,
-      'Supprimer',
+      t.detail.deleteTitle,
+      isInCloud(process.id) ? t.detail.deleteCloud(process.name) : t.detail.deleteLocal(process.name),
+      t.detail.delete,
       () => {
         removeImportedProcess(process.id);
         router.back();
       },
+      t.common.cancel,
     );
 
   const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';
@@ -119,11 +110,11 @@ function ProcessDetail({ process }: { process: Process }) {
       <Stack.Screen
         options={{
           title: '',
-          headerBackTitle: 'Process',
+          headerBackTitle: t.detail.back,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerRight: () => (
-            <Pressable onPress={share} accessibilityRole="button" accessibilityLabel="Partager" hitSlop={12}>
+            <Pressable onPress={share} accessibilityRole="button" accessibilityLabel={t.detail.share} hitSlop={12}>
               <SymbolView name={{ ios: 'square.and.arrow.up', android: 'share' }} size={22} tintColor={theme.link} />
             </Pressable>
           ),
@@ -137,43 +128,39 @@ function ProcessDetail({ process }: { process: Process }) {
           <ThemedText type="title" accessibilityRole="header">
             {process.name}
           </ThemedText>
-          {process.source && <ThemedText themeColor="textSecondary">{SOURCE_TEXT[process.source]}</ThemedText>}
+          {process.source && <ThemedText themeColor="textSecondary">{t.detail.sourceText[process.source]}</ThemedText>}
           {shared && (
-            <ThemedText themeColor="textSecondary">
-              Partagé par {shared.ownerName}
-              {shared.actor ? ` · votre partie : ${shared.actor}` : ''}
-            </ThemedText>
+            <ThemedText themeColor="textSecondary">{t.detail.sharedBy(shared.ownerName, shared.actor)}</ThemedText>
           )}
           {process.editedAt && (
-            <ThemedText themeColor="textSecondary">Corrigé dans l’app le {formatDate(process.editedAt)}</ThemedText>
+            <ThemedText themeColor="textSecondary">
+              {t.detail.editedOn(t.dates.full(new Date(process.editedAt)))}
+            </ThemedText>
           )}
           {isImported(process.id) && (
             <Pressable
               onPress={() => router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } })}
               accessibilityRole="button"
-              accessibilityHint="Modifier les étapes, les acteurs, les délais et les branches"
+              accessibilityHint={t.detail.editHint}
               hitSlop={8}
               style={styles.edit}>
               <SymbolView name={{ ios: 'pencil', android: 'edit' }} size={18} tintColor={theme.link} />
               <ThemedText type="link" style={{ color: theme.link }}>
-                Modifier le process
+                {t.detail.edit}
               </ThemedText>
             </Pressable>
           )}
         </View>
 
         <View style={styles.stats}>
-          <StatTile value={summary.stepCount} label={summary.stepCount > 1 ? 'étapes' : 'étape'} />
-          <StatTile value={summary.decisionCount} label={summary.decisionCount > 1 ? 'décisions' : 'décision'} />
-          <StatTile
-            value={paths.capped ? `${paths.count}+` : paths.count}
-            label={paths.count > 1 ? 'chemins possibles' : 'chemin possible'}
-          />
-          <StatTile value={toFix} label={toFix > 1 ? 'points à corriger' : 'point à corriger'} tone={fixTone} />
+          <StatTile value={summary.stepCount} label={t.detail.stats.steps(summary.stepCount)} />
+          <StatTile value={summary.decisionCount} label={t.detail.stats.decisions(summary.decisionCount)} />
+          <StatTile value={paths.capped ? `${paths.count}+` : paths.count} label={t.detail.stats.paths(paths.count)} />
+          <StatTile value={toFix} label={t.detail.stats.toFix(toFix)} tone={fixTone} />
         </View>
 
         {isImported(process.id) && (
-          <Section title="Partage">
+          <Section title={t.detail.sharing}>
             <Pressable
               onPress={() => router.push({ pathname: '/partage/[id]', params: { id: process.id } })}
               accessibilityRole="button"
@@ -181,10 +168,10 @@ function ProcessDetail({ process }: { process: Process }) {
               <SymbolView name={{ ios: 'person.2', android: 'group' }} size={22} tintColor={theme.link} />
               <View style={styles.issueText}>
                 <ThemedText type="link" style={{ color: theme.link }}>
-                  Partager avec les acteurs
+                  {t.detail.shareWithActors}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Invitez-les par leur identifiant ou leur e-mail : ils voient le process sur leur compte.
+                  {t.detail.shareWithActorsHint}
                 </ThemedText>
               </View>
               <SymbolView
@@ -198,7 +185,7 @@ function ProcessDetail({ process }: { process: Process }) {
         )}
 
         {shared && (
-          <Section title="Ma partie">
+          <Section title={t.detail.myPart}>
             <Pressable
               onPress={() => router.push({ pathname: '/ma-partie/[id]', params: { id: process.id } })}
               accessibilityRole="button"
@@ -206,10 +193,10 @@ function ProcessDetail({ process }: { process: Process }) {
               <SymbolView name={{ ios: 'checkmark.circle', android: 'task_alt' }} size={22} tintColor={theme.link} />
               <View style={styles.issueText}>
                 <ThemedText type="link" style={{ color: theme.link }}>
-                  Relire et valider ma partie
+                  {t.detail.reviewMyPart}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Pour chaque étape : validée, ou à revoir avec un commentaire. {shared.ownerName} verra vos avis.
+                  {t.detail.reviewMyPartHint(shared.ownerName)}
                 </ThemedText>
               </View>
               <SymbolView
@@ -221,12 +208,12 @@ function ProcessDetail({ process }: { process: Process }) {
           </Section>
         )}
 
-        <Section title="Suivi en vrai">
+        <Section title={t.detail.tracking}>
           <TrackingCard process={process} />
         </Section>
 
         {summary.actors.length > 0 && (
-          <Section title="Acteurs">
+          <Section title={t.detail.actors}>
             <View style={styles.chips}>
               {summary.actors.map((actor) => (
                 <View key={actor} style={[styles.chip, { backgroundColor: theme.primaryBackground }]}>
@@ -237,12 +224,12 @@ function ProcessDetail({ process }: { process: Process }) {
           </Section>
         )}
 
-        <Section title="Diagnostic">
+        <Section title={t.detail.diagnostic}>
           <DiagnosticCard process={process} shown={shown} folded={folded} onShow={showStep} />
         </Section>
 
         <View onLayout={(e) => (sectionY.current = e.nativeEvent.layout.y)}>
-          <Section title="Étapes">
+          <Section title={t.detail.steps}>
             <View
               onLayout={(e) => (cardY.current = e.nativeEvent.layout.y)}
               style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -260,12 +247,12 @@ function ProcessDetail({ process }: { process: Process }) {
                     {index + 1}
                   </ThemedText>
                   <View style={styles.stepText}>
-                    <ThemedText>{step.title || 'Sans titre'}</ThemedText>
+                    <ThemedText>{step.title || t.untitled}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {[
-                        KIND_LABELS[step.kind],
+                        t.kinds[step.kind],
                         step.actor,
-                        step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null,
+                        step.duration ? t.format.count(step.duration, t.words.workingDay) : null,
                       ]
                         .filter(Boolean)
                         .join(' · ')}
@@ -281,14 +268,14 @@ function ProcessDetail({ process }: { process: Process }) {
           <Pressable
             onPress={confirmDelete}
             accessibilityRole="button"
-            accessibilityHint="Demande une confirmation"
+            accessibilityHint={t.detail.deleteHint}
             style={({ pressed }) => [
               styles.delete,
               { backgroundColor: pressed ? theme.dangerBackground : 'transparent' },
             ]}>
             <SymbolView name={{ ios: 'trash', android: 'delete' }} size={18} tintColor={theme.danger} />
             <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              Supprimer ce process
+              {t.detail.deleteProcess}
             </ThemedText>
           </Pressable>
         )}
@@ -297,8 +284,8 @@ function ProcessDetail({ process }: { process: Process }) {
       <View
         style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, backgroundColor: theme.background }]}>
         <PrimaryButton
-          label="▶  Lancer la simulation"
-          accessibilityLabel="Lancer la simulation"
+          label={t.detail.simulate}
+          accessibilityLabel={t.detail.simulateLabel}
           onPress={() => router.push({ pathname: '/simulation/[id]', params: { id: process.id } })}
         />
       </View>
@@ -306,12 +293,10 @@ function ProcessDetail({ process }: { process: Process }) {
   );
 }
 
-const KIND_LABELS = { start: 'Départ', task: 'Tâche', decision: 'Décision', end: 'Fin' } as const;
-
 /** Commence le suivi d'une demande réelle de ce process et renvoie son identifiant. */
-function startNewTracking(process: Process): string | null {
+function startNewTracking(t: Messages, process: Process): string | null {
   const now = new Date();
-  const label = `Demande du ${now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  const label = t.detail.newTrackingLabel(t.dates.short(now));
   const tracking = startTracking(process, now, `suivi-${now.getTime()}`, label);
   if (!tracking) return null;
   saveTracking(tracking);
@@ -321,11 +306,12 @@ function startNewTracking(process: Process): string | null {
 /** Les demandes réelles suivies pour ce process, et « Suivre une demande ». */
 function TrackingCard({ process }: { process: Process }) {
   const theme = useTheme();
+  const t = useT();
   const trackings = useTrackings(process.id);
   const [now] = useState(() => new Date());
   const open = (id: string) => router.push({ pathname: '/suivi/[id]', params: { id } });
   const start = () => {
-    const id = startNewTracking(process);
+    const id = startNewTracking(t, process);
     if (id) open(id);
   };
 
@@ -333,8 +319,7 @@ function TrackingCard({ process }: { process: Process }) {
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       {trackings.length === 0 && (
         <ThemedText themeColor="textSecondary" style={styles.trackingIntro}>
-          Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule l’échéance de chaque étape en jours
-          ouvrés.
+          {t.detail.trackingIntro}
         </ThemedText>
       )}
       {trackings.map((tracking, index) => {
@@ -353,10 +338,10 @@ function TrackingCard({ process }: { process: Process }) {
               <ThemedText>{tracking.label}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {current
-                  ? `${title || 'Sans titre'}${current.dueAt ? ` · échéance ${formatMoment(current.dueAt)}` : ''}`
-                  : `Terminée le ${formatMoment(tracking.finishedAt!)}`}
+                  ? t.detail.currentDue(title || t.untitled, current.dueAt ? formatMoment(current.dueAt, t) : null)
+                  : t.detail.finishedOn(formatMoment(tracking.finishedAt!, t))}
               </ThemedText>
-              {current && <Badge {...timingBadge(current, now)} />}
+              {current && <Badge {...timingBadge(current, now, t)} />}
             </View>
             <SymbolView
               name={{ ios: 'chevron.right', android: 'chevron_right' }}
@@ -372,7 +357,7 @@ function TrackingCard({ process }: { process: Process }) {
         style={[styles.trackingRow, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
         <SymbolView name={{ ios: 'play.circle', android: 'play_circle' }} size={20} tintColor={theme.link} />
         <ThemedText type="link" style={{ color: theme.link }}>
-          Suivre une demande
+          {t.detail.startTracking}
         </ThemedText>
       </Pressable>
     </View>
@@ -428,6 +413,7 @@ function DiagnosticCard({
   onShow: (stepId: string) => void;
 }) {
   const theme = useTheme();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const visible = open ? [...shown, ...folded] : shown;
 
@@ -436,11 +422,11 @@ function DiagnosticCard({
       {shown.length === 0 && (
         <View style={styles.issue}>
           <SymbolView name={{ ios: 'checkmark.circle', android: 'check_circle' }} size={22} tintColor={theme.success} />
-          <ThemedText style={[styles.issueText, { color: theme.success }]}>Aucune anomalie</ThemedText>
+          <ThemedText style={[styles.issueText, { color: theme.success }]}>{t.detail.noIssue}</ThemedText>
         </View>
       )}
       {visible.map((issue, index) => {
-        const { title, detail } = explainIssue(issue, process);
+        const { title, detail } = explainIssue(issue, process, t);
         const color =
           issue.severity === 'error'
             ? theme.danger
@@ -475,10 +461,10 @@ function DiagnosticCard({
               <Pressable
                 onPress={() => onShow(stepId)}
                 accessibilityRole="button"
-                accessibilityLabel={`Voir l’étape : ${title}`}
+                accessibilityLabel={t.detail.seeStep(title)}
                 hitSlop={8}
                 style={styles.see}>
-                <ThemedText type="link">Voir</ThemedText>
+                <ThemedText type="link">{t.detail.see}</ThemedText>
               </Pressable>
             )}
           </View>
@@ -491,9 +477,7 @@ function DiagnosticCard({
           accessibilityState={{ expanded: open }}
           style={[styles.fold, { borderTopColor: theme.border }]}>
           <ThemedText themeColor="textSecondary" style={styles.issueText}>
-            {open
-              ? 'Replier les informations'
-              : `${plural(folded.length, 'information repliée', 'informations repliées')}`}
+            {open ? t.detail.foldInfo : t.detail.foldedInfo(folded.length)}
           </ThemedText>
           <SymbolView
             name={
@@ -562,9 +546,3 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, gap: Spacing.half },
   footer: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
 });
-
-/** « 30 octobre 2026 à 22:15 ». */
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return `${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-}

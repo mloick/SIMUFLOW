@@ -16,7 +16,7 @@ import { workingDaysBetween } from '@/tracking/calendar';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { completeStep, currentStep, nextChoices, stepOf, type Tracking } from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
-import { plural } from '@/utils/format';
+import { useT } from '@/i18n';
 
 /**
  * Suivi d'une demande réelle : l'étape en cours avec son échéance (jours
@@ -30,6 +30,7 @@ export default function TrackingScreen() {
   const tracking = getTracking(id);
   const process = tracking && getProcess(tracking.processId);
   const theme = useTheme();
+  const t = useT();
 
   if (!tracking || !process) {
     return (
@@ -38,9 +39,9 @@ export default function TrackingScreen() {
         <StateMessage
           icon={{ ios: 'exclamationmark.circle', android: 'error' }}
           tone="danger"
-          title="Suivi introuvable"
-          message="Cette demande ou son process n’existe plus sur ce téléphone."
-          action={{ label: 'Revenir', onPress: () => router.back() }}
+          title={t.tracking.notFound}
+          message={t.tracking.notFoundText}
+          action={{ label: t.tracking.back, onPress: () => router.back() }}
         />
       </View>
     );
@@ -60,27 +61,34 @@ function useNow(): Date {
 
 function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Process }) {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const now = useNow();
   const current = currentStep(tracking);
   const choices = nextChoices(process, tracking);
   const done = tracking.steps.filter((step) => step.doneAt).reverse();
-  const titleOf = (stepId: string) => process.steps.find((step) => step.id === stepId)?.title || 'Sans titre';
+  const titleOf = (stepId: string) => process.steps.find((step) => step.id === stepId)?.title || t.untitled;
 
   const complete = (linkId?: string) => saveTracking(completeStep(process, tracking, new Date(), linkId));
 
   const confirmStop = () =>
-    confirmAction('Arrêter ce suivi ?', `« ${tracking.label} » sera retiré de cet appareil.`, 'Arrêter', () => {
-      removeTracking(tracking.id);
-      router.back();
-    });
+    confirmAction(
+      t.tracking.stopTitle,
+      t.tracking.stopText(tracking.label),
+      t.tracking.stopConfirm,
+      () => {
+        removeTracking(tracking.id);
+        router.back();
+      },
+      t.common.cancel,
+    );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
           title: '',
-          headerBackTitle: 'Process',
+          headerBackTitle: t.detail.back,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
         }}
@@ -93,14 +101,14 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
             {tracking.label}
           </ThemedText>
           <ThemedText themeColor="textSecondary">
-            {process.name} · commencée le {formatMoment(tracking.startedAt)}
+            {t.tracking.startedOn(process.name, formatMoment(tracking.startedAt, t))}
           </ThemedText>
         </View>
 
         {current ? (
           <View style={[styles.card, styles.current, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <ThemedText type="smallBold" themeColor="textSecondary">
-              Étape en cours
+              {t.tracking.current}
             </ThemedText>
             <ThemedText type="subtitle">{titleOf(current.stepId)}</ThemedText>
             {stepOf(process, current)?.actor && (
@@ -108,27 +116,25 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
             )}
             <View style={styles.dueRow} accessible>
               <ThemedText>
-                {current.dueAt ? `Échéance : ${formatMoment(current.dueAt)}` : 'Pas de délai pour cette étape'}
+                {current.dueAt ? t.tracking.due(formatMoment(current.dueAt, t)) : t.tracking.noDue}
               </ThemedText>
-              {current.dueAt && <Badge {...timingBadge(current, now)} />}
+              {current.dueAt && <Badge {...timingBadge(current, now, t)} />}
             </View>
             {choices.length > 1 ? (
               <View style={styles.choices}>
-                <ThemedText type="smallBold">Étape terminée : quelle suite ?</ThemedText>
+                <ThemedText type="smallBold">{t.tracking.whichNext}</ThemedText>
                 {choices.map((link) => (
                   <PrimaryButton
                     key={link.id}
-                    label={`${link.label ?? 'Suite'} → ${titleOf(link.to)}`}
+                    label={`${link.label ?? t.tracking.next} → ${titleOf(link.to)}`}
                     onPress={() => complete(link.id)}
                   />
                 ))}
               </View>
             ) : (
               <PrimaryButton
-                label={choices.length === 1 ? 'Étape terminée' : 'Terminer la demande'}
-                accessibilityLabel={
-                  choices.length === 1 ? `Étape terminée, passer à « ${titleOf(choices[0].to)} »` : undefined
-                }
+                label={choices.length === 1 ? t.tracking.stepDone : t.tracking.finish}
+                accessibilityLabel={choices.length === 1 ? t.tracking.stepDoneGoTo(titleOf(choices[0].to)) : undefined}
                 onPress={() => complete()}
               />
             )}
@@ -141,16 +147,16 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
               { backgroundColor: theme.successBackground, borderColor: theme.border },
             ]}>
             <ThemedText type="subtitle" style={{ color: theme.success }}>
-              Demande terminée
+              {t.tracking.finished}
             </ThemedText>
             <ThemedText style={{ color: theme.success }}>
-              Le {formatMoment(tracking.finishedAt!)}, en{' '}
-              {plural(
-                Math.max(0, workingDaysBetween(new Date(tracking.startedAt), new Date(tracking.finishedAt!))),
-                'jour ouvré',
-                'jours ouvrés',
+              {t.tracking.finishedIn(
+                formatMoment(tracking.finishedAt!, t),
+                t.format.count(
+                  Math.max(0, workingDaysBetween(new Date(tracking.startedAt), new Date(tracking.finishedAt!))),
+                  t.words.workingDay,
+                ),
               )}
-              .
             </ThemedText>
           </View>
         )}
@@ -158,13 +164,16 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
         {tracking.answers && tracking.answers.length > 0 && (
           <View style={styles.section}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              Réponses du formulaire
+              {t.tracking.answers}
             </ThemedText>
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               {tracking.answers.map((line, index) => (
                 <View
                   key={`${line.label}-${index}`}
-                  style={[styles.answer, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                  style={[
+                    styles.answer,
+                    index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+                  ]}>
                   <ThemedText type="small" themeColor="textSecondary">
                     {line.label}
                   </ThemedText>
@@ -178,7 +187,7 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
         {done.length > 0 && (
           <View style={styles.section}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              Étapes passées
+              {t.tracking.pastSteps}
             </ThemedText>
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               {done.map((step, index) => (
@@ -191,9 +200,9 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
                   ]}>
                   <ThemedText>{titleOf(step.stepId)}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Terminée le {formatMoment(step.doneAt!)}
+                    {t.tracking.doneOn(formatMoment(step.doneAt!, t))}
                   </ThemedText>
-                  <Badge {...timingBadge(step, now)} />
+                  <Badge {...timingBadge(step, now, t)} />
                 </View>
               ))}
             </View>
@@ -202,7 +211,7 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
 
         <Pressable onPress={confirmStop} accessibilityRole="button" style={styles.stop}>
           <ThemedText type="link" style={{ color: theme.danger }}>
-            Arrêter ce suivi
+            {t.tracking.stop}
           </ThemedText>
         </Pressable>
       </ScrollView>

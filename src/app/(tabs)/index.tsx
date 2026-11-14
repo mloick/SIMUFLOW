@@ -18,6 +18,7 @@ import { useWelcomeSeen } from '@/data/welcome-setting';
 import { summarize, type Process, type ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';
+import { useT } from '@/i18n';
 
 const NO_PROCESSES: Process[] = [];
 
@@ -34,6 +35,7 @@ type Row =
  */
 export default function ProcessListScreen() {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const list = useProcessList();
   const [query, setQuery] = useState('');
@@ -84,7 +86,7 @@ export default function ProcessListScreen() {
   const header = (
     <View style={styles.header}>
       <ThemedText type="title" accessibilityRole="header">
-        Process
+        {t.tabs.process}
       </ThemedText>
       {list.status === 'loading' && <View style={[styles.search, { backgroundColor: theme.field }]} />}
       {list.status === 'ready' && hasProcesses && (
@@ -93,9 +95,9 @@ export default function ProcessListScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Rechercher un process"
+            placeholder={t.list.search}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Rechercher un process"
+            accessibilityLabel={t.list.search}
             returnKeyType="search"
             clearButtonMode="while-editing"
             autoCorrect={false}
@@ -110,7 +112,7 @@ export default function ProcessListScreen() {
           style={[styles.offline, { backgroundColor: theme.primaryBackground }]}>
           <SymbolView name={{ ios: 'bell.badge', android: 'notifications_active' }} size={18} tintColor={theme.link} />
           <ThemedText type="smallBold" style={[styles.offlineText, { color: theme.link }]}>
-            {unread > 1 ? `${unread} nouvelles alertes du partage` : 'Une nouvelle alerte du partage'}
+            {t.list.newAlerts(unread)}
           </ThemedText>
           <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={16} tintColor={theme.link} />
         </Pressable>
@@ -119,7 +121,7 @@ export default function ProcessListScreen() {
         <View style={[styles.offline, { backgroundColor: theme.warningBackground }]} accessibilityRole="alert">
           <SymbolView name={{ ios: 'wifi.slash', android: 'wifi_off' }} size={18} tintColor={theme.warning} />
           <ThemedText type="small" style={[styles.offlineText, { color: theme.warning }]}>
-            Hors connexion. Vous voyez la dernière version enregistrée.
+            {t.list.offline}
           </ThemedText>
         </View>
       )}
@@ -134,9 +136,9 @@ export default function ProcessListScreen() {
       <StateMessage
         icon={{ ios: 'exclamationmark.circle', android: 'error' }}
         tone="danger"
-        title="Impossible de charger vos process"
-        message="Le serveur n’a pas répondu. Vos données ne sont pas perdues."
-        action={{ label: 'Réessayer', onPress: list.reload }}
+        title={t.list.errorTitle}
+        message={t.list.errorText}
+        action={{ label: t.common.retry, onPress: list.reload }}
       />
     );
   } else if (!hasProcesses) {
@@ -144,15 +146,15 @@ export default function ProcessListScreen() {
       <StateMessage
         icon={{ ios: 'list.bullet.rectangle', android: 'account_tree' }}
         tone="primary"
-        title="Aucun process pour l’instant"
-        message="Importez un fichier draw.io ou scannez un tableau pour commencer."
-        action={{ label: 'Ajouter un process', onPress: openImport }}
+        title={t.list.emptyTitle}
+        message={t.list.emptyText}
+        action={{ label: t.list.add, onPress: openImport }}
       />
     );
   } else {
     empty = (
       <ThemedText themeColor="textSecondary" style={styles.noResult}>
-        Aucun process ne correspond à « {query.trim()} ».
+        {t.list.noMatch(query.trim())}
       </ThemedText>
     );
   }
@@ -166,10 +168,7 @@ export default function ProcessListScreen() {
           if (row.kind === 'hint') {
             return (
               <View style={[styles.hint, { borderColor: theme.fieldBorder }]}>
-                <ThemedText themeColor="textSecondary">
-                  Vos process apparaîtront ici. Touchez + pour en importer un ou scanner un tableau, ou essayez d’abord
-                  les exemples ci-dessous.
-                </ThemedText>
+                <ThemedText themeColor="textSecondary">{t.list.hint}</ThemedText>
               </View>
             );
           }
@@ -178,10 +177,10 @@ export default function ProcessListScreen() {
               <View style={styles.examplesHeader}>
                 <View style={styles.flex}>
                   <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-                    Partagés avec moi · {row.count}
+                    {t.list.shared(row.count)}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    À relire et valider : seul leur propriétaire peut les modifier.
+                    {t.list.sharedHint}
                   </ThemedText>
                 </View>
               </View>
@@ -193,15 +192,15 @@ export default function ProcessListScreen() {
                 onPress={() => setExamplesOpen((open) => !open)}
                 accessibilityRole="button"
                 accessibilityState={{ expanded: examplesOpen }}
-                accessibilityLabel={`Exemples, ${row.count} process`}
-                accessibilityHint={examplesOpen ? 'Replie les exemples' : 'Affiche les exemples'}
+                accessibilityLabel={t.list.examplesLabel(row.count)}
+                accessibilityHint={examplesOpen ? t.list.collapse : t.list.expand}
                 style={styles.examplesHeader}>
                 <View style={styles.flex}>
                   <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-                    Exemples · {row.count}
+                    {t.list.examples(row.count)}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    Fournis avec l’app, pour essayer. Masquez-les dans le Profil.
+                    {t.list.examplesHint}
                   </ThemedText>
                 </View>
                 <SymbolView
@@ -236,7 +235,7 @@ export default function ProcessListScreen() {
         <Pressable
           onPress={openImport}
           accessibilityRole="button"
-          accessibilityLabel="Ajouter un process"
+          accessibilityLabel={t.list.add}
           style={({ pressed }) => [
             styles.fab,
             { backgroundColor: theme.primary, bottom: insets.bottom + Spacing.three, opacity: pressed ? 0.85 : 1 },

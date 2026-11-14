@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from '@jest/globals';
 
 import { authErrorMessage, checkCredentials } from '@/backend/auth-messages';
-import { profileProblem, roleLabel } from '@/domain';
+import { profileProblem, reviewProblem, roleLabel } from '@/domain';
+import { describeRule } from '@/import';
 
 import { getLanguage, getLocale, getT, resolveLanguage, setLanguageSetting } from '..';
 import { en } from '../messages/en';
@@ -66,6 +67,23 @@ describe('changer de langue', () => {
     setLanguageSetting('fr');
     expect(roleLabel('chef_de_projet')).toBe('Chef de projet');
     expect(getT().profil.seeAlerts(2)).toBe('Voir les alertes · 2 nouvelles');
+  });
+
+  it('traduit aussi les écrans : nombres, pluriels, dates, messages du domaine', () => {
+    setLanguageSetting('en');
+    const t = getT();
+    expect(t.format.num(1.5)).toBe('1.5');
+    expect(t.format.count(1, t.words.step)).toBe('1 step');
+    expect(t.format.count(0, t.words.step)).toBe('0 steps');
+    expect(t.dates.short(new Date(2026, 10, 14, 9, 5))).toBe('14 Nov at 09:05');
+    expect(describeRule({ type: 'column', header: 'Pilote', column: 'actor' })).toBe('Column “Pilote” read as the actor');
+    expect(reviewProblem('a_revoir', ' ')).toBe('Say what needs reviewing in this step.');
+    expect(t.validationPanel.validated(2, 3)).toBe('2/3 validated');
+
+    setLanguageSetting('fr');
+    expect(getT().format.num(1.5)).toBe('1,5');
+    expect(getT().format.count(0, getT().words.step)).toBe('0 étape');
+    expect(describeRule({ type: 'column', header: 'Pilote', column: 'actor' })).toBe('Colonne « Pilote » lue comme l’acteur');
   });
 
   it('ajoute la règle du mot de passe au message « trop faible »', () => {

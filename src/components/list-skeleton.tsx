@@ -12,6 +12,7 @@ import Animated, {
 
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * État « chargement » : la forme des cartes, sans spinner (maquette, état 1).
@@ -20,6 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export function ListSkeleton({ count = 4 }: { count?: number }) {
   const theme = useTheme();
+  const t = useT();
   const bar = { backgroundColor: theme.field };
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(1);
@@ -40,7 +42,7 @@ export function ListSkeleton({ count = 4 }: { count?: number }) {
     <Animated.View
       style={[styles.list, pulse]}
       accessible
-      accessibilityLabel="Chargement des process"
+      accessibilityLabel={t.list.loading}
       accessibilityState={{ busy: true }}>
       {Array.from({ length: count }, (_, index) => (
         <View key={index} style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>

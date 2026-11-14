@@ -7,6 +7,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { confirmAction } from '@/utils/confirm';
 import { shareLink } from '@/utils/share-link';
+import { getT, useT } from '@/i18n';
 
 /**
  * « Liens pour les acteurs sans compte » : un lien web par acteur du schéma.
@@ -23,6 +24,8 @@ export function ActorLinks({
   actors: string[];
 }) {
   const theme = useTheme();
+  const t = useT();
+  const l = t.share.links;
   const [links, setLinks] = useState<ActorLink[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -31,7 +34,7 @@ export function ActorLinks({
   const fetchLinks = useCallback(
     () =>
       listActorLinks(cloudId).then(setLinks, (cause: unknown) =>
-        setError(cause instanceof Error ? cause.message : 'Les liens n’ont pas pu être lus.'),
+        setError(cause instanceof Error ? cause.message : getT().share.links.readError),
       ),
     [cloudId],
   );
@@ -47,7 +50,7 @@ export function ActorLinks({
     try {
       await action();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Le lien n’a pas pu être fait.');
+      setError(cause instanceof Error ? cause.message : l.makeError);
     } finally {
       setBusy(null);
     }
@@ -56,11 +59,8 @@ export function ActorLinks({
   const send = (link: ActorLink) =>
     run(link.actor, async () => {
       const url = linkUrl(link.token);
-      const done = await shareLink(
-        `Pouvez-vous relire votre partie (« ${link.actor} ») du process « ${processName} » ? Pas besoin de compte : ${url}`,
-        url,
-      );
-      setNotice(done === 'copié' ? `Lien de « ${link.actor} » copié.` : `Lien de « ${link.actor} » envoyé.`);
+      const done = await shareLink(l.message(link.actor, processName, url), url);
+      setNotice(done === 'copié' ? l.copied(link.actor) : l.sent(link.actor));
     });
 
   const create = (actor: string) =>
@@ -71,14 +71,15 @@ export function ActorLinks({
 
   const remove = (link: ActorLink) =>
     confirmAction(
-      'Retirer ce lien ?',
-      `Le lien de « ${link.actor} » ne s’ouvrira plus, et les avis donnés par ce lien seront retirés.`,
-      'Retirer',
+      l.removeTitle,
+      l.removeText(link.actor),
+      t.common.remove,
       () =>
         run(link.actor, async () => {
           await removeActorLink(link.id);
           setLinks((list) => (list ?? []).filter((item) => item.id !== link.id));
         }),
+      t.common.cancel,
     );
 
   const card = [styles.card, { backgroundColor: theme.surface, borderColor: theme.border }];
@@ -86,11 +87,10 @@ export function ActorLinks({
   return (
     <View style={styles.field}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Liens pour les acteurs sans compte
+        {l.heading}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Un lien par acteur, à envoyer à la bonne personne : elle l’ouvre dans son navigateur, confirme son nom et relit
-        sa partie, sans créer de compte.
+        {l.intro}
       </ThemedText>
       {error && (
         <View style={[styles.notice, { backgroundColor: theme.dangerBackground }]} accessibilityRole="alert">
@@ -110,7 +110,7 @@ export function ActorLinks({
         <View style={[card, styles.row]}>
           {error ? (
             <Pressable onPress={fetchLinks} accessibilityRole="button">
-              <ThemedText type="link">Réessayer</ThemedText>
+              <ThemedText type="link">{t.common.retry}</ThemedText>
             </Pressable>
           ) : (
             <ActivityIndicator color={theme.textSecondary} />
@@ -130,7 +130,7 @@ export function ActorLinks({
                 <View style={styles.flex}>
                   <ThemedText>{actor}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                    {link ? linkUrl(link.token).replace('https://', '') : 'Pas de lien'}
+                    {link ? linkUrl(link.token).replace('https://', '') : l.none}
                   </ThemedText>
                 </View>
                 {busy === actor ? (
@@ -140,19 +140,19 @@ export function ActorLinks({
                     <Pressable
                       onPress={() => send(link)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Envoyer le lien de ${actor}`}
+                      accessibilityLabel={l.sendLabel(actor)}
                       hitSlop={8}>
                       <ThemedText type="smallBold" style={{ color: theme.link }}>
-                        Envoyer
+                        {l.send}
                       </ThemedText>
                     </Pressable>
                     <Pressable
                       onPress={() => remove(link)}
                       accessibilityRole="button"
-                      accessibilityLabel={`Retirer le lien de ${actor}`}
+                      accessibilityLabel={l.removeLabel(actor)}
                       hitSlop={8}>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        Retirer
+                        {t.common.remove}
                       </ThemedText>
                     </Pressable>
                   </View>
@@ -160,10 +160,10 @@ export function ActorLinks({
                   <Pressable
                     onPress={() => create(actor)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Créer un lien pour ${actor}`}
+                    accessibilityLabel={l.createLabel(actor)}
                     hitSlop={8}>
                     <ThemedText type="smallBold" style={{ color: theme.link }}>
-                      Créer un lien
+                      {l.create}
                     </ThemedText>
                   </Pressable>
                 )}

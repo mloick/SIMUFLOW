@@ -14,6 +14,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import type { Reminder } from '@/tracking/reminders';
+import { getT } from '@/i18n';
 
 export type NotificationPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
@@ -35,13 +36,13 @@ export function configureNotifications() {
   });
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync(DEADLINE_CHANNEL, {
-      name: 'Échéances des process',
-      description: 'Rappels avant et après l’échéance de chaque étape d’un process suivi.',
+      name: getT().notifications.deadlineChannel,
+      description: getT().notifications.deadlineChannelText,
       importance: AndroidImportance.HIGH,
     }).catch(() => {});
     Notifications.setNotificationChannelAsync(SHARE_CHANNEL, {
-      name: 'Partage des process',
-      description: 'Un process partagé avec vous, une étape à revoir, un process entièrement validé.',
+      name: getT().notifications.shareChannel,
+      description: getT().notifications.shareChannelText,
       importance: AndroidImportance.DEFAULT,
     }).catch(() => {});
   }
@@ -70,7 +71,7 @@ export async function sendTestNotification() {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'SimuFlow',
-      body: 'Les notifications marchent : vous serez prévenu des échéances de vos process suivis.',
+      body: getT().notifications.testBody,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

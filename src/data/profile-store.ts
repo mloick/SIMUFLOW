@@ -8,6 +8,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { useSession } from '@/backend/auth';
 import { getMyProfile, saveMyProfile } from '@/backend/profiles';
 import type { Profile } from '@/domain';
+import { getT } from '@/i18n';
 
 export type ProfileState =
   | { status: 'none' }
@@ -32,7 +33,7 @@ async function load(userId: string) {
     if (loadedFor === userId) set({ status: 'ready', profile });
   } catch (cause) {
     if (loadedFor === userId)
-      set({ status: 'error', message: cause instanceof Error ? cause.message : 'Le profil n’a pas pu être lu.' });
+      set({ status: 'error', message: cause instanceof Error ? cause.message : getT().errors.profileRead });
   }
 }
 

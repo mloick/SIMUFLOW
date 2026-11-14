@@ -7,16 +7,16 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { firstFilledRow, sheetGrid, type ColumnChoice, type Sheet } from '@/import/tableau';
 import { headerKind, type ColumnKind } from '@/scan/table';
-import { plural } from '@/utils/format';
+import { useT } from '@/i18n';
 
 /** Les rôles proposés pour une colonne, dans l'ordre des pastilles. */
-const OPTIONS: { kind: ColumnKind | null; label: string }[] = [
-  { kind: null, label: 'Ignorer' },
-  { kind: 'step', label: 'Étape' },
-  { kind: 'actor', label: 'Acteur' },
-  { kind: 'delay', label: 'Délai' },
-  { kind: 'next', label: 'Suite' },
-  { kind: 'number', label: 'N°' },
+const OPTIONS: { kind: ColumnKind | null; key: 'ignore' | ColumnKind }[] = [
+  { kind: null, key: 'ignore' },
+  { kind: 'step', key: 'step' },
+  { kind: 'actor', key: 'actor' },
+  { kind: 'delay', key: 'delay' },
+  { kind: 'next', key: 'next' },
+  { kind: 'number', key: 'number' },
 ];
 
 /** Au-delà, les colonnes ne sont pas proposées (un tableau de process en a rarement autant). */
@@ -49,6 +49,8 @@ export function ColumnPicker({
   onCancel: () => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const c = t.columns;
   const rows = useMemo(() => sheetGrid(sheet), [sheet]);
   const [headerIndex, setHeaderIndex] = useState(() => firstFilledRow(sheet));
   const header = rows[headerIndex] ?? [];
@@ -87,48 +89,47 @@ export function ColumnPicker({
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <ThemedText type="smallBold" style={styles.title} accessibilityRole="header">
-        Choisir les colonnes · {sheet.name}
+        {c.title(sheet.name)}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Dites à l’app quelle colonne contient l’étape, l’acteur, le délai… Elle s’en souviendra pour les
-        prochains tableaux qui ont ces titres.
+        {c.intro}
       </ThemedText>
 
       <View style={styles.headerRow}>
-        <ThemedText style={styles.flex}>Ligne des titres : {headerIndex + 1}</ThemedText>
+        <ThemedText style={styles.flex}>{c.headerRow(headerIndex + 1)}</ThemedText>
         <StepButton
-          label="Précédente"
+          label={c.previous}
           disabled={headerIndex === 0}
           onPress={() => moveHeader(-1)}
-          accessibilityLabel="Ligne des titres précédente"
+          accessibilityLabel={c.previousLabel}
         />
         <StepButton
-          label="Suivante"
+          label={c.next}
           disabled={headerIndex >= rows.length - 1}
           onPress={() => moveHeader(1)}
-          accessibilityLabel="Ligne des titres suivante"
+          accessibilityLabel={c.nextLabel}
         />
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {plural(rowCount, 'ligne')} sous les titres
+        {c.rowsBelow(t.format.count(rowCount, t.words.row))}
       </ThemedText>
 
       {columns.map(({ label, index }) => (
         <View key={index} style={[styles.column, { borderTopColor: theme.border }]}>
           <ThemedText numberOfLines={2}>{label}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {rows[headerIndex + 1]?.[index] ? `ex. ${rows[headerIndex + 1][index]}` : ' '}
+            {rows[headerIndex + 1]?.[index] ? c.example(rows[headerIndex + 1][index]) : ' '}
           </ThemedText>
-          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={`Rôle de la colonne ${label}`}>
+          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={c.roleOf(label)}>
             {OPTIONS.map((option) => {
               const selected = (choice[index] ?? null) === option.kind;
               return (
                 <Pressable
-                  key={option.label}
+                  key={option.key}
                   onPress={() => choose(index, option.kind)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
-                  accessibilityLabel={`${label} : ${option.label}`}
+                  accessibilityLabel={`${label} : ${c.options[option.key]}`}
                   style={[
                     styles.chip,
                     {
@@ -137,7 +138,7 @@ export function ColumnPicker({
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.background : theme.text }}>
-                    {option.label}
+                    {c.options[option.key]}
                   </ThemedText>
                 </Pressable>
               );
@@ -147,19 +148,24 @@ export function ColumnPicker({
       ))}
 
       <PrimaryButton
-        label="Lire ce tableau"
-        onPress={() => onDone(headerIndex, header.map((_, column) => choice[column] ?? null))}
+        label={c.read}
+        onPress={() =>
+          onDone(
+            headerIndex,
+            header.map((_, column) => choice[column] ?? null),
+          )
+        }
         disabled={!ready}
-        accessibilityLabel={ready ? 'Lire ce tableau' : 'Lire ce tableau, choisissez d’abord la colonne Étape'}
+        accessibilityLabel={ready ? c.read : c.readDisabled}
       />
       {!ready && (
         <ThemedText type="small" themeColor="textSecondary">
-          Choisissez au moins la colonne « Étape ».
+          {c.needStep}
         </ThemedText>
       )}
       <Pressable onPress={onCancel} accessibilityRole="button" style={styles.cancel}>
         <ThemedText type="link" style={{ color: theme.link }}>
-          Annuler
+          {t.common.cancel}
         </ThemedText>
       </Pressable>
     </View>

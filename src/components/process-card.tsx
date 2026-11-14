@@ -5,25 +5,17 @@ import { Badge, type BadgeTone } from '@/components/badge';
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
-import type { Process, ProcessSource, ProcessSummary } from '@/domain';
+import type { Process, ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/utils/format';
-
-const SOURCE_LABELS: Record<ProcessSource, string> = {
-  drawio: 'draw.io',
-  scan: 'Scan',
-  json: 'JSON',
-  tableau: 'Tableau',
-  bpmn: 'BPMN',
-  visio: 'Visio',
-  texte: 'Texte',
-};
+import { useT, type Messages } from '@/i18n';
 
 /** Pastille du diagnostic : les erreurs d'abord, puis les avertissements. */
-export function diagnosticBadge(summary: ProcessSummary): { label: string; tone: BadgeTone } {
-  if (summary.errorCount > 0) return { label: plural(summary.errorCount, 'erreur'), tone: 'danger' };
-  if (summary.warningCount > 0) return { label: plural(summary.warningCount, 'avertissement'), tone: 'warning' };
-  return { label: 'Aucune anomalie', tone: 'success' };
+export function diagnosticBadge(t: Messages, summary: ProcessSummary): { label: string; tone: BadgeTone } {
+  const { count } = t.format;
+  const { words } = t;
+  if (summary.errorCount > 0) return { label: count(summary.errorCount, words.error), tone: 'danger' };
+  if (summary.warningCount > 0) return { label: count(summary.warningCount, words.warning), tone: 'warning' };
+  return { label: t.card.noIssue, tone: 'success' };
 }
 
 /** Carte d'un process dans la liste. Toute la carte ouvre le détail. `sharedBy` : process partagé avec moi, par qui. */
@@ -37,13 +29,15 @@ export function ProcessCard({
   sharedBy?: string;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const { count } = t.format;
   const meta = [
-    plural(summary.stepCount, 'étape'),
-    plural(summary.decisionCount, 'décision'),
-    plural(summary.actors.length, 'acteur'),
+    count(summary.stepCount, t.words.step),
+    count(summary.decisionCount, t.words.decision),
+    count(summary.actors.length, t.words.actor),
   ].join(' · ');
-  const badge = diagnosticBadge(summary);
-  const source = process.source ? SOURCE_LABELS[process.source] : undefined;
+  const badge = diagnosticBadge(t, summary);
+  const source = process.source ? t.sources[process.source] : undefined;
 
   return (
     <Pressable
@@ -51,14 +45,14 @@ export function ProcessCard({
       accessibilityRole="button"
       accessibilityLabel={[
         process.name,
-        sharedBy && `Partagé par ${sharedBy}`,
+        sharedBy && t.card.sharedBy(sharedBy),
         meta,
         badge.label,
-        source && `Source : ${source}`,
+        source && t.card.source(source),
       ]
         .filter(Boolean)
         .join('. ')}
-      accessibilityHint="Ouvre le détail du process"
+      accessibilityHint={t.card.openHint}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: pressed ? theme.surfaceMuted : theme.surface, borderColor: theme.border },
@@ -77,7 +71,7 @@ export function ProcessCard({
         <View style={styles.shared}>
           <SymbolView name={{ ios: 'person.2', android: 'group' }} size={16} tintColor={theme.link} />
           <ThemedText type="small" style={{ color: theme.link }}>
-            Partagé par {sharedBy}
+            {t.card.sharedBy(sharedBy)}
           </ThemedText>
         </View>
       )}

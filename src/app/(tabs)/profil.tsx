@@ -225,7 +225,7 @@ function ReadingRules() {
           </ThemedText>
         ) : (
           rules.map((rule, index) => {
-            const text = describeRule(rule);
+            const text = describeRule(rule, t);
             return (
               <View key={text}>
                 {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
@@ -761,7 +761,7 @@ function DemoScenarioPicker() {
                 { backgroundColor: selected ? theme.primary : theme.surface, borderColor: theme.border },
               ]}>
               <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {option.label}
+                {t.errors.demo[option.value]}
               </ThemedText>
             </Pressable>
           );

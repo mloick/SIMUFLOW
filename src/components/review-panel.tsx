@@ -17,9 +17,7 @@ import {
   type StepReview,
 } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/utils/format';
-
-const STATUS_LABELS: Record<ReviewStatus, string> = { valide: 'Validée', a_revoir: 'À revoir' };
+import { getT, useT } from '@/i18n';
 
 /**
  * Relecture d'un process partagé par un membre : ses étapes (celles de
@@ -51,6 +49,8 @@ export function ReviewPanel({
   note?: string;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const r = t.review;
   const { process, actor, cloudId } = shared;
   const api = useMemo(() => given ?? cloudReviews(cloudId ?? ''), [given, cloudId]);
   const mine = useMemo(() => myPartSteps(process, actor), [process, actor]);
@@ -68,9 +68,7 @@ export function ReviewPanel({
     () =>
       api
         .load()
-        .then(setReviews, (cause: unknown) =>
-          setLoadError(cause instanceof Error ? cause.message : 'Vos avis n’ont pas pu être lus.'),
-        ),
+        .then(setReviews, (cause: unknown) => setLoadError(cause instanceof Error ? cause.message : getT().review.loadError)),
     [api],
   );
 
@@ -108,10 +106,10 @@ export function ReviewPanel({
         <ThemedText type="subtitle">{process.name}</ThemedText>
         <ThemedText themeColor="textSecondary">
           {hasPart
-            ? `${shared.ownerName} vous confie « ${actor} » : ${plural(mine.length, 'étape')} à relire.`
+            ? r.yourPart(shared.ownerName, actor ?? '', t.format.count(mine.length, t.words.step))
             : actor
-              ? `« ${actor} » n’a plus d’étape dans ce schéma : relisez tout le process.`
-              : `${shared.ownerName} vous confie tout le process : ${plural(all.length, 'étape')} à relire.`}
+              ? r.noPart(actor)
+              : r.whole(shared.ownerName, t.format.count(all.length, t.words.step))}
         </ThemedText>
       </View>
 
@@ -125,12 +123,12 @@ export function ReviewPanel({
           <ThemedText type="smallBold" style={{ color: progress.done ? theme.success : theme.text }}>
             {progress.done
               ? progress.toRevise
-                ? `Merci : votre partie est relue, avec ${plural(progress.toRevise, 'étape')} à revoir.`
-                : 'Merci : votre partie est relue et validée.'
-              : `${progress.validated} validée${progress.validated > 1 ? 's' : ''} · ${progress.toRevise} à revoir · ${progress.pending} à relire`}
+                ? r.doneWithIssues(t.format.count(progress.toRevise, t.words.step))
+                : r.done
+              : r.progress(progress.validated, progress.toRevise, progress.pending)}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {note ?? `${shared.ownerName} voit vos avis. Vous pouvez les changer tant que vous êtes membre.`}
+            {note ?? r.ownerSees(shared.ownerName)}
           </ThemedText>
         </View>
       )}
@@ -153,7 +151,7 @@ export function ReviewPanel({
                   },
                 ]}>
                 <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                  {option === 'mine' ? `Ma partie · ${mine.length}` : `Tout le process · ${all.length}`}
+                  {option === 'mine' ? r.myPart(mine.length) : r.wholeProcess(all.length)}
                 </ThemedText>
               </Pressable>
             );
@@ -165,7 +163,7 @@ export function ReviewPanel({
         <View style={card}>
           <ThemedText style={[styles.row, { color: theme.danger }]}>{loadError}</ThemedText>
           <Pressable onPress={reload} accessibilityRole="button" style={styles.row}>
-            <ThemedText type="link">Réessayer</ThemedText>
+            <ThemedText type="link">{t.common.retry}</ThemedText>
           </Pressable>
         </View>
       ) : reviews === null ? (
@@ -175,7 +173,7 @@ export function ReviewPanel({
       ) : steps.length === 0 ? (
         <View style={card}>
           <ThemedText themeColor="textSecondary" style={styles.row}>
-            Ce process n’a pas d’étape à relire.
+            {r.noSteps}
           </ThemedText>
         </View>
       ) : (
@@ -218,6 +216,8 @@ function StepCard({
   onClear: (stepId: string) => Promise<void>;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const r = t.review;
   const [status, setStatus] = useState<ReviewStatus>(review?.status ?? 'a_revoir');
   const [comment, setComment] = useState(review?.comment ?? '');
   const [busy, setBusy] = useState(false);
@@ -229,7 +229,7 @@ function StepCard({
     try {
       await action();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Votre avis n’a pas pu être enregistré.');
+      setError(cause instanceof Error ? cause.message : r.saveError);
     } finally {
       setBusy(false);
     }
@@ -243,12 +243,12 @@ function StepCard({
   };
 
   const submit = () => {
-    const problem = reviewProblem(status, comment);
+    const problem = reviewProblem(status, comment, t);
     if (problem) return setError(problem);
     run(() => onSave({ stepId: step.id, status, comment: comment.trim() || null }));
   };
 
-  const meta = [step.actor, step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null]
+  const meta = [step.actor, step.duration ? t.format.count(step.duration, t.words.workingDay) : null]
     .filter(Boolean)
     .join(' · ');
 
@@ -267,7 +267,7 @@ function StepCard({
           {number}
         </ThemedText>
         <View style={styles.flex}>
-          <ThemedText>{step.title || 'Sans titre'}</ThemedText>
+          <ThemedText>{step.title || t.untitled}</ThemedText>
           {meta ? (
             <ThemedText type="small" themeColor="textSecondary">
               {meta}
@@ -275,13 +275,13 @@ function StepCard({
           ) : null}
         </View>
         {review && (
-          <Badge label={STATUS_LABELS[review.status]} tone={review.status === 'valide' ? 'success' : 'warning'} />
+          <Badge label={r.statuses[review.status]} tone={review.status === 'valide' ? 'success' : 'warning'} />
         )}
       </View>
 
       {review?.comment && !editing && (
         <ThemedText type="small" themeColor="textSecondary" style={styles.comment}>
-          « {review.comment} »
+          {r.quote(review.comment)}
         </ThemedText>
       )}
 
@@ -310,7 +310,7 @@ function StepCard({
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {STATUS_LABELS[option]}
+                    {r.statuses[option]}
                   </ThemedText>
                 </Pressable>
               );
@@ -325,23 +325,19 @@ function StepCard({
             multiline
             maxLength={MAX_COMMENT}
             textAlignVertical="top"
-            placeholder={
-              status === 'a_revoir'
-                ? 'Ce qui est à revoir : délai, acteur, étape manquante…'
-                : 'Commentaire (facultatif)'
-            }
+            placeholder={status === 'a_revoir' ? r.toRevisePlaceholder : r.commentPlaceholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel={`Commentaire sur l’étape ${number}`}
+            accessibilityLabel={r.commentLabel(number)}
             style={[
               styles.input,
               { color: theme.text, backgroundColor: theme.background, borderColor: theme.fieldBorder },
             ]}
           />
-          <PrimaryButton label={busy ? 'Envoi…' : 'Enregistrer mon avis'} onPress={submit} disabled={busy} />
+          <PrimaryButton label={busy ? r.sending : r.save} onPress={submit} disabled={busy} />
           <View style={styles.actions}>
             <Pressable onPress={onCancel} accessibilityRole="button" hitSlop={8} style={styles.link}>
               <ThemedText type="smallBold" style={{ color: theme.link }}>
-                Annuler
+                {t.common.cancel}
               </ThemedText>
             </Pressable>
             {review && (
@@ -351,7 +347,7 @@ function StepCard({
                 hitSlop={8}
                 style={styles.link}>
                 <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                  Retirer mon avis
+                  {r.removeMine}
                 </ThemedText>
               </Pressable>
             )}
@@ -361,11 +357,11 @@ function StepCard({
         <Pressable
           onPress={() => open(review.status)}
           accessibilityRole="button"
-          accessibilityLabel={`Changer mon avis sur l’étape ${number}`}
+          accessibilityLabel={r.changeLabel(number)}
           hitSlop={8}
           style={styles.link}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Changer mon avis
+            {r.change}
           </ThemedText>
         </Pressable>
       ) : (
@@ -374,20 +370,20 @@ function StepCard({
             onPress={() => run(() => onSave({ stepId: step.id, status: 'valide', comment: null }))}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel={`Valider l’étape ${number}`}
+            accessibilityLabel={r.validateLabel(number)}
             style={[styles.choice, { backgroundColor: theme.successBackground }]}>
             <ThemedText type="smallBold" style={{ color: theme.success }}>
-              ✓ Valider
+              {r.validate}
             </ThemedText>
           </Pressable>
           <Pressable
             onPress={() => open('a_revoir')}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel={`Signaler l’étape ${number} à revoir`}
+            accessibilityLabel={r.flagLabel(number)}
             style={[styles.choice, { backgroundColor: theme.warningBackground }]}>
             <ThemedText type="smallBold" style={{ color: theme.warning }}>
-              À revoir…
+              {r.flag}
             </ThemedText>
           </Pressable>
         </View>

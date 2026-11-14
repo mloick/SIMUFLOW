@@ -3,6 +3,8 @@
  * partie », et où il en est. Fonctions pures, testées dans __tests__/review.test.ts.
  */
 
+import { getT, type Messages } from '@/i18n';
+
 import type { Process, Step } from './types';
 
 /** Avis sur une étape : validée telle quelle, ou à revoir (avec un commentaire). */
@@ -55,8 +57,8 @@ export function reviewProgress(steps: Step[], reviews: StepReview[]) {
 }
 
 /** Problème d'un avis avant envoi, ou `null` s'il est bon. */
-export function reviewProblem(status: ReviewStatus, comment: string): string | null {
-  if (comment.length > MAX_COMMENT) return `Le commentaire fait au plus ${MAX_COMMENT} caractères.`;
-  if (status === 'a_revoir' && !comment.trim()) return 'Dites ce qui est à revoir dans cette étape.';
+export function reviewProblem(status: ReviewStatus, comment: string, t: Messages = getT()): string | null {
+  if (comment.length > MAX_COMMENT) return t.review.commentTooLong(MAX_COMMENT);
+  if (status === 'a_revoir' && !comment.trim()) return t.review.commentRequired;
   return null;
 }

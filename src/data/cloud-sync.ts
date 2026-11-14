@@ -29,6 +29,7 @@ import { checkShareAlerts, forgetShareAlerts } from './share-alerts-store';
 import { forgetShared, refreshShared } from './shared-store';
 import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
+import { getT } from '@/i18n';
 
 export type SyncStatus = (
   | { state: 'idle' }
@@ -115,7 +116,7 @@ export async function syncNow() {
     setStatus({
       state: 'error',
       offline,
-      message: offline ? 'Hors connexion : vos process seront envoyés plus tard.' : 'La synchronisation a échoué.',
+      message: offline ? getT().errors.offlineSync : getT().errors.syncFailed,
       synced: status.synced,
     });
     if (__DEV__) console.warn('Synchronisation des process :', error);

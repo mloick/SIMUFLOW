@@ -9,6 +9,7 @@ import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getT, useT } from '@/i18n';
 
 /**
  * Page d'un lien d'acteur, ouverte dans le navigateur, sans compte : la
@@ -18,6 +19,8 @@ import { useTheme } from '@/hooks/use-theme';
 export default function LinkScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const theme = useTheme();
+  const t = useT();
+  const l = t.review.link;
   const [view, setView] = useState<LinkView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -30,7 +33,7 @@ export default function LinkScreen() {
           setView(next);
           if (next.reviewerName) setName(next.reviewerName);
         },
-        (cause: unknown) => setError(cause instanceof Error ? cause.message : 'Le lien n’a pas pu s’ouvrir.'),
+        (cause: unknown) => setError(cause instanceof Error ? cause.message : getT().review.link.openError),
       ),
     [token],
   );
@@ -57,9 +60,9 @@ export default function LinkScreen() {
       <StateMessage
         icon={{ ios: 'link', android: 'link_off' }}
         tone="danger"
-        title="Lien introuvable"
+        title={l.notFound}
         message={error}
-        action={{ label: 'Ouvrir SimuFlow', onPress: () => router.replace('/') }}
+        action={{ label: l.openApp, onPress: () => router.replace('/') }}
       />
     );
   } else if (!view) {
@@ -73,20 +76,17 @@ export default function LinkScreen() {
     body = (
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ThemedText type="subtitle">{view.process.name}</ThemedText>
-        <ThemedText>
-          {view.ownerName} vous demande de relire la partie « {view.actor} » de ce process : pour chaque étape, dites si
-          elle est juste ou à revoir. Pas besoin de compte.
-        </ThemedText>
+        <ThemedText>{l.intro(view.ownerName, view.actor)}</ThemedText>
         <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <ThemedText type="smallBold" nativeID="nom">
-            Vous êtes « {view.actor} » ? Écrivez votre nom pour le confirmer.
+            {l.areYou(view.actor)}
           </ThemedText>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Prénom Nom"
+            placeholder={l.namePlaceholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Votre nom"
+            accessibilityLabel={l.nameLabel}
             autoComplete="name"
             maxLength={80}
             returnKeyType="done"
@@ -96,10 +96,9 @@ export default function LinkScreen() {
               { color: theme.text, backgroundColor: theme.background, borderColor: theme.fieldBorder },
             ]}
           />
-          <PrimaryButton label="C’est moi, je relis ma partie" onPress={confirm} disabled={!name.trim()} />
+          <PrimaryButton label={l.confirm} onPress={confirm} disabled={!name.trim()} />
           <ThemedText type="small" themeColor="textSecondary">
-            Votre nom accompagne chacun de vos avis : {view.ownerName} saura qui a relu. Si ce lien n’est pas pour vous,
-            fermez simplement la page.
+            {l.nameNote(view.ownerName)}
           </ThemedText>
         </View>
       </ScrollView>
@@ -109,7 +108,7 @@ export default function LinkScreen() {
       <ReviewPanel
         shared={{ process: view.process, actor: view.actor, ownerName: view.ownerName }}
         api={api}
-        note={`${view.ownerName} voit vos avis, signés « ${confirmed} ». Vous pouvez les changer tant que le lien existe.`}
+        note={l.ownerSees(view.ownerName, confirmed)}
       />
     );
   }
@@ -118,7 +117,7 @@ export default function LinkScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Relire ma partie',
+          title: t.titles.link,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },

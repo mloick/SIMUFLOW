@@ -4,6 +4,7 @@
  */
 
 import type { Process, Step, StepKind } from './types';
+import { getT } from '@/i18n';
 
 export type StepChanges = {
   title?: string;
@@ -62,7 +63,9 @@ export function makeDecision(process: Process, stepId: string): Process {
   return {
     ...next,
     links: next.links.map((link) =>
-      link.from === stepId && !link.label?.trim() ? { ...link, label: titles.get(link.to) || 'Autre cas' } : link,
+      link.from === stepId && !link.label?.trim()
+        ? { ...link, label: titles.get(link.to) || getT().editor.otherCase }
+        : link,
     ),
   };
 }
@@ -88,7 +91,7 @@ export function addStepAfter(process: Process, afterId: string, title: string): 
   const stepId = freeId(new Set(process.steps.map((step) => step.id)), 'etape');
   const linkIds = new Set(process.links.map((link) => link.id));
   const exits = process.links.filter((link) => link.from === afterId);
-  const step: Step = { id: stepId, kind: 'task', title: title.trim() || 'Nouvelle étape' };
+  const step: Step = { id: stepId, kind: 'task', title: title.trim() || getT().editor.newStepTitle };
   const at = process.steps.findIndex((other) => other.id === afterId);
   const steps = [...process.steps];
   steps.splice(at < 0 ? steps.length : at + 1, 0, step);
@@ -118,7 +121,11 @@ export function addBranch(process: Process, fromId: string, label: string, toId?
     target = freeId(new Set(process.steps.map((step) => step.id)), 'etape');
     const at = process.steps.findIndex((step) => step.id === fromId);
     const steps = [...process.steps];
-    steps.splice(at < 0 ? steps.length : at + 1, 0, { id: target, kind: 'task', title: name || 'Nouveau cas' });
+    steps.splice(at < 0 ? steps.length : at + 1, 0, {
+      id: target,
+      kind: 'task',
+      title: name || getT().editor.newCaseTitle,
+    });
     next = { ...process, steps };
   }
   const link = { id: freeId(linkIds, 'lien'), from: fromId, to: target, ...(name ? { label: name } : {}) };
