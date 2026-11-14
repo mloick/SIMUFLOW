@@ -62,6 +62,7 @@ export default function RootLayout() {
           <Stack.Screen name="formulaire" options={{ title: 'Formulaire', presentation: 'modal' }} />
           <Stack.Screen name="formulaire-modifier" options={{ title: 'Modifier le formulaire', presentation: 'modal' }} />
           <Stack.Screen name="export/[id]" options={{ title: 'Exporter le schéma', presentation: 'modal' }} />
+          <Stack.Screen name="partage/[id]" options={{ title: 'Partager', presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>
