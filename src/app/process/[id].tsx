@@ -153,6 +153,30 @@ function ProcessDetail({ process }: { process: Process }) {
           <StatTile value={toFix} label={toFix > 1 ? 'points à corriger' : 'point à corriger'} tone={fixTone} />
         </View>
 
+        {isImported(process.id) && (
+          <Section title="Partage">
+            <Pressable
+              onPress={() => router.push({ pathname: '/partage/[id]', params: { id: process.id } })}
+              accessibilityRole="button"
+              style={[styles.card, styles.shareRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <SymbolView name={{ ios: 'person.2', android: 'group' }} size={22} tintColor={theme.link} />
+              <View style={styles.issueText}>
+                <ThemedText type="link" style={{ color: theme.link }}>
+                  Partager avec les acteurs
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Invitez-les par leur identifiant ou leur e-mail : ils voient le process sur leur compte.
+                </ThemedText>
+              </View>
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right' }}
+                size={16}
+                tintColor={theme.textSecondary}
+              />
+            </Pressable>
+          </Section>
+        )}
+
         <Section title="Suivi en vrai">
           <TrackingCard process={process} />
         </Section>
@@ -475,6 +499,7 @@ const styles = StyleSheet.create({
   trackingText: { alignItems: 'flex-start' },
   trackingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 48, padding: Spacing.three },
   sectionTitle: { fontSize: 16 },
+  shareRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { borderRadius: Radius.pill, paddingHorizontal: Spacing.three - Spacing.one, paddingVertical: Spacing.one },
   card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },

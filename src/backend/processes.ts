@@ -11,9 +11,20 @@ import { fromRow, toRow, type ProcessRow } from './process-row';
 
 const TABLE = 'processes';
 
-/** Les process du compte connecté, du plus récent au plus ancien. */
+/**
+ * Les process du compte connecté, du plus récent au plus ancien. Seulement
+ * ceux dont il est propriétaire : les process partagés avec lui sont aussi
+ * lisibles (voir 20261117000000_partage.sql), mais ne se synchronisent pas.
+ */
 export async function listCloudProcesses(): Promise<Process[]> {
-  const { data, error } = await supabase.from(TABLE).select('*').order('updated_at', { ascending: false });
+  const { data: auth } = await supabase.auth.getSession();
+  const userId = auth.session?.user.id;
+  if (!userId) throw new Error('Connexion requise.');
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('owner_id', userId)
+    .order('updated_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data as ProcessRow[]).map(fromRow);
 }

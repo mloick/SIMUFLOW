@@ -161,6 +161,17 @@ export function isInCloud(id: string): boolean {
   return entries.some((entry) => entry.process.id === id && entry.cloudId !== undefined && !entry.deleted);
 }
 
+/** Identifiant du process sur le serveur, s'il y est déjà. */
+export function getCloudId(id: string): string | undefined {
+  const entry = entries.find((item) => item.process.id === id && !item.deleted);
+  return entry?.cloudId;
+}
+
+/** Comme `getCloudId`, et se met à jour après une synchronisation. */
+export function useCloudId(id: string): string | undefined {
+  return useSyncExternalStore(subscribeImports, () => getCloudId(id), () => getCloudId(id));
+}
+
 export function useImportedProcesses(): Process[] {
   return useSyncExternalStore(
     subscribeImports,

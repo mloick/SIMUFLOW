@@ -8,7 +8,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
 2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
-3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation
+3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
 6. [Compte et données](#6-compte-et-données) : synchronisation, version web, confidentialité
@@ -237,6 +237,14 @@ Pour montrer un process sans vrais noms, cochez **Anonymiser les noms** à l'imp
 
 ![Anonymiser : l'option à l'import, le process importé avec ses services, puis l'option à l'export](captures/etape-26-anonymisation.png)
 
+### Partager avec les acteurs · Disponible (côté propriétaire)
+
+Sur la fiche d'un de vos process, **Partager avec les acteurs** ouvre **Partager**. Écrivez l'**identifiant** d'un collègue (`julie.martin`, voir **Mon profil**) ou son **adresse e-mail**, choisissez s'il le faut l'**acteur** du schéma dont il s'occupe, puis **Inviter**. Vous pouvez inviter autant de personnes qu'il faut (jusqu'à 100), plusieurs pour un même acteur, et en **retirer**. Il faut être connecté, et le process doit être sur votre compte (il y part à la synchronisation). Les exemples fournis avec l'app ne se partagent pas.
+
+Les membres pourront voir et jouer le process depuis leur compte, sans pouvoir le modifier. Ce qu'ils voient de leur côté, la validation et les commentaires par étape arrivent dans les étapes suivantes (voir **Prévu**).
+
+![Partager : la liste des membres avec leur acteur, puis une invitation pour « Service B »](captures/etape-39-partage.png)
+
 ## 4. Suivre une vraie demande
 
 ### Suivi en vrai · Disponible
@@ -413,7 +421,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Partager et valider** · Prévue : partager un process avec des collègues, et être prévenu quand quelqu'un valide ou commente une étape.
+- **Valider à plusieurs** · Prévue : chaque membre invité voit le process partagé dans sa liste, sa partie mise en avant, valide ou commente chaque étape ; le propriétaire suit la validation et est prévenu. Plus tard, un lien web pour les acteurs sans compte.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **Interface en anglais** · Prévue.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
