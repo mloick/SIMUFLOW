@@ -449,12 +449,15 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 7. Confort
 
+- **Langue** · Disponible en partie : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Profil > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Pour l'instant, l'anglais couvre les onglets, le **Profil**, la connexion, le mot de passe oublié, **Mon profil** et la présentation ; les autres écrans restent en français et passeront en anglais aux prochaines étapes.
 - **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Profil > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
 - **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Profil**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
-- **Profil** · Disponible : compte, apparence, notifications, exemples, règles apprises, puis **À propos** (serveur, présentation, confidentialité, version).
+- **Profil** · Disponible : compte, langue, apparence, notifications, exemples, règles apprises, puis **À propos** (serveur, présentation, confidentialité, version).
+
+![Langue : la présentation et la connexion en anglais sur un téléphone en anglais, le réglage Langue du Profil, puis Français choisi](captures/etape-44-langue.png)
 
 ![Apparence : Automatique, puis Sombre choisi dans le Profil, et la liste en sombre](captures/etape-37-apparence.png)
 
@@ -474,5 +477,5 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 ## 8. Prévu
 
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
-- **Interface en anglais** · Prévue.
+- **Interface en anglais, sur tous les écrans** · Prévue : la liste, la fiche d'un process, la simulation, l'import, l'export, les formulaires et le partage, en plusieurs étapes.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

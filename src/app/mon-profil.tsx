@@ -7,6 +7,7 @@ import { StateMessage } from '@/components/state-message';
 import { ThemedText } from '@/components/themed-text';
 import { updateMyProfile, useMyProfile } from '@/data/profile-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * « Mon profil » : prénom, nom, identifiant et rôle du compte connecté. Le
@@ -15,6 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export default function MyProfileScreen() {
   const theme = useTheme();
+  const t = useT();
   const session = useSession();
   const state = useMyProfile();
 
@@ -24,9 +26,9 @@ export default function MyProfileScreen() {
       <StateMessage
         icon={{ ios: 'person.crop.circle', android: 'account_circle' }}
         tone="primary"
-        title="Connexion requise"
-        message="Le profil est gardé sur votre compte : connectez-vous d’abord."
-        action={{ label: 'Se connecter', onPress: () => router.replace('/connexion') }}
+        title={t.myProfile.signInRequired}
+        message={t.myProfile.signInRequiredText}
+        action={{ label: t.common.signIn, onPress: () => router.replace('/connexion') }}
       />
     );
   } else if (state.status === 'error') {
@@ -34,9 +36,9 @@ export default function MyProfileScreen() {
       <StateMessage
         icon={{ ios: 'exclamationmark.circle', android: 'error' }}
         tone="danger"
-        title="Profil indisponible"
+        title={t.myProfile.unavailable}
         message={state.message}
-        action={{ label: 'Réessayer', onPress: state.reload }}
+        action={{ label: t.common.retry, onPress: state.reload }}
       />
     );
   } else if (state.status !== 'ready') {
@@ -57,13 +59,13 @@ export default function MyProfileScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Mon profil',
+          title: t.titles.myProfile,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },
           headerLeft: () => (
             <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-              <ThemedText style={{ color: theme.link }}>Annuler</ThemedText>
+              <ThemedText style={{ color: theme.link }}>{t.common.cancel}</ThemedText>
             </Pressable>
           ),
         }}

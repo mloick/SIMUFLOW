@@ -12,11 +12,12 @@ import {
 } from 'react-native';
 
 import { type AuthResult, openRecoveryLink, updatePassword } from '@/backend/auth';
-import { checkNewPassword, parseRecoveryLink, PASSWORD_RULE } from '@/backend/auth-messages';
+import { checkNewPassword, parseRecoveryLink } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * Mot de passe oublié, étape 2 : l'écran que rouvre le lien de l'e-mail
@@ -25,6 +26,7 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export default function NewPasswordScreen() {
   const theme = useTheme();
+  const t = useT();
   const url = Linking.useLinkingURL();
   const link = useMemo(() => parseRecoveryLink(url), [url]);
   const [opened, setOpened] = useState<AuthResult | null>(null);
@@ -56,7 +58,7 @@ export default function NewPasswordScreen() {
   // Le lien est invalide, expiré, ou la session n'a pas pu s'ouvrir.
   const linkProblem =
     link === null
-      ? "Ce lien n'est pas valide. Ouvrez le dernier e-mail « Mot de passe oublié » reçu, ou demandez-en un nouveau."
+      ? t.newPassword.invalidLink
       : link.kind === 'error'
         ? link.message
         : opened && !opened.ok
@@ -68,38 +70,40 @@ export default function NewPasswordScreen() {
     content = (
       <>
         <ThemedText type="subtitle" accessibilityRole="header">
-          Mot de passe changé
+          {t.newPassword.done}
         </ThemedText>
-        <ThemedText themeColor="textSecondary">Vous êtes connecté avec votre nouveau mot de passe.</ThemedText>
-        <PrimaryButton label="Continuer" onPress={() => router.replace('/profil')} />
+        <ThemedText themeColor="textSecondary">{t.newPassword.doneText}</ThemedText>
+        <PrimaryButton label={t.newPassword.continue} onPress={() => router.replace('/profil')} />
       </>
     );
   } else if (linkProblem) {
     content = (
       <>
         <ThemedText type="subtitle" accessibilityRole="header">
-          Lien inutilisable
+          {t.newPassword.unusable}
         </ThemedText>
         <ThemedText themeColor="textSecondary">{linkProblem}</ThemedText>
-        <PrimaryButton label="Demander un nouveau lien" onPress={() => router.replace('/connexion')} />
+        <PrimaryButton label={t.newPassword.askNew} onPress={() => router.replace('/connexion')} />
       </>
     );
   } else if (!opened) {
-    content = <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel="Ouverture du lien" />;
+    content = (
+      <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel={t.newPassword.opening} />
+    );
   } else {
     content = (
       <>
         <ThemedText type="subtitle" accessibilityRole="header">
-          Nouveau mot de passe
+          {t.newPassword.title}
         </ThemedText>
-        <ThemedText themeColor="textSecondary">Choisissez le mot de passe que vous utiliserez désormais.</ThemedText>
+        <ThemedText themeColor="textSecondary">{t.newPassword.intro}</ThemedText>
         <View style={styles.field}>
-          <ThemedText type="smallBold">Nouveau mot de passe</ThemedText>
+          <ThemedText type="smallBold">{t.newPassword.title}</ThemedText>
           <TextInput
             value={password}
             onChangeText={setPassword}
-            accessibilityLabel="Nouveau mot de passe"
-            accessibilityHint={PASSWORD_RULE}
+            accessibilityLabel={t.newPassword.title}
+            accessibilityHint={t.auth.passwordRule}
             secureTextEntry
             autoCapitalize="none"
             autoComplete="new-password"
@@ -114,7 +118,7 @@ export default function NewPasswordScreen() {
             ]}
           />
           <ThemedText type="small" themeColor="textSecondary">
-            {PASSWORD_RULE}
+            {t.auth.passwordRule}
           </ThemedText>
         </View>
         {error && (
@@ -123,9 +127,9 @@ export default function NewPasswordScreen() {
           </ThemedText>
         )}
         {busy ? (
-          <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel="Envoi en cours" />
+          <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel={t.common.sending} />
         ) : (
-          <PrimaryButton label="Enregistrer le mot de passe" onPress={save} />
+          <PrimaryButton label={t.newPassword.save} onPress={save} />
         )}
       </>
     );

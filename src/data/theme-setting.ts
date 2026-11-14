@@ -12,11 +12,8 @@ import '@/backend/local-storage';
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
 
-export const THEME_MODES: { value: ThemeMode; label: string }[] = [
-  { value: 'auto', label: 'Automatique' },
-  { value: 'light', label: 'Clair' },
-  { value: 'dark', label: 'Sombre' },
-];
+/** Les trois choix, dans l'ordre affiché ; leurs noms sont dans les textes de l'app (theme.options). */
+export const THEME_MODES: ThemeMode[] = ['auto', 'light', 'dark'];
 
 const KEY = 'simuflow.apparence';
 const listeners = new Set<() => void>();

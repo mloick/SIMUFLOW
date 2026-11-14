@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /** Adresse où le lien de l'e-mail rouvre l'app (simuflow://nouveau-mot-de-passe sur le téléphone). */
 export const RECOVERY_PATH = 'nouveau-mot-de-passe';
@@ -18,6 +19,7 @@ export const RECOVERY_PATH = 'nouveau-mot-de-passe';
  */
 export function ResetPasswordForm({ initialEmail, onCancel }: { initialEmail: string; onCancel: () => void }) {
   const theme = useTheme();
+  const t = useT();
   const [email, setEmail] = useState(initialEmail);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -37,23 +39,19 @@ export function ResetPasswordForm({ initialEmail, onCancel }: { initialEmail: st
   return (
     <View style={styles.form}>
       <ThemedText type="subtitle" accessibilityRole="header">
-        {sent ? 'Vérifiez vos e-mails' : 'Mot de passe oublié'}
+        {sent ? t.signIn.checkMail : t.reset.title}
       </ThemedText>
-      <ThemedText themeColor="textSecondary">
-        {sent
-          ? `Si un compte existe pour ${email.trim()}, un e-mail vient de lui être envoyé. Ouvrez le lien qu'il contient sur ce téléphone : SimuFlow s'ouvrira pour choisir un nouveau mot de passe. Le lien est valable une heure.`
-          : 'Saisissez votre adresse : vous recevrez un lien par e-mail pour choisir un nouveau mot de passe.'}
-      </ThemedText>
+      <ThemedText themeColor="textSecondary">{sent ? t.reset.sent(email.trim()) : t.reset.intro}</ThemedText>
 
       {!sent && (
         <View style={styles.field}>
-          <ThemedText type="smallBold">Adresse e-mail</ThemedText>
+          <ThemedText type="smallBold">{t.common.emailLabel}</ThemedText>
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="prenom.nom@exemple.fr"
+            placeholder={t.common.emailPlaceholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Adresse e-mail"
+            accessibilityLabel={t.common.emailLabel}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
@@ -77,11 +75,11 @@ export function ResetPasswordForm({ initialEmail, onCancel }: { initialEmail: st
       )}
 
       {busy ? (
-        <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel="Envoi en cours" />
+        <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel={t.common.sending} />
       ) : sent ? (
-        <PrimaryButton label="Renvoyer un e-mail" onPress={() => setSent(false)} />
+        <PrimaryButton label={t.reset.resend} onPress={() => setSent(false)} />
       ) : (
-        <PrimaryButton label="Recevoir un lien" onPress={send} />
+        <PrimaryButton label={t.reset.send} onPress={send} />
       )}
 
       <Pressable
@@ -90,7 +88,7 @@ export function ResetPasswordForm({ initialEmail, onCancel }: { initialEmail: st
         accessibilityRole="button"
         hitSlop={8}
         style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}>
-        <ThemedText type="link">Retour à la connexion</ThemedText>
+        <ThemedText type="link">{t.reset.back}</ThemedText>
       </Pressable>
     </View>
   );

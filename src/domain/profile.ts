@@ -4,6 +4,8 @@
  * Fonctions pures, testées dans __tests__/profile.test.ts.
  */
 
+import { getT } from '@/i18n';
+
 export type ProfileRole = 'chef_de_projet' | 'collaborateur';
 
 export type Profile = {
@@ -14,10 +16,10 @@ export type Profile = {
   role?: ProfileRole;
 };
 
-export const ROLE_LABELS: Record<ProfileRole, string> = {
-  chef_de_projet: 'Chef de projet',
-  collaborateur: 'Collaborateur',
-};
+/** « Chef de projet », dans la langue de l'app. */
+export function roleLabel(role: ProfileRole): string {
+  return getT().roles[role];
+}
 
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 30;
@@ -55,19 +57,19 @@ export function nextUsername(username: string): string {
 
 /** Le problème de l'identifiant, à afficher, ou null s'il est valable. */
 export function usernameProblem(username: string): string | null {
-  if (username.length < USERNAME_MIN) return `Au moins ${USERNAME_MIN} caractères.`;
-  if (username.length > USERNAME_MAX) return `Au plus ${USERNAME_MAX} caractères.`;
-  if (!USERNAME.test(username))
-    return 'Minuscules sans accent, chiffres, point, tiret ou tiret bas ; commence par une lettre ou un chiffre.';
+  const t = getT().profileForm;
+  if (username.length < USERNAME_MIN) return t.usernameMin(USERNAME_MIN);
+  if (username.length > USERNAME_MAX) return t.usernameMax(USERNAME_MAX);
+  if (!USERNAME.test(username)) return t.usernameChars;
   return null;
 }
 
 /** Le problème du profil (premier trouvé), ou null s'il peut être enregistré. */
 export function profileProblem(profile: Profile): string | null {
-  if (!profile.firstName.trim()) return 'Le prénom est obligatoire.';
-  if (!profile.lastName.trim()) return 'Le nom est obligatoire.';
-  if (profile.firstName.trim().length > 60 || profile.lastName.trim().length > 60)
-    return 'Le prénom et le nom font au plus 60 caractères.';
+  const t = getT().profileForm;
+  if (!profile.firstName.trim()) return t.firstNameRequired;
+  if (!profile.lastName.trim()) return t.lastNameRequired;
+  if (profile.firstName.trim().length > 60 || profile.lastName.trim().length > 60) return t.namesTooLong;
   return usernameProblem(profile.username);
 }
 
