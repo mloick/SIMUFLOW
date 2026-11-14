@@ -332,6 +332,10 @@ Pour essayer : `template-formulaire.xlsx`, seul ou avec `workflow-sla-ola.xlsx`,
 
 Dans **Profil**, **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
 
+Connecté, **Compléter mon profil** (dans la section Compte) demande votre prénom, votre nom, un **identifiant** (proposé d'après votre nom, par exemple `julie.martin`, unique) et votre rôle : **Chef de projet**, **Collaborateur** ou non précisé. C'est une simple mention. L'identifiant servira à vous inviter sur un process partagé.
+
+![Mon profil : l'identifiant proposé d'après le nom, puis un identifiant déjà pris et la variante proposée](captures/etape-38-mon-profil.png)
+
 Connecté, vos process, règles de lecture et formulaires gardés vous suivent sur tous vos appareils. Sans réseau, rien n'est perdu : la liste affiche « Hors connexion » et l'app envoie les changements dès le retour du réseau. **Supprimer mon compte** efface le compte et ses données, sur le serveur et sur le téléphone. Le serveur est hébergé à Paris ; **À propos** dit s'il est joignable.
 
 ![Synchronisation : un process venu du compte, le Profil synchronisé, puis hors connexion](captures/etape-8-synchro.png)

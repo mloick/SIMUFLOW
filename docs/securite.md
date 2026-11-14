@@ -33,8 +33,8 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Point | État | Preuve |
 | --- | --- | --- |
 | Authentification par un service éprouvé, pas maison | ✅ | Supabase Auth (e-mail et mot de passe), mots de passe hachés côté serveur |
-| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes`, `reading_rules` et `saved_forms` : `(select auth.uid()) = owner_id` |
-| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
+| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes`, `reading_rules`, `saved_forms` (`(select auth.uid()) = owner_id`) et `profiles` (`(select auth.uid()) = id`) |
+| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `profils_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
 | Aucun droit sans connexion | ✅ | Rôle `anon` sans aucun droit sur les tables |
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
@@ -63,7 +63,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Point | État | Preuve |
 | --- | --- | --- |
 | Fichiers importés lus comme des données, refusés proprement s'ils sont abîmés | ✅ | Lecteurs draw.io, BPMN, Visio, JSON, Excel et CSV testés avec des fichiers invalides ou refusés (ancien .xls, classeur protégé) ; taille limitée (5 Mo, 20 Mo pour un classeur) ; jamais d'`eval` |
-| Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, listes d'étapes et de liens, au plus 500 règles, au plus 200 formulaires et 5 Mo |
+| Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, `texte`, listes d'étapes et de liens, au plus 500 règles, au plus 200 formulaires et 5 Mo |
 | Dépendances à jour, installées depuis le fichier verrou | ✅ | `npx expo install --check` avant chaque build iOS ; `npm ci` en CI |
 | Failles connues dans les dépendances | ✅ | `npm audit --omit=dev` (13 nov.) : 0 critique, 0 haute ; 26 modérées et 1 faible, toutes dans des outils Node de build et de test (Expo CLI, Jest, `glob`, `minimatch`, `node-forge` pour les certificats de signature d'EAS Update), qui ne sont pas embarqués dans l'app |
 | Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 386 tests |
@@ -112,10 +112,11 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Projet hébergé en Union européenne (région Paris).
 - Nouvelles tables non exposées automatiquement : chaque accès est donné explicitement (`grant`).
 - Row Level Security activée sur `processes` : chaque compte ne lit, ne crée, ne modifie et ne supprime que ses propres process (`(select auth.uid()) = owner_id`). Le rôle `anon` (sans connexion) n'a aucun droit.
-- La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, étapes et liens sous forme de listes.
+- La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, `texte`, étapes et liens sous forme de listes.
 - Règles testées avec deux comptes sur un PostgreSQL local (`supabase/tests/processes_rls.sql`), y compris un test cassé exprès pour vérifier qu'il détecte une faille.
 - Règles de lecture apprises : table `reading_rules`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 500 règles en liste, supprimées avec le compte). Testée de la même façon (`supabase/tests/regles_lecture_rls.sql`).
 - Formulaires gardés : table `saved_forms`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 200 formulaires et 5 Mo, supprimés avec le compte). Testée de la même façon (`supabase/tests/formulaires_rls.sql`).
+- Profils : table `profiles`, une ligne par compte (prénom, nom, identifiant unique, rôle déclaré), mêmes protections (RLS sur le compte, rien sans connexion, identifiant vérifié par la base, supprimé avec le compte). Personne ne lit encore le profil d'un autre compte. Testée de la même façon (`supabase/tests/profils_rls.sql`).
 
 ## Comptes
 
