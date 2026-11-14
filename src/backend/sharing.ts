@@ -53,6 +53,8 @@ export function sharingErrorMessage(error: { code?: string; message?: string }):
       return new SharingError('C’est vous : vous êtes déjà le propriétaire de ce process.');
     case '54000':
       return new SharingError('Un process compte au plus 100 membres.');
+    case '23505':
+      return new SharingError('Cet acteur a déjà un lien.');
     case '23503':
       return new SharingError('Vous n’êtes plus membre de ce process : son propriétaire vous en a retiré.');
     case '23514':

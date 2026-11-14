@@ -72,6 +72,7 @@ export default function RootLayout() {
           <Stack.Screen name="ma-partie/[id]" options={{ title: 'Ma partie' }} />
           <Stack.Screen name="validation/[id]" options={{ title: 'Suivi de la validation' }} />
           <Stack.Screen name="alertes" options={{ title: 'Alertes' }} />
+          <Stack.Screen name="lien/[token]" options={{ title: 'Relire ma partie' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

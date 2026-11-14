@@ -92,7 +92,7 @@ src/
   import/       Lecture des fichiers draw.io, BPMN, Visio et JSON en process, règles de lecture apprises (rules.ts) ; schémas d'exemple dans __fixtures__/ ; tableaux Excel et CSV dans tableau/ (lecture du classeur, reconnaissance de chaque onglet, modèles de lecture dans modeles/)
   export/       Export d'un process en PDF (page HTML avec le schéma en SVG), draw.io, BPMN 2.0 et JSON ; tests dans __tests__/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
-  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts), profil (profiles.ts), partage côté propriétaire (sharing.ts) et côté membre (shared.ts)
+  backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts), profil (profiles.ts), partage côté propriétaire (sharing.ts), côté membre (shared.ts) et par lien d'acteur (links.ts)
   hooks/        Hooks partagés (thème, mode sombre, grands textes)
   scan/         Lecture d'un tableau photographié : mots lus par Tesseract dans la version web rangés en cases (words.ts) après effacement des traits du tableau (table-lines.ts), texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   tracking/     Suivre un process en vrai : calendrier des jours ouvrés français (calendar.ts), suivi d'une demande étape par étape (tracking.ts), textes des échéances (format.ts), rappels à programmer (reminders.ts) ; tests dans __tests__/
@@ -1088,6 +1088,63 @@ Pas de serveur de notifications : un « push » sur iPhone demande un compte App
 - « entièrement validé » une fois, puis de nouveau après une perte.
 
 `src/data/__tests__/share-alerts-store.test.ts`, avec le serveur et les notifications simulés, vérifie que l'existant est noté sans alerte. Il vérifie ensuite qu'un nouveau partage est gardé, notifié avec son chemin et compté comme nouveau. Enfin, il vérifie le marquage « vu » et l'oubli à la déconnexion.
+
+#### Liens d'acteur (`supabase/migrations/20261119000000_liens_acteurs.sql`)
+
+Pour relire sa partie sans compte. **À coller dans Supabase** après les scripts du partage et des avis.
+
+- **Table `actor_links`** :
+  - colonnes : `id`, `process_id` (`on delete cascade`), `actor`, `token` et `created_at`, avec un lien par acteur et par process (`unique`) ;
+  - le jeton fait 64 caractères hexadécimaux tirés de deux `gen_random_uuid()`, soit 244 bits de hasard, et il est `unique` ;
+  - règles : seul le propriétaire du process voit, crée et retire ses liens (`is_process_owner`).
+- **Table `link_reviews`** :
+  - colonnes : `link_id` (`on delete cascade`), `step_id`, `status`, `comment` (obligatoire pour `a_revoir`), `reviewer_name` (le nom confirmé, 1 à 80 caractères) et `updated_at` ;
+  - clé `(link_id, step_id)` ;
+  - règles : lecture seule pour le propriétaire (`is_link_owner`, `security definer`) ; aucune écriture directe, même pour un compte.
+- **Sans compte (`anon`)** : rien sur les tables. Trois fonctions `security definer`, qui demandent le jeton :
+  - `link_open(jeton)` renvoie le nom et le contenu du process, l'acteur, le nom du propriétaire et les avis déjà donnés (sinon `P0002`) ;
+  - `link_review(jeton, nom, étape, statut, commentaire)` vérifie que l'étape est dans le process (sinon `22023`) et enregistre ou remplace l'avis avec le nom ;
+  - `link_unreview(jeton, étape)` retire un avis.
+
+**Dans l'app.** `src/backend/links.ts` contient :
+- `linkUrl` : `https://mloick.github.io/SIMUFLOW/app/lien/<jeton>`, la page de la version web, qui s'ouvre aussi depuis un téléphone sans l'app ;
+- `listActorLinks`, `createActorLink`, `removeActorLink` ;
+- `openLink`, `reviewByLink`, `unreviewByLink` et `linkErrorMessage` ;
+- `listLinkActivity` : les avis des liens, pour le propriétaire.
+
+Côté propriétaire :
+- **Partager** : `ActorLinks` (`src/components/actor-links.tsx`), sous les membres de `SharePanel`, donne une ligne par acteur du schéma : « Créer un lien », ou l'adresse avec « Envoyer » et « Retirer » (avec confirmation).
+- **Envoyer** : `shareLink` (`src/utils/share-link.ts`). Sur téléphone, c'est `Share.share`. Sur le web (`share-link.web.ts`), c'est `navigator.share` s'il existe, sinon le lien est copié avec `navigator.clipboard`.
+
+La page `src/app/lien/[token].tsx` :
+1. lit le lien ;
+2. présente la demande ;
+3. demande le nom (« Vous êtes « Achats » ? ») ;
+4. affiche `ReviewPanel` avec une source d'avis propre au lien (prop `api`) et sa phrase (prop `note`).
+
+`ReviewPanel` (`src/components/review-panel.tsx`) prend désormais une source d'avis (`ReviewApi` : `load`, `save`, `remove`) : celle du compte connecté par défaut, celle du lien ici.
+
+La liste des process ne pousse plus la présentation du premier lancement par-dessus une page `/lien/…` (`usePathname`).
+
+Dans le suivi et les alertes, chaque lien compte comme un membre :
+- son identifiant est `lien:<id>` ;
+- son nom est « Inès Moreau (lien) », ou « Lien « Achats », pas encore ouvert » (`linkMember`, `src/data/validation-data.ts`) ;
+- son acteur est celui du lien.
+
+`useValidationData` et les alertes (`share-alerts-store.ts`) lisent `listLinkActivity`. Un échec de cette lecture, par exemple quand le script n'est pas encore appliqué, ne casse ni le suivi ni les alertes.
+
+![Lien pour les acteurs sans compte : les liens dans Partager, la page du lien qui demande le nom, la relecture, puis l'avis dans le suivi de la validation](captures/etape-43-lien-acteur.png)
+
+**Tests.** `supabase/tests/liens_acteurs_rls.sql`, avec le propriétaire A, un autre compte C et un visiteur sans compte :
+- **A** crée un lien (jeton de 64 caractères) et ne peut pas écrire un avis de lien directement.
+- **C** ne voit pas le lien et ne peut pas en créer sur le process de A.
+- **Le visiteur sans compte** ne lit aucune table. Il ouvre le lien et y voit le process, l'acteur et le nom du propriétaire. Il donne un avis avec son nom, le change, puis le retire. Sont refusés : un lien inconnu, une étape absente, un nom vide, « à revoir » sans commentaire et un mauvais jeton.
+- **A** lit l'avis ; **C** ne le lit pas.
+- **Lien retiré** : ses avis partent et il ne s'ouvre plus.
+
+Lancé avec PostgreSQL 16 : tout passe, ainsi que les autres tests SQL. Côté app :
+- `src/backend/__tests__/links.test.ts` : adresse, messages, lien compté comme membre ;
+- le test d'écran `lien-ecran.test.tsx` : nom demandé, puis avis enregistré avec ce nom.
 
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
