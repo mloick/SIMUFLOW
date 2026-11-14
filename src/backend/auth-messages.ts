@@ -1,7 +1,9 @@
 /**
  * Textes de l'écran de connexion : vérification des champs avant l'envoi,
- * et traduction en français des erreurs renvoyées par Supabase Auth.
+ * et traduction des erreurs renvoyées par Supabase Auth, dans la langue de l'app.
  */
+
+import { getT } from '@/i18n';
 
 /**
  * Longueur minimale d'un nouveau mot de passe. La même valeur est réglée dans Supabase
@@ -13,33 +15,35 @@ export const PASSWORD_MIN_LENGTH = 8;
 const SYMBOLS = '!@#$%^&*()_+-=[]{};\'\\:"|<>?,./`~';
 
 /** La règle d'un nouveau mot de passe, affichée sous le champ. */
-export const PASSWORD_RULE = `Au moins ${PASSWORD_MIN_LENGTH} caractères, avec une minuscule, une majuscule, un chiffre et un symbole.`;
+export function passwordRule(): string {
+  return getT().auth.passwordRule;
+}
 
 /**
  * Ce qui manque à un nouveau mot de passe, ou `null`. Mêmes exigences que le réglage
  * Supabase du projet (longueur et types de caractères), qui les vérifie aussi.
  */
 export function passwordProblem(password: string): string | null {
+  const t = getT().auth;
   const missing = [
-    !/[a-z]/.test(password) && 'une minuscule',
-    !/[A-Z]/.test(password) && 'une majuscule',
-    !/[0-9]/.test(password) && 'un chiffre',
-    ![...password].some((char) => SYMBOLS.includes(char)) && 'un symbole (par exemple ! ? # -)',
+    !/[a-z]/.test(password) && t.missing.lower,
+    !/[A-Z]/.test(password) && t.missing.upper,
+    !/[0-9]/.test(password) && t.missing.digit,
+    ![...password].some((char) => SYMBOLS.includes(char)) && t.missing.symbol,
   ].filter((item): item is string => Boolean(item));
-  if (password.length < PASSWORD_MIN_LENGTH)
-    return `Le mot de passe doit faire au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+  if (password.length < PASSWORD_MIN_LENGTH) return t.passwordTooShort;
   if (missing.length === 0) return null;
   const list =
-    missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(', ')} et ${missing[missing.length - 1]}`;
-  return `Il manque au mot de passe ${list}.`;
+    missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(', ')} ${t.and} ${missing[missing.length - 1]}`;
+  return t.passwordMissing(list);
 }
 
 export type Credentials = { email: string; password: string };
 
 /** Un problème dans l'adresse e-mail, ou `null`. */
 export function checkEmail(email: string): string | null {
-  if (!email.trim()) return 'Saisissez votre adresse e-mail.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Cette adresse e-mail n'est pas valide.";
+  if (!email.trim()) return getT().auth.emailEmpty;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return getT().auth.emailInvalid;
   return null;
 }
 
@@ -47,7 +51,7 @@ export function checkEmail(email: string): string | null {
 export function checkCredentials({ email, password }: Credentials, mode: 'connexion' | 'creation'): string | null {
   const emailProblem = checkEmail(email);
   if (emailProblem) return emailProblem;
-  if (!password) return 'Saisissez votre mot de passe.';
+  if (!password) return getT().auth.passwordEmpty;
   return mode === 'creation' ? passwordProblem(password) : null;
 }
 
@@ -83,26 +87,11 @@ export function parseRecoveryLink(url: string | null): RecoveryLink | null {
 /** Ce que l'on lit d'une erreur Supabase Auth. */
 export type AuthErrorLike = { code?: string; name?: string; status?: number; message?: string };
 
-const MESSAGES: Record<string, string> = {
-  invalid_credentials: 'Adresse e-mail ou mot de passe incorrect.',
-  email_not_confirmed: "Confirmez d'abord votre adresse : ouvrez le lien reçu par e-mail.",
-  user_already_exists: 'Un compte existe déjà avec cette adresse. Connectez-vous.',
-  email_exists: 'Un compte existe déjà avec cette adresse. Connectez-vous.',
-  weak_password: `Mot de passe trop faible. ${PASSWORD_RULE}`,
-  email_address_invalid: "Cette adresse e-mail n'est pas acceptée.",
-  over_email_send_rate_limit: "Trop d'e-mails envoyés. Réessayez dans une heure.",
-  over_request_rate_limit: 'Trop de tentatives. Patientez quelques minutes.',
-  signup_disabled: 'La création de compte est fermée pour le moment.',
-  otp_expired: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
-  access_denied: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
-  same_password: "Choisissez un mot de passe différent de l'ancien.",
-};
-
 export function authErrorMessage(error: AuthErrorLike): string {
-  if (error.code && MESSAGES[error.code]) return MESSAGES[error.code];
+  const t = getT();
+  const known = error.code ? t.auth.errors[error.code] : undefined;
+  if (known) return error.code === 'weak_password' ? `${known} ${t.auth.passwordRule}` : known;
   // Pas de réponse du serveur : réseau coupé ou serveur injoignable.
-  if (error.name === 'AuthRetryableFetchError' || error.status === 0) {
-    return 'Serveur injoignable : vérifiez la connexion Internet.';
-  }
-  return 'La connexion a échoué. Réessayez.';
+  if (error.name === 'AuthRetryableFetchError' || error.status === 0) return t.common.offline;
+  return t.auth.failed;
 }

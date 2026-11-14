@@ -34,21 +34,24 @@ import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
 import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
 import { useMyProfile } from '@/data/profile-store';
 import { useShareAlerts } from '@/data/share-alerts-store';
-import { displayName, ROLE_LABELS } from '@/domain';
+import { displayName } from '@/domain';
+import { LANGUAGE_SETTINGS, type Messages, setLanguageSetting, useLanguage, useLanguageSetting, useT } from '@/i18n';
 
 /** Le Profil : le compte, les réglages, puis les informations sur l'app. */
 export default function ProfileScreen() {
   const theme = useTheme();
+  const t = useT();
   return (
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
       <ThemedText type="title" accessibilityRole="header">
-        Profil
+        {t.profil.title}
       </ThemedText>
-      <ThemedText themeColor="textSecondary">Votre compte, vos réglages et les informations sur l’app.</ThemedText>
+      <ThemedText themeColor="textSecondary">{t.profil.intro}</ThemedText>
       <Account />
+      <LanguageSetting />
       <AppearanceSetting />
       <NotificationSettings />
       <ExamplesSetting />
@@ -63,6 +66,7 @@ export default function ProfileScreen() {
 /** Le compte connecté et le bouton de déconnexion, ou l'invitation à se connecter. */
 function Account() {
   const theme = useTheme();
+  const t = useT();
   const session = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +82,7 @@ function Account() {
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Compte
+        {t.profil.account}
       </ThemedText>
       {session === undefined ? (
         <View style={[box, styles.row]}>
@@ -87,11 +91,11 @@ function Account() {
       ) : session === null ? (
         <View style={box}>
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
-            Connectez-vous pour retrouver vos process sur tous vos appareils.
+            {t.profil.signInInvite}
           </ThemedText>
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <Link href="/connexion" style={styles.row} accessibilityRole="link">
-            <ThemedText type="link">Se connecter ou créer un compte →</ThemedText>
+            <ThemedText type="link">{t.profil.signInLink}</ThemedText>
           </Link>
         </View>
       ) : (
@@ -99,7 +103,7 @@ function Account() {
           <View
             style={[styles.row, styles.identity]}
             accessible
-            accessibilityLabel={`Connecté : ${session.user.email}`}>
+            accessibilityLabel={t.profil.connectedAs(session.user.email ?? '')}>
             <View style={[styles.avatar, { backgroundColor: theme.primaryBackground }]}>
               <ThemedText type="smallBold" style={{ color: theme.link }} maxFontSizeMultiplier={1.4}>
                 {initials(session.user.email)}
@@ -107,7 +111,7 @@ function Account() {
             </View>
             <View style={styles.flex}>
               <ThemedText type="small" themeColor="textSecondary">
-                Connecté
+                {t.profil.connected}
               </ThemedText>
               <ThemedText numberOfLines={1}>{session.user.email}</ThemedText>
             </View>
@@ -122,7 +126,7 @@ function Account() {
               <ActivityIndicator color={theme.danger} />
             ) : (
               <ThemedText type="link" style={{ color: theme.danger }}>
-                Se déconnecter
+                {t.profil.signOut}
               </ThemedText>
             )}
           </Pressable>
@@ -141,6 +145,7 @@ function Account() {
 /** Les formulaires gardés, à rouvrir (remplir, lier un workflow) ou à retirer. */
 function SavedForms() {
   const theme = useTheme();
+  const t = useT();
   const session = useSession();
   const forms = useSavedForms();
   const open = (index: number) => {
@@ -150,20 +155,22 @@ function SavedForms() {
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Mes formulaires
+        {t.profil.savedForms}
       </ThemedText>
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {forms.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
-            Aucun pour l’instant. Importez un template de formulaire (Excel), puis touchez « Garder ce formulaire » :
-            vous pourrez le remplir à nouveau et lui lier un workflow plus tard.
+            {t.profil.savedFormsEmpty}
           </ThemedText>
         ) : (
           forms.map((saved, index) => {
-            const name = saved.form.name ?? 'Formulaire sans nom';
+            const name = saved.form.name ?? t.profil.unnamedForm;
             const link = saved.workflow
-              ? `lié à ${saved.workflow.source || (saved.workflow.kind === 'process' ? saved.workflow.process.name : 'un workflow')}`
-              : 'sans workflow';
+              ? t.profil.linkedTo(
+                  saved.workflow.source ||
+                    (saved.workflow.kind === 'process' ? saved.workflow.process.name : t.profil.aWorkflow),
+                )
+              : t.profil.noWorkflow;
             return (
               <View key={saved.id}>
                 {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
@@ -171,20 +178,20 @@ function SavedForms() {
                   <Pressable
                     onPress={() => open(index)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Ouvrir le formulaire ${name}, ${link}`}
+                    accessibilityLabel={t.profil.openForm(name, link)}
                     style={styles.flex}>
                     <ThemedText style={{ color: theme.link }}>{name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {saved.form.questions.length} questions · {link}
+                      {t.profil.formQuestions(saved.form.questions.length, link)}
                     </ThemedText>
                   </Pressable>
                   <Pressable
                     onPress={() => removeSavedForm(saved.id)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Retirer le formulaire ${name}`}
+                    accessibilityLabel={t.profil.removeForm(name)}
                     hitSlop={8}>
                     <ThemedText type="link" style={{ color: theme.danger }}>
-                      Retirer
+                      {t.common.remove}
                     </ThemedText>
                   </Pressable>
                 </View>
@@ -194,9 +201,7 @@ function SavedForms() {
         )}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {session
-          ? 'Gardés avec leur workflow, sur ce téléphone et sur votre compte.'
-          : 'Gardés avec leur workflow sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.'}
+        {session ? t.profil.formsKeptAccount : t.profil.formsKeptLocal}
       </ThemedText>
     </View>
   );
@@ -205,18 +210,18 @@ function SavedForms() {
 /** Les règles de lecture apprises des corrections, chacune avec « Oublier ». */
 function ReadingRules() {
   const theme = useTheme();
+  const t = useT();
   const rules = useReadingRules();
   const session = useSession();
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Règles de lecture apprises
+        {t.profil.rules}
       </ThemedText>
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {rules.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
-            Aucune pour l’instant. Quand vous corrigez un process importé (un acteur renommé partout, une forme qui veut
-            dire « décision »), SimuFlow le retient et le refait aux imports suivants.
+            {t.profil.rulesEmpty}
           </ThemedText>
         ) : (
           rules.map((rule, index) => {
@@ -229,10 +234,10 @@ function ReadingRules() {
                   <Pressable
                     onPress={() => forgetReadingRule(rule)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Oublier la règle : ${text}`}
+                    accessibilityLabel={t.profil.forgetRule(text)}
                     hitSlop={8}>
                     <ThemedText type="link" style={{ color: theme.danger }}>
-                      Oublier
+                      {t.profil.forget}
                     </ThemedText>
                   </Pressable>
                 </View>
@@ -242,29 +247,27 @@ function ReadingRules() {
         )}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {session
-          ? 'Gardées sur ce téléphone et sur votre compte.'
-          : 'Gardées sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.'}
+        {session ? t.profil.rulesKeptAccount : t.profil.rulesKeptLocal}
       </ThemedText>
     </View>
   );
 }
 
-/** Afficher ou masquer les process d'exemple dans la liste. */
 /** Nom, identifiant et rôle du compte, avec le lien vers « Mon profil ». */
 function ProfileRow() {
   const theme = useTheme();
+  const t = useT();
   const state = useMyProfile();
   const profile = state.status === 'ready' ? state.profile : null;
   let detail: string;
-  if (state.status === 'loading' || state.status === 'none') detail = 'Lecture du profil…';
+  if (state.status === 'loading' || state.status === 'none') detail = t.profil.profileLoading;
   else if (state.status === 'error') detail = state.message;
-  else if (!profile) detail = 'Ajoutez votre nom et un identifiant pour être invité sur un process.';
-  else detail = [`@${profile.username}`, profile.role ? ROLE_LABELS[profile.role] : null].filter(Boolean).join(' · ');
+  else if (!profile) detail = t.profil.profileMissing;
+  else detail = [`@${profile.username}`, profile.role ? t.roles[profile.role] : null].filter(Boolean).join(' · ');
   return (
     <Link href="/mon-profil" accessibilityRole="button" style={styles.row}>
       <View style={[styles.flex, styles.profileText]}>
-        <ThemedText>{profile ? displayName(profile) : 'Compléter mon profil'}</ThemedText>
+        <ThemedText>{profile ? displayName(profile) : t.profil.completeProfile}</ThemedText>
         <ThemedText
           type="small"
           style={{ color: state.status === 'error' ? theme.danger : theme.textSecondary }}
@@ -272,69 +275,111 @@ function ProfileRow() {
           {detail}
         </ThemedText>
       </View>
-      <ThemedText type="link"> {profile ? 'Modifier →' : '→'}</ThemedText>
+      <ThemedText type="link"> {profile ? t.profil.editProfile : '→'}</ThemedText>
     </Link>
   );
 }
 
-/** Apparence : automatique (comme le téléphone), clair ou sombre. */
-function AppearanceSetting() {
+/** Langue : automatique (comme le téléphone), français ou anglais. */
+function LanguageSetting() {
   const theme = useTheme();
-  const current = useThemeMode();
+  const t = useT();
+  const current = useLanguageSetting();
+  const language = useLanguage();
   return (
     <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="apparence">
-        Apparence
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="langue">
+        {t.language.heading}
       </ThemedText>
       <View
         style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
         accessibilityRole="radiogroup"
-        accessibilityLabelledBy="apparence">
-        {THEME_MODES.map((option) => {
-          const selected = option.value === current;
+        accessibilityLabelledBy="langue">
+        {LANGUAGE_SETTINGS.map((option) => {
+          const selected = option === current;
           return (
             <Pressable
-              key={option.value}
-              onPress={() => setThemeMode(option.value)}
+              key={option}
+              onPress={() => setLanguageSetting(option)}
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
-              accessibilityLabel={option.label}
+              accessibilityLabel={t.language.options[option]}
               style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
               <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {option.label}
+                {t.language.options[option]}
               </ThemedText>
             </Pressable>
           );
         })}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {current === 'auto' ? 'Suit le réglage du téléphone.' : 'Garde ce mode, quel que soit le réglage du téléphone.'}
+        {current === 'auto' ? t.language.autoHint(t.language.names[language]) : t.language.fixedHint}
       </ThemedText>
     </View>
   );
 }
 
+/** Apparence : automatique (comme le téléphone), clair ou sombre. */
+function AppearanceSetting() {
+  const theme = useTheme();
+  const t = useT();
+  const current = useThemeMode();
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="apparence">
+        {t.theme.heading}
+      </ThemedText>
+      <View
+        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
+        accessibilityRole="radiogroup"
+        accessibilityLabelledBy="apparence">
+        {THEME_MODES.map((option) => {
+          const selected = option === current;
+          return (
+            <Pressable
+              key={option}
+              onPress={() => setThemeMode(option)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={t.theme.options[option]}
+              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
+                {t.theme.options[option]}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        {current === 'auto' ? t.theme.autoHint : t.theme.fixedHint}
+      </ThemedText>
+    </View>
+  );
+}
+
+/** Afficher ou masquer les process d'exemple dans la liste. */
 function ExamplesSetting() {
   const theme = useTheme();
+  const t = useT();
   const shown = useExamplesShown();
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Liste des process
+        {t.profil.processList}
       </ThemedText>
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={[styles.row, styles.identity]}>
           <View style={styles.flex}>
-            <ThemedText>Afficher les exemples</ThemedText>
+            <ThemedText>{t.profil.showExamples}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Quatre process fictifs fournis avec l’app, en bas de la liste.
+              {t.profil.showExamplesHint}
             </ThemedText>
           </View>
           <Switch
             value={shown}
             onValueChange={setExamplesShown}
             trackColor={{ true: theme.link }}
-            accessibilityLabel="Afficher les exemples"
+            accessibilityLabel={t.profil.showExamples}
           />
         </View>
       </View>
@@ -345,6 +390,7 @@ function ExamplesSetting() {
 /** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
 function NotificationSettings() {
   const theme = useTheme();
+  const t = useT();
   const enabled = useRemindersEnabled();
   const alertsEnabled = useShareAlertsEnabled();
   const { unread } = useShareAlerts();
@@ -381,14 +427,14 @@ function NotificationSettings() {
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Notifications
+        {t.profil.notifications}
       </ThemedText>
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={[styles.row, styles.identity]}>
           <View style={styles.flex}>
-            <ThemedText>Rappels d’échéance</ThemedText>
+            <ThemedText>{t.profil.reminders}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Le matin de l’échéance de chaque étape d’une demande suivie, puis en cas de retard.
+              {t.profil.remindersHint}
             </ThemedText>
           </View>
           <Switch
@@ -396,15 +442,15 @@ function NotificationSettings() {
             onValueChange={toggle}
             disabled={unavailable || permission === null}
             trackColor={{ true: theme.link }}
-            accessibilityLabel="Rappels d’échéance"
+            accessibilityLabel={t.profil.reminders}
           />
         </View>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={[styles.row, styles.identity]}>
           <View style={styles.flex}>
-            <ThemedText>Alertes du partage</ThemedText>
+            <ThemedText>{t.profil.shareAlerts}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Un process partagé avec vous, une étape à revoir, un process entièrement validé.
+              {t.profil.shareAlertsHint}
             </ThemedText>
           </View>
           <Switch
@@ -412,13 +458,13 @@ function NotificationSettings() {
             onValueChange={toggleAlerts}
             disabled={unavailable || permission === null}
             trackColor={{ true: theme.link }}
-            accessibilityLabel="Alertes du partage"
+            accessibilityLabel={t.profil.shareAlerts}
           />
         </View>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <Pressable onPress={() => router.push('/alertes')} accessibilityRole="button" style={styles.row}>
           <ThemedText type="link" style={{ color: theme.link }}>
-            Voir les alertes{unread > 0 ? ` · ${unread} nouvelle${unread > 1 ? 's' : ''}` : ''}
+            {t.profil.seeAlerts(unread)}
           </ThemedText>
         </Pressable>
         {active && (
@@ -426,19 +472,19 @@ function NotificationSettings() {
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <Pressable onPress={test} accessibilityRole="button" style={styles.row}>
               <ThemedText type="link" style={{ color: theme.link }}>
-                Envoyer une notification d’essai
+                {t.profil.testNotification}
               </ThemedText>
             </Pressable>
           </>
         )}
       </View>
       <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite">
-        {notificationText(enabled, permission, sent)}
+        {notificationText(t.profil, enabled, permission, sent)}
       </ThemedText>
       {enabled && permission === 'denied' && (
         <Pressable onPress={() => Linking.openSettings()} accessibilityRole="button" hitSlop={8}>
           <ThemedText type="link" style={{ color: theme.link }}>
-            Ouvrir les réglages
+            {t.profil.openSettings}
           </ThemedText>
         </Pressable>
       )}
@@ -446,32 +492,37 @@ function NotificationSettings() {
   );
 }
 
-function notificationText(enabled: boolean, permission: NotificationPermission | null, sent: boolean): string {
-  if (permission === 'unavailable')
-    return 'Les notifications ne sont pas disponibles dans le navigateur : les alertes du partage restent dans « Voir les alertes ».';
-  if (!enabled) return 'Rappels coupés : aucune notification ne sera envoyée.';
-  if (permission === 'denied') return 'Les notifications sont refusées pour SimuFlow dans les réglages du téléphone.';
-  if (permission === 'undetermined') return 'Le téléphone vous demandera l’autorisation au premier rappel.';
-  if (sent) return `Notification envoyée : elle arrive dans ${TEST_DELAY_SECONDS} secondes, même téléphone verrouillé.`;
-  return 'Les notifications sont programmées sur ce téléphone, sans serveur.';
+function notificationText(
+  t: Messages['profil'],
+  enabled: boolean,
+  permission: NotificationPermission | null,
+  sent: boolean,
+): string {
+  if (permission === 'unavailable') return t.notifUnavailable;
+  if (!enabled) return t.notifOff;
+  if (permission === 'denied') return t.notifDenied;
+  if (permission === 'undetermined') return t.notifUndetermined;
+  if (sent) return t.notifSent(TEST_DELAY_SECONDS);
+  return t.notifReady;
 }
 
-function syncText(status: SyncStatus): string {
+function syncText(t: Messages, status: SyncStatus): string {
   switch (status.state) {
     case 'syncing':
-      return 'Synchronisation…';
+      return t.profil.syncing;
     case 'done':
-      return `Process synchronisés à ${status.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+      return t.profil.syncedAt(status.at.toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' }));
     case 'error':
       return status.message;
     default:
-      return 'Vos process importés sont gardés sur votre compte.';
+      return t.profil.syncIdle;
   }
 }
 
 /** État de la synchronisation des process importés, et bouton pour la relancer. */
 function SyncRow() {
   const theme = useTheme();
+  const t = useT();
   const status = useSyncStatus();
   const syncing = status.state === 'syncing';
   return (
@@ -485,12 +536,12 @@ function SyncRow() {
         type="small"
         style={[styles.flex, { color: status.state === 'error' ? theme.warning : theme.textSecondary }]}
         accessibilityLiveRegion="polite">
-        {syncText(status)}
+        {syncText(t, status)}
       </ThemedText>
       {!syncing && (
         <Pressable onPress={syncNow} accessibilityRole="button" hitSlop={8}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Synchroniser
+            {t.profil.syncNow}
           </ThemedText>
         </Pressable>
       )}
@@ -504,6 +555,7 @@ function SyncRow() {
  */
 function DeleteAccount() {
   const theme = useTheme();
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -524,12 +576,11 @@ function DeleteAccount() {
           accessibilityRole="button"
           style={[styles.box, styles.row, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <ThemedText type="link" style={{ color: theme.danger }}>
-            Supprimer mon compte
+            {t.profil.deleteAccount}
           </ThemedText>
         </Pressable>
         <ThemedText type="small" themeColor="textSecondary">
-          La suppression efface votre compte et vos process, sur le serveur et sur ce téléphone. Elle vous sera demandée
-          une seconde fois pour confirmer.
+          {t.profil.deleteAccountHint}
         </ThemedText>
       </View>
     );
@@ -540,11 +591,10 @@ function DeleteAccount() {
       style={[styles.confirm, { backgroundColor: theme.dangerBackground, borderColor: theme.danger }]}
       accessibilityRole="alert">
       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-        Supprimer définitivement votre compte ?
+        {t.profil.deleteConfirmTitle}
       </ThemedText>
       <ThemedText type="small" style={{ color: theme.text }}>
-        Votre compte et tous vos process seront effacés, sur le serveur et sur ce téléphone. Impossible de revenir en
-        arrière.
+        {t.profil.deleteConfirmText}
       </ThemedText>
       {error && (
         <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
@@ -560,19 +610,19 @@ function DeleteAccount() {
           disabled={busy}
           accessibilityRole="button"
           style={[styles.confirmButton, { borderColor: theme.fieldBorder, backgroundColor: theme.surface }]}>
-          <ThemedText type="smallBold">Annuler</ThemedText>
+          <ThemedText type="smallBold">{t.common.cancel}</ThemedText>
         </Pressable>
         <Pressable
           onPress={confirm}
           disabled={busy}
           accessibilityRole="button"
-          accessibilityLabel="Supprimer définitivement mon compte"
+          accessibilityLabel={t.profil.deleteConfirmLabel}
           style={[styles.confirmButton, { borderColor: theme.danger, backgroundColor: theme.danger }]}>
           {busy ? (
             <ActivityIndicator color={theme.background} />
           ) : (
             <ThemedText type="smallBold" style={{ color: theme.background }}>
-              Supprimer
+              {t.profil.deleteConfirm}
             </ThemedText>
           )}
         </Pressable>
@@ -590,16 +640,14 @@ function initials(email = '') {
   return (parts.length > 1 ? parts[0][0] + parts[1][0] : email.slice(0, 2)).toUpperCase();
 }
 
-const STATUS_TEXT: Record<ServerStatus | 'checking', string> = {
-  checking: 'Vérification du serveur…',
-  ok: 'Serveur SimuFlow joignable',
-  unreachable: 'Serveur injoignable : vérifiez la connexion Internet',
-  error: 'Le serveur répond avec une erreur',
-};
+function statusText(t: Messages['profil'], status: ServerStatus | 'checking'): string {
+  return { checking: t.serverChecking, ok: t.serverOk, unreachable: t.serverUnreachable, error: t.serverError }[status];
+}
 
 /** Le serveur Supabase répond-il ? Vérifié à l'ouverture de l'écran, et à la demande. */
 function ServerRow() {
   const theme = useTheme();
+  const t = useT();
   const [status, setStatus] = useState<ServerStatus | 'checking'>('checking');
 
   const check = useCallback(async () => {
@@ -627,13 +675,13 @@ function ServerRow() {
           <View style={[styles.dot, { backgroundColor: color }]} />
         )}
         <ThemedText style={[styles.flex, { color: status === 'checking' ? theme.textSecondary : theme.text }]}>
-          {STATUS_TEXT[status]}
+          {statusText(t.profil, status)}
         </ThemedText>
       </View>
       {status !== 'checking' && status !== 'ok' && (
         <Pressable onPress={check} accessibilityRole="button" hitSlop={8}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Réessayer
+            {t.common.retry}
           </ThemedText>
         </Pressable>
       )}
@@ -648,29 +696,34 @@ function ServerRow() {
  */
 function About() {
   const theme = useTheme();
+  const t = useT();
+  const locale = t.common.locale;
   const version = Constants.expoConfig?.version ?? '';
   const update =
     !Updates.isEmbeddedLaunch && Updates.createdAt
-      ? `mise à jour du ${Updates.createdAt.toLocaleDateString('fr-FR')} à ${Updates.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-      : 'version installée';
+      ? t.profil.updateOf(
+          Updates.createdAt.toLocaleDateString(locale),
+          Updates.createdAt.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+        )
+      : t.profil.installedVersion;
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        À propos
+        {t.profil.about}
       </ThemedText>
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <ServerRow />
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <Link href="/bienvenue" accessibilityRole="button" style={styles.row}>
-          <ThemedText type="link">Revoir la présentation →</ThemedText>
+          <ThemedText type="link">{t.profil.replayWelcome}</ThemedText>
         </Link>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <Pressable
           onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
           accessibilityRole="link"
-          accessibilityHint="Ouvre la page dans le navigateur."
+          accessibilityHint={t.profil.opensInBrowser}
           style={styles.row}>
-          <ThemedText type="link">Politique de confidentialité ↗</ThemedText>
+          <ThemedText type="link">{t.profil.privacy}</ThemedText>
         </Pressable>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={styles.row}>
@@ -686,12 +739,13 @@ function About() {
 /** Mode développement : force un état de la liste des process, pour le montrer. */
 function DemoScenarioPicker() {
   const theme = useTheme();
+  const t = useT();
   const current = useDemoScenario();
 
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Démo · état de la liste des process
+        {t.profil.demo}
       </ThemedText>
       <View style={styles.options} accessibilityRole="radiogroup">
         {DEMO_SCENARIOS.map((option) => {

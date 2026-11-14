@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { signIn, signUp } from '@/backend/auth';
-import { checkCredentials, PASSWORD_RULE } from '@/backend/auth-messages';
+import { checkCredentials } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
 import { ResetPasswordForm } from '@/components/reset-password-form';
 import { SimuflowLogo } from '@/components/simuflow-logo';
@@ -21,11 +21,13 @@ import { ThemedText } from '@/components/themed-text';
 import { PRIVACY_URL } from '@/constants/links';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 type Mode = 'connexion' | 'creation' | 'oubli';
 
 export default function SignInScreen() {
   const theme = useTheme();
+  const t = useT();
   const [mode, setMode] = useState<Mode>('connexion');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -81,13 +83,11 @@ export default function SignInScreen() {
     return (
       <ScrollView style={{ backgroundColor: theme.background }} contentContainerStyle={styles.content}>
         <ThemedText type="subtitle" accessibilityRole="header">
-          Vérifiez vos e-mails
+          {t.signIn.checkMail}
         </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Un lien de confirmation a été envoyé à {email.trim()}. Ouvrez-le, puis revenez vous connecter.
-        </ThemedText>
+        <ThemedText themeColor="textSecondary">{t.signIn.confirmSent(email.trim())}</ThemedText>
         <PrimaryButton
-          label="Se connecter"
+          label={t.common.signIn}
           onPress={() => {
             setCheckMail(false);
             setMode('connexion');
@@ -109,20 +109,18 @@ export default function SignInScreen() {
             SimuFlow
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.center}>
-            {creating
-              ? 'Créez un compte pour retrouver vos process sur tous vos appareils.'
-              : 'Validez vos workflows en les rejouant pas à pas.'}
+            {creating ? t.signIn.taglineCreate : t.signIn.tagline}
           </ThemedText>
         </View>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Adresse e-mail</ThemedText>
+          <ThemedText type="smallBold">{t.common.emailLabel}</ThemedText>
           <TextInput
             value={email}
             onChangeText={setEmail}
-            placeholder="prenom.nom@exemple.fr"
+            placeholder={t.common.emailPlaceholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Adresse e-mail"
+            accessibilityLabel={t.common.emailLabel}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="email"
@@ -136,13 +134,13 @@ export default function SignInScreen() {
           />
         </View>
         <View style={styles.field}>
-          <ThemedText type="smallBold">Mot de passe</ThemedText>
+          <ThemedText type="smallBold">{t.signIn.password}</ThemedText>
           <TextInput
             ref={passwordRef}
             value={password}
             onChangeText={setPassword}
-            accessibilityLabel="Mot de passe"
-            accessibilityHint={creating ? PASSWORD_RULE : undefined}
+            accessibilityLabel={t.signIn.password}
+            accessibilityHint={creating ? t.auth.passwordRule : undefined}
             secureTextEntry
             autoCapitalize="none"
             autoComplete={creating ? 'new-password' : 'current-password'}
@@ -154,7 +152,7 @@ export default function SignInScreen() {
           />
           {creating ? (
             <ThemedText type="small" themeColor="textSecondary">
-              {PASSWORD_RULE}
+              {t.auth.passwordRule}
             </ThemedText>
           ) : (
             <Pressable
@@ -166,7 +164,7 @@ export default function SignInScreen() {
               accessibilityRole="button"
               hitSlop={8}
               style={({ pressed }) => [styles.forgot, { opacity: pressed ? 0.6 : 1 }]}>
-              <ThemedText type="link">Mot de passe oublié ?</ThemedText>
+              <ThemedText type="link">{t.signIn.forgot}</ThemedText>
             </Pressable>
           )}
         </View>
@@ -178,32 +176,32 @@ export default function SignInScreen() {
         )}
 
         {busy ? (
-          <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel="Envoi en cours" />
+          <ActivityIndicator color={theme.primary} style={styles.busy} accessibilityLabel={t.common.sending} />
         ) : (
-          <PrimaryButton label={creating ? 'Créer mon compte' : 'Se connecter'} onPress={submit} />
+          <PrimaryButton label={creating ? t.signIn.createAccount : t.common.signIn} onPress={submit} />
         )}
 
         {creating && (
           <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-            Votre adresse et vos process sont gardés sur un serveur en Union européenne, visibles par vous seul.{' '}
+            {t.signIn.privacyNote}{' '}
             <ThemedText
               type="small"
               style={{ color: theme.link, textDecorationLine: 'underline' }}
               accessibilityRole="link"
               onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}>
-              Politique de confidentialité
+              {t.signIn.privacy}
             </ThemedText>
           </ThemedText>
         )}
 
         <View style={[styles.switch, { borderColor: theme.border }]}>
-          <ThemedText themeColor="textSecondary">{creating ? 'Déjà un compte ?' : 'Pas encore de compte ?'}</ThemedText>
+          <ThemedText themeColor="textSecondary">{creating ? t.signIn.haveAccount : t.signIn.noAccount}</ThemedText>
           <Pressable
             onPress={switchMode}
             disabled={busy}
             accessibilityRole="button"
             style={({ pressed }) => [styles.secondary, { borderColor: theme.primary, opacity: pressed ? 0.7 : 1 }]}>
-            <ThemedText type="link">{creating ? 'Se connecter' : 'Créer un compte'}</ThemedText>
+            <ThemedText type="link">{creating ? t.common.signIn : t.signIn.switchCreate}</ThemedText>
           </Pressable>
         </View>
       </ScrollView>

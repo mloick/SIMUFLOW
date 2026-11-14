@@ -5,6 +5,8 @@
  * leur passe ce qu'il lit dans `navigator`.
  */
 
+import { getT } from '@/i18n';
+
 /** Appareil pour lequel montrer les étapes : iPhone ou iPad, Android, ou ordinateur. */
 export type InstallPlatform = 'ios' | 'android' | 'desktop';
 
@@ -26,20 +28,7 @@ export function detectInstallPlatform({ userAgent, touchPoints, standalone }: De
   return 'desktop';
 }
 
-/** Les étapes à suivre, dans les mots des menus du navigateur. */
-export const INSTALL_STEPS: Record<InstallPlatform, string[]> = {
-  ios: [
-    'Dans Safari, touchez les trois points (•••), puis « Partager » (ou directement le bouton Partager, en bas).',
-    'Touchez « Sur l’écran d’accueil » (faites défiler si besoin).',
-    'Touchez « Ajouter », puis ouvrez SimuFlow depuis son icône : il s’ouvre comme une app, en plein écran.',
-  ],
-  android: [
-    'Dans Chrome, touchez les trois points (⋮) en haut à droite.',
-    'Touchez « Ajouter à l’écran d’accueil » ou « Installer l’application ».',
-    'Confirmez avec « Installer », puis ouvrez SimuFlow depuis son icône : il s’ouvre comme une app, en plein écran.',
-  ],
-  desktop: [
-    'Sur un téléphone, ouvrez ce même lien, puis suivez les étapes qui s’affichent.',
-    'Sur ordinateur, Chrome et Edge proposent aussi « Installer SimuFlow », avec l’icône à droite de la barre d’adresse.',
-  ],
-};
+/** Les étapes à suivre, dans les mots des menus du navigateur et la langue de l'app. */
+export function installSteps(platform: InstallPlatform): string[] {
+  return getT().welcome.installSteps[platform];
+}

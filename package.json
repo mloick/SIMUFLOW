@@ -73,7 +73,8 @@
     "preset": "jest-expo",
     "moduleNameMapper": {
       "\\.css$": "<rootDir>/jest/style-vide.js",
-      "^expo-sqlite/localStorage/install$": "<rootDir>/jest/stockage-memoire.js"
+      "^expo-sqlite/localStorage/install$": "<rootDir>/jest/stockage-memoire.js",
+      "^@/i18n/device-locale$": "<rootDir>/jest/langue-fr.js"
     }
   }
 }

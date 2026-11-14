@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,52 +11,33 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { setWelcomeSeen } from '@/data/welcome-setting';
 import { useTheme } from '@/hooks/use-theme';
-import { INSTALL_STEPS, type InstallPlatform } from '@/utils/install-guide';
+import { useT, type Messages } from '@/i18n';
+import { installSteps } from '@/utils/install-guide';
 import { installPlatform } from '@/utils/install-guide-platform';
 
 type Page = { icon?: SymbolViewProps['name']; title: string; text: string; steps?: string[] };
 
-const PAGES: Page[] = [
-  {
-    title: 'Bienvenue dans SimuFlow',
-    text: 'Validez vos process avant de les mettre en place : rejouez-les étape par étape et repérez ce qui coince.',
-  },
-  {
-    icon: { ios: 'square.and.arrow.down', android: 'download' },
-    title: 'Ajoutez vos process',
-    text: 'Importez un schéma draw.io ou un fichier JSON, ou photographiez un tableau avec le Scanner. Quatre exemples sont là pour essayer tout de suite.',
-  },
-  {
-    icon: { ios: 'play.circle', android: 'play_circle' },
-    title: 'Rejouez et corrigez',
-    text: 'Simulez pas à pas, voyez tous les cas d’un coup et le chemin le plus long, corrigez le process dans l’app, puis exportez le schéma.',
-  },
-  {
-    icon: { ios: 'bell.badge', android: 'notifications_active' },
-    title: 'Suivez une vraie demande',
-    text: 'Suivez une demande en jours ouvrés : SimuFlow vous rappelle ses échéances. Créez un compte dans le Profil pour retrouver vos process sur tous vos appareils.',
-  },
+const ICONS: SymbolViewProps['name'][] = [
+  { ios: 'square.and.arrow.down', android: 'download' },
+  { ios: 'play.circle', android: 'play_circle' },
+  { ios: 'bell.badge', android: 'notifications_active' },
 ];
 
-const INSTALL_TEXT: Record<InstallPlatform, string> = {
-  ios: 'En trois gestes, sur l’écran d’accueil :',
-  android: 'En trois gestes, sur l’écran d’accueil :',
-  desktop: 'SimuFlow s’utilise aussi comme une app sur votre téléphone :',
-};
-
 /**
- * Pages de la présentation. Dans un navigateur (web app pas encore installée),
- * la deuxième page explique comment ajouter SimuFlow à l'écran d'accueil.
+ * Pages de la présentation, dans la langue de l'app. Dans un navigateur (web
+ * app pas encore installée), la deuxième page explique comment ajouter
+ * SimuFlow à l'écran d'accueil.
  */
-function buildPages(): Page[] {
+function buildPages(t: Messages): Page[] {
+  const pages: Page[] = t.welcome.pages.map((page, index) => ({ ...page, icon: ICONS[index - 1] }));
   const platform = installPlatform();
-  if (!platform) return PAGES;
+  if (!platform) return pages;
   const install: Page = {
-    title: 'Installez SimuFlow',
-    text: INSTALL_TEXT[platform],
-    steps: INSTALL_STEPS[platform],
+    title: t.welcome.installTitle,
+    text: t.welcome.installText[platform],
+    steps: installSteps(platform),
   };
-  return [PAGES[0], install, ...PAGES.slice(1)];
+  return [pages[0], install, ...pages.slice(1)];
 }
 
 /** Présentation du premier lancement, en quatre pages. Revoyable depuis le Profil. */
@@ -64,7 +45,8 @@ export default function WelcomeScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
-  const [pages] = useState(buildPages);
+  const t = useT();
+  const pages = useMemo(() => buildPages(t), [t]);
   const [index, setIndex] = useState(0);
   const page = pages[index];
   const last = index === pages.length - 1;
@@ -84,7 +66,7 @@ export default function WelcomeScreen() {
       <View style={styles.top}>
         {!last && (
           <Pressable onPress={finish} accessibilityRole="button" hitSlop={12} style={styles.skip}>
-            <ThemedText type="link">Passer</ThemedText>
+            <ThemedText type="link">{t.welcome.skip}</ThemedText>
           </Pressable>
         )}
       </View>
@@ -127,7 +109,7 @@ export default function WelcomeScreen() {
       </ScrollView>
 
       <View style={styles.bottom}>
-        <View style={styles.dots} accessible accessibilityLabel={`Page ${index + 1} sur ${pages.length}`}>
+        <View style={styles.dots} accessible accessibilityLabel={t.welcome.pageOf(index + 1, pages.length)}>
           {pages.map((item, dot) => (
             <View
               key={item.title}
@@ -135,7 +117,10 @@ export default function WelcomeScreen() {
             />
           ))}
         </View>
-        <PrimaryButton label={last ? 'Commencer' : 'Suivant'} onPress={last ? finish : () => setIndex(index + 1)} />
+        <PrimaryButton
+          label={last ? t.welcome.start : t.welcome.next}
+          onPress={last ? finish : () => setIndex(index + 1)}
+        />
         {/* Toujours à sa place, invisible sur la première page : les boutons ne sautent pas. */}
         <Pressable
           onPress={() => setIndex(index - 1)}
@@ -145,7 +130,7 @@ export default function WelcomeScreen() {
           importantForAccessibility={index === 0 ? 'no-hide-descendants' : 'auto'}
           hitSlop={8}
           style={[styles.previous, { opacity: index === 0 ? 0 : 1 }]}>
-          <ThemedText type="link">Précédent</ThemedText>
+          <ThemedText type="link">{t.welcome.previous}</ThemedText>
         </Pressable>
       </View>
     </View>
@@ -167,7 +152,13 @@ const styles = StyleSheet.create({
   page: { alignItems: 'center', gap: Spacing.four },
   icon: { width: 96, height: 96, borderRadius: Radius.medium, alignItems: 'center', justifyContent: 'center' },
   center: { textAlign: 'center' },
-  steps: { alignSelf: 'stretch', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.medium, borderWidth: 1 },
+  steps: {
+    alignSelf: 'stretch',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
   step: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
   number: { width: 28, height: 28, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
   numberText: { fontWeight: '700', fontSize: 15, lineHeight: 20 },

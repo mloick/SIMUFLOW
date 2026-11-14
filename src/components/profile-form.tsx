@@ -5,14 +5,11 @@ import { ProfileError } from '@/backend/profiles';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { nextUsername, profileProblem, ROLE_LABELS, suggestUsername, type Profile, type ProfileRole } from '@/domain';
+import { nextUsername, profileProblem, suggestUsername, type Profile, type ProfileRole } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
-const ROLES: { value: ProfileRole | null; label: string }[] = [
-  { value: 'chef_de_projet', label: ROLE_LABELS.chef_de_projet },
-  { value: 'collaborateur', label: ROLE_LABELS.collaborateur },
-  { value: null, label: 'Ne pas préciser' },
-];
+const ROLES: (ProfileRole | null)[] = ['chef_de_projet', 'collaborateur', null];
 
 /**
  * Formulaire du profil : prénom, nom, identifiant (proposé d'après le nom tant
@@ -27,6 +24,7 @@ export function ProfileForm({
   onSave: (profile: Profile) => Promise<unknown>;
 }) {
   const theme = useTheme();
+  const t = useT();
   const [firstName, setFirstName] = useState(initial?.firstName ?? '');
   const [lastName, setLastName] = useState(initial?.lastName ?? '');
   const [username, setUsername] = useState(initial?.username ?? '');
@@ -53,9 +51,9 @@ export function ProfileForm({
         const other = nextUsername(username);
         setUsername(other);
         setUsernameTouched(true);
-        setError(`« ${username} » est déjà pris : « ${other} » est proposé à la place.`);
+        setError(t.profileForm.taken(username, other));
       } else {
-        setError(cause instanceof Error ? cause.message : 'Le profil n’a pas pu être enregistré.');
+        setError(cause instanceof Error ? cause.message : t.profileForm.failed);
       }
     } finally {
       setBusy(false);
@@ -66,12 +64,10 @@ export function ProfileForm({
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <ThemedText themeColor="textSecondary">
-          Votre nom et votre identifiant permettront de vous inviter sur un process partagé.
-        </ThemedText>
+        <ThemedText themeColor="textSecondary">{t.profileForm.intro}</ThemedText>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Prénom</ThemedText>
+          <ThemedText type="smallBold">{t.profileForm.firstName}</ThemedText>
           <TextInput
             value={firstName}
             onChangeText={(text) => {
@@ -80,7 +76,7 @@ export function ProfileForm({
             }}
             placeholder="Julie"
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Prénom"
+            accessibilityLabel={t.profileForm.firstName}
             autoComplete="given-name"
             textContentType="givenName"
             style={input}
@@ -88,7 +84,7 @@ export function ProfileForm({
         </View>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Nom</ThemedText>
+          <ThemedText type="smallBold">{t.profileForm.lastName}</ThemedText>
           <TextInput
             value={lastName}
             onChangeText={(text) => {
@@ -97,7 +93,7 @@ export function ProfileForm({
             }}
             placeholder="Martin"
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Nom"
+            accessibilityLabel={t.profileForm.lastName}
             autoComplete="family-name"
             textContentType="familyName"
             style={input}
@@ -105,7 +101,7 @@ export function ProfileForm({
         </View>
 
         <View style={styles.field}>
-          <ThemedText type="smallBold">Identifiant</ThemedText>
+          <ThemedText type="smallBold">{t.profileForm.username}</ThemedText>
           <TextInput
             value={username}
             onChangeText={(text) => {
@@ -114,28 +110,29 @@ export function ProfileForm({
             }}
             placeholder="julie.martin"
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Identifiant"
-            accessibilityHint="Unique, il sert à vous inviter sur un process."
+            accessibilityLabel={t.profileForm.username}
+            accessibilityHint={t.profileForm.usernameHint}
             autoCapitalize="none"
             autoCorrect={false}
             style={input}
           />
           <ThemedText type="small" themeColor="textSecondary">
-            Proposé d’après votre nom, modifiable. Unique : il sert à vous inviter.
+            {t.profileForm.usernameHelp}
           </ThemedText>
         </View>
 
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="role">
-            Rôle
+            {t.profileForm.role}
           </ThemedText>
           <View style={styles.roles} accessibilityRole="radiogroup" accessibilityLabelledBy="role">
             {ROLES.map((option) => {
-              const selected = option.value === role;
+              const selected = option === role;
+              const label = option ? t.roles[option] : t.profileForm.noRole;
               return (
                 <Pressable
-                  key={option.label}
-                  onPress={() => setRole(option.value)}
+                  key={label}
+                  onPress={() => setRole(option)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   style={[
@@ -146,14 +143,14 @@ export function ProfileForm({
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {option.label}
+                    {label}
                   </ThemedText>
                 </Pressable>
               );
             })}
           </View>
           <ThemedText type="small" themeColor="textSecondary">
-            Une simple mention, visible des personnes avec qui vous partagerez un process.
+            {t.profileForm.roleHelp}
           </ThemedText>
         </View>
 
@@ -165,7 +162,7 @@ export function ProfileForm({
           </View>
         )}
 
-        <PrimaryButton label={busy ? 'Enregistrement…' : 'Enregistrer'} onPress={save} disabled={busy} />
+        <PrimaryButton label={busy ? t.common.saving : t.common.save} onPress={save} disabled={busy} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

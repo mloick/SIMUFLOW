@@ -5,6 +5,7 @@ import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * Onglets de la version web. Les onglets natifs (`NativeTabs`) deviennent dans
@@ -14,18 +15,19 @@ import { useTheme } from '@/hooks/use-theme';
  */
 export default function TabsLayout() {
   const theme = useTheme();
+  const t = useT();
   return (
     <Tabs style={styles.root}>
       <TabSlot style={styles.slot} />
       <TabList style={[styles.bar, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
         <TabTrigger name="index" href="/" asChild>
-          <TabButton icon="account_tree" label="Process" />
+          <TabButton icon="account_tree" label={t.tabs.process} />
         </TabTrigger>
         <TabTrigger name="scanner" href="/scanner" asChild>
-          <TabButton icon="document_scanner" label="Scanner" />
+          <TabButton icon="document_scanner" label={t.tabs.scanner} />
         </TabTrigger>
         <TabTrigger name="profil" href="/profil" asChild>
-          <TabButton icon="person" label="Profil" />
+          <TabButton icon="person" label={t.tabs.profile} />
         </TabTrigger>
       </TabList>
     </Tabs>
@@ -42,11 +44,7 @@ function TabButton({ icon, label, isFocused, ...props }: TabButtonProps) {
   const theme = useTheme();
   const color = isFocused ? theme.link : theme.textSecondary;
   return (
-    <Pressable
-      {...props}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: isFocused }}
-      style={styles.tab}>
+    <Pressable {...props} accessibilityRole="tab" accessibilityState={{ selected: isFocused }} style={styles.tab}>
       <View style={[styles.pill, isFocused && { backgroundColor: theme.surfaceMuted }]}>
         <SymbolView name={{ ios: 'circle', android: icon }} size={24} tintColor={color} />
       </View>

@@ -5,6 +5,8 @@
 
 import { useSyncExternalStore } from 'react';
 
+import { getT } from '@/i18n';
+
 import { authErrorMessage, type Credentials, type RecoveryLink } from './auth-messages';
 import { supabase } from './client';
 import { createSessionStore, type SessionState } from './session-store';
@@ -80,7 +82,7 @@ export async function deleteAccount(): Promise<AuthResult> {
     const offline = /fetch|network/i.test(error.message);
     return {
       ok: false,
-      message: offline ? authErrorMessage({ status: 0 }) : 'La suppression a échoué. Réessayez plus tard.',
+      message: offline ? authErrorMessage({ status: 0 }) : getT().profil.deleteFailed,
     };
   }
   // Le compte n'existe plus côté serveur : on efface seulement la session du téléphone.

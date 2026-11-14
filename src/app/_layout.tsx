@@ -7,6 +7,7 @@ import { SplashOverlay } from '@/components/splash-overlay';
 import { Colors } from '@/constants/theme';
 import { useCloudSync } from '@/data/cloud-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useT } from '@/i18n';
 import { configureNotifications } from '@/notifications/notifications';
 import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
 import { useShareAlertNavigation } from '@/notifications/use-share-alert-taps';
@@ -37,6 +38,7 @@ function navigationTheme(scheme: 'light' | 'dark') {
 
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const t = useT();
   // Process importés synchronisés avec le compte connecté.
   useCloudSync();
   // Rappels d'échéance des demandes suivies, et ouverture d'un suivi depuis un rappel.
@@ -50,29 +52,26 @@ export default function RootLayout() {
         <SplashOverlay />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="connexion" options={{ title: 'Connexion', presentation: 'modal' }} />
-          <Stack.Screen name="mon-profil" options={{ title: 'Mon profil', presentation: 'modal' }} />
+          <Stack.Screen name="connexion" options={{ title: t.titles.signIn, presentation: 'modal' }} />
+          <Stack.Screen name="mon-profil" options={{ title: t.titles.myProfile, presentation: 'modal' }} />
           <Stack.Screen
             name="bienvenue"
             options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}
           />
-          <Stack.Screen name="nouveau-mot-de-passe" options={{ title: 'Nouveau mot de passe' }} />
-          <Stack.Screen name="process/[id]" options={{ title: 'Process' }} />
-          <Stack.Screen name="process/modifier/[id]" options={{ title: 'Modifier' }} />
-          <Stack.Screen name="simulation/[id]" options={{ title: 'Simulation' }} />
-          <Stack.Screen name="suivi/[id]" options={{ title: 'Suivi' }} />
-          <Stack.Screen name="import" options={{ title: 'Importer un process', presentation: 'modal' }} />
-          <Stack.Screen name="formulaire" options={{ title: 'Formulaire', presentation: 'modal' }} />
-          <Stack.Screen
-            name="formulaire-modifier"
-            options={{ title: 'Modifier le formulaire', presentation: 'modal' }}
-          />
-          <Stack.Screen name="export/[id]" options={{ title: 'Exporter le schéma', presentation: 'modal' }} />
-          <Stack.Screen name="partage/[id]" options={{ title: 'Partager', presentation: 'modal' }} />
-          <Stack.Screen name="ma-partie/[id]" options={{ title: 'Ma partie' }} />
-          <Stack.Screen name="validation/[id]" options={{ title: 'Suivi de la validation' }} />
-          <Stack.Screen name="alertes" options={{ title: 'Alertes' }} />
-          <Stack.Screen name="lien/[token]" options={{ title: 'Relire ma partie' }} />
+          <Stack.Screen name="nouveau-mot-de-passe" options={{ title: t.titles.newPassword }} />
+          <Stack.Screen name="process/[id]" options={{ title: t.titles.process }} />
+          <Stack.Screen name="process/modifier/[id]" options={{ title: t.titles.edit }} />
+          <Stack.Screen name="simulation/[id]" options={{ title: t.titles.simulation }} />
+          <Stack.Screen name="suivi/[id]" options={{ title: t.titles.tracking }} />
+          <Stack.Screen name="import" options={{ title: t.titles.import, presentation: 'modal' }} />
+          <Stack.Screen name="formulaire" options={{ title: t.titles.form, presentation: 'modal' }} />
+          <Stack.Screen name="formulaire-modifier" options={{ title: t.titles.editForm, presentation: 'modal' }} />
+          <Stack.Screen name="export/[id]" options={{ title: t.titles.export, presentation: 'modal' }} />
+          <Stack.Screen name="partage/[id]" options={{ title: t.titles.share, presentation: 'modal' }} />
+          <Stack.Screen name="ma-partie/[id]" options={{ title: t.titles.myPart }} />
+          <Stack.Screen name="validation/[id]" options={{ title: t.titles.validation }} />
+          <Stack.Screen name="alertes" options={{ title: t.titles.alerts }} />
+          <Stack.Screen name="lien/[token]" options={{ title: t.titles.link }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>
