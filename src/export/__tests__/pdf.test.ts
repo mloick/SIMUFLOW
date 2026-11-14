@@ -15,6 +15,7 @@ describe('export PDF', () => {
     expect(html).toContain('critique');
     expect(html).toContain('stroke="#111111"');
     expect(html).toContain('Aucune anomalie');
+    expect(html).toContain('En bref');
     expect(html).toContain('29 octobre 2026');
   });
 

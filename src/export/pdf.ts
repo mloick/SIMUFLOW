@@ -1,6 +1,7 @@
 /**
  * Page HTML du PDF exporté (expo-print la transforme en PDF) : le schéma en
- * couleur, les familles de chemins avec leurs délais, et le diagnostic.
+ * couleur, un résumé « En bref », les familles de chemins avec leurs délais,
+ * et le diagnostic.
  */
 
 import { explainIssue, summarize, type Process } from '@/domain';
@@ -8,6 +9,7 @@ import { overviewOf, paintFamilies } from '@/simulation/families';
 import { layoutProcess } from '@/simulation/layout';
 import { formatNumber, plural } from '@/utils/format';
 
+import { briefOf } from './brief';
 import { diagramSvg } from './svg';
 
 export type PdfOptions = {
@@ -15,6 +17,8 @@ export type PdfOptions = {
   colorFamilies: boolean;
   /** Couleurs des familles (FamilyColors.light). */
   colors: readonly string[];
+  /** Nom de chaque couleur (« bleu », « vert »…), pour le résumé « En bref ». */
+  colorNames?: readonly string[];
   /** Date affichée en bas de page. */
   date?: Date;
 };
@@ -53,6 +57,11 @@ export function processToPdfHtml(process: Process, options: PdfOptions): string 
       </tr>`,
     )
     .join('');
+
+  const brief = briefOf(process, overview, { colorNames: options.colorFamilies ? options.colorNames : undefined });
+  const briefHtml = `<div class="brief">${brief.intro.map((line) => `<p>${escape(line)}</p>`).join('')}${
+    brief.cases.length ? `<ul>${brief.cases.map((line) => `<li>${escape(line)}</li>`).join('')}</ul>` : ''
+  }<p>${escape(brief.outro)}</p></div>`;
 
   const top = overview.load[0];
   const notes = [
@@ -102,6 +111,10 @@ export function processToPdfHtml(process: Process, options: PdfOptions): string 
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
   .badge { font-size: 10px; font-weight: 600; color: #9a4510; background: #fdeedf; border-radius: 999px; padding: 1px 6px; }
   .note { color: #4a5b70; }
+  .brief { background: #eef3f8; border-radius: 12px; padding: 10px 14px; line-height: 1.5; page-break-inside: avoid; }
+  .brief p { margin: 4px 0; }
+  .brief ul { margin: 4px 0; padding-left: 18px; }
+  .brief li { margin: 2px 0; }
   .issues { padding-left: 0; list-style: none; margin: 0; }
   .issues li { padding: 5px 0; border-bottom: 1px solid #dde5ee; }
   .tag { font-size: 10px; font-weight: 600; border-radius: 999px; padding: 1px 6px; }
@@ -111,6 +124,8 @@ export function processToPdfHtml(process: Process, options: PdfOptions): string 
 <body>
   <h1>${escape(process.name)}</h1>
   <p class="facts">${facts}</p>
+  <h2>En bref</h2>
+  ${briefHtml}
   <h2>Schéma</h2>
   <div class="diagram">${diagramSvg(layout, strokes)}</div>
   <h2>Familles de chemins</h2>
