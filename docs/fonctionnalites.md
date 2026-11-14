@@ -8,7 +8,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
 2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
-3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie
+3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
 6. [Compte et données](#6-compte-et-données) : synchronisation, version web, confidentialité
@@ -241,7 +241,7 @@ Pour montrer un process sans vrais noms, cochez **Anonymiser les noms** à l'imp
 
 Sur la fiche d'un de vos process, **Partager avec les acteurs** ouvre **Partager**. Écrivez l'**identifiant** d'un collègue (`julie.martin`, voir **Mon profil**) ou son **adresse e-mail**, choisissez s'il le faut l'**acteur** du schéma dont il s'occupe, puis **Inviter**. Vous pouvez inviter autant de personnes qu'il faut (jusqu'à 100), plusieurs pour un même acteur, et en **retirer**. Il faut être connecté, et le process doit être sur votre compte (il y part à la synchronisation). Les exemples fournis avec l'app ne se partagent pas.
 
-Les membres voient et jouent le process depuis leur compte, sans pouvoir le modifier (voir ci-dessous). Le suivi de leurs avis arrive dans une prochaine étape (voir **Prévu**).
+Les membres voient et jouent le process depuis leur compte, sans pouvoir le modifier, et donnent leur avis sur leur partie (voir ci-dessous).
 
 ![Partager : la liste des membres avec leur acteur, puis une invitation pour « Service B »](captures/etape-39-partage.png)
 
@@ -257,6 +257,18 @@ Sur sa fiche, **Relire et valider ma partie** ouvre **Ma partie** : les étapes 
 Chaque avis part tout de suite sur votre compte, et vous pouvez le changer ou le retirer. En haut, un encadré compte les étapes validées, à revoir et à relire, puis vous remercie quand votre partie est relue. Seuls vous et le propriétaire du process voyez vos avis : les autres membres ne les voient pas. Il n'y a pas de messagerie, seulement un commentaire par étape.
 
 ![Ma partie : le process partagé dans la liste, sa fiche, puis une étape validée et une étape à revoir avec son commentaire](captures/etape-40-ma-partie.png)
+
+### Suivre la validation · Disponible
+
+Dès qu'un process est partagé, sa fiche montre, sous **Partager avec les acteurs**, la carte **Suivi de la validation** : « 2 membres sur 3 ont fini · 1 étape à revoir », avec une pastille **En cours**, **À revoir** ou **Validé**. Elle ouvre l'écran **Suivi de la validation** :
+
+- un encadré qui résume où en est la relecture, et **« Process entièrement validé »** quand chaque membre a relu sa partie sans rien laisser à revoir ;
+- **Membres** : pour chacun, son acteur, le nombre d'étapes validées, et **Terminé**, **À revoir**, **En cours** ou **Pas commencé** ;
+- **Étapes** : pour chaque étape, qui l'a validée, et les commentaires « à revoir » avec leur auteur. **À revoir** n'affiche que les étapes à corriger.
+
+Corrigez une étape dans **Modifier le process** : le membre voit la nouvelle version et peut changer son avis. **Actualiser** relit les avis. Pour l'instant, rien ne vous prévient tout seul : ouvrez la fiche pour voir où en est la validation.
+
+![Suivi de la validation : la carte sur la fiche, les membres et leur avancement, une étape à revoir avec son commentaire, puis « Process entièrement validé »](captures/etape-41-suivi-validation.png)
 
 ## 4. Suivre une vraie demande
 
@@ -434,7 +446,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Suivre la validation** · Prévue : le propriétaire voit, étape par étape, qui a validé et ce qui est à revoir, et sait quand le process est entièrement validé ; les membres sont prévenus d'un nouveau partage. Plus tard, un lien web pour les acteurs sans compte.
+- **Être prévenu** · Prévue : une alerte quand un process est partagé avec vous, quand un membre signale une étape à revoir, et quand le process est entièrement validé. Plus tard, un lien web pour les acteurs sans compte.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **Interface en anglais** · Prévue.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

@@ -5,6 +5,8 @@
  * `members_of`, qui ne répondent qu'au propriétaire et aux membres du process.
  */
 
+import type { MemberReview } from '@/domain';
+
 import { supabase } from './client';
 
 export type Member = {
@@ -90,4 +92,24 @@ export async function removeMember(cloudId: string, memberId: string): Promise<v
 export function memberName(member: Member): string {
   const name = [member.firstName, member.lastName].filter(Boolean).join(' ').trim();
   return name || (member.username ? `@${member.username}` : 'Membre sans profil');
+}
+
+type ProcessReviewRow = { member_id: string; step_id: string; status: 'valide' | 'a_revoir'; comment: string | null };
+
+/**
+ * Tous les avis des membres sur un process, pour son propriétaire (les règles
+ * de la table `step_reviews` ne donnent à un membre que les siens).
+ */
+export async function listProcessReviews(cloudId: string): Promise<MemberReview[]> {
+  const { data, error } = await supabase
+    .from('step_reviews')
+    .select('member_id, step_id, status, comment')
+    .eq('process_id', cloudId);
+  if (error) throw sharingErrorMessage(error);
+  return ((data ?? []) as ProcessReviewRow[]).map((row) => ({
+    memberId: row.member_id,
+    stepId: row.step_id,
+    status: row.status,
+    comment: row.comment,
+  }));
 }

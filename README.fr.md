@@ -32,7 +32,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Simuler** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique.
 - **Exporter** en PDF (avec un résumé en clair de chaque cas), draw.io, BPMN 2.0 ou JSON, anonymisé si besoin.
 - **Suivre une vraie demande**, avec des échéances en jours ouvrés français et un rappel le jour J.
-- **Partager** un process avec ses acteurs : inviter des collègues par identifiant ou e-mail, et relier chacun à un acteur du schéma ; ils le lisent sans pouvoir le modifier, et chacun relit sa partie : chaque étape est validée, ou signalée à revoir avec un commentaire.
+- **Partager** un process avec ses acteurs : inviter des collègues par identifiant ou e-mail, et relier chacun à un acteur du schéma ; ils le lisent sans pouvoir le modifier, et chacun relit sa partie : chaque étape est validée, ou signalée à revoir avec un commentaire. Le propriétaire suit qui a fini, ce qui est à corriger, et voit « entièrement validé » à la fin.
 - **Synchroniser** entre appareils avec un compte, en restant utilisable hors connexion ; tout est supprimé avec le compte.
 
 La visite complète, avec captures, est dans le [guide des fonctionnalités](docs/fonctionnalites.md). Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).

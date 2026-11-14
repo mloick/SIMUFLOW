@@ -32,7 +32,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Simulate** step by step, or see every path at once with the critical path.
 - **Export** as PDF (with a plain-language summary of each case), draw.io, BPMN 2.0 or JSON, anonymised if needed.
 - **Follow a real request** with deadlines in French working days and a reminder on the due date.
-- **Share** a process with its actors: invite colleagues by username or e-mail and link each one to a step owner of the diagram; they can read it, not change it, and each member reviews their part: every step is validated, or flagged with a comment.
+- **Share** a process with its actors: invite colleagues by username or e-mail and link each one to a step owner of the diagram; they can read it, not change it, and each member reviews their part: every step is validated, or flagged with a comment. The owner follows who has finished, what needs fixing, and sees « fully validated » at the end.
 - **Sync** across devices with an account, offline first; everything is deleted with the account.
 
 The full tour, with screenshots, is in the [features guide](docs/fonctionnalites.md) (French). The screen mockups are in [`docs/maquette/`](docs/maquette/).
