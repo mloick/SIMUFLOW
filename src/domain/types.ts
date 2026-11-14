@@ -30,8 +30,8 @@ export type Link = {
   label?: string;
 };
 
-/** D'où vient le process : schéma draw.io, tableau scanné, fichier JSON, tableau Excel / CSV, schéma BPMN ou Visio. */
-export type ProcessSource = 'drawio' | 'scan' | 'json' | 'tableau' | 'bpmn' | 'visio';
+/** D'où vient le process : schéma draw.io, tableau scanné, fichier JSON, tableau Excel / CSV, schéma BPMN ou Visio, texte. */
+export type ProcessSource = 'drawio' | 'scan' | 'json' | 'tableau' | 'bpmn' | 'visio' | 'texte';
 
 export type Process = {
   id: string;

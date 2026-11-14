@@ -56,11 +56,11 @@ export function briefOf(process: Process, overview: ProcessOverview, options: Br
   const intro: string[] = [];
   const startIds = [...new Set(overview.families.flatMap((f) => f.paths.map((p) => p.steps[0].stepId)))];
   const actors = summary.actors;
-  const start = startIds.length ? `Ce process part de ${startIds.map(title).join(' ou ')}` : 'Ce process n’a pas de départ';
+  const start = startIds.length
+    ? `Ce process part de ${startIds.map(title).join(' ou ')}`
+    : 'Ce process n’a pas de départ';
   intro.push(
-    actors.length
-      ? `${start} et fait intervenir ${plural(actors.length, 'acteur')} : ${listOf(actors)}.`
-      : `${start}.`,
+    actors.length ? `${start} et fait intervenir ${plural(actors.length, 'acteur')} : ${listOf(actors)}.` : `${start}.`,
   );
 
   const paths = overview.families.flatMap((family) => family.paths);
@@ -80,9 +80,7 @@ export function briefOf(process: Process, overview: ProcessOverview, options: Br
   const longest = overview.families.reduce((best, f) => (f.maxDays > best.maxDays ? f : best));
   const comparable = timed && overview.families.length > 1 && fastest !== longest;
 
-  const firstQuestion = overview.families[0].label.includes(' : ')
-    ? overview.families[0].label.split(' : ')[0]
-    : null;
+  const firstQuestion = overview.families[0].label.includes(' : ') ? overview.families[0].label.split(' : ')[0] : null;
   intro.push(
     overview.families.length > 1
       ? `Il se sépare en ${overview.families.length} cas${firstQuestion ? ` à la question « ${firstQuestion} ? »` : ''}${overview.capped ? ' (plus de 500 chemins : seuls les grands cas sont résumés)' : ''} :`
