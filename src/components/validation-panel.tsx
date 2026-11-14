@@ -8,12 +8,12 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useValidationData } from '@/data/validation-data';
 import { validationOverview, type MemberProgress, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/utils/format';
+import { useT } from '@/i18n';
 
-const STATE_BADGES: Record<MemberProgress['state'], { label: string; tone: BadgeTone }> = {
-  termine: { label: 'Terminé', tone: 'success' },
-  en_cours: { label: 'En cours', tone: 'neutral' },
-  pas_commence: { label: 'Pas commencé', tone: 'neutral' },
+const STATE_TONES: Record<MemberProgress['state'], BadgeTone> = {
+  termine: 'success',
+  en_cours: 'neutral',
+  pas_commence: 'neutral',
 };
 
 /**
@@ -24,6 +24,8 @@ const STATE_BADGES: Record<MemberProgress['state'], { label: string; tone: Badge
  */
 export function ValidationPanel({ process, cloudId }: { process: Process; cloudId: string }) {
   const theme = useTheme();
+  const t = useT();
+  const v = t.validationPanel;
   const data = useValidationData(cloudId);
   const [onlyToRevise, setOnlyToRevise] = useState(false);
   const overview = useMemo(
@@ -48,7 +50,7 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
             {data.status === 'error' ? data.message : ''}
           </ThemedText>
           <Pressable onPress={data.reload} accessibilityRole="button" style={styles.row}>
-            <ThemedText type="link">Réessayer</ThemedText>
+            <ThemedText type="link">{t.common.retry}</ThemedText>
           </Pressable>
         </View>
       </View>
@@ -58,9 +60,7 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
     return (
       <View style={styles.content}>
         <ThemedText type="subtitle">{process.name}</ThemedText>
-        <ThemedText themeColor="textSecondary">
-          Personne n’est encore invité. Partagez le process avec ses acteurs : leurs avis s’afficheront ici.
-        </ThemedText>
+        <ThemedText themeColor="textSecondary">{v.nobody}</ThemedText>
       </View>
     );
   }
@@ -92,22 +92,18 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
           {validationSummary(t, overview)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {overview.fullyValidated
-            ? 'Chaque membre a relu sa partie et tout validé : le process peut être diffusé.'
-            : overview.toReviseCount > 0
-              ? 'Corrigez les étapes à revoir dans « Modifier le process » : le membre verra la nouvelle version et pourra changer son avis.'
-              : 'Les avis arrivent au fil de la relecture. Revenez plus tard, ou touchez Actualiser.'}
+          {overview.fullyValidated ? v.allDone : overview.toReviseCount > 0 ? v.fixHint : v.waiting}
         </ThemedText>
         <Pressable onPress={data.reload} accessibilityRole="button" hitSlop={8} style={styles.link}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Actualiser
+            {v.refresh}
           </ThemedText>
         </Pressable>
       </View>
 
       <View style={styles.field}>
         <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-          Membres · {overview.members.length}
+          {v.members(overview.members.length)}
         </ThemedText>
         <View style={card}>
           {overview.members.map((item, index) => (
@@ -122,9 +118,9 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
                 <ThemedText>{item.member.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {[
-                    item.member.actor ?? 'Tout le process',
-                    `${item.validated}/${item.total} validée${item.validated > 1 ? 's' : ''}`,
-                    item.toRevise ? `${item.toRevise} à revoir` : null,
+                    item.member.actor ?? v.wholeProcess,
+                    v.validated(item.validated, item.total),
+                    item.toRevise ? v.toReviseCount(item.toRevise) : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -132,8 +128,8 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
               </View>
               <Badge
                 {...(item.state === 'termine' && item.toRevise > 0
-                  ? { label: 'À revoir', tone: 'warning' as const }
-                  : STATE_BADGES[item.state])}
+                  ? { label: v.toRevise, tone: 'warning' as const }
+                  : { label: v.states[item.state], tone: STATE_TONES[item.state] })}
               />
             </View>
           ))}
@@ -142,7 +138,7 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
 
       <View style={styles.field}>
         <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-          Étapes
+          {v.steps}
         </ThemedText>
         <View style={styles.chips} accessibilityRole="radiogroup">
           {[false, true].map((option) => {
@@ -161,15 +157,13 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
                   },
                 ]}>
                 <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                  {option ? `À revoir · ${overview.toReviseCount}` : `Toutes · ${overview.steps.length}`}
+                  {option ? v.filterToRevise(overview.toReviseCount) : v.filterAll(overview.steps.length)}
                 </ThemedText>
               </Pressable>
             );
           })}
         </View>
-        {steps.length === 0 && (
-          <ThemedText themeColor="textSecondary">Aucune étape à revoir pour l’instant.</ThemedText>
-        )}
+        {steps.length === 0 && <ThemedText themeColor="textSecondary">{v.noneToRevise}</ThemedText>}
         {steps.map(({ step, validatedBy, toRevise }) => (
           <View
             key={step.id}
@@ -179,7 +173,7 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
                 {numbers.get(step.id)}
               </ThemedText>
               <View style={styles.flex}>
-                <ThemedText>{step.title || 'Sans titre'}</ThemedText>
+                <ThemedText>{step.title || t.untitled}</ThemedText>
                 {step.actor ? (
                   <ThemedText type="small" themeColor="textSecondary">
                     {step.actor}
@@ -190,23 +184,23 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
             {toRevise.map(({ member, comment }) => (
               <View key={member.id} style={[styles.remark, { backgroundColor: theme.warningBackground }]}>
                 <ThemedText type="smallBold" style={{ color: theme.warning }}>
-                  À revoir · {member.name}
+                  {v.toReviseBy(member.name)}
                 </ThemedText>
-                <ThemedText type="small">« {comment} »</ThemedText>
+                <ThemedText type="small">{v.quote(comment)}</ThemedText>
               </View>
             ))}
             <ThemedText type="small" themeColor="textSecondary">
               {validatedBy.length
-                ? `Validée par ${validatedBy.map((member) => member.name).join(', ')}`
+                ? v.validatedBy(validatedBy.map((member) => member.name).join(', '))
                 : toRevise.length
-                  ? 'Validée par personne'
-                  : 'Pas encore d’avis'}
+                  ? v.validatedByNobody
+                  : v.noReview}
             </ThemedText>
           </View>
         ))}
         {overview.steps.length > 0 && !onlyToRevise && (
           <ThemedText type="small" themeColor="textSecondary">
-            {plural(overview.steps.length, 'étape')} à relire, sans le départ ni la fin.
+            {v.toRead(t.format.count(overview.steps.length, t.words.step))}
           </ThemedText>
         )}
       </View>

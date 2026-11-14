@@ -280,7 +280,8 @@ export const fr = {
     role: 'Rôle',
     noRole: 'Ne pas préciser',
     roleHelp: 'Une simple mention, visible des personnes avec qui vous partagerez un process.',
-    taken: (taken: string, other: string): string => `« ${taken} » est déjà pris : « ${other} » est proposé à la place.`,
+    taken: (taken: string, other: string): string =>
+      `« ${taken} » est déjà pris : « ${other} » est proposé à la place.`,
     failed: 'Le profil n’a pas pu être enregistré.',
     usernameMin: (min: number): string => `Au moins ${min} caractères.`,
     usernameMax: (max: number): string => `Au plus ${max} caractères.`,

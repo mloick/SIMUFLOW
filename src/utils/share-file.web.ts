@@ -1,3 +1,5 @@
+import { getT } from '@/i18n';
+
 /**
  * Sur le web : téléchargement du fichier, et impression (« Enregistrer en PDF »)
  * pour le PDF.
@@ -14,7 +16,7 @@ export async function shareTextFile(fileName: string, content: string, mimeType:
 
 export async function sharePdf(_fileName: string, html: string, _title: string) {
   const page = window.open('', '_blank');
-  if (!page) throw new Error('Autorisez les fenêtres pour ce site, puis réessayez.');
+  if (!page) throw new Error(getT().errors.allowPopups);
   page.document.write(html);
   page.document.close();
   page.focus();

@@ -20,6 +20,7 @@ import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import type { FamilyPaint } from '@/simulation/families';
 import { midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import { useT } from '@/i18n';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -83,6 +84,7 @@ export function ProcessDiagram({
   accessibilityLabel: string;
 }) {
   const theme = useTheme();
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const [frameWidth, setFrameWidth] = useState(0);
 
@@ -215,11 +217,11 @@ export function ProcessDiagram({
     <View style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
-          Schéma
+          {t.diagram.title}
         </ThemedText>
-        <ToolButton label="−" hint="Dézoomer" onPress={() => zoomBy(1 / 1.25)} />
-        <ToolButton label="+" hint="Zoomer" onPress={() => zoomBy(1.25)} />
-        <ToolButton label="Tout" hint="Afficher tout le schéma" onPress={showAll} />
+        <ToolButton label="−" hint={t.diagram.zoomOut} onPress={() => zoomBy(1 / 1.25)} />
+        <ToolButton label="+" hint={t.diagram.zoomIn} onPress={() => zoomBy(1.25)} />
+        <ToolButton label={t.diagram.all} hint={t.diagram.allHint} onPress={showAll} />
       </View>
       <View
         style={[styles.frame, { height, backgroundColor: theme.surface, borderColor: theme.border }]}
@@ -269,7 +271,7 @@ export function ProcessDiagram({
                       fontFamily={FONT}
                       fontWeight="600"
                       fill={theme.textSecondary}>
-                      {lane.label || 'Sans acteur'}
+                      {lane.label || t.diagram.noActor}
                     </SvgText>
                   </G>
                 ))}
@@ -500,9 +502,10 @@ function Halo({ node }: { node: DiagramNode }) {
 
 /** Titre coupé en lignes de la largeur de la forme (3 lignes au plus). */
 function NodeText({ node, color }: { node: DiagramNode; color: string }) {
+  const t = useT();
   const fontSize = 13;
   const usable = node.kind === 'decision' ? node.width * 0.62 : node.width - 14;
-  const lines = wrap(node.title || 'Sans titre', Math.max(6, Math.floor(usable / (fontSize * 0.56))), 3);
+  const lines = wrap(node.title || t.untitled, Math.max(6, Math.floor(usable / (fontSize * 0.56))), 3);
   const lineHeight = fontSize * 1.2;
   const firstY = node.y + node.height / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.35;
   return (

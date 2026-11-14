@@ -10,6 +10,7 @@ import { markShareAlertsSeen, useShareAlerts } from '@/data/share-alerts-store';
 import type { ShareAlert } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoment } from '@/tracking/format';
+import { useT } from '@/i18n';
 
 const ICONS = {
   partage: { ios: 'person.2', android: 'group' },
@@ -25,6 +26,7 @@ const ICONS = {
  */
 export default function AlertsScreen() {
   const theme = useTheme();
+  const t = useT();
   const { alerts } = useShareAlerts();
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function AlertsScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Alertes',
+          title: t.titles.alerts,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },
@@ -51,9 +53,9 @@ export default function AlertsScreen() {
           <StateMessage
             icon={{ ios: 'bell', android: 'notifications' }}
             tone="primary"
-            title="Aucune alerte"
-            message="Vous serez prévenu ici quand un process est partagé avec vous, quand une étape est à revoir, et quand un de vos process est entièrement validé."
-            action={{ label: 'Revenir', onPress: () => router.back() }}
+            title={t.alerts.empty}
+            message={t.alerts.emptyText}
+            action={{ label: t.share.back, onPress: () => router.back() }}
           />
         }
         renderItem={({ item: alert }) => (
@@ -76,7 +78,7 @@ export default function AlertsScreen() {
               <ThemedText type="smallBold">{alert.title}</ThemedText>
               <ThemedText type="small">{alert.body}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {formatMoment(alert.at)}
+                {formatMoment(alert.at, t)}
               </ThemedText>
             </View>
             <SymbolView

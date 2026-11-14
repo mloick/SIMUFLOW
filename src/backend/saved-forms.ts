@@ -7,6 +7,7 @@
 import type { SavedForm } from '@/data/form-store';
 
 import { supabase } from './client';
+import { getT } from '@/i18n';
 
 const TABLE = 'saved_forms';
 
@@ -20,7 +21,7 @@ export async function getCloudForms(): Promise<SavedForm[]> {
 /** Remplace les formulaires du compte (crée sa ligne la première fois). */
 export async function saveCloudForms(forms: SavedForm[]): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Connexion requise.');
+  if (!auth.user) throw new Error(getT().errors.signInRequired);
   const { error } = await supabase.from(TABLE).upsert({ owner_id: auth.user.id, forms });
   if (error) throw new Error(error.message);
 }

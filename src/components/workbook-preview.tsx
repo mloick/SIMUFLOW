@@ -5,15 +5,8 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  SHEET_KIND_LABELS,
-  WORKBOOK_KIND_LABELS,
-  type FormTemplate,
-  type SheetKind,
-  type SheetReport,
-  type WorkbookReport,
-} from '@/import/tableau';
-import { plural } from '@/utils/format';
+import { getT, useT, type Messages } from '@/i18n';
+import { type FormTemplate, type SheetKind, type SheetReport, type WorkbookReport } from '@/import/tableau';
 
 /** Onglets dont on peut choisir les colonnes à la main. */
 const CHOOSABLE = new Set<SheetKind>(['inconnu', 'liste']);
@@ -28,13 +21,14 @@ const TONES: Record<SheetKind, BadgeTone> = {
 };
 
 /** « 4 situations · 13 colonnes · 1 fusion » : ce qui a été trouvé dans un onglet. */
-export function sheetMeta(sheet: SheetReport): string {
-  const unit = sheet.kind === 'sla-ola' ? 'situation' : sheet.kind === 'process' ? 'étape' : 'ligne';
+export function sheetMeta(sheet: SheetReport, t: Messages = getT()): string {
+  const unit = sheet.kind === 'sla-ola' ? t.words.situation : sheet.kind === 'process' ? t.words.step : t.words.row;
+  const { count } = t.format;
   return [
-    plural(sheet.rowCount, unit),
-    plural(sheet.columnCount, 'colonne'),
-    sheet.mergedCount > 0 && plural(sheet.mergedCount, 'fusion'),
-    sheet.hidden && 'masqué',
+    count(sheet.rowCount, unit),
+    count(sheet.columnCount, t.workbook.column),
+    sheet.mergedCount > 0 && count(sheet.mergedCount, t.workbook.merge),
+    sheet.hidden && t.workbook.hidden,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -66,47 +60,58 @@ export function WorkbookPreview({
   linkedSituations?: number;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const b = t.workbook;
+  const { count } = t.format;
   const partialForm = report.sheets.some((sheet) => sheet.kind === 'formulaire');
   const situations = report.sheets.some((sheet) => sheet.kind === 'sla-ola');
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Ce que l’app a lu
+        {b.read}
       </ThemedText>
       {form && onShowForm && (
         <Pressable
           onPress={onShowForm}
           accessibilityRole="button"
-          accessibilityLabel={`Voir le formulaire ${form.name ?? ''}, ${plural(form.questions.length, 'question')}`}
+          accessibilityLabel={b.showFormLabel(form.name ?? '', count(form.questions.length, t.words.question))}
           style={[styles.form, { backgroundColor: theme.surface, borderColor: theme.primary }]}>
           <View style={[styles.formIcon, { backgroundColor: theme.primaryBackground }]}>
-            <SymbolView name={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }} size={24} tintColor={theme.link} />
+            <SymbolView
+              name={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}
+              size={24}
+              tintColor={theme.link}
+            />
           </View>
           <View style={styles.flex}>
             <ThemedText type="smallBold" style={styles.title}>
-              {linkedSituations > 0 ? 'Remplir le formulaire, puis suivre son process' : 'Voir le formulaire'}
+              {linkedSituations > 0 ? b.fillThenFollow : b.showForm}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {[
                 form.name,
-                plural(form.questions.length, 'question'),
-                linkedSituations > 0 ? `lié à ${plural(linkedSituations, 'situation')}` : 'formulaire seul',
+                count(form.questions.length, t.words.question),
+                linkedSituations > 0 ? b.linkedTo(count(linkedSituations, t.words.situation)) : b.formOnly,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             </ThemedText>
           </View>
-          <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={18} tintColor={theme.textSecondary} />
+          <SymbolView
+            name={{ ios: 'chevron.right', android: 'chevron_right' }}
+            size={18}
+            tintColor={theme.textSecondary}
+          />
         </Pressable>
       )}
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.summary}>
           <ThemedText type="smallBold" style={styles.title}>
-            {WORKBOOK_KIND_LABELS[report.kind]}
+            {b.kinds[report.kind]}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {plural(report.sheets.length, 'onglet')}
+            {count(report.sheets.length, t.words.sheet)}
           </ThemedText>
         </View>
         {report.sheets.map((sheet, index) => (
@@ -114,23 +119,23 @@ export function WorkbookPreview({
             <View
               style={styles.row}
               accessible
-              accessibilityLabel={`Onglet ${sheet.name}. ${SHEET_KIND_LABELS[sheet.kind]}. ${sheetMeta(sheet)}`}>
+              accessibilityLabel={b.sheetLabel(sheet.name, b.sheetKinds[sheet.kind], sheetMeta(sheet, t))}>
               <View style={styles.flex}>
                 <ThemedText>{sheet.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {sheetMeta(sheet)}
+                  {sheetMeta(sheet, t)}
                 </ThemedText>
               </View>
-              <Badge label={SHEET_KIND_LABELS[sheet.kind]} tone={TONES[sheet.kind]} />
+              <Badge label={b.sheetKinds[sheet.kind]} tone={TONES[sheet.kind]} />
             </View>
             {onChooseColumns && CHOOSABLE.has(sheet.kind) && (
               <Pressable
                 onPress={() => onChooseColumns(index)}
                 accessibilityRole="button"
-                accessibilityLabel={`Choisir les colonnes de l’onglet ${sheet.name}`}
+                accessibilityLabel={b.chooseColumnsOf(sheet.name)}
                 style={styles.choose}>
                 <ThemedText type="link" style={{ color: theme.link }}>
-                  Choisir les colonnes
+                  {b.chooseColumns}
                 </ThemedText>
               </Pressable>
             )}
@@ -140,7 +145,11 @@ export function WorkbookPreview({
 
       {warnings.length > 0 && (
         <View style={[styles.notice, { backgroundColor: theme.warningBackground }]}>
-          <SymbolView name={{ ios: 'exclamationmark.triangle', android: 'warning' }} size={20} tintColor={theme.warning} />
+          <SymbolView
+            name={{ ios: 'exclamationmark.triangle', android: 'warning' }}
+            size={20}
+            tintColor={theme.warning}
+          />
           <View style={styles.flex}>
             {warnings.map((warning) => (
               <ThemedText key={warning} type="small" style={{ color: theme.warning }}>
@@ -154,7 +163,9 @@ export function WorkbookPreview({
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {form ? formNotice(importable, linkedSituations > 0) : importNotice(importable, partialForm, situations)}
+          {form
+            ? formNotice(t, importable, linkedSituations > 0)
+            : importNotice(t, importable, partialForm, situations)}
         </ThemedText>
       </View>
     </View>
@@ -162,13 +173,10 @@ export function WorkbookPreview({
 }
 
 /** Template de formulaire, seul ou avec son workflow dans le même classeur. */
-export function formNotice(importable: number, linked = false): string {
-  const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
-  if (linked) {
-    return `${local} Le formulaire et son workflow sont dans ce classeur : touchez « Remplir le formulaire », remplissez-le, et la situation choisie mène à son process, avec ses acteurs et ses délais.`;
-  }
-  const next = 'Touchez « Voir le formulaire » pour le remplir comme le demandeur.';
-  return `${local} ${next}${importable > 0 ? '' : ' Formulaire seul : la simulation s’arrête à l’envoi, sauf si vous lui liez un workflow.'}`;
+export function formNotice(t: Messages, importable: number, linked = false): string {
+  const b = t.workbook;
+  if (linked) return `${b.local} ${b.formLinked}`;
+  return `${b.local} ${b.formNext}${importable > 0 ? '' : b.formAlone}`;
 }
 
 /**
@@ -176,21 +184,14 @@ export function formNotice(importable: number, linked = false): string {
  * mais aucun formulaire n'a pu y être lu (pas d'onglet « Questions »).
  * `situations` : le classeur a des onglets « SLA / OLA ».
  */
-export function importNotice(importable: number, partialForm: boolean, situations = false): string {
-  const local = 'Le fichier est lu sur l’appareil, sans être envoyé ni gardé.';
-  if (situations && importable > 0) {
-    return `${local} Chaque situation du workflow devient un process prêt à simuler : choisissez-la plus bas, avec son rapport de lecture.`;
-  }
-  if (importable > 0) {
-    return partialForm
-      ? `${local} Aucun formulaire n’a été lu (onglet « Questions » introuvable) : seuls les onglets « Process » s’importent.`
-      : local;
-  }
-  if (situations) return `${local} Aucune situation n’est encore décrite (ni SLA ni étape) : rien à importer.`;
-  if (partialForm) {
-    return `${local} Ce classeur ressemble à un template de formulaire, mais son onglet « Questions » est introuvable : aucun formulaire n’a pu être lu.`;
-  }
-  return `${local} Aucun onglet ne ressemble à un tableau de process (colonnes Étape, Acteur, Délai…) : touchez « Choisir les colonnes » sous un onglet pour dire à l’app où elles sont.`;
+export function importNotice(t: Messages, importable: number, partialForm: boolean, situations = false): string {
+  const b = t.workbook;
+  const { local } = b;
+  if (situations && importable > 0) return `${local} ${b.situations}`;
+  if (importable > 0) return partialForm ? `${local} ${b.partialForm}` : local;
+  if (situations) return `${local} ${b.noSituation}`;
+  if (partialForm) return `${local} ${b.formNoQuestions}`;
+  return `${local} ${b.nothing}`;
 }
 
 const styles = StyleSheet.create({

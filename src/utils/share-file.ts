@@ -7,12 +7,13 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
+import { getT } from '@/i18n';
 
 /** A4 en points (72 par pouce), pour expo-print. */
 const A4 = { width: 595, height: 842 };
 
 async function share(file: File, mimeType: string, title: string) {
-  if (!(await Sharing.isAvailableAsync())) throw new Error('Le partage n’est pas disponible sur cet appareil.');
+  if (!(await Sharing.isAvailableAsync())) throw new Error(getT().errors.shareUnavailable);
   // Sur iOS, un type MIME ajouterait une deuxième extension (« .drawio.xml ») :
   // l'extension du fichier suffit.
   await Sharing.shareAsync(file.uri, Platform.OS === 'android' ? { mimeType, dialogTitle: title } : {});

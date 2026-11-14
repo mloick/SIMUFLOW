@@ -25,20 +25,13 @@ import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
 import { overviewOf, paintFamilies, type PathFamily, type ProcessOverview } from '@/simulation/families';
 import { layoutProcess } from '@/simulation/layout';
-import { formatNumber, plural } from '@/utils/format';
+import { useT } from '@/i18n';
 
 type Mode = 'pas-a-pas' | 'simple' | 'complexe' | 'tous';
 
-const MODES: { value: Mode; label: string }[] = [
-  { value: 'pas-a-pas', label: 'Pas à pas' },
-  { value: 'simple', label: 'Simple' },
-  { value: 'complexe', label: 'Complexe' },
-  { value: 'tous', label: 'Tous' },
-];
+const MODES: Mode[] = ['pas-a-pas', 'simple', 'complexe', 'tous'];
 
 const REPLAY_INTERVAL_MS = 450;
-
-const KIND_LABELS: Record<StepKind, string> = { start: 'Départ', task: 'Étape', decision: 'Décision', end: 'Fin' };
 
 /**
  * Simulation (maquette, écran 4) : on rejoue le process étape par étape. À
@@ -50,6 +43,7 @@ export default function SimulationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const process = getProcess(id);
   const theme = useTheme();
+  const t = useT();
 
   if (!process) {
     return (
@@ -57,9 +51,9 @@ export default function SimulationScreen() {
         <StateMessage
           icon={{ ios: 'exclamationmark.circle', android: 'error' }}
           tone="danger"
-          title="Process introuvable"
-          message="Ce process n’existe plus sur ce téléphone."
-          action={{ label: 'Revenir', onPress: () => router.back() }}
+          title={t.detail.notFound}
+          message={t.simulation.notFoundText}
+          action={{ label: t.simulation.back, onPress: () => router.back() }}
         />
       </View>
     );
@@ -70,6 +64,7 @@ export default function SimulationScreen() {
 
 function Simulator({ process }: { process: Process }) {
   const theme = useTheme();
+  const t = useT();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -82,7 +77,8 @@ function Simulator({ process }: { process: Process }) {
   const [replayTarget, setReplayTarget] = useState<PathStep[] | null>(null);
   const windowSize = useWindowDimensions();
   const largeText = useLargeText();
-  const overview = useMemo(() => overviewOf(process), [process]);
+  // Les noms des familles sont dans la langue de l'app : recalculés quand elle change.
+  const overview = useMemo(() => overviewOf(process, t), [process, t]);
   const familyColors = useFamilyColors();
   // Famille isolée sur le schéma (vue « Tous »).
   const [isolated, setIsolated] = useState<string | null>(null);
@@ -104,8 +100,11 @@ function Simulator({ process }: { process: Process }) {
 
   // Le lecteur d'écran annonce chaque nouvelle étape.
   useEffect(() => {
-    if (current) AccessibilityInfo.announceForAccessibility(`${KIND_LABELS[current.kind]} : ${current.title}`);
-  }, [current]);
+    if (current)
+      AccessibilityInfo.announceForAccessibility(
+        t.simulation.announce(t.simulation.kinds[current.kind], current.title),
+      );
+  }, [current, t]);
 
   const chooseMode = (next: Mode) => {
     setMode(next);
@@ -127,13 +126,13 @@ function Simulator({ process }: { process: Process }) {
   if (state.status === 'no-start') {
     return (
       <View style={[styles.screen, { backgroundColor: theme.background }]}>
-        <Stack.Screen options={{ title: 'Simulation', headerBackTitle: 'Détail' }} />
+        <Stack.Screen options={{ title: t.titles.simulation, headerBackTitle: t.simulation.backTitle }} />
         <StateMessage
           icon={{ ios: 'exclamationmark.triangle', android: 'warning' }}
           tone="danger"
-          title="Rien à simuler"
-          message="Ce process n’a pas d’étape de départ. Ajoutez-en une dans le schéma, puis importez-le à nouveau."
-          action={{ label: 'Revenir au détail', onPress: () => router.back() }}
+          title={t.simulation.nothingTitle}
+          message={t.simulation.nothingText}
+          action={{ label: t.simulation.backToDetail, onPress: () => router.back() }}
         />
       </View>
     );
@@ -143,8 +142,8 @@ function Simulator({ process }: { process: Process }) {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Simulation',
-          headerBackTitle: 'Détail',
+          title: t.titles.simulation,
+          headerBackTitle: t.simulation.backTitle,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },
@@ -152,7 +151,7 @@ function Simulator({ process }: { process: Process }) {
             <Pressable
               onPress={() => router.push({ pathname: '/export/[id]', params: { id: process.id } })}
               accessibilityRole="button"
-              accessibilityLabel="Exporter le schéma"
+              accessibilityLabel={t.simulation.export}
               hitSlop={12}
               style={styles.headerButton}>
               <SymbolView name={{ ios: 'square.and.arrow.up', android: 'share' }} size={22} tintColor={theme.link} />
@@ -163,11 +162,11 @@ function Simulator({ process }: { process: Process }) {
 
       <View style={[styles.modes, largeText && styles.modesWrap]} accessibilityRole="tablist">
         {MODES.map((option) => {
-          const selected = option.value === mode;
+          const selected = option === mode;
           return (
             <Pressable
-              key={option.value}
-              onPress={() => chooseMode(option.value)}
+              key={option}
+              onPress={() => chooseMode(option)}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
               style={[
@@ -178,7 +177,7 @@ function Simulator({ process }: { process: Process }) {
                   : { backgroundColor: theme.surface, borderColor: theme.fieldBorder, borderWidth: 1 },
               ]}>
               <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {option.label}
+                {t.simulation.modes[option]}
               </ThemedText>
             </Pressable>
           );
@@ -193,7 +192,10 @@ function Simulator({ process }: { process: Process }) {
               layout={layout}
               height={Math.round(Math.min(480, Math.max(240, windowSize.height * 0.5)))}
               overview={paintFamilies(overview, familyColors, isolated)}
-              accessibilityLabel={`Schéma complet : ${plural(overview.families.length, 'famille')} de chemins, chacune d’une couleur${isolated ? `. Famille isolée : ${overview.families.find((family) => family.id === isolated)?.label}` : ''}.`}
+              accessibilityLabel={t.simulation.allLabel(
+                t.format.count(overview.families.length, t.simulation.family),
+                isolated ? (overview.families.find((family) => family.id === isolated)?.label ?? null) : null,
+              )}
             />
           </View>
           <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.four }]}>
@@ -219,7 +221,11 @@ function Simulator({ process }: { process: Process }) {
                 currentId: current?.id,
                 candidateLinks: mode === 'pas-a-pas' ? choices.map((link) => link.id) : [],
               }}
-              accessibilityLabel={`Schéma du process : ${plural(new Set(state.trail.map((item) => item.stepId)).size, 'étape affichée', 'étapes affichées')} sur ${process.steps.length}${current ? `. Étape en cours : ${current.title}` : ''}.`}
+              accessibilityLabel={t.simulation.trailLabel(
+                new Set(state.trail.map((item) => item.stepId)).size,
+                process.steps.length,
+                current ? current.title : null,
+              )}
             />
           </View>
 
@@ -228,7 +234,7 @@ function Simulator({ process }: { process: Process }) {
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: !reduceMotion })}
             contentContainerStyle={styles.content}>
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              {process.name} · Déroulé · {formatNumber(state.days)} JO cumulés
+              {t.simulation.trailTitle(process.name, t.format.num(state.days))}
             </ThemedText>
             {state.trail.map(({ stepId, linkId }, index) => {
               const step = sim.graph.steps.get(stepId)!;
@@ -241,10 +247,10 @@ function Simulator({ process }: { process: Process }) {
                   accessible
                   accessibilityLabel={[
                     `${index + 1}. ${step.title}`,
-                    label && `par « ${label} »`,
+                    label && t.simulation.via(label),
                     step.actor,
-                    step.duration ? plural(step.duration, 'jour ouvré', 'jours ouvrés') : null,
-                    isCurrent && 'étape en cours',
+                    step.duration ? t.format.count(step.duration, t.words.workingDay) : null,
+                    isCurrent && t.simulation.currentStep,
                   ]
                     .filter(Boolean)
                     .join(', ')}
@@ -252,12 +258,12 @@ function Simulator({ process }: { process: Process }) {
                   <View style={[styles.dot, { backgroundColor: dotColor(step.kind, theme) }]} />
                   <View style={styles.flex}>
                     <ThemedText>
-                      {step.title || 'Sans titre'}
-                      {step.duration ? ` · ${formatNumber(step.duration)} JO` : ''}
+                      {step.title || t.untitled}
+                      {step.duration ? ` · ${t.simulation.wd(t.format.num(step.duration))}` : ''}
                     </ThemedText>
                     {label && (
                       <ThemedText type="small" themeColor="textSecondary">
-                        par « {label} »
+                        {t.simulation.via(label)}
                       </ThemedText>
                     )}
                   </View>
@@ -279,9 +285,9 @@ function Simulator({ process }: { process: Process }) {
             {state.status === 'running' && current && replaying && (
               <View style={styles.panelTitle}>
                 <ThemedText type="smallBold" themeColor="textSecondary">
-                  {mode === 'simple' ? 'Cas simple' : 'Cas complexe'} · lecture du chemin
+                  {t.simulation.replaying(mode === 'simple')}
                 </ThemedText>
-                <ThemedText type="subtitle">{current.title || 'Sans titre'}</ThemedText>
+                <ThemedText type="subtitle">{current.title || t.untitled}</ThemedText>
               </View>
             )}
 
@@ -291,14 +297,14 @@ function Simulator({ process }: { process: Process }) {
                   <ThemedText
                     type="smallBold"
                     style={{ color: current.kind === 'decision' ? theme.warning : theme.textSecondary }}>
-                    {[KIND_LABELS[current.kind], current.actor].filter(Boolean).join(' · ')}
+                    {[t.simulation.kinds[current.kind], current.actor].filter(Boolean).join(' · ')}
                   </ThemedText>
-                  <ThemedText type="subtitle">{current.title || 'Sans titre'}</ThemedText>
+                  <ThemedText type="subtitle">{current.title || t.untitled}</ThemedText>
                 </View>
                 {choices.length === 1 ? (
                   <PrimaryButton
-                    label="Étape suivante"
-                    accessibilityLabel={`Étape suivante : ${sim.graph.steps.get(choices[0].to)?.title}`}
+                    label={t.simulation.next}
+                    accessibilityLabel={t.simulation.nextLabel(sim.graph.steps.get(choices[0].to)?.title ?? '')}
                     onPress={() => setState(sim.step(state, choices[0].id))}
                   />
                 ) : (
@@ -306,8 +312,11 @@ function Simulator({ process }: { process: Process }) {
                     {choices.map((link) => (
                       <View key={link.id} style={styles.choice}>
                         <PrimaryButton
-                          label={link.label || sim.graph.steps.get(link.to)?.title || 'Sortie'}
-                          accessibilityLabel={`Choisir ${link.label || ''} : aller à ${sim.graph.steps.get(link.to)?.title}`}
+                          label={link.label || sim.graph.steps.get(link.to)?.title || t.simulation.exit}
+                          accessibilityLabel={t.simulation.choose(
+                            link.label || '',
+                            sim.graph.steps.get(link.to)?.title ?? '',
+                          )}
                           onPress={() => setState(sim.step(state, link.id))}
                         />
                       </View>
@@ -320,10 +329,10 @@ function Simulator({ process }: { process: Process }) {
             {state.status === 'finished' && (
               <View style={styles.panelTitle}>
                 <ThemedText type="smallBold" style={{ color: theme.success }}>
-                  Fin atteinte
+                  {t.simulation.endReached}
                 </ThemedText>
                 <ThemedText type="subtitle">
-                  {plural(state.trail.length, 'étape')} · {formatNumber(state.days)} JO
+                  {t.format.count(state.trail.length, t.words.step)} · {t.simulation.wd(t.format.num(state.days))}
                 </ThemedText>
               </View>
             )}
@@ -331,18 +340,18 @@ function Simulator({ process }: { process: Process }) {
             {state.status === 'stuck' && current && (
               <View style={styles.panelTitle}>
                 <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                  Impasse
+                  {t.simulation.deadEnd}
                 </ThemedText>
-                <ThemedText type="subtitle">« {current.title} » n’a aucune sortie.</ThemedText>
+                <ThemedText type="subtitle">{t.simulation.noExit(current.title)}</ThemedText>
               </View>
             )}
 
             <View style={styles.secondary}>
               {mode === 'pas-a-pas' && state.trail.length > 1 && (
-                <TextButton label="Revenir en arrière" onPress={() => setState(sim.back(state))} />
+                <TextButton label={t.simulation.stepBack} onPress={() => setState(sim.back(state))} />
               )}
               {(state.status !== 'running' || mode !== 'pas-a-pas') && (
-                <TextButton label="Recommencer pas à pas" onPress={restart} />
+                <TextButton label={t.simulation.restart} onPress={restart} />
               )}
             </View>
           </View>
@@ -366,15 +375,21 @@ function OverviewList({
   onToggle: (familyId: string) => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const s = t.simulation;
   const top = overview.load[0];
   if (overview.pathCount === 0) {
-    return <ThemedText themeColor="textSecondary">Aucun chemin ne va du départ jusqu’à une fin.</ThemedText>;
+    return <ThemedText themeColor="textSecondary">{s.noPath}</ThemedText>;
   }
   return (
     <>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        {process.name} · {overview.capped ? 'plus de ' : ''}
-        {plural(overview.pathCount, 'chemin')} · {plural(overview.families.length, 'famille')}
+        {s.overviewTitle(
+          process.name,
+          overview.capped,
+          t.format.count(overview.pathCount, t.words.path),
+          t.format.count(overview.families.length, s.family),
+        )}
       </ThemedText>
       {overview.families.map((family, index) => (
         <FamilyRow
@@ -386,15 +401,13 @@ function OverviewList({
         />
       ))}
       <ThemedText type="small" themeColor="textSecondary">
-        {overview.families.length > 1 ? 'Touchez une famille pour l’isoler sur le schéma. ' : ''}
-        {overview.critical && overview.families.length > 1
-          ? `Chemin critique : ${formatNumber(overview.critical.duration)} JO, en trait épais. `
-          : ''}
-        {top ? `Charge : ${top.actor} porte ${plural(top.steps, 'étape')} sur ${process.steps.length}.` : ''}
+        {overview.families.length > 1 ? s.isolateHint : ''}
+        {overview.critical && overview.families.length > 1 ? s.critical(t.format.num(overview.critical.duration)) : ''}
+        {top ? s.load(top.actor, t.format.count(top.steps, t.words.step), process.steps.length) : ''}
       </ThemedText>
       {overview.capped && (
         <ThemedText type="small" style={{ color: theme.warning }}>
-          Trop de chemins pour tous les lister : seuls les {overview.pathCount} premiers sont comptés.
+          {s.capped(overview.pathCount)}
         </ThemedText>
       )}
     </>
@@ -413,18 +426,20 @@ function FamilyRow({
   onPress: () => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const s = t.simulation;
   const days =
     family.minDays === family.maxDays
-      ? `${formatNumber(family.minDays)} JO`
-      : `${formatNumber(family.minDays)} à ${formatNumber(family.maxDays)} JO`;
-  const count = plural(family.paths.length, 'chemin');
+      ? s.wd(t.format.num(family.minDays))
+      : s.daysRange(t.format.num(family.minDays), t.format.num(family.maxDays));
+  const count = t.format.count(family.paths.length, t.words.path);
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${family.label}${family.critical ? ', critique' : ''} : ${count}, ${days.replace('JO', 'jours ouvrés')}`}
-      accessibilityHint={selected ? 'Réaffiche toutes les familles' : 'Isole cette famille sur le schéma'}
+      accessibilityLabel={s.familyLabel(family.label, family.critical, count, days)}
+      accessibilityHint={selected ? s.showAllFamilies : s.isolateFamily}
       style={({ pressed }) => [
         styles.family,
         {
@@ -439,7 +454,7 @@ function FamilyRow({
           <ThemedText
             type="smallBold"
             style={[styles.badge, { color: theme.warning, backgroundColor: theme.warningBackground }]}>
-            critique
+            {s.criticalBadge}
           </ThemedText>
         )}
       </View>

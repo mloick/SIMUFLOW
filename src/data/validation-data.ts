@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { listLinkActivity, type ActorLink } from '@/backend/links';
 import { listMembers, listProcessReviews, memberName } from '@/backend/sharing';
 import type { MemberReview, ValidationMember } from '@/domain';
+import { getT } from '@/i18n';
 
 export type ValidationData =
   | { status: 'loading' }
@@ -38,7 +39,7 @@ export function useValidationData(cloudId: string | undefined): ValidationData &
       (cause: unknown) =>
         setData({
           status: 'error',
-          message: cause instanceof Error ? cause.message : 'Le suivi n’a pas pu être lu.',
+          message: cause instanceof Error ? cause.message : getT().errors.trackingRead,
         }),
     );
   }, [cloudId]);
@@ -59,5 +60,9 @@ export function useValidationData(cloudId: string | undefined): ValidationData &
 export function linkMember(link: ActorLink, reviews: { memberId: string; reviewerName: string }[]): ValidationMember {
   const id = `lien:${link.id}`;
   const name = reviews.find((review) => review.memberId === id)?.reviewerName;
-  return { id, name: name ? `${name} (lien)` : `Lien « ${link.actor} », pas encore ouvert`, actor: link.actor };
+  return {
+    id,
+    name: name ? getT().errors.linkMember(name) : getT().errors.linkNotOpened(link.actor),
+    actor: link.actor,
+  };
 }

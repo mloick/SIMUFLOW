@@ -7,6 +7,7 @@
 import type { Profile, ProfileRole } from '@/domain';
 
 import { supabase } from './client';
+import { getT } from '@/i18n';
 
 const TABLE = 'profiles';
 
@@ -40,12 +41,10 @@ function fromRow(row: ProfileRow): Profile {
 
 /** Message pour une erreur de la base (code PostgreSQL ou PostgREST). */
 export function profileErrorMessage(error: { code?: string; message?: string }): ProfileError {
-  if (error.code === '23505') return new ProfileError('Cet identifiant est déjà pris : choisissez-en un autre.', true);
-  if (error.code === '42P01' || error.code === 'PGRST205')
-    return new ProfileError('Le serveur n’a pas encore la table des profils : le script SQL est à appliquer.');
-  if (error.code === '23514')
-    return new ProfileError('Une valeur n’est pas acceptée par le serveur : vérifiez les champs.');
-  return new ProfileError('Le profil n’a pas pu être enregistré. Vérifiez la connexion et réessayez.');
+  if (error.code === '23505') return new ProfileError(getT().errors.usernameTaken, true);
+  if (error.code === '42P01' || error.code === 'PGRST205') return new ProfileError(getT().errors.noProfileTable);
+  if (error.code === '23514') return new ProfileError(getT().errors.badValue);
+  return new ProfileError(getT().errors.profileFailed);
 }
 
 /** Le profil du compte connecté, ou null s'il n'en a pas encore. */
@@ -58,7 +57,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 /** Crée ou remplace le profil du compte connecté. */
 export async function saveMyProfile(profile: Profile): Promise<Profile> {
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new ProfileError('Connexion requise.');
+  if (!auth.user) throw new ProfileError(getT().errors.signInRequired);
   const { data, error } = await supabase
     .from(TABLE)
     .upsert({

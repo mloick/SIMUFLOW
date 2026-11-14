@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 type Props = {
   checked: boolean;
@@ -27,10 +28,13 @@ export function AnonymizeOption({
   hidden,
   onChangeHidden,
   result,
-  label = 'Anonymiser les noms',
-  description = 'Acteurs → Service A, B… ; e-mails, téléphones et liens masqués',
+  label: labelProp,
+  description: descriptionProp,
 }: Props) {
   const theme = useTheme();
+  const t = useT();
+  const label = labelProp ?? t.anonymize.label;
+  const description = descriptionProp ?? t.anonymize.description;
   return (
     <View style={styles.option}>
       <Pressable
@@ -62,17 +66,20 @@ export function AnonymizeOption({
       {checked && (
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="mots-masques-label">
-            Autres mots à masquer
+            {t.anonymize.otherWords}
           </ThemedText>
           <TextInput
             value={hidden}
             onChangeText={onChangeHidden}
-            placeholder="Nom de l’entreprise, d’un client… séparés par des virgules"
+            placeholder={t.anonymize.placeholder}
             placeholderTextColor={theme.textSecondary}
-            accessibilityLabel="Autres mots à masquer"
+            accessibilityLabel={t.anonymize.otherWords}
             autoCapitalize="none"
             autoCorrect={false}
-            style={[styles.input, { color: theme.text, backgroundColor: theme.surface, borderColor: theme.fieldBorder }]}
+            style={[
+              styles.input,
+              { color: theme.text, backgroundColor: theme.surface, borderColor: theme.fieldBorder },
+            ]}
           />
           {result ? (
             <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite">

@@ -26,6 +26,7 @@ import type { LinkedWorkflow, ShownForm } from './form-store';
 import { addImportedProcess, getProcess } from './process-store';
 import { applyReadingRules, getLearnedHeaders } from './rules-store';
 import { saveTracking } from './tracking-store';
+import { getT } from '@/i18n';
 
 /** Le process qui suit le formulaire : celui de la situation `index`, ou le process lié. Créé une seule fois. */
 export function processForForm(shown: ShownForm, index: number | null): Process | null {
@@ -50,7 +51,7 @@ export function processForForm(shown: ShownForm, index: number | null): Process 
  * jointes. Pour une situation, l'étape « remplir le formulaire » est déjà faite.
  */
 export function startFormTracking(process: Process, formName: string, lines: AnswerLine[], skipForm: boolean, now = new Date()): string | null {
-  const label = `${formName} · ${now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  const label = `${formName} · ${getT().dates.short(now)}`;
   let tracking = startTracking(process, now, `suivi-${now.getTime()}`, label);
   if (!tracking) return null;
   tracking = { ...tracking, answers: lines.map(({ label: question, answer }) => ({ label: question, answer })) };
@@ -68,7 +69,7 @@ export async function readWorkflowFile(asset: DocumentPickerAsset): Promise<Link
     if (situations.length > 0) return { kind: 'situations', source: asset.name, situations };
     const read = workbookToProcesses(workbook, prefix, getLearnedHeaders());
     if (read.processes.length > 0) return { kind: 'process', source: asset.name, process: read.processes[0] };
-    throw new ImportError('Ce classeur ne contient ni situations SLA / OLA ni tableau de process.');
+    throw new ImportError(getT().errors.noWorkflowInBook);
   }
   const { result } = applyReadingRules(importProcessFile(asset.name, await readPickedFile(asset), prefix));
   return { kind: 'process', source: asset.name, process: result.processes[0] };
@@ -85,8 +86,8 @@ export type FormBundle = { form: FormTemplate; source: string; workflow: LinkedW
  * template de formulaire est le formulaire ; l'autre, son workflow.
  */
 export async function readFormBundle(assets: DocumentPickerAsset[]): Promise<FormBundle> {
-  if (assets.length === 0) throw new ImportError('Choisissez le template du formulaire, et son workflow si vous l’avez.');
-  if (assets.length > 2) throw new ImportError('Choisissez deux fichiers au plus : le formulaire et son workflow.');
+  if (assets.length === 0) throw new ImportError(getT().errors.pickForm);
+  if (assets.length > 2) throw new ImportError(getT().errors.twoFilesMax);
   let found: { form: FormTemplate; asset: DocumentPickerAsset; workflow: LinkedWorkflow | null } | null = null;
   const others: DocumentPickerAsset[] = [];
   for (const asset of assets) {
@@ -103,13 +104,13 @@ export async function readFormBundle(assets: DocumentPickerAsset[]): Promise<For
     others.push(asset);
   }
   if (!found) {
-    throw new ImportError('Aucun de ces fichiers n’est un template de formulaire (un classeur avec un onglet « Questions » ou « Variables »).');
+    throw new ImportError(getT().errors.noForm);
   }
   let { workflow } = found;
   // Un workflow dans un fichier à part passe avant celui du même classeur.
   if (others[0]) workflow = await readWorkflowFile(others[0]);
   if (workflow?.kind === 'situations' && !findFormLink(found.form, workflow.situations)) {
-    throw new ImportError(`Aucun choix du formulaire ne porte le nom d’une situation de « ${workflow.source} » : le lien est impossible.`);
+    throw new ImportError(getT().errors.noFormLink(workflow.source));
   }
   return { form: found.form, source: found.asset.name, workflow };
 }

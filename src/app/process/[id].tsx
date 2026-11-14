@@ -130,12 +130,12 @@ function ProcessDetail({ process }: { process: Process }) {
           </ThemedText>
           {process.source && <ThemedText themeColor="textSecondary">{t.detail.sourceText[process.source]}</ThemedText>}
           {shared && (
-            <ThemedText themeColor="textSecondary">
-              {t.detail.sharedBy(shared.ownerName, shared.actor)}
-            </ThemedText>
+            <ThemedText themeColor="textSecondary">{t.detail.sharedBy(shared.ownerName, shared.actor)}</ThemedText>
           )}
           {process.editedAt && (
-            <ThemedText themeColor="textSecondary">{t.detail.editedOn(t.dates.full(new Date(process.editedAt)))}</ThemedText>
+            <ThemedText themeColor="textSecondary">
+              {t.detail.editedOn(t.dates.full(new Date(process.editedAt)))}
+            </ThemedText>
           )}
           {isImported(process.id) && (
             <Pressable
@@ -155,10 +155,7 @@ function ProcessDetail({ process }: { process: Process }) {
         <View style={styles.stats}>
           <StatTile value={summary.stepCount} label={t.detail.stats.steps(summary.stepCount)} />
           <StatTile value={summary.decisionCount} label={t.detail.stats.decisions(summary.decisionCount)} />
-          <StatTile
-            value={paths.capped ? `${paths.count}+` : paths.count}
-            label={t.detail.stats.paths(paths.count)}
-          />
+          <StatTile value={paths.capped ? `${paths.count}+` : paths.count} label={t.detail.stats.paths(paths.count)} />
           <StatTile value={toFix} label={t.detail.stats.toFix(toFix)} tone={fixTone} />
         </View>
 

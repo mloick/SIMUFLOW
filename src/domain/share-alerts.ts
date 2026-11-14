@@ -10,6 +10,8 @@
  * Fonctions pures, testées dans __tests__/share-alerts.test.ts.
  */
 
+import { getT, type Messages } from '@/i18n';
+
 import type { Process } from './types';
 import { validationOverview, type MemberReview } from './validation';
 
@@ -60,6 +62,7 @@ export function detectShareAlerts(
   previous: ShareAlertState | null,
   snapshot: ShareSnapshot,
   now: Date,
+  t: Messages = getT(),
 ): { alerts: ShareAlert[]; state: ShareAlertState } {
   const at = now.toISOString();
   const state: ShareAlertState = { shared: [], toRevise: [], validated: [] };
@@ -71,8 +74,8 @@ export function detectShareAlerts(
       alerts.push({
         id: `partage:${item.cloudId}:${at}`,
         kind: 'partage',
-        title: 'Nouveau process partagé',
-        body: `${item.ownerName} partage « ${item.name} » avec vous. Relisez votre partie.`,
+        title: t.alerts.sharedTitle,
+        body: t.alerts.sharedBody(item.ownerName, item.name),
         target: { pathname: '/process/[id]', id: item.localId },
         at,
       });
@@ -80,21 +83,21 @@ export function detectShareAlerts(
   }
 
   for (const item of snapshot.owned) {
-    const titles = new Map(item.process.steps.map((step) => [step.id, step.title || 'Sans titre']));
+    const titles = new Map(item.process.steps.map((step) => [step.id, step.title || t.untitled]));
     const memberIds = new Set(item.members.map((member) => member.id));
     const toRevise = item.reviews.filter((review) => review.status === 'a_revoir' && memberIds.has(review.memberId));
     const fresh = toRevise.filter((review) => previous && !previous.toRevise.includes(reviseKey(item.cloudId, review)));
     state.toRevise.push(...toRevise.map((review) => reviseKey(item.cloudId, review)));
     if (fresh.length > 0) {
-      const steps = [...new Set(fresh.map((review) => titles.get(review.stepId) ?? 'une étape'))];
+      const steps = [...new Set(fresh.map((review) => titles.get(review.stepId) ?? t.alerts.aStep))];
       alerts.push({
         id: `a_revoir:${item.cloudId}:${at}`,
         kind: 'a_revoir',
-        title: steps.length > 1 ? `${steps.length} étapes à revoir` : 'Une étape à revoir',
+        title: steps.length > 1 ? t.alerts.stepsTitle(steps.length) : t.alerts.stepTitle,
         body:
           steps.length > 1
-            ? `Dans « ${item.process.name} » : ${steps.map((title) => `« ${title} »`).join(', ')}.`
-            : `« ${steps[0]} », dans « ${item.process.name} ».`,
+            ? t.alerts.stepsBody(item.process.name, steps)
+            : t.alerts.stepBody(steps[0], item.process.name),
         target: { pathname: '/validation/[id]', id: item.localId },
         at,
       });
@@ -111,8 +114,8 @@ export function detectShareAlerts(
         alerts.push({
           id: `valide:${item.cloudId}:${at}`,
           kind: 'valide',
-          title: 'Process entièrement validé',
-          body: `Tous les membres ont validé « ${item.process.name} ».`,
+          title: t.alerts.validatedTitle,
+          body: t.alerts.validatedBody(item.process.name),
           target: { pathname: '/validation/[id]', id: item.localId },
           at,
         });

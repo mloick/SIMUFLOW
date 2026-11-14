@@ -6,6 +6,7 @@ import { StateMessage } from '@/components/state-message';
 import { ValidationPanel } from '@/components/validation-panel';
 import { getProcess, isImported, useCloudId } from '@/data/process-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * « Suivi de la validation » : le propriétaire d'un process partagé voit où en
@@ -14,6 +15,8 @@ import { useTheme } from '@/hooks/use-theme';
 export default function ValidationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
+  const t = useT();
+  const v = t.validationScreen;
   const session = useSession();
   const process = getProcess(id);
   const cloudId = useCloudId(id);
@@ -24,9 +27,9 @@ export default function ValidationScreen() {
       <StateMessage
         icon={{ ios: 'exclamationmark.circle', android: 'error' }}
         tone="danger"
-        title="Process introuvable"
-        message="Seul le propriétaire d’un process suit sa validation, depuis le téléphone où il l’a importé."
-        action={{ label: 'Revenir', onPress: () => router.back() }}
+        title={t.share.notFound}
+        message={v.notFoundText}
+        action={{ label: t.share.back, onPress: () => router.back() }}
       />
     );
   } else if (session === null) {
@@ -34,9 +37,9 @@ export default function ValidationScreen() {
       <StateMessage
         icon={{ ios: 'person.2', android: 'group' }}
         tone="primary"
-        title="Connexion requise"
-        message="Les avis des membres sont sur votre compte : connectez-vous d’abord."
-        action={{ label: 'Se connecter', onPress: () => router.push('/connexion') }}
+        title={t.share.signInRequired}
+        message={v.signInText}
+        action={{ label: t.share.signIn, onPress: () => router.push('/connexion') }}
       />
     );
   } else if (!cloudId) {
@@ -44,9 +47,9 @@ export default function ValidationScreen() {
       <StateMessage
         icon={{ ios: 'icloud.and.arrow.up', android: 'cloud_upload' }}
         tone="primary"
-        title="Pas encore partagé"
-        message="Ce process n’est pas encore sur votre compte : partagez-le d’abord avec ses acteurs."
-        action={{ label: 'Revenir', onPress: () => router.back() }}
+        title={v.notShared}
+        message={v.notSharedText}
+        action={{ label: t.share.back, onPress: () => router.back() }}
       />
     );
   } else {
@@ -57,7 +60,7 @@ export default function ValidationScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Suivi de la validation',
+          title: t.titles.validation,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },

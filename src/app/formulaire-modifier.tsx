@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { editShownForm, getShownForm } from '@/data/form-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 import {
   addComplement,
   addCondition,
@@ -34,13 +35,6 @@ import {
   type QuestionType,
 } from '@/import/tableau';
 import { confirmAction } from '@/utils/confirm';
-import { plural } from '@/utils/format';
-
-const LIST_LABELS = {
-  options: { title: 'Choix', hint: 'Un choix par ligne' },
-  fields: { title: 'Champs à remplir', hint: 'Un champ par ligne (Nom, Prénom, Téléphone…)' },
-  documents: { title: 'Documents attendus', hint: 'Un document par ligne (affichés sous « Ajouter un fichier »)' },
-} as const;
 
 /**
  * « Modifier le formulaire » : corriger à la main ce que la lecture du
@@ -53,6 +47,7 @@ const LIST_LABELS = {
  */
 export default function FormEditorScreen() {
   const theme = useTheme();
+  const t = useT();
   const [shown] = useState(getShownForm);
   if (!shown) {
     return (
@@ -61,8 +56,8 @@ export default function FormEditorScreen() {
           icon={{ ios: 'doc.text', android: 'description' }}
           tone="primary"
           action={{ label: 'Fermer', onPress: () => router.back() }}
-          title="Aucun formulaire à modifier"
-          message="Importez un template de formulaire (Excel) depuis « Nouveau process »."
+          title={t.formEditor.empty}
+          message={t.form.emptyText}
         />
       </View>
     );
@@ -72,6 +67,8 @@ export default function FormEditorScreen() {
 
 function Editor({ original }: { original: FormTemplate }) {
   const theme = useTheme();
+  const t = useT();
+  const fe = t.formEditor;
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(original);
   const [open, setOpen] = useState<number | null>(null);
@@ -88,16 +85,16 @@ function Editor({ original }: { original: FormTemplate }) {
   const cancel = () => {
     if (latest.current === original) return router.back();
     confirmAction(
-      'Abandonner les modifications ?',
-      'Le formulaire restera tel qu’il était.',
-      'Abandonner',
+      fe.discardTitle,
+      fe.discardText,
+      fe.discard,
       () => router.back(),
-      'Continuer à modifier',
+      fe.keepEditing,
     );
   };
   const add = (after: number, type?: QuestionType) => {
     const { form, n } = addQuestion(draft, after, type);
-    setDraft(type === 'attachment' ? updateQuestion(form, n, { label: 'Pièce jointe' }) : form);
+    setDraft(type === 'attachment' ? updateQuestion(form, n, { label: fe.attachment }) : form);
     setOpen(n);
   };
 
@@ -105,18 +102,18 @@ function Editor({ original }: { original: FormTemplate }) {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Modifier le formulaire',
+          title: t.titles.editForm,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerLeft: () => (
             <Pressable onPress={cancel} accessibilityRole="button" hitSlop={12}>
-              <ThemedText style={{ color: theme.link }}>Annuler</ThemedText>
+              <ThemedText style={{ color: theme.link }}>{t.common.cancel}</ThemedText>
             </Pressable>
           ),
           headerRight: () => (
             <Pressable onPress={save} accessibilityRole="button" hitSlop={12}>
               <ThemedText type="link" style={{ color: theme.link }}>
-                Enregistrer
+                {fe.save}
               </ThemedText>
             </Pressable>
           ),
@@ -128,11 +125,10 @@ function Editor({ original }: { original: FormTemplate }) {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.five }]}>
         <ThemedText type="subtitle" accessibilityRole="header">
-          {draft.name ?? 'Formulaire sans nom'}
+          {draft.name ?? t.form.unnamed}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {plural(draft.questions.length, 'question')}. Touchez une question pour la modifier, la déplacer ou la
-          supprimer. Le template d’origine n’est pas modifié.
+          {fe.intro(t.format.count(draft.questions.length, t.words.question))}
         </ThemedText>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -168,7 +164,7 @@ function Editor({ original }: { original: FormTemplate }) {
           accessibilityRole="button"
           style={[styles.action, { borderColor: theme.link }]}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
-            Ajouter une question à la fin
+            {fe.addAtEnd}
           </ThemedText>
         </Pressable>
       </ScrollView>
@@ -200,16 +196,19 @@ function QuestionEditor({
   onRemove: () => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const fe = t.formEditor;
+  const ALWAYS = fe.alwaysWith;
   const [source, setSource] = useState<number | null>(null);
   const [forOption, setForOption] = useState(ALWAYS);
   const complements = complementTypes(question);
   const choices = answersOf(question);
   const blockEnd = form.questions.filter((item) => item.n === question.n || item.partOf === question.n).at(-1)?.n ?? question.n;
-  const title = question.label.split('\n')[0] || 'Question sans titre';
+  const title = question.label.split('\n')[0] || fe.untitled;
   const kind = listKind(question.type);
   const sources = conditionSources(form, question.n);
   const chosenSource = sources.find((item) => item.n === source);
-  const labelOf = (n: number) => form.questions.find((item) => item.n === n)?.label.split('\n')[0] ?? `Question ${n}`;
+  const labelOf = (n: number) => form.questions.find((item) => item.n === n)?.label.split('\n')[0] ?? t.field.question(n);
   const update = (patch: Partial<Omit<FormQuestion, 'n'>>) => onChange(updateQuestion(form, question.n, patch));
 
   const remove = () => {
@@ -217,16 +216,16 @@ function QuestionEditor({
     const own = form.questions.filter((item) => item.partOf === question.n).length;
     const parts = [
       linked > 0
-        ? `${plural(linked, 'question')} ${linked > 1 ? 'dépendent' : 'dépend'} de sa réponse : ${linked > 1 ? 'elles s’afficheront' : 'elle s’affichera'} sans cette condition.`
-        : 'Elle sera retirée du formulaire.',
-      own > 0 ? `${own > 1 ? `Ses ${own} compléments seront supprimés` : 'Son complément sera supprimé'} avec elle.` : null,
+        ? fe.dependants(linked, t.format.count(linked, t.words.question))
+        : fe.removed,
+      own > 0 ? fe.complementsRemoved(own) : null,
     ];
     confirmAction(
-      `Supprimer « ${title} » ?`,
+      fe.deleteTitle(title),
       parts.filter(Boolean).join(' '),
-      'Supprimer',
+      fe.delete,
       onRemove,
-      'Garder',
+      fe.keep,
     );
   };
 
@@ -240,7 +239,7 @@ function QuestionEditor({
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityHint={open ? 'Replie la question' : 'Ouvre la question pour la modifier'}
+        accessibilityHint={open ? fe.collapse : fe.expand}
         style={[styles.row, open && { backgroundColor: theme.primaryBackground }]}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.number}>
           {question.n}
@@ -252,26 +251,26 @@ function QuestionEditor({
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
             {[
-              question.partOf !== undefined ? `↳ complément de ${question.partOf}` : null,
-              typeLabel(question.type),
-              question.type === 'checkbox' && question.single ? 'un seul choix' : null,
-              question.conditions.length > 0 ? 'conditionnelle' : null,
+              question.partOf !== undefined ? fe.complementOf(question.partOf) : null,
+              fe.types[question.type] ?? typeLabel(question.type),
+              question.type === 'checkbox' && question.single ? fe.single : null,
+              question.conditions.length > 0 ? fe.conditional : null,
             ]
               .filter(Boolean)
               .join(' · ')}
           </ThemedText>
         </View>
         <ThemedText type="link" style={{ color: theme.link }}>
-          {open ? 'Fermer' : 'Modifier'}
+          {open ? fe.close : fe.edit}
         </ThemedText>
       </Pressable>
 
       {open && (
         <View style={styles.form}>
-          <Label text="Intitulé" />
-          <Field value={question.label} onCommit={(label) => update({ label })} accessibilityLabel="Intitulé de la question" multiline />
+          <Label text={fe.label} />
+          <Field value={question.label} onCommit={(label) => update({ label })} accessibilityLabel={fe.labelA11y} multiline />
 
-          <Label text="Type" />
+          <Label text={fe.type} />
           <View style={styles.options} accessibilityRole="radiogroup">
             {EDITABLE_TYPES.map((item) => {
               const selected = question.type === item.type;
@@ -286,7 +285,7 @@ function QuestionEditor({
                     { backgroundColor: selected ? theme.primary : theme.background, borderColor: selected ? theme.primary : theme.border },
                   ]}>
                   <ThemedText type="small" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {item.label}
+                    {fe.types[item.type] ?? item.label}
                   </ThemedText>
                 </Pressable>
               );
@@ -294,11 +293,11 @@ function QuestionEditor({
           </View>
 
           <View style={styles.switchRow}>
-            <ThemedText style={styles.flex}>Réponse obligatoire</ThemedText>
+            <ThemedText style={styles.flex}>{fe.required}</ThemedText>
             <Switch
               value={question.mandatory}
               onValueChange={(mandatory) => update({ mandatory })}
-              accessibilityLabel="Réponse obligatoire"
+              accessibilityLabel={fe.required}
               trackColor={{ true: theme.primary }}
             />
           </View>
@@ -306,15 +305,15 @@ function QuestionEditor({
           {question.type === 'checkbox' && (
             <View style={styles.switchRow}>
               <View style={styles.flex}>
-                <ThemedText>Plusieurs choix possibles</ThemedText>
+                <ThemedText>{fe.multiple}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {question.single ? 'Une seule case peut être cochée.' : 'On peut cocher plusieurs cases.'}
+                  {question.single ? fe.oneBox : fe.manyBoxes}
                 </ThemedText>
               </View>
               <Switch
                 value={!question.single}
                 onValueChange={(many) => update({ single: many ? undefined : true })}
-                accessibilityLabel="Plusieurs choix possibles"
+                accessibilityLabel={fe.multiple}
                 trackColor={{ true: theme.primary }}
               />
             </View>
@@ -322,24 +321,24 @@ function QuestionEditor({
 
           {kind && (
             <>
-              <Label text={LIST_LABELS[kind].title} />
+              <Label text={fe.lists[kind].title} />
               {kind === 'documents' && question.documents.filter((document) => document.trim()).length > 1 && (
-                <Action label="Une pièce jointe par document" onPress={() => onChange(splitDocuments(form, question.n))} />
+                <Action label={fe.split} onPress={() => onChange(splitDocuments(form, question.n))} />
               )}
               <ThemedText type="small" themeColor="textSecondary">
-                {LIST_LABELS[kind].hint}
+                {fe.lists[kind].hint}
               </ThemedText>
               <Field
                 value={question[kind].join('\n')}
                 onCommit={(text) => update({ [kind]: text.split('\n') })}
-                accessibilityLabel={LIST_LABELS[kind].title}
+                accessibilityLabel={fe.lists[kind].title}
                 multiline
               />
               {kind === 'fields' && question.fields.filter((field) => field.trim()).length > 1 && (
                 <>
-                  <Label text="Au moins un de ces champs" />
+                  <Label text={fe.atLeastOne} />
                   <ThemedText type="small" themeColor="textSecondary">
-                    Cochez les champs dont un seul suffit (« N° client et/ou N° de contrat ») : dès que l’un est rempli, les autres deviennent facultatifs.
+                    {fe.atLeastOneHint}
                   </ThemedText>
                   {question.fields
                     .filter((field) => field.trim())
@@ -351,7 +350,7 @@ function QuestionEditor({
                           onPress={() => onChange(toggleAtLeastOne(form, question.n, field))}
                           accessibilityRole="checkbox"
                           accessibilityState={{ checked }}
-                          accessibilityLabel={`Au moins un : ${field}`}
+                          accessibilityLabel={fe.atLeastOneLabel(field)}
                           style={styles.switchRow}>
                           <SymbolView
                             name={checked ? { ios: 'checkmark.square.fill', android: 'check_box' } : { ios: 'square', android: 'check_box_outline_blank' }}
@@ -367,27 +366,27 @@ function QuestionEditor({
             </>
           )}
 
-          <Label text="Aide sous la question" />
-          <Field value={question.help ?? ''} placeholder="Aucune" onCommit={(help) => update({ help })} accessibilityLabel="Aide sous la question" />
+          <Label text={fe.help} />
+          <Field value={question.help ?? ''} placeholder={fe.none} onCommit={(help) => update({ help })} accessibilityLabel={fe.help} />
 
-          <Label text="S’affiche" />
+          <Label text={fe.shows} />
           {question.conditions.length === 0 && (
             <ThemedText type="small" themeColor="textSecondary">
-              Toujours.
+              {fe.always}
             </ThemedText>
           )}
           {question.conditions.map((condition, position) => (
             <View key={`${condition.question}-${condition.equals}`} style={[styles.chip, { backgroundColor: theme.primaryBackground }]}>
               <ThemedText type="small" style={[styles.flex, { color: theme.link }]}>
-                Si « {labelOf(condition.question)} » = {condition.equals}
+                {fe.condition(labelOf(condition.question), condition.equals)}
               </ThemedText>
               <Pressable
                 onPress={() => onChange(removeCondition(form, question.n, position))}
                 accessibilityRole="button"
-                accessibilityLabel={`Retirer la condition : ${labelOf(condition.question)} = ${condition.equals}`}
+                accessibilityLabel={fe.removeCondition(labelOf(condition.question), condition.equals)}
                 hitSlop={8}>
                 <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                  Retirer
+                  {t.common.remove}
                 </ThemedText>
               </Pressable>
             </View>
@@ -395,13 +394,13 @@ function QuestionEditor({
           {sources.length > 0 && (
             <View style={[styles.newCondition, { borderColor: theme.border }]}>
               <ThemedText type="small" themeColor="textSecondary">
-                Ajouter une condition : la question s’affiche si…
+                {fe.addCondition}
               </ThemedText>
               <Dropdown
                 options={sources.map((item) => `${item.n}. ${item.label.split('\n')[0]}`)}
                 value={chosenSource ? `${chosenSource.n}. ${chosenSource.label.split('\n')[0]}` : ''}
                 onChange={(value) => setSource(Number(value.split('.')[0]))}
-                label="Question dont dépend l’affichage"
+                label={fe.sourceLabel}
                 borderColor={theme.fieldBorder}
               />
               {chosenSource && (
@@ -412,7 +411,7 @@ function QuestionEditor({
                     onChange(addCondition(form, question.n, { question: chosenSource.n, equals }));
                     setSource(null);
                   }}
-                  label="Réponse qui fait apparaître la question"
+                  label={fe.answerLabel}
                   borderColor={theme.fieldBorder}
                 />
               )}
@@ -421,17 +420,16 @@ function QuestionEditor({
 
           {complements.length > 0 && (
             <View style={[styles.newCondition, { borderColor: theme.border }]}>
-              <Label text="Compléter la question" />
+              <Label text={fe.complete} />
               <ThemedText type="small" themeColor="textSecondary">
-                Ajoute un champ qui s’affiche avec elle, par exemple la description d’un fichier joint, ou un fichier et une
-                précision quand on choisit « Autre ».
+                {fe.completeHint}
               </ThemedText>
               {choices.length > 0 && (
                 <Dropdown
-                  options={[ALWAYS, ...choices.map((choice) => `Si « ${choice} » est choisi`)]}
+                  options={[ALWAYS, ...choices.map((choice) => fe.ifChosen(choice))]}
                   value={forOption}
                   onChange={setForOption}
-                  label="Quand afficher le complément"
+                  label={fe.whenLabel}
                   borderColor={theme.fieldBorder}
                 />
               )}
@@ -439,9 +437,9 @@ function QuestionEditor({
                 {complements.map((item) => (
                   <Action
                     key={item.type}
-                    label={`Ajouter ${item.label.charAt(0).toLowerCase()}${item.label.slice(1)}`}
+                    label={item.type === 'attachment' ? fe.addAttachment : question.type === 'attachment' ? fe.addDescription : fe.addPrecision}
                     onPress={() => {
-                      const option = choices.find((choice) => forOption === `Si « ${choice} » est choisi`);
+                      const option = choices.find((choice) => forOption === fe.ifChosen(choice));
                       onAddComplement(item.type, option);
                     }}
                   />
@@ -453,13 +451,13 @@ function QuestionEditor({
           <View style={styles.footer}>
             {question.partOf === undefined && (
               <>
-                <Action label="Monter" onPress={() => onMove(-1)} disabled={question.n === 1} />
-                <Action label="Descendre" onPress={() => onMove(1)} disabled={blockEnd === form.questions.length} />
-                <Action label="Ajouter une question après" onPress={() => onAddAfter()} />
-                <Action label="Ajouter une pièce jointe après" onPress={() => onAddAfter('attachment')} />
+                <Action label={fe.up} onPress={() => onMove(-1)} disabled={question.n === 1} />
+                <Action label={fe.down} onPress={() => onMove(1)} disabled={blockEnd === form.questions.length} />
+                <Action label={fe.addAfter} onPress={() => onAddAfter()} />
+                <Action label={fe.addAttachmentAfter} onPress={() => onAddAfter('attachment')} />
               </>
             )}
-            <Action label="Supprimer" onPress={remove} danger />
+            <Action label={fe.delete} onPress={remove} danger />
           </View>
         </View>
       )}
@@ -468,7 +466,6 @@ function QuestionEditor({
 }
 
 /** Un complément qui s'affiche toujours avec sa question. */
-const ALWAYS = 'Toujours, avec la question';
 
 function Action({ label, onPress, disabled, danger }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
   const theme = useTheme();

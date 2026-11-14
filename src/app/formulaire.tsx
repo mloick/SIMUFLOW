@@ -25,6 +25,7 @@ import {
 } from '@/data/form-store';
 import { parseHiddenWords, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 import { ImportError } from '@/import';
 import {
   answerSummary,
@@ -33,17 +34,14 @@ import {
   findFormLink,
   situationName,
   visibleQuestions,
-  VARIANT_LABELS,
   type AnswerLine,
   type FormTemplate,
   type FormAnswer,
   type FormAnswers,
   type FormWarning,
 } from '@/import/tableau';
-import { plural } from '@/utils/format';
 
 const TONES: Record<FormWarning['level'], BadgeTone> = { rouge: 'danger', orange: 'warning', info: 'neutral' };
-const LEVELS: Record<FormWarning['level'], string> = { rouge: 'À corriger', orange: 'À vérifier', info: 'Info' };
 
 /**
  * « Formulaire » : le formulaire décrit par un template, tel que le
@@ -54,6 +52,9 @@ const LEVELS: Record<FormWarning['level'], string> = { rouge: 'À corriger', ora
  */
 export default function FormScreen() {
   const theme = useTheme();
+  const t = useT();
+  const f = t.form;
+  const { count } = t.format;
   const insets = useSafeAreaInsets();
   const scroll = useRef<ScrollViewInstance>(null);
   const positions = useRef(new Map<number, number>());
@@ -80,8 +81,8 @@ export default function FormScreen() {
 
   const visible = useMemo(() => new Set(form ? visibleQuestions(form.questions, answers).map((q) => q.n) : []), [form, answers]);
   const problems = useMemo(
-    () => (form && attempted ? checkAnswers(form.questions, answers) : new Map<number, string>()),
-    [form, answers, attempted],
+    () => (form && attempted ? checkAnswers(form.questions, answers, t) : new Map<number, string>()),
+    [form, answers, attempted, t],
   );
 
   if (!form) {
@@ -90,9 +91,9 @@ export default function FormScreen() {
         <StateMessage
           icon={{ ios: 'doc.text', android: 'description' }}
           tone="primary"
-          action={{ label: 'Fermer', onPress: () => router.back() }}
-          title="Aucun formulaire à afficher"
-          message="Importez un template de formulaire (Excel) depuis « Nouveau process »."
+          action={{ label: t.share.close, onPress: () => router.back() }}
+          title={f.empty}
+          message={f.emptyText}
         />
       </View>
     );
@@ -107,12 +108,12 @@ export default function FormScreen() {
     try {
       const next = await readWorkflowFile(selection.assets[0]);
       if (next.kind === 'situations' && !findFormLink(form, next.situations)) {
-        throw new ImportError('Aucun choix du formulaire ne porte le nom d’une situation de ce workflow : le lien est impossible.');
+        throw new ImportError(f.noLink);
       }
       setShownWorkflow(next);
       setLinkError(null);
     } catch (cause) {
-      setLinkError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+      setLinkError(cause instanceof ImportError ? cause.message : f.readError);
     }
   };
   const unlink = () => setShownWorkflow(null);
@@ -173,22 +174,22 @@ export default function FormScreen() {
           <View style={styles.row}>
             <SymbolView name={{ ios: 'checkmark.circle.fill', android: 'check_circle' }} size={28} tintColor={theme.success} />
             <ThemedText type="subtitle" accessibilityRole="header" style={styles.flex}>
-              Demande prête
+              {f.ready}
             </ThemedText>
           </View>
           <ThemedText themeColor="textSecondary">
-            {form.name ? `Le formulaire « ${form.name} »` : 'Le formulaire'} est rempli correctement. Rien n’a été envoyé : c’est une simulation.
+            {f.filled(form.name ?? null)}
           </ThemedText>
         </View>
 
         <View style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-            Récapitulatif ({plural(lines.length, 'réponse')})
+            {f.summary(count(lines.length, f.answer))}
           </ThemedText>
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             {lines.length === 0 && (
               <ThemedText type="small" themeColor="textSecondary" style={styles.line}>
-                Aucune réponse donnée.
+                {f.noAnswer}
               </ThemedText>
             )}
             {lines.map((line, index) => (
@@ -217,10 +218,10 @@ export default function FormScreen() {
         {workflowCard}
 
         <View style={styles.actions}>
-          <PrimaryButton label="Modifier les réponses" onPress={() => setSent(false)} />
+          <PrimaryButton label={f.editAnswers} onPress={() => setSent(false)} />
           <Pressable onPress={restart} accessibilityRole="button" style={styles.secondary}>
             <ThemedText type="link" style={{ color: theme.link }}>
-              Nouvelle demande
+              {f.newRequest}
             </ThemedText>
           </Pressable>
         </View>
@@ -238,9 +239,9 @@ export default function FormScreen() {
         <SymbolView name={{ ios: 'square.and.pencil', android: 'edit_note' }} size={20} tintColor={theme.link} />
         <View style={[styles.flex, styles.noticeText]}>
           <ThemedText type="small">
-            Remplissez le formulaire comme le demandeur.{' '}
-            {hidden > 0 && `${plural(hidden, 'question')} ${hidden > 1 ? 'apparaîtront' : 'apparaîtra'} selon vos réponses. `}
-            Rien n’est envoyé.
+            {f.fillIntro}{' '}
+            {hidden > 0 && f.willAppear(hidden, count(hidden, t.words.question))}
+            {f.nothingSent}
           </ThemedText>
           {hidden > 0 && (
             <Pressable
@@ -249,17 +250,17 @@ export default function FormScreen() {
               accessibilityState={{ checked: showHidden }}
               hitSlop={8}>
               <ThemedText type="smallBold" style={{ color: theme.link }}>
-                {showHidden ? 'Masquer les questions cachées' : 'Montrer aussi les questions cachées'}
+                {showHidden ? f.hideHidden : f.showHidden}
               </ThemedText>
             </Pressable>
           )}
           <Pressable
             onPress={() => router.push('/formulaire-modifier')}
             accessibilityRole="button"
-            accessibilityHint="Ajouter, retirer ou corriger des questions, des pièces jointes et des conditions"
+            accessibilityHint={f.editHint}
             hitSlop={8}>
             <ThemedText type="smallBold" style={{ color: theme.link }}>
-              Modifier le formulaire
+              {f.edit}
             </ThemedText>
           </Pressable>
         </View>
@@ -271,11 +272,11 @@ export default function FormScreen() {
           onToggle={toggleAnonymous}
           hidden={hiddenWords}
           onChangeHidden={changeHiddenWords}
-          label="Anonymiser le formulaire"
-          description="Groupes et services → Service A, B…, dans le formulaire et son workflow ; e-mails, téléphones et liens masqués"
+          label={f.anonymize}
+          description={f.anonymizeHint}
           result={
             shown?.anonymous
-              ? `${plural(shown.anonymous.actorCount, 'groupe renommé', 'groupes renommés')}${savedId ? ' · le formulaire gardé suit' : ''}`
+              ? `${count(shown.anonymous.actorCount, f.renamedGroup)}${savedId ? f.savedFollows : ''}`
               : undefined
           }
         />
@@ -288,18 +289,18 @@ export default function FormScreen() {
         style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.header}>
           <ThemedText type="subtitle" accessibilityRole="header">
-            {form.name ?? 'Formulaire sans nom'}
+            {form.name ?? f.unnamed}
           </ThemedText>
           {form.description && <ThemedText themeColor="textSecondary">{form.description}</ThemedText>}
           <View style={styles.badges}>
             {form.ticketType && <Badge label={form.ticketType} />}
-            <Badge label={plural(form.questions.length, 'question')} />
+            <Badge label={count(form.questions.length, t.words.question)} />
           </View>
           <ThemedText type="small" themeColor="textSecondary">
             <ThemedText type="small" style={{ color: theme.danger }}>
               *
             </ThemedText>{' '}
-            Réponse obligatoire
+            {f.required}
           </ThemedText>
         </View>
 
@@ -335,10 +336,10 @@ export default function FormScreen() {
           <View style={[styles.question, styles.submitArea, { borderTopColor: theme.border }]}>
             {problems.size > 0 && (
               <ThemedText type="smallBold" style={[styles.center, { color: theme.danger }]} accessibilityLiveRegion="polite">
-                {plural(problems.size, 'réponse')} à corriger avant l’envoi.
+                {f.toFix(count(problems.size, f.answer))}
               </ThemedText>
             )}
-            <PrimaryButton label="Envoyer la demande" onPress={send} />
+            <PrimaryButton label={f.send} onPress={send} />
           </View>
         )}
       </View>
@@ -346,18 +347,18 @@ export default function FormScreen() {
       {(form.assignmentGroup || form.tasks.length > 0) && (
         <View style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-            Après l’envoi
+            {f.afterSend}
           </ThemedText>
           <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            {form.assignmentGroup && <ThemedText>Ticket attribué à {form.assignmentGroup}</ThemedText>}
+            {form.assignmentGroup && <ThemedText>{f.assignedTo(form.assignmentGroup)}</ThemedText>}
             {form.summary && (
               <ThemedText type="small" themeColor="textSecondary">
-                Résumé : {form.summary}
+                {f.summaryLine(form.summary)}
               </ThemedText>
             )}
             {form.tasks.map((task) => (
               <ThemedText key={task.n} type="small">
-                Task {task.sequence ?? task.n} : {task.description ?? 'sans titre'}
+                {f.task(String(task.sequence ?? task.n), task.description ?? null)}
                 {task.group ? ` · ${task.group}` : ''}
               </ThemedText>
             ))}
@@ -368,7 +369,7 @@ export default function FormScreen() {
       {form.warnings.length > 0 && (
         <View style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-            Points à vérifier dans le template
+            {f.toCheck}
           </ThemedText>
           <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             {form.warnings.map((warning, index) => (
@@ -376,7 +377,7 @@ export default function FormScreen() {
                 key={`${warning.cell}-${index}`}
                 style={[styles.warning, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
                 <View style={styles.row}>
-                  <Badge label={LEVELS[warning.level]} tone={TONES[warning.level]} />
+                  <Badge label={f.levels[warning.level]} tone={TONES[warning.level]} />
                   <ThemedText type="small" themeColor="textSecondary">
                     {warning.sheet}
                     {warning.cell ? ` · ${warning.cell}` : ''}
@@ -385,7 +386,7 @@ export default function FormScreen() {
                 <ThemedText type="small">{warning.message}</ThemedText>
                 {warning.question && (
                   <ThemedText type="small" themeColor="textSecondary" style={styles.italic}>
-                    Question à poser : {warning.question}
+                    {f.question(warning.question)}
                   </ThemedText>
                 )}
               </View>
@@ -416,11 +417,14 @@ function WorkflowCard({
   onKeep: () => void;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const f = t.form;
+  const { count } = t.format;
   const link = workflow?.kind === 'situations' ? findFormLink(form, workflow.situations) : null;
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        Workflow lié
+        {f.linked}
       </ThemedText>
       <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.row}>
@@ -430,15 +434,19 @@ function WorkflowCard({
             tintColor={workflow ? theme.link : theme.textSecondary}
           />
           <ThemedText type="smallBold" style={styles.flex}>
-            {workflow ? workflow.source || 'Workflow' : 'Formulaire seul'}
+            {workflow ? workflow.source || f.workflow : f.formOnly}
           </ThemedText>
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           {workflow?.kind === 'situations'
-            ? `${plural(workflow.situations.length, 'situation')}. La réponse à « ${link?.question.label.split('\n')[0] ?? '?'} » choisit le process qui suit la demande (${plural(link?.linked ?? 0, 'choix relié', 'choix reliés')}).`
+            ? f.situationsLink(
+                count(workflow.situations.length, t.words.situation),
+                link?.question.label.split('\n')[0] ?? '?',
+                count(link?.linked ?? 0, f.linkedChoice),
+              )
             : workflow
-              ? `Process « ${workflow.process.name} » : il suit chaque demande envoyée.`
-              : 'Aucun workflow : la simulation s’arrête au formulaire. Liez un classeur SLA / OLA, un schéma draw.io ou un tableau de process pour que la demande continue dans son process.'}
+              ? f.processLink(workflow.process.name)
+              : f.noWorkflow}
         </ThemedText>
         {error && (
           <ThemedText type="small" style={{ color: theme.danger }} accessibilityLiveRegion="polite">
@@ -448,13 +456,13 @@ function WorkflowCard({
         <View style={styles.links}>
           <Pressable onPress={onPick} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
             <ThemedText type="link" style={{ color: theme.link }}>
-              {workflow ? 'Changer de workflow' : 'Lier un workflow'}
+              {workflow ? f.changeWorkflow : f.linkWorkflow}
             </ThemedText>
           </Pressable>
           {workflow && (
             <Pressable onPress={onUnlink} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
               <ThemedText type="link" style={{ color: theme.danger }}>
-                Retirer le lien
+                {f.unlink}
               </ThemedText>
             </Pressable>
           )}
@@ -462,12 +470,12 @@ function WorkflowCard({
         <View style={[styles.keep, { borderTopColor: theme.border }]}>
           {saved ? (
             <ThemedText type="small" themeColor="textSecondary">
-              Gardé : retrouvez-le dans Profil, « Mes formulaires ».
+              {f.kept}
             </ThemedText>
           ) : (
             <Pressable onPress={onKeep} accessibilityRole="button" hitSlop={8} style={styles.linkButton}>
               <ThemedText type="link" style={{ color: theme.link }}>
-                Garder ce formulaire{workflow ? ' et son workflow' : ''}
+                {f.keep(Boolean(workflow))}
               </ThemedText>
             </Pressable>
           )}
@@ -493,13 +501,15 @@ function NextStep({
   run: (index: number | null) => Process | null;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const f = t.form;
   if (!workflow) {
     return (
       <View style={[styles.notice, { backgroundColor: theme.primaryBackground }]}>
         <SymbolView name={{ ios: 'info.circle', android: 'info' }} size={20} tintColor={theme.link} />
         <ThemedText type="small" style={styles.flex}>
-          {form.assignmentGroup ? `Le ticket irait à ${form.assignmentGroup}. ` : ''}
-          Ce formulaire n’est lié à aucun workflow : la simulation s’arrête ici. Liez-en un plus bas pour suivre la demande dans son process.
+          {form.assignmentGroup ? f.ticketTo(form.assignmentGroup) : ''}
+          {f.notLinked}
         </ThemedText>
       </View>
     );
@@ -517,52 +527,52 @@ function NextStep({
   const track = () => {
     const process = run(index);
     if (!process) return;
-    const id = startFormTracking(process, form.name ?? 'Demande', lines, workflow.kind === 'situations');
+    const id = startFormTracking(process, form.name ?? f.request, lines, workflow.kind === 'situations');
     if (id) router.push({ pathname: '/suivi/[id]', params: { id } });
   };
 
   return (
     <View style={styles.section}>
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        La suite de la demande
+        {f.next}
       </ThemedText>
       <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: ready ? theme.primary : theme.border }]}>
         {chosen?.kind === 'situation' && situation && (
           <>
             <ThemedText type="small" themeColor="textSecondary">
-              Réponse « {chosen.option} » : la situation du workflow
+              {f.chosen(chosen.option)}
             </ThemedText>
             <ThemedText type="subtitle">{situationName(situation)}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {situationMeta(situation)} · {VARIANT_LABELS[situation.variant]}
+              {situationMeta(situation, t)} · {t.situations.variants[situation.variant]}
             </ThemedText>
           </>
         )}
         {chosen?.kind === 'unmatched' && (
           <ThemedText style={{ color: theme.warning }}>
-            La réponse « {chosen.option} » ne correspond à aucune situation du workflow : rien ne suit.
+            {f.unmatched(chosen.option)}
           </ThemedText>
         )}
         {chosen?.kind === 'unanswered' && (
-          <ThemedText style={{ color: theme.warning }}>Aucune situation choisie dans le formulaire : rien ne suit.</ThemedText>
+          <ThemedText style={{ color: theme.warning }}>{f.unanswered}</ThemedText>
         )}
         {chosen?.kind === 'no-link' && (
-          <ThemedText style={{ color: theme.warning }}>Aucun choix du formulaire ne correspond aux situations du workflow.</ThemedText>
+          <ThemedText style={{ color: theme.warning }}>{f.noMatch}</ThemedText>
         )}
         {workflow.kind === 'process' && (
           <>
             <ThemedText type="small" themeColor="textSecondary">
-              Le process lié
+              {f.linkedProcess}
             </ThemedText>
             <ThemedText type="subtitle">{workflow.process.name}</ThemedText>
           </>
         )}
         {ready && (
           <View style={styles.actions}>
-            <PrimaryButton label="Simuler le parcours" onPress={simulate} />
+            <PrimaryButton label={f.simulate} onPress={simulate} />
             <Pressable onPress={track} accessibilityRole="button" style={styles.secondary}>
               <ThemedText type="link" style={{ color: theme.link }}>
-                Suivre la demande en vrai
+                {f.track}
               </ThemedText>
             </Pressable>
           </View>

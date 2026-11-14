@@ -16,6 +16,7 @@
  */
 
 import type { Process, StepKind } from '@/domain';
+import { getT, type Messages } from '@/i18n';
 import { headerKey, headerKind, type ColumnKind, type LearnedHeaders } from '@/scan/table';
 
 export type ReadingRule =
@@ -140,52 +141,23 @@ export function applyRules(process: Process, rules: ReadingRule[]): { process: P
     return next;
   });
   if (used.size === 0) return { process, applied: [] };
-  return { process: { ...process, steps }, applied: rules.filter((rule) => used.has(rule)).map(describeRule) };
+  return {
+    process: { ...process, steps },
+    applied: rules.filter((rule) => used.has(rule)).map((rule) => describeRule(rule)),
+  };
 }
 
-const SHAPE_NAMES: Record<string, string> = {
-  rhombus: 'losange',
-  ellipse: 'ellipse',
-  triangle: 'triangle',
-  hexagon: 'hexagone',
-  cloud: 'nuage',
-  cylinder: 'cylindre',
-  parallelogram: 'parallélogramme',
-  trapezoid: 'trapèze',
-  text: 'texte seul',
-  rectangle: 'rectangle',
-  rounded: 'rectangle arrondi',
-  process: 'rectangle à bords doubles',
-  document: 'document',
-  step: 'flèche',
-};
-
-const COLUMN_NAMES: Record<ColumnKind, string> = {
-  number: 'le numéro',
-  step: 'l’étape',
-  actor: 'l’acteur',
-  delay: 'le délai',
-  next: 'la suite',
-};
-
-const ROLE_NAMES: Record<StepKind, string> = {
-  start: 'un départ',
-  task: 'une tâche',
-  decision: 'une décision',
-  end: 'une fin',
-};
-
 /** Nom lisible d'une forme : « hexagone », ou le nom draw.io sans préfixe (« mxgraph.flowchart.delay » → « delay »). */
-export function shapeName(shape: string): string {
-  return SHAPE_NAMES[shape] ?? shape.split('.').pop() ?? shape;
+export function shapeName(shape: string, t: Messages = getT()): string {
+  return t.rules.shapes[shape] ?? shape.split('.').pop() ?? shape;
 }
 
 /** Phrase d’une règle : « Acteur « Serv. compta » lu comme « Comptabilité » », « Forme hexagone lue comme une décision ». */
-export function describeRule(rule: ReadingRule): string {
-  if (rule.type === 'actor') return `Acteur « ${rule.from} » lu comme « ${rule.to} »`;
-  if (rule.type === 'column') return `Colonne « ${rule.header} » lue comme ${COLUMN_NAMES[rule.column]}`;
-  const name = shapeName(rule.shape);
-  return `Forme ${name} lue comme ${ROLE_NAMES[rule.role]}`;
+export function describeRule(rule: ReadingRule, t: Messages = getT()): string {
+  const r = t.rules;
+  if (rule.type === 'actor') return r.actor(rule.from, rule.to);
+  if (rule.type === 'column') return r.column(rule.header, r.columns[rule.column]);
+  return r.shape(shapeName(rule.shape, t), r.roles[rule.role]);
 }
 
 /** Relit une liste de règles enregistrée ; ignore ce qui est mal formé. */

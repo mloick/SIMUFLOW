@@ -5,6 +5,7 @@
  */
 
 import type { Link, Process, ProcessSource, Step } from '@/domain';
+import { getT } from '@/i18n';
 
 /** Une ligne de la table, telle que Supabase la renvoie. */
 export type ProcessRow = {
@@ -38,7 +39,7 @@ export function toRow(process: Process): ProcessRowInput {
 export function fromRow(row: ProcessRow): Process {
   const { content } = row;
   if (!content || !Array.isArray(content.steps) || !Array.isArray(content.links)) {
-    throw new Error(`Le process « ${row.name} » est mal enregistré sur le serveur.`);
+    throw new Error(getT().errors.badRow(row.name));
   }
   return {
     id: row.id,

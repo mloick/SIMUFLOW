@@ -6,20 +6,21 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getT, useT, type Messages } from '@/i18n';
 import { groupOf, groupText, isFieldOptional, type FormAnswer, type FormQuestion } from '@/import/tableau';
 
 export type { FormAnswer };
 
 /** « Êtes-vous le signataire ? = Non » : la condition d'une question, lisible. */
-export function conditionText(question: FormQuestion, questions: FormQuestion[]): string | null {
+export function conditionText(question: FormQuestion, questions: FormQuestion[], t: Messages = getT()): string | null {
   // Un complément suit sa question : la condition est déjà dite au-dessus.
   if (question.conditions.length === 0 || question.partOf !== undefined) return null;
   return question.conditions
     .map(({ question: source, equals }) => {
-      const label = questions.find((item) => item.n === source)?.label.split('\n')[0] ?? `Question ${source}`;
+      const label = questions.find((item) => item.n === source)?.label.split('\n')[0] ?? t.field.question(source);
       return `« ${label} » = ${equals}`;
     })
-    .join(' et ');
+    .join(t.field.and);
 }
 
 const KEYBOARDS: Partial<Record<FormQuestion['type'], KeyboardTypeOptions>> = {
@@ -30,12 +31,6 @@ const KEYBOARDS: Partial<Record<FormQuestion['type'], KeyboardTypeOptions>> = {
   datetime: 'numbers-and-punctuation',
 };
 
-const PLACEHOLDERS: Partial<Record<FormQuestion['type'], string>> = {
-  date: 'jj/mm/aaaa',
-  datetime: 'jj/mm/aaaa hh:mm',
-  email: 'nom@exemple.fr',
-  url: 'https://',
-};
 
 /**
  * Une question du formulaire, dessinée selon son type comme sur un portail
@@ -60,12 +55,15 @@ export function FormField({
   error?: string | null;
 }) {
   const theme = useTheme();
+  const t = useT();
+  const f = t.field;
+  const placeholders: Partial<Record<FormQuestion['type'], string>> = f.placeholders;
   const [title, ...rest] = question.label.split('\n');
   const subtitle = rest.join('\n').trim();
   // Une suite de questions à la même condition ne la montre qu'une fois, sur la première.
   const previous = questions[questions.findIndex((item) => item.n === question.n) - 1];
   const sameAsPrevious = previous !== undefined && JSON.stringify(previous.conditions) === JSON.stringify(question.conditions);
-  const condition = sameAsPrevious ? null : conditionText(question, questions);
+  const condition = sameAsPrevious ? null : conditionText(question, questions, t);
 
   if (question.type === 'break') {
     return <View style={[styles.break, { backgroundColor: theme.border }]} accessibilityRole="none" />;
@@ -97,7 +95,7 @@ export function FormField({
         <View style={[styles.condition, { backgroundColor: theme.primaryBackground }]}>
           <SymbolView name={{ ios: 'arrow.turn.down.right', android: 'subdirectory_arrow_right' }} size={14} tintColor={theme.link} />
           <ThemedText type="small" style={[styles.flex, { color: theme.link }]}>
-            S’affiche si {condition}
+            {f.showsIf(condition)}
           </ThemedText>
         </View>
       )}
@@ -126,7 +124,7 @@ export function FormField({
         <TextInput
           value={text}
           onChangeText={onChange}
-          placeholder={question.example ?? PLACEHOLDERS[question.type]}
+          placeholder={question.example ?? placeholders[question.type]}
           placeholderTextColor={theme.textSecondary}
           keyboardType={KEYBOARDS[question.type]}
           multiline={question.type === 'multiline'}
@@ -136,7 +134,14 @@ export function FormField({
       )}
 
       {question.type === 'yesno' && (
-        <Choices options={['Oui', 'Non']} selected={text ? [text] : []} onToggle={(option) => onChange(option)} single label={title} />
+        <Choices
+          options={['Oui', 'Non']}
+          labels={{ Oui: f.yes, Non: f.no }}
+          selected={text ? [text] : []}
+          onToggle={(option) => onChange(option)}
+          single
+          label={title}
+        />
       )}
 
       {question.type === 'select' && (
@@ -158,7 +163,7 @@ export function FormField({
           <>
             {question.options.length > 1 && (
               <ThemedText type="small" themeColor="textSecondary">
-                {question.single ? 'Un seul choix possible' : 'Plusieurs choix possibles'}
+                {question.single ? f.singleChoice : f.multipleChoice}
               </ThemedText>
             )}
             <Checkboxes options={question.options} checked={checked} onChange={onChange} single={question.single} />
@@ -170,7 +175,7 @@ export function FormField({
       {(question.type === 'list' || question.type === 'reference') && (
         <View style={[styles.placeholderBox, { borderColor: theme.fieldBorder, backgroundColor: theme.surfaceMuted }]}>
           <ThemedText type="small" themeColor="textSecondary">
-            Choix dans les données de l’outil (liste remplie au moment de la demande)
+            {f.toolData}
           </ThemedText>
           {question.explanation && (
             <ThemedText type="small" themeColor="textSecondary">
@@ -191,22 +196,22 @@ export function FormField({
               <Pressable
                 onPress={() => onChange(checked.filter((item) => item !== name))}
                 accessibilityRole="button"
-                accessibilityLabel={`Retirer ${name}`}
+                accessibilityLabel={f.removeFile(name)}
                 hitSlop={12}>
                 <SymbolView name={{ ios: 'xmark.circle.fill', android: 'cancel' }} size={20} tintColor={theme.textSecondary} />
               </Pressable>
             </View>
           ))}
-          <Pressable onPress={addFile} accessibilityRole="button" accessibilityLabel={`${title} : ajouter un fichier`} style={styles.row}>
+          <Pressable onPress={addFile} accessibilityRole="button" accessibilityLabel={f.addFileLabel(title)} style={styles.row}>
             <SymbolView name={{ ios: 'paperclip', android: 'attach_file' }} size={18} tintColor={theme.link} />
             <ThemedText type="link" style={{ color: theme.link }}>
-              {checked.length > 0 ? 'Ajouter un autre fichier' : 'Ajouter un fichier'}
+              {checked.length > 0 ? f.addAnother : f.addFile}
             </ThemedText>
           </Pressable>
           {question.documents.length > 0 && (
             <View style={styles.documents}>
               <ThemedText type="small" themeColor="textSecondary">
-                Documents attendus :
+                {f.expected}
               </ThemedText>
               {question.documents.map((document) => (
                 <ThemedText key={document} type="small" themeColor="textSecondary">
@@ -228,7 +233,7 @@ export function FormField({
             <View key={field} style={styles.subfield}>
               {group?.[0] === field && (
                 <ThemedText type="small" themeColor="textSecondary" style={styles.groupNote}>
-                  Remplissez au moins l’un {group.length === 2 ? 'des deux' : 'de ces champs'} : {groupText(group)}.
+                  {f.fillOneOf(group.length === 2, groupText(group, t))}
                 </ThemedText>
               )}
               <ThemedText type="small">
@@ -236,12 +241,12 @@ export function FormField({
                 {question.mandatory && !optional && <ThemedText type="small" style={{ color: theme.danger }}> *</ThemedText>}
                 {group && optional && empty && (
                   <ThemedText type="small" themeColor="textSecondary">
-                    {' (facultatif)'}
+                    {f.optional}
                   </ThemedText>
                 )}
                 {question.limits?.[field] ? (
                   <ThemedText type="small" themeColor="textSecondary">
-                    {` · ${question.limits[field]} caractères au plus`}
+                    {` · ${f.maxChars(question.limits[field])}`}
                   </ThemedText>
                 ) : null}
               </ThemedText>
@@ -252,8 +257,8 @@ export function FormField({
                 accessibilityLabel={`${title} : ${field}`}
                 accessibilityHint={
                   [
-                    question.limits?.[field] ? `${question.limits[field]} caractères au plus` : null,
-                    group ? (optional ? 'Facultatif' : `Au moins l’un de ces champs : ${groupText(group)}`) : null,
+                    question.limits?.[field] ? f.maxChars(question.limits[field]) : null,
+                    group ? (optional ? f.optionalHint : f.oneOfHint(groupText(group, t))) : null,
                   ]
                     .filter(Boolean)
                     .join('. ') || undefined
@@ -283,11 +288,14 @@ export function FormField({
 
 function Choices({
   options,
+  labels,
   selected,
   onToggle,
   label,
 }: {
   options: string[];
+  /** Texte affiché pour un choix, quand il diffère de la valeur gardée. */
+  labels?: Record<string, string>;
   selected: string[];
   onToggle: (option: string) => void;
   single?: boolean;
@@ -309,7 +317,7 @@ function Choices({
               { backgroundColor: on ? theme.primary : theme.surface, borderColor: on ? theme.primary : theme.fieldBorder },
             ]}>
             <ThemedText type="smallBold" style={{ color: on ? theme.onPrimary : theme.text }}>
-              {option}
+              {labels?.[option] ?? option}
             </ThemedText>
           </Pressable>
         );
@@ -384,6 +392,7 @@ export function Dropdown({
   borderColor: string;
 }) {
   const theme = useTheme();
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <View>
@@ -391,10 +400,10 @@ export function Dropdown({
         onPress={() => setOpen(!open)}
         accessibilityRole="combobox"
         accessibilityLabel={label}
-        accessibilityValue={{ text: value || 'Aucun choix' }}
+        accessibilityValue={{ text: value || t.field.noChoice }}
         accessibilityState={{ expanded: open }}
         style={[styles.input, styles.dropdown, { backgroundColor: theme.surface, borderColor }]}>
-        <ThemedText style={[styles.flex, !value && { color: theme.textSecondary }]}>{value || '— Choisir —'}</ThemedText>
+        <ThemedText style={[styles.flex, !value && { color: theme.textSecondary }]}>{value || t.field.choose}</ThemedText>
         <SymbolView
           name={open ? { ios: 'chevron.up', android: 'expand_less' } : { ios: 'chevron.down', android: 'expand_more' }}
           size={18}
@@ -405,7 +414,7 @@ export function Dropdown({
         <View style={[styles.menu, { backgroundColor: theme.surface, borderColor: theme.fieldBorder }]}>
           {options.length === 0 && (
             <ThemedText type="small" themeColor="textSecondary" style={styles.menuItem}>
-              Aucun choix dans le template
+              {t.field.noOptions}
             </ThemedText>
           )}
           {options.map((option) => (

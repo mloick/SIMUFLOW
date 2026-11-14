@@ -95,7 +95,7 @@ src/
   simulation/   Moteur de simulation pas à pas, mise en page du schéma et familles de chemins, en TypeScript pur ; tests dans __tests__/
   backend/      Connexion au backend Supabase : adresse et clé publique (config.ts), client partagé (client.ts), compte et session (auth.ts, auth-messages.ts, session-store.ts ; session gardée dans le trousseau chiffré : session-storage.ts, secure-session-storage.ts), test du serveur (health.ts), process sur le serveur (process-row.ts, processes.ts), profil (profiles.ts), partage côté propriétaire (sharing.ts), côté membre (shared.ts) et par lien d'acteur (links.ts)
   hooks/        Hooks partagés (thème, mode sombre, grands textes)
-  i18n/         Langue de l'app : réglage et textes de la langue actuelle (index.ts : useT, getT), langue du téléphone (device-locale.ts), textes en français (messages/fr.ts, la référence) et en anglais (messages/en.ts) ; tests dans __tests__/
+  i18n/         Langue de l'app : réglage et textes de la langue actuelle (index.ts : useT, getT), langue du téléphone (device-locale.ts), textes en français (messages/fr.ts, la référence, avec ceux des écrans dans messages/fr-ecrans.ts) et en anglais (messages/en.ts et messages/en-ecrans.ts) ; tests dans __tests__/
   scan/         Lecture d'un tableau photographié : mots lus par Tesseract dans la version web rangés en cases (words.ts) après effacement des traits du tableau (table-lines.ts), texte lu rangé en lignes (rows.ts), tableau seul retrouvé grâce à sa ligne de titres (table.ts), puis transformé en process (to-process.ts) ; tests dans __tests__/, positions de texte relevées sur les tableaux d'exemple dans __fixtures__/
   tracking/     Suivre un process en vrai : calendrier des jours ouvrés français (calendar.ts), suivi d'une demande étape par étape (tracking.ts), textes des échéances (format.ts), rappels à programmer (reminders.ts) ; tests dans __tests__/
   notifications/ Notifications locales : autorisation, canal Android, notification d'essai et rappels programmés (notifications.ts, et notifications.web.ts pour le web), réglages « Rappels d'échéance » et « Alertes du partage » (settings.ts), mise à jour des rappels (use-deadline-reminders.ts), alerte du partage envoyée tout de suite (`notifyNow`) et ouverture de son écran (use-share-alert-taps.ts)
@@ -145,7 +145,7 @@ Tout ce qui décide se trouve ici, en TypeScript pur : le modèle d'un process, 
 
 **Index** (`graph.ts`). `buildGraph` range les liens sortants et entrants de chaque étape et repère les départs et les fins. Sans étape `start`, les départs sont les étapes où rien n'arrive mais d'où un lien part. Deux parcours en largeur servent au diagnostic : les étapes atteignables depuis un départ, et celles d'où l'on peut atteindre une fin (parcours à rebours).
 
-**Diagnostic** (`diagnostic.ts`). `diagnose` renvoie la liste des anomalies, triées de la plus grave à la moins grave. `describeIssue` donne le message en français.
+**Diagnostic** (`diagnostic.ts`). `diagnose` renvoie la liste des anomalies, triées de la plus grave à la moins grave. `describeIssue` donne le message dans la langue de l'app (voir « Langue de l'app »).
 
 | Code | Gravité | Signification |
 | --- | --- | --- |
@@ -1197,23 +1197,31 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 L'app parle français ou anglais. Le réglage « Langue » du Profil vaut `auto`, `fr` ou `en`. Il est gardé dans `localStorage` sous `simuflow.langue` (rien n'est gardé pour `auto`).
 
 - **Automatique** : `resolveLanguage` prend le français si la langue du téléphone commence par `fr`, l'anglais sinon. La langue du téléphone est lue par `Intl.DateTimeFormat().resolvedOptions().locale` (`device-locale.ts`), intégré à Hermes et aux navigateurs : pas de module natif, donc pas de nouvelle build.
-- **Textes** : `messages/fr.ts` est la référence. `messages/en.ts` est typé `Messages` (`typeof fr`) : une clé manquante ou en trop est une erreur TypeScript. Une valeur est un texte, ou une fonction quand le texte contient un nombre ou un nom (`seeAlerts(2)` donne « Voir les alertes · 2 nouvelles » ou « See alerts · 2 new »). `common.locale` (`fr-FR` ou `en-GB`) sert aux dates et aux heures.
+- **Textes** : `messages/fr.ts` est la référence. `messages/en.ts` est typé `Messages` (`typeof fr`) : une clé manquante ou en trop est une erreur TypeScript. Les textes des écrans (liste, fiche, simulation, suivi, éditeur, import, Scanner, export, formulaires, partage, alertes, messages du serveur) sont rangés par écran dans `messages/fr-ecrans.ts` et `messages/en-ecrans.ts` (typé `ScreenMessages`), puis repris dans les deux catalogues. Une valeur est un texte, ou une fonction quand le texte contient un nombre ou un nom (`seeAlerts(2)` donne « Voir les alertes · 2 nouvelles » ou « See alerts · 2 new »). `common.locale` (`fr-FR` ou `en-GB`) sert aux dates et aux heures.
 - **Dans un écran** : `const t = useT()`, puis `t.profil.title`. `useT` lit la langue avec `useSyncExternalStore` : changer la langue redessine tout de suite chaque écran ouvert, titres de la barre et onglets compris (`_layout.tsx`, `(tabs)/_layout.tsx` et `.web.tsx`).
-- **Hors d'un écran** (messages d'erreur de `auth-messages.ts`, de `profile.ts`, étapes d'installation de `install-guide.ts`) : `getT()`, lu au moment de l'appel.
-- **React Compiler** : il mémorise ce qu'un écran calcule à partir de ses entrées. Un appel à `getT()` pendant l'affichage garderait donc l'ancienne langue. Dans un écran, on prend toujours les textes de `useT()` et on les passe aux fonctions d'aide (`syncText(t, status)` dans le Profil).
+- **Nombres, pluriels, dates** : `t.format.num` (virgule en français, point en anglais), `t.format.count(n, t.words.step)` (« 0 étape », « 0 steps » : le pluriel français commence à 2, l'anglais dès que n ≠ 1), `t.dates.moment`, `full`, `short` et `time` (`fr-FR` ou `en-GB`).
+- **Hors d'un écran** (messages d'erreur du serveur dans `backend/`, de la synchronisation, de `auth-messages.ts` et `profile.ts`, alertes du partage, rappels et notifications, étapes d'installation) : `getT()`, lu au moment de l'appel. Les fonctions du domaine qui produisent un texte affiché (`describeIssue`, `explainIssue`, `overviewOf`, `formatMoment`, `timingBadge`, `describeRule`, `reviewProblem`, `answerProblem`, `situationMeta`, `detectShareAlerts`) prennent un dernier paramètre `t`, qui vaut `getT()` par défaut.
+- **React Compiler** : il mémorise ce qu'un écran calcule à partir de ses entrées. Un appel à `getT()` pendant l'affichage garderait donc l'ancienne langue. Dans un écran, on prend toujours les textes de `useT()` et on les passe aux fonctions d'aide (`syncText(t, status)` dans le Profil, `overviewOf(process, t)` dans la simulation) ; un `useMemo` qui calcule un texte a `t` dans ses dépendances.
 - **Version web** : la page annonce sa langue (`document.documentElement.lang`), pour les lecteurs d'écran et la traduction du navigateur.
 
-**Écrans en anglais à cette étape** : onglets, titres de tous les écrans, Profil, connexion, mot de passe oublié et nouveau mot de passe, Mon profil et son formulaire, présentation du premier lancement, liste des process (`(tabs)/index.tsx`, carte, squelette de chargement) et fiche d'un process (`process/[id].tsx`, avec le diagnostic `domain/diagnostic.ts`, les dates et échéances du suivi `tracking/format.ts`, les rappels `tracking/reminders.ts` et les notifications). Les textes de ces écrans sont dans `messages/fr-ecrans.ts` et `messages/en-ecrans.ts`. Les fonctions d'aide prennent les textes en paramètre (`diagnosticBadge(t, summary)`, `explainIssue(issue, process, t)`, `formatMoment(date, t)`). Les autres écrans passeront en anglais aux étapes suivantes.
+**Ce qui reste en français.** Tous les écrans sont traduits. Restent en français :
+- le contenu importé (noms, étapes, acteurs, questions d'un formulaire), qui reste tel qu'il a été écrit ;
+- les quatre process d'exemple et l'exemple du texte à coller, dont le format (« 2. Acteur : intitulé (2 JO) → 4 ») est lu en français ;
+- les remarques détaillées des modèles de lecture des tableaux Excel (`import/tableau/modeles/`), et la valeur « Oui » ou « Non » gardée pour une question oui / non (l'écran affiche « Yes » ou « No ») ;
+- le contenu des fichiers exportés (PDF, draw.io, BPMN, JSON), sauf le diagnostic et les familles de chemins du PDF, écrits dans la langue de l'app ;
+- les mots qui remplacent une donnée anonymisée (« Service A », « [masqué] »).
 
 **Tests.**
 - Dans Jest, `jest/langue-fr.js` remplace la langue du téléphone par `fr-FR` (`moduleNameMapper`) : les tests lisent l'app en français, quelle que soit la machine.
 - `src/i18n/__tests__/i18n.test.ts` vérifie :
   - la langue automatique ;
   - les mêmes clés, types et longueurs de listes dans les deux catalogues, sans texte vide ;
-  - le changement de langue sur les messages (connexion, profil, rôle, pluriel).
+  - le changement de langue sur les messages (connexion, profil, rôle, pluriel) et sur les écrans (nombres, pluriels, dates, règle de lecture, avis à revoir, suivi de validation).
 - `src/components/__tests__/langue-ecran.test.tsx` passe l'écran de connexion en anglais, avec son message d'erreur, puis le remet en français.
 
 ![Langue : la présentation et la connexion en anglais sur un téléphone en anglais, le réglage Langue du Profil, puis Français choisi](captures/etape-44-langue.png)
+
+![L'app en anglais : la liste, la fiche d'un process, la simulation et l'import](captures/etape-45-anglais.png)
 
 ### Identité de l'app : icône, écran de démarrage, identifiant
 

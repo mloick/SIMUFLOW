@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { syncNow } from '@/data/cloud-sync';
 import { getProcess, isImported, useCloudId } from '@/data/process-store';
 import { useTheme } from '@/hooks/use-theme';
+import { useT } from '@/i18n';
 
 /**
  * « Partager » : inviter des membres sur un process, par leur identifiant ou
@@ -17,6 +18,8 @@ import { useTheme } from '@/hooks/use-theme';
 export default function ShareScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
+  const t = useT();
+  const s = t.share;
   const session = useSession();
   const process = getProcess(id);
   const cloudId = useCloudId(id);
@@ -27,9 +30,9 @@ export default function ShareScreen() {
       <StateMessage
         icon={{ ios: 'exclamationmark.circle', android: 'error' }}
         tone="danger"
-        title="Process introuvable"
-        message="Ce process n’existe plus sur ce téléphone."
-        action={{ label: 'Revenir', onPress: () => router.back() }}
+        title={s.notFound}
+        message={s.notFoundText}
+        action={{ label: s.back, onPress: () => router.back() }}
       />
     );
   } else if (session === null) {
@@ -37,9 +40,9 @@ export default function ShareScreen() {
       <StateMessage
         icon={{ ios: 'person.2', android: 'group' }}
         tone="primary"
-        title="Connexion requise"
-        message="Pour partager un process, il doit être sur votre compte : connectez-vous d’abord."
-        action={{ label: 'Se connecter', onPress: () => router.push('/connexion') }}
+        title={s.signInRequired}
+        message={s.signInText}
+        action={{ label: s.signIn, onPress: () => router.push('/connexion') }}
       />
     );
   } else if (!isImported(process.id)) {
@@ -47,9 +50,9 @@ export default function ShareScreen() {
       <StateMessage
         icon={{ ios: 'person.2', android: 'group' }}
         tone="primary"
-        title="Exemple non partageable"
-        message="Les exemples fournis avec l’app ne se partagent pas. Importez votre propre process pour le partager."
-        action={{ label: 'Revenir', onPress: () => router.back() }}
+        title={s.example}
+        message={s.exampleText}
+        action={{ label: s.back, onPress: () => router.back() }}
       />
     );
   } else if (!cloudId) {
@@ -57,9 +60,9 @@ export default function ShareScreen() {
       <StateMessage
         icon={{ ios: 'icloud.and.arrow.up', android: 'cloud_upload' }}
         tone="primary"
-        title="Pas encore sur votre compte"
-        message="Le process doit d’abord être envoyé sur votre compte. Il le sera à la prochaine synchronisation."
-        action={{ label: 'Synchroniser maintenant', onPress: () => syncNow() }}
+        title={s.notOnAccount}
+        message={s.notOnAccountText}
+        action={{ label: s.syncNow, onPress: () => syncNow() }}
       />
     );
   } else {
@@ -70,13 +73,13 @@ export default function ShareScreen() {
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          title: 'Partager',
+          title: t.titles.share,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerTitleStyle: { color: theme.text },
           headerLeft: () => (
             <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
-              <ThemedText style={{ color: theme.link }}>Fermer</ThemedText>
+              <ThemedText style={{ color: theme.link }}>{s.close}</ThemedText>
             </Pressable>
           ),
         }}

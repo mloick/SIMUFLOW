@@ -168,9 +168,7 @@ export default function ProcessListScreen() {
           if (row.kind === 'hint') {
             return (
               <View style={[styles.hint, { borderColor: theme.fieldBorder }]}>
-                <ThemedText themeColor="textSecondary">
-                  {t.list.hint}
-                </ThemedText>
+                <ThemedText themeColor="textSecondary">{t.list.hint}</ThemedText>
               </View>
             );
           }

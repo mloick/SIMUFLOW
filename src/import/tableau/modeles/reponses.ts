@@ -4,6 +4,8 @@
  * écrites, et le récapitulatif de la demande. Logique pure, sans écran.
  */
 
+import { getT, type Messages } from '@/i18n';
+
 import { isQuestionVisible, type FormQuestion } from './formulaire';
 
 /** Réponse à une question : un texte, des choix cochés (ou des fichiers joints), ou un texte par champ d'un libellé. */
@@ -66,8 +68,8 @@ export function isFieldOptional(question: FormQuestion, field: string, answer: F
 }
 
 /** « A ou B », « A, B ou C ». */
-export function groupText(group: string[]): string {
-  return group.length < 2 ? (group[0] ?? '') : `${group.slice(0, -1).join(', ')} ou ${group.at(-1)}`;
+export function groupText(group: string[], t: Messages = getT()): string {
+  return group.length < 2 ? (group[0] ?? '') : `${group.slice(0, -1).join(', ')} ${t.answers.or} ${group.at(-1)}`;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -85,36 +87,37 @@ function isDate(text: string): boolean {
 }
 
 /** Ce qui ne va pas dans une réponse, ou `null` si elle convient. */
-export function answerProblem(question: FormQuestion, answer: FormAnswer | undefined): string | null {
+export function answerProblem(question: FormQuestion, answer: FormAnswer | undefined, t: Messages = getT()): string | null {
+  const a = t.answers;
   if (!expectsAnswer(question)) return null;
   if (isEmptyAnswer(question, answer)) {
     if (!question.mandatory) return null;
     if (question.type === 'label' || question.type === 'richlabel') {
       const group = question.atLeastOne?.[0];
-      return group ? `Remplissez les champs, dont au moins l’un de ceux-ci : ${groupText(group)}.` : 'Remplissez tous les champs.';
+      return group ? a.fillAllWithGroup(groupText(group, t)) : a.fillAll;
     }
-    if (question.type === 'attachment') return 'Ajoutez au moins un fichier.';
-    return 'Réponse obligatoire.';
+    if (question.type === 'attachment') return a.addFile;
+    return a.required;
   }
   if (question.mandatory && (question.type === 'label' || question.type === 'richlabel') && typeof answer === 'object' && !Array.isArray(answer)) {
     const empty = question.atLeastOne?.find((group) => group.every((field) => !filled(answer, field)));
-    if (empty) return `Remplissez au moins l’un de ces champs : ${groupText(empty)}.`;
-    if (question.fields.some((field) => !filled(answer, field) && !isFieldOptional(question, field, answer))) return 'Remplissez tous les champs.';
+    if (empty) return a.fillOne(groupText(empty, t));
+    if (question.fields.some((field) => !filled(answer, field) && !isFieldOptional(question, field, answer))) return a.fillAll;
   }
   if (typeof answer !== 'string') return null;
   const text = answer.trim();
   switch (question.type) {
     case 'email':
-      return EMAIL.test(text) ? null : 'Adresse e-mail attendue, par exemple nom@exemple.fr.';
+      return EMAIL.test(text) ? null : a.email;
     case 'url':
-      return URL.test(text) ? null : 'Adresse web attendue, commençant par https://.';
+      return URL.test(text) ? null : a.url;
     case 'ip':
-      return IPV4.test(text) ? null : 'Adresse IP attendue, par exemple 192.168.1.10.';
+      return IPV4.test(text) ? null : a.ip;
     case 'date':
-      return isDate(text) ? null : 'Date attendue au format jj/mm/aaaa.';
+      return isDate(text) ? null : a.date;
     case 'datetime': {
       const [day, time] = text.split(/\s+/);
-      return isDate(day ?? '') && TIME.test(time ?? '') ? null : 'Date et heure attendues au format jj/mm/aaaa hh:mm.';
+      return isDate(day ?? '') && TIME.test(time ?? '') ? null : a.datetime;
     }
     default:
       return null;
@@ -122,10 +125,10 @@ export function answerProblem(question: FormQuestion, answer: FormAnswer | undef
 }
 
 /** Les problèmes des questions affichées, par numéro de question. Vide : la demande peut partir. */
-export function checkAnswers(questions: FormQuestion[], answers: FormAnswers): Map<number, string> {
+export function checkAnswers(questions: FormQuestion[], answers: FormAnswers, t: Messages = getT()): Map<number, string> {
   const problems = new Map<number, string>();
   for (const question of visibleQuestions(questions, answers)) {
-    const problem = answerProblem(question, answers[question.n]);
+    const problem = answerProblem(question, answers[question.n], t);
     if (problem) problems.set(question.n, problem);
   }
   return problems;

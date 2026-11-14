@@ -8,8 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { summarize, type Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { getT, useT } from '@/i18n';
 import { confirmAction } from '@/utils/confirm';
-import { plural } from '@/utils/format';
 
 /**
  * Partage d'un process déjà sur le compte (`cloudId`) : inviter un membre par
@@ -18,6 +18,8 @@ import { plural } from '@/utils/format';
  */
 export function SharePanel({ process, cloudId }: { process: Process; cloudId: string }) {
   const theme = useTheme();
+  const t = useT();
+  const s = t.share;
   const actors = useMemo(() => summarize(process).actors, [process]);
   const [members, setMembers] = useState<Member[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
   const fetchMembers = useCallback(
     () =>
       listMembers(cloudId).then(setMembers, (cause: unknown) =>
-        setLoadError(cause instanceof Error ? cause.message : 'Les membres n’ont pas pu être lus.'),
+        setLoadError(cause instanceof Error ? cause.message : getT().share.membersError),
       ),
     [cloudId],
   );
@@ -48,16 +50,16 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
   const invite = async () => {
     const value = who.trim();
     setDone(null);
-    if (!value) return setError('Écrivez l’identifiant ou l’adresse e-mail de la personne.');
+    if (!value) return setError(s.whoEmpty);
     setBusy(true);
     setError(null);
     try {
       const member = await inviteMember(cloudId, value, actor);
       setMembers((list) => [...(list ?? []).filter((item) => item.id !== member.id), member]);
-      setDone(`Invitation faite : ${memberName(member)}${member.actor ? `, pour « ${member.actor} »` : ''}.`);
+      setDone(s.invited(memberName(member), member.actor));
       setWho('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'L’invitation n’a pas pu se faire.');
+      setError(cause instanceof Error ? cause.message : s.inviteError);
     } finally {
       setBusy(false);
     }
@@ -65,17 +67,18 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
 
   const remove = (member: Member) =>
     confirmAction(
-      'Retirer ce membre ?',
-      `${memberName(member)} ne verra plus « ${process.name} ».`,
-      'Retirer',
+      s.removeTitle,
+      s.removeText(memberName(member), process.name),
+      t.common.remove,
       async () => {
         try {
           await removeMember(cloudId, member.id);
           setMembers((list) => (list ?? []).filter((item) => item.id !== member.id));
         } catch (cause) {
-          setError(cause instanceof Error ? cause.message : 'Le membre n’a pas pu être retiré.');
+          setError(cause instanceof Error ? cause.message : s.removeError);
         }
       },
+      t.common.cancel,
     );
 
   const input = [styles.input, { color: theme.text, backgroundColor: theme.surface, borderColor: theme.fieldBorder }];
@@ -84,22 +87,19 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <ThemedText type="subtitle">{process.name}</ThemedText>
-      <ThemedText themeColor="textSecondary">
-        Invitez les acteurs du process : ils le verront et pourront le jouer depuis leur compte, sans pouvoir le
-        modifier.
-      </ThemedText>
+      <ThemedText themeColor="textSecondary">{s.intro}</ThemedText>
 
       <View style={styles.field}>
-        <ThemedText type="smallBold">Qui inviter ?</ThemedText>
+        <ThemedText type="smallBold">{s.who}</ThemedText>
         <TextInput
           value={who}
           onChangeText={(text) => {
             setWho(text);
             setError(null);
           }}
-          placeholder="julie.martin ou julie@exemple.fr"
+          placeholder={s.whoPlaceholder}
           placeholderTextColor={theme.textSecondary}
-          accessibilityLabel="Identifiant ou adresse e-mail"
+          accessibilityLabel={s.whoLabel}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -112,7 +112,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
       {actors.length > 0 && (
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="acteur">
-            Pour l’acteur
+            {s.forActor}
           </ThemedText>
           <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabelledBy="acteur">
             {[null, ...actors].map((option) => {
@@ -131,7 +131,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
                     },
                   ]}>
                   <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                    {option ?? 'Aucun en particulier'}
+                    {option ?? s.anyActor}
                   </ThemedText>
                 </Pressable>
               );
@@ -155,17 +155,17 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
         </View>
       )}
 
-      <PrimaryButton label={busy ? 'Invitation…' : 'Inviter'} onPress={invite} disabled={busy} />
+      <PrimaryButton label={busy ? s.inviting : s.invite} onPress={invite} disabled={busy} />
 
       <View style={styles.field}>
         <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-          {members ? `Membres · ${members.length}` : 'Membres'}
+          {members ? s.membersCount(members.length) : s.members}
         </ThemedText>
         {loadError ? (
           <View style={card}>
             <ThemedText style={[styles.row, { color: theme.danger }]}>{loadError}</ThemedText>
             <Pressable onPress={load} accessibilityRole="button" style={styles.row}>
-              <ThemedText type="link">Réessayer</ThemedText>
+              <ThemedText type="link">{t.common.retry}</ThemedText>
             </Pressable>
           </View>
         ) : members === null ? (
@@ -175,7 +175,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
         ) : members.length === 0 ? (
           <View style={card}>
             <ThemedText themeColor="textSecondary" style={styles.row}>
-              Personne pour l’instant. Les membres invités apparaîtront ici.
+              {s.noMembers}
             </ThemedText>
           </View>
         ) : (
@@ -192,7 +192,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
                   <ThemedText type="small" themeColor="textSecondary">
                     {[
                       member.username && member.firstName ? `@${member.username}` : null,
-                      member.actor ?? 'Tout le process',
+                      member.actor ?? s.wholeProcess,
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -201,10 +201,10 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
                 <Pressable
                   onPress={() => remove(member)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Retirer ${memberName(member)}`}
+                  accessibilityLabel={s.removeLabel(memberName(member))}
                   hitSlop={8}>
                   <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                    Retirer
+                    {t.common.remove}
                   </ThemedText>
                 </Pressable>
               </View>
@@ -213,7 +213,7 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
         )}
         {members && members.length > 0 && (
           <ThemedText type="small" themeColor="textSecondary">
-            {plural(members.length, 'membre')} peu{members.length > 1 ? 'vent' : 't'} lire ce process.
+            {s.canRead(members.length, t.format.count(members.length, t.words.member))}
           </ThemedText>
         )}
       </View>
