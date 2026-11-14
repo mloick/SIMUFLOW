@@ -8,6 +8,7 @@ import type { Reminder } from '@/tracking/reminders';
 export type NotificationPermission = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
 export const DEADLINE_CHANNEL = 'echeances';
+export const SHARE_CHANNEL = 'partage';
 export const TEST_DELAY_SECONDS = 5;
 
 export function configureNotifications() {}
@@ -27,3 +28,7 @@ export async function cancelAllNotifications() {}
 export async function scheduleReminders(_reminders: Reminder[]) {}
 
 export function useReminderTaps(_open: (trackingId: string) => void) {}
+
+export async function notifyNow(_alert: { id: string; title: string; body: string; path: string }) {}
+
+export function useShareAlertTaps(_open: (path: string) => void) {}

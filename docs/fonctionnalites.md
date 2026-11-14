@@ -8,7 +8,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
 2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
-3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation
+3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation, alertes
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
 6. [Compte et données](#6-compte-et-données) : synchronisation, version web, confidentialité
@@ -266,9 +266,23 @@ Dès qu'un process est partagé, sa fiche montre, sous **Partager avec les acteu
 - **Membres** : pour chacun, son acteur, le nombre d'étapes validées, et **Terminé**, **À revoir**, **En cours** ou **Pas commencé** ;
 - **Étapes** : pour chaque étape, qui l'a validée, et les commentaires « à revoir » avec leur auteur. **À revoir** n'affiche que les étapes à corriger.
 
-Corrigez une étape dans **Modifier le process** : le membre voit la nouvelle version et peut changer son avis. **Actualiser** relit les avis. Pour l'instant, rien ne vous prévient tout seul : ouvrez la fiche pour voir où en est la validation.
+Corrigez une étape dans **Modifier le process** : le membre voit la nouvelle version et peut changer son avis. **Actualiser** relit les avis. Vous êtes aussi prévenu par une alerte (voir ci-dessous).
 
 ![Suivi de la validation : la carte sur la fiche, les membres et leur avancement, une étape à revoir avec son commentaire, puis « Process entièrement validé »](captures/etape-41-suivi-validation.png)
+
+### Alertes du partage · Disponible
+
+SimuFlow vous prévient dans trois cas :
+
+- **Nouveau process partagé** : quelqu'un partage un process avec vous ;
+- **Une étape à revoir** : un membre signale une étape de votre process ;
+- **Process entièrement validé** : tous les membres ont validé votre process.
+
+Les alertes arrivent quand l'app se synchronise : à l'ouverture, au retour dans l'app, quand le réseau revient, ou avec **Synchroniser**. Sur iPhone et Android, chacune s'affiche aussi en notification, et la toucher ouvre le process ou son suivi. Dans le navigateur, il n'y a pas de notification, mais un bandeau en haut de la liste des process annonce les nouvelles alertes. Il ouvre l'écran **Alertes**, qui les garde toutes. Dans **Profil**, **Alertes du partage** coupe les notifications, et **Voir les alertes** ouvre la liste.
+
+Il n'y a pas de serveur de notifications : c'est l'app qui regarde ce qui a changé quand elle s'ouvre. Une alerte n'arrive donc pas tant que l'app reste fermée.
+
+![Alertes du partage : le bandeau sur la liste des process, l'écran Alertes, puis le réglage dans le Profil](captures/etape-42-alertes.png)
 
 ## 4. Suivre une vraie demande
 
@@ -446,7 +460,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Être prévenu** · Prévue : une alerte quand un process est partagé avec vous, quand un membre signale une étape à revoir, et quand le process est entièrement validé. Plus tard, un lien web pour les acteurs sans compte.
+- **Lien web pour les acteurs sans compte** · Prévue : un lien par acteur, ouvert dans le navigateur, où la personne confirme son nom avant de relire sa partie.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **Interface en anglais** · Prévue.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

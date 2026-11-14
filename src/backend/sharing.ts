@@ -113,3 +113,37 @@ export async function listProcessReviews(cloudId: string): Promise<MemberReview[
     comment: row.comment,
   }));
 }
+
+type MembershipRow = { process_id: string; member_id: string; actor: string | null };
+type DatedReviewRow = ProcessReviewRow & { process_id: string; updated_at: string };
+
+/**
+ * Membres et avis de plusieurs process d'un coup (pour les alertes du
+ * propriétaire) : deux requêtes, quel que soit le nombre de process.
+ */
+export async function listSharingActivity(cloudIds: string[]): Promise<{
+  members: MembershipRow[];
+  reviews: (MemberReview & { processId: string; updatedAt: string })[];
+}> {
+  if (cloudIds.length === 0) return { members: [], reviews: [] };
+  const [members, reviews] = await Promise.all([
+    supabase.from('process_members').select('process_id, member_id, actor').in('process_id', cloudIds),
+    supabase
+      .from('step_reviews')
+      .select('process_id, member_id, step_id, status, comment, updated_at')
+      .in('process_id', cloudIds),
+  ]);
+  if (members.error) throw sharingErrorMessage(members.error);
+  if (reviews.error) throw sharingErrorMessage(reviews.error);
+  return {
+    members: (members.data ?? []) as MembershipRow[],
+    reviews: ((reviews.data ?? []) as DatedReviewRow[]).map((row) => ({
+      processId: row.process_id,
+      memberId: row.member_id,
+      stepId: row.step_id,
+      status: row.status,
+      comment: row.comment,
+      updatedAt: row.updated_at,
+    })),
+  };
+}

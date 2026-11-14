@@ -60,6 +60,11 @@ export function forgetShared() {
   if (shared.length) setSharedProcesses([]);
 }
 
+/** La liste en mémoire, pour les alertes. */
+export function getSharedProcesses(): SharedProcess[] {
+  return shared;
+}
+
 export function getShared(id: string): SharedProcess | undefined {
   return shared.find((item) => item.process.id === id);
 }

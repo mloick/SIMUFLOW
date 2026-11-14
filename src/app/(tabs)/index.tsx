@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { splitExamples } from '@/data/examples';
 import { useProcessList } from '@/data/process-list';
+import { useShareAlerts } from '@/data/share-alerts-store';
 import { useSharedProcesses } from '@/data/shared-store';
 import { useWelcomeSeen } from '@/data/welcome-setting';
 import { summarize, type Process, type ProcessSummary } from '@/domain';
@@ -40,6 +41,7 @@ export default function ProcessListScreen() {
   const reduceMotion = useReducedMotion();
   const welcomeSeen = useWelcomeSeen();
   const shared = useSharedProcesses();
+  const { unread } = useShareAlerts();
 
   // Premier lancement : la présentation s'ouvre par-dessus la liste.
   useEffect(() => {
@@ -98,6 +100,18 @@ export default function ProcessListScreen() {
             style={[styles.searchInput, { color: theme.text }]}
           />
         </View>
+      )}
+      {unread > 0 && (
+        <Pressable
+          onPress={() => router.push('/alertes')}
+          accessibilityRole="button"
+          style={[styles.offline, { backgroundColor: theme.primaryBackground }]}>
+          <SymbolView name={{ ios: 'bell.badge', android: 'notifications_active' }} size={18} tintColor={theme.link} />
+          <ThemedText type="smallBold" style={[styles.offlineText, { color: theme.link }]}>
+            {unread > 1 ? `${unread} nouvelles alertes du partage` : 'Une nouvelle alerte du partage'}
+          </ThemedText>
+          <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={16} tintColor={theme.link} />
+        </Pressable>
       )}
       {list.status === 'ready' && list.offline && (
         <View style={[styles.offline, { backgroundColor: theme.warningBackground }]} accessibilityRole="alert">
