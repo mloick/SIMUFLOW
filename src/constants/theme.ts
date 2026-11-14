@@ -70,6 +70,9 @@ export const FamilyColors = {
   dark: ['#4fb8ec', '#5fd3a6', '#f6b27a', '#b99cf2', '#f48fb1', '#5ed3dc'],
 } as const;
 
+/** Nom de chaque couleur de famille, dans le même ordre, pour les textes (« En bleu, … »). */
+export const FamilyColorNames = ['bleu', 'vert', 'orange', 'violet', 'rose', 'turquoise'] as const;
+
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({

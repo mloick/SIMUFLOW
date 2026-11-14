@@ -8,7 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
-import { FamilyColors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { FamilyColorNames, FamilyColors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
 import { anonymizeProcess, parseHiddenWords, type Process } from '@/domain';
 import { exportFileName, exportText, MIME_TYPES, processToPdfHtml, type ExportFormat } from '@/export';
@@ -18,7 +18,7 @@ import { plural } from '@/utils/format';
 import { sharePdf, shareTextFile } from '@/utils/share-file';
 
 const FORMATS: { value: ExportFormat; badge: string; title: string; description: string }[] = [
-  { value: 'pdf', badge: 'PDF', title: 'PDF', description: 'Schéma en couleur, familles de chemins et diagnostic' },
+  { value: 'pdf', badge: 'PDF', title: 'PDF', description: 'Schéma en couleur, résumé en clair, familles de chemins et diagnostic' },
   {
     value: 'drawio',
     badge: '.drawio',
@@ -85,7 +85,11 @@ function Exporter({ process }: { process: Process }) {
     const title = `Exporter « ${shared.name} »`;
     try {
       // Couleurs claires : le fichier est fait pour une page blanche.
-      const options = { colorFamilies: colorable && colorFamilies, colors: FamilyColors.light };
+      const options = {
+        colorFamilies: colorable && colorFamilies,
+        colors: FamilyColors.light,
+        colorNames: FamilyColorNames,
+      };
       if (format === 'pdf') await sharePdf(fileName, processToPdfHtml(shared, options), title);
       else await shareTextFile(fileName, exportText(shared, format, options), MIME_TYPES[format], title);
     } catch (cause) {

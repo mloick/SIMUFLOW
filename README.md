@@ -30,7 +30,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Diagnose**: dead ends, unreachable steps, paths that never finish, one-way decisions, unlabelled branches.
 - **Correct** the process in an editor; the app learns reading rules from your corrections.
 - **Simulate** step by step, or see every path at once with the critical path.
-- **Export** as PDF, draw.io, BPMN 2.0 or JSON, anonymised if needed.
+- **Export** as PDF (with a plain-language summary of each case), draw.io, BPMN 2.0 or JSON, anonymised if needed.
 - **Follow a real request** with deadlines in French working days and a reminder on the due date.
 - **Sync** across devices with an account, offline first; everything is deleted with the account.
 

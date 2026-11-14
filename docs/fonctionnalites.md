@@ -193,7 +193,7 @@ Le déroulé montre chaque étape, son acteur et le délai cumulé en jours ouvr
 
 Dans la simulation, le bouton de partage propose :
 
-- **PDF** : le schéma en couleur, les familles de chemins et le diagnostic, à envoyer ou imprimer ;
+- **PDF** : un résumé « En bref » en quelques phrases (par où le process commence, ses cas, le plus rapide et le plus long, les impasses), le schéma en couleur, les familles de chemins et le diagnostic, à envoyer ou imprimer ;
 - **draw.io** : à retoucher dans draw.io, un couloir par acteur ;
 - **BPMN 2.0** : à ouvrir dans Camunda Modeler, bpmn.io, Bizagi, Signavio… ;
 - **JSON** : pour un autre SimuFlow.
@@ -201,6 +201,8 @@ Dans la simulation, le bouton de partage propose :
 SimuFlow sait réimporter ses exports draw.io et BPMN sans perte.
 
 ![Exporter le schéma : le choix du format, puis le PDF](captures/etape-6b-export.png)
+
+![Le PDF commence par un résumé « En bref » : chaque cas avec sa couleur sur le schéma](captures/etape-35-en-bref.png)
 
 <details>
 <summary>Plus de captures</summary>
