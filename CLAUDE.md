@@ -4,6 +4,10 @@
 
 Application mobile de simulation de workflows (projet de Master 2, développement mobile). Interface et documentation en français ; le README principal est en anglais.
 
+## Se repérer
+
+Lire d'abord [docs/carte.md](docs/carte.md) : où est quoi, les règles et les pièges, en une page. Ne lire `docs/technique.md` que pour le détail d'une partie. Garder les commandes peu bavardes (`| tail`, `grep`) plutôt que d'afficher des fichiers ou des journaux entiers.
+
 ## Documentation à tenir à jour
 
 Toute modification du code (`src/`, `app.json`, `package.json`, `modules/`) met à jour, dans le même commit ou la même pull request :

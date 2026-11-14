@@ -103,7 +103,7 @@ src/
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
 assets/         Icônes, images, écran de démarrage
 public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil, moteur de lecture du Scanner web (ocr/, copié par scripts/ocr-web.mjs, non versionné)
-docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
+docs/           Documentation (dont carte.md, la carte du code en une page, securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
