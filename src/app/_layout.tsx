@@ -48,6 +48,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="connexion" options={{ title: 'Connexion', presentation: 'modal' }} />
+          <Stack.Screen name="mon-profil" options={{ title: 'Mon profil', presentation: 'modal' }} />
           <Stack.Screen
             name="bienvenue"
             options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }}

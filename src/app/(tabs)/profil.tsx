@@ -27,6 +27,8 @@ import {
 import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
 import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
 import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
+import { useMyProfile } from '@/data/profile-store';
+import { displayName, ROLE_LABELS } from '@/domain';
 
 /** Le Profil : le compte, les réglages, puis les informations sur l'app. */
 export default function ProfileScreen() {
@@ -104,6 +106,8 @@ function Account() {
               <ThemedText numberOfLines={1}>{session.user.email}</ThemedText>
             </View>
           </View>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          <ProfileRow />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SyncRow />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
@@ -241,6 +245,32 @@ function ReadingRules() {
 }
 
 /** Afficher ou masquer les process d'exemple dans la liste. */
+/** Nom, identifiant et rôle du compte, avec le lien vers « Mon profil ». */
+function ProfileRow() {
+  const theme = useTheme();
+  const state = useMyProfile();
+  const profile = state.status === 'ready' ? state.profile : null;
+  let detail: string;
+  if (state.status === 'loading' || state.status === 'none') detail = 'Lecture du profil…';
+  else if (state.status === 'error') detail = state.message;
+  else if (!profile) detail = 'Ajoutez votre nom et un identifiant pour être invité sur un process.';
+  else detail = [`@${profile.username}`, profile.role ? ROLE_LABELS[profile.role] : null].filter(Boolean).join(' · ');
+  return (
+    <Link href="/mon-profil" accessibilityRole="button" style={styles.row}>
+      <View style={[styles.flex, styles.profileText]}>
+        <ThemedText>{profile ? displayName(profile) : 'Compléter mon profil'}</ThemedText>
+        <ThemedText
+          type="small"
+          style={{ color: state.status === 'error' ? theme.danger : theme.textSecondary }}
+          numberOfLines={2}>
+          {detail}
+        </ThemedText>
+      </View>
+      <ThemedText type="link"> {profile ? 'Modifier →' : '→'}</ThemedText>
+    </Link>
+  );
+}
+
 /** Apparence : automatique (comme le téléphone), clair ou sombre. */
 function AppearanceSetting() {
   const theme = useTheme();
@@ -672,6 +702,7 @@ const styles = StyleSheet.create({
   boxText: { paddingVertical: Spacing.three },
   row: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two },
   identity: { gap: Spacing.three },
+  profileText: { gap: Spacing.half },
   divider: { height: StyleSheet.hairlineWidth },
   deleteBlock: { gap: Spacing.two, marginTop: Spacing.two },
   confirm: {
