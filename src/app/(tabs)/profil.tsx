@@ -24,10 +24,16 @@ import {
   TEST_DELAY_SECONDS,
   type NotificationPermission,
 } from '@/notifications/notifications';
-import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
+import {
+  setRemindersEnabled,
+  setShareAlertsEnabled,
+  useRemindersEnabled,
+  useShareAlertsEnabled,
+} from '@/notifications/settings';
 import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
 import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
 import { useMyProfile } from '@/data/profile-store';
+import { useShareAlerts } from '@/data/share-alerts-store';
 import { displayName, ROLE_LABELS } from '@/domain';
 
 /** Le Profil : le compte, les réglages, puis les informations sur l'app. */
@@ -149,8 +155,8 @@ function SavedForms() {
       <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {forms.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
-            Aucun pour l’instant. Importez un template de formulaire (Excel), puis touchez « Garder ce formulaire » : vous
-            pourrez le remplir à nouveau et lui lier un workflow plus tard.
+            Aucun pour l’instant. Importez un template de formulaire (Excel), puis touchez « Garder ce formulaire » :
+            vous pourrez le remplir à nouveau et lui lier un workflow plus tard.
           </ThemedText>
         ) : (
           forms.map((saved, index) => {
@@ -340,6 +346,8 @@ function ExamplesSetting() {
 function NotificationSettings() {
   const theme = useTheme();
   const enabled = useRemindersEnabled();
+  const alertsEnabled = useShareAlertsEnabled();
+  const { unread } = useShareAlerts();
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [sent, setSent] = useState(false);
 
@@ -356,6 +364,11 @@ function NotificationSettings() {
     setSent(false);
     if (!next) return cancelAllNotifications();
     if (permission === 'undetermined') setPermission(await requestNotificationPermission());
+  };
+
+  const toggleAlerts = async (next: boolean) => {
+    setShareAlertsEnabled(next);
+    if (next && permission === 'undetermined') setPermission(await requestNotificationPermission());
   };
 
   const test = async () => {
@@ -386,6 +399,28 @@ function NotificationSettings() {
             accessibilityLabel="Rappels d’échéance"
           />
         </View>
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={[styles.row, styles.identity]}>
+          <View style={styles.flex}>
+            <ThemedText>Alertes du partage</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Un process partagé avec vous, une étape à revoir, un process entièrement validé.
+            </ThemedText>
+          </View>
+          <Switch
+            value={alertsEnabled && !unavailable}
+            onValueChange={toggleAlerts}
+            disabled={unavailable || permission === null}
+            trackColor={{ true: theme.link }}
+            accessibilityLabel="Alertes du partage"
+          />
+        </View>
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <Pressable onPress={() => router.push('/alertes')} accessibilityRole="button" style={styles.row}>
+          <ThemedText type="link" style={{ color: theme.link }}>
+            Voir les alertes{unread > 0 ? ` · ${unread} nouvelle${unread > 1 ? 's' : ''}` : ''}
+          </ThemedText>
+        </Pressable>
         {active && (
           <>
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
@@ -412,7 +447,8 @@ function NotificationSettings() {
 }
 
 function notificationText(enabled: boolean, permission: NotificationPermission | null, sent: boolean): string {
-  if (permission === 'unavailable') return 'Les notifications ne sont pas disponibles dans le navigateur.';
+  if (permission === 'unavailable')
+    return 'Les notifications ne sont pas disponibles dans le navigateur : les alertes du partage restent dans « Voir les alertes ».';
   if (!enabled) return 'Rappels coupés : aucune notification ne sera envoyée.';
   if (permission === 'denied') return 'Les notifications sont refusées pour SimuFlow dans les réglages du téléphone.';
   if (permission === 'undetermined') return 'Le téléphone vous demandera l’autorisation au premier rappel.';

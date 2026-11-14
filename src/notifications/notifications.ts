@@ -20,6 +20,9 @@ export type NotificationPermission = 'granted' | 'denied' | 'undetermined' | 'un
 /** Canal Android des rappels (réglable par l'utilisateur dans les réglages du téléphone). */
 export const DEADLINE_CHANNEL = 'echeances';
 
+/** Canal Android des alertes du partage. */
+export const SHARE_CHANNEL = 'partage';
+
 /** À appeler une fois au démarrage : affiche les notifications même quand l'app est ouverte. */
 export function configureNotifications() {
   Notifications.setNotificationHandler({
@@ -35,6 +38,11 @@ export function configureNotifications() {
       name: 'Échéances des process',
       description: 'Rappels avant et après l’échéance de chaque étape d’un process suivi.',
       importance: AndroidImportance.HIGH,
+    }).catch(() => {});
+    Notifications.setNotificationChannelAsync(SHARE_CHANNEL, {
+      name: 'Partage des process',
+      description: 'Un process partagé avec vous, une étape à revoir, un process entièrement validé.',
+      importance: AndroidImportance.DEFAULT,
     }).catch(() => {});
   }
 }
@@ -113,5 +121,23 @@ export function useReminderTaps(open: (trackingId: string) => void) {
   useEffect(() => {
     const trackingId = response?.notification.request.content.data?.trackingId;
     if (typeof trackingId === 'string') open(trackingId);
+  }, [response, open]);
+}
+
+/** Une alerte du partage, affichée tout de suite. Toucher l'alerte ouvre `path`. */
+export async function notifyNow(alert: { id: string; title: string; body: string; path: string }) {
+  await Notifications.scheduleNotificationAsync({
+    identifier: alert.id,
+    content: { title: alert.title, body: alert.body, data: { kind: 'partage', path: alert.path } },
+    trigger: Platform.OS === 'android' ? { channelId: SHARE_CHANNEL } : null,
+  });
+}
+
+/** Appelle `open(path)` quand l'utilisateur touche une alerte du partage. */
+export function useShareAlertTaps(open: (path: string) => void) {
+  const response = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    const data = response?.notification.request.content.data;
+    if (data?.kind === 'partage' && typeof data.path === 'string') open(data.path);
   }, [response, open]);
 }

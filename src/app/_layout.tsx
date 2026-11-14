@@ -9,6 +9,7 @@ import { useCloudSync } from '@/data/cloud-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { configureNotifications } from '@/notifications/notifications';
 import { useDeadlineReminders } from '@/notifications/use-deadline-reminders';
+import { useShareAlertNavigation } from '@/notifications/use-share-alert-taps';
 
 // Les onglets restent toujours sous les écrans modaux (présentation du premier lancement).
 export const unstable_settings = { anchor: '(tabs)' };
@@ -40,6 +41,8 @@ export default function RootLayout() {
   useCloudSync();
   // Rappels d'échéance des demandes suivies, et ouverture d'un suivi depuis un rappel.
   useDeadlineReminders();
+  // Alertes du partage : toucher l'alerte ouvre le process ou son suivi.
+  useShareAlertNavigation();
   return (
     // Racine des gestes (pincer et glisser sur le schéma).
     <GestureHandlerRootView style={styles.root}>
@@ -60,11 +63,15 @@ export default function RootLayout() {
           <Stack.Screen name="suivi/[id]" options={{ title: 'Suivi' }} />
           <Stack.Screen name="import" options={{ title: 'Importer un process', presentation: 'modal' }} />
           <Stack.Screen name="formulaire" options={{ title: 'Formulaire', presentation: 'modal' }} />
-          <Stack.Screen name="formulaire-modifier" options={{ title: 'Modifier le formulaire', presentation: 'modal' }} />
+          <Stack.Screen
+            name="formulaire-modifier"
+            options={{ title: 'Modifier le formulaire', presentation: 'modal' }}
+          />
           <Stack.Screen name="export/[id]" options={{ title: 'Exporter le schéma', presentation: 'modal' }} />
           <Stack.Screen name="partage/[id]" options={{ title: 'Partager', presentation: 'modal' }} />
           <Stack.Screen name="ma-partie/[id]" options={{ title: 'Ma partie' }} />
           <Stack.Screen name="validation/[id]" options={{ title: 'Suivi de la validation' }} />
+          <Stack.Screen name="alertes" options={{ title: 'Alertes' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

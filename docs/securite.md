@@ -53,7 +53,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 
 | Point | État | Preuve |
 | --- | --- | --- |
-| Autorisations au minimum, demandées au bon moment avec une explication | ✅ | Appareil photo à l'ouverture du Scanner (micro et codes-barres non demandés) ; notifications au premier rappel |
+| Autorisations au minimum, demandées au bon moment avec une explication | ✅ | Appareil photo à l'ouverture du Scanner (micro et codes-barres non demandés) ; notifications au premier rappel, ou en activant les alertes du partage |
 | Liens entrants (`simuflow://`) traités comme des données non fiables | ✅ | Seul `nouveau-mot-de-passe` lit l'adresse ; `parseRecoveryLink` n'accepte qu'un jeton de récupération ou une erreur connue (testé) |
 | Lien de récupération réservé à SimuFlow | ⚠️ | Un schéma `simuflow://` peut être déclaré par une autre app sur Android ; des liens universels (domaine vérifié) le réserveraient. Risque limité : lien à usage unique, valable une heure |
 | Pages web ouvertes dans le navigateur du système, sans accès à l'app | ✅ | `WebBrowser.openBrowserAsync` (politique de confidentialité) ; aucune WebView qui exécute du code |
@@ -133,7 +133,7 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Les process importés sont enregistrés dans le dossier Documents de l'app, inaccessible aux autres apps.
 - À la déconnexion ou à la suppression du compte, les copies des process, des règles de lecture et des formulaires gardés du compte sont retirées du téléphone : un autre compte connecté sur le même téléphone ne les voit pas.
 - Appareil photo : demandé seulement à l'ouverture du Scanner, avec un message qui dit à quoi il sert. Pas de micro ni de lecture de codes-barres (autorisations non demandées). Les photos restent dans le cache de l'app et ne sont envoyées nulle part. La lecture du texte se fait sur le téléphone (module natif : Vision sur iOS, ML Kit avec son modèle inclus dans l'app sur Android) : aucun service en ligne, aucun envoi de la photo ni du texte lu. L'image recadrée sur le document reste dans le dossier temporaire de l'app.
-- Notifications : uniquement locales, programmées par le téléphone ; aucun jeton push, aucun serveur de notifications (`enableRemoteNotifications: false`). L'autorisation n'est demandée qu'en activant les rappels, et peut être coupée dans le Profil.
+- Notifications : uniquement locales, programmées par le téléphone ; aucun jeton push, aucun serveur de notifications (`enableRemoteNotifications: false`). L'autorisation n'est demandée qu'en activant les rappels ou les alertes du partage, qui se coupent dans le Profil. Les alertes du partage sont calculées par l'app à la synchronisation, à partir de données que les règles d'accès lui donnent déjà ; leur texte reste sur le téléphone et est effacé à la déconnexion.
 - Les fichiers importés (draw.io, BPMN, Visio, JSON, Excel, CSV) sont lus sur l'appareil, comme des données : un fichier abîmé ou inattendu est refusé avec un message, sans planter l'app. Ils ne sont ni envoyés ni gardés.
 
 ## Dans le navigateur
