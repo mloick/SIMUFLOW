@@ -26,6 +26,7 @@ import {
 } from '@/notifications/notifications';
 import { setRemindersEnabled, useRemindersEnabled } from '@/notifications/settings';
 import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
+import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
 
 /** Le Profil : le compte, les réglages, puis les informations sur l'app. */
 export default function ProfileScreen() {
@@ -40,6 +41,7 @@ export default function ProfileScreen() {
       </ThemedText>
       <ThemedText themeColor="textSecondary">Votre compte, vos réglages et les informations sur l’app.</ThemedText>
       <Account />
+      <AppearanceSetting />
       <NotificationSettings />
       <ExamplesSetting />
       <SavedForms />
@@ -239,6 +241,43 @@ function ReadingRules() {
 }
 
 /** Afficher ou masquer les process d'exemple dans la liste. */
+/** Apparence : automatique (comme le téléphone), clair ou sombre. */
+function AppearanceSetting() {
+  const theme = useTheme();
+  const current = useThemeMode();
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="apparence">
+        Apparence
+      </ThemedText>
+      <View
+        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
+        accessibilityRole="radiogroup"
+        accessibilityLabelledBy="apparence">
+        {THEME_MODES.map((option) => {
+          const selected = option.value === current;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setThemeMode(option.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={option.label}
+              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
+                {option.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        {current === 'auto' ? 'Suit le réglage du téléphone.' : 'Garde ce mode, quel que soit le réglage du téléphone.'}
+      </ThemedText>
+    </View>
+  );
+}
+
 function ExamplesSetting() {
   const theme = useTheme();
   const shown = useExamplesShown();
@@ -653,6 +692,20 @@ const styles = StyleSheet.create({
   },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  segments: {
+    flexDirection: 'row',
+    gap: Spacing.one,
+    padding: Spacing.one,
+    borderRadius: Radius.medium,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.small,
+  },
   options: {
     flexDirection: 'row',
     flexWrap: 'wrap',

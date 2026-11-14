@@ -104,7 +104,7 @@ public/         Fichiers copiés tels quels dans la version web : page de base (
 docs/           Documentation (dont securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
-jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
+jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
 scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
@@ -510,7 +510,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 
 **Premier lancement** (`bienvenue.tsx`, `src/data/welcome-setting.ts`). Tant que la présentation n'a pas été vue (clé `simuflow.bienvenue` sur le téléphone), la liste l'ouvre par-dessus elle (`router.push('/bienvenue')`, `presentation: 'fullScreenModal'`). Quatre pages : bienvenue (logo), ajouter ses process, rejouer et corriger, suivre une vraie demande. Dans un navigateur, une page « Installez SimuFlow » s'ajoute en deuxième (voir « Version web »). « Suivant », « Précédent » (toujours à sa place, invisible sur la première page, pour que les boutons ne bougent pas), « Passer » et, à la fin, « Commencer » ; les points annoncent « Page 2 sur 4 » ; chaque page arrive en fondu, sauf avec « Réduire les animations ». « Commencer » ou « Passer » la marquent vue. Elles referment l'écran par `router.dismissTo('/')`, et `unstable_settings = { anchor: '(tabs)' }` dans `_layout.tsx` garde les onglets sous les écrans modaux : le retour fonctionne même si la présentation est le premier écran affiché. Le Profil propose « Revoir la présentation ». Le test Maestro passe la présentation si elle s'affiche (`runFlow` avec `when: visible`).
 
-**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis cinq sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, synchronisation, suppression), **Notifications** (rappels d'échéance), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
+**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis six sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, synchronisation, suppression), **Apparence** (`AppearanceSetting` : trois boutons radio Automatique, Clair, Sombre, et une phrase qui dit ce que fait le choix), **Notifications** (rappels d'échéance), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
 
 ![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 
@@ -1038,9 +1038,11 @@ Les couleurs viennent de la maquette et sont rangées dans `src/constants/theme.
 - `Colors.light` et `Colors.dark` : la même liste de couleurs nommées par leur rôle (`background`, `surface`, `surfaceMuted`, `field`, `text`, `textSecondary`, `link`, `primary`, `onPrimary`, `primaryBackground`, `border`, et les couleurs du diagnostic `success`, `warning`, `danger` avec leur fond).
 - `Radius` (arrondis), `Spacing` (espacements), `Fonts` (polices système).
 
-Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif du téléphone, clair ou sombre. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc.
+Le hook `useTheme()` (`src/hooks/use-theme.ts`) renvoie la palette du mode actif, clair ou sombre. Ce mode vient de `useColorScheme()` (`src/hooks/use-color-scheme.ts`, et `.web.ts` pour le rendu statique du web) : le réglage « Apparence » du Profil (`src/data/theme-setting.ts` : `auto`, `light` ou `dark`, gardé dans `localStorage` sous `simuflow.apparence`), ou le mode du téléphone en automatique (`resolveScheme`). Sur iOS et Android, le choix est aussi passé au système (`Appearance.setColorScheme`, `unspecified` pour automatique) pour que le clavier et les fenêtres du système suivent. `_layout.tsx` et `SplashOverlay` utilisent ce hook, jamais celui de React Native directement. `ThemedText` et `ThemedView` l'utilisent, ainsi que la barre d'onglets et les en-têtes de navigation (thème construit dans `src/app/_layout.tsx`). Un écran ne doit jamais écrire une couleur en dur : il prend `useTheme().text`, `useTheme().surface`, etc. Dans les tests, `jest/stockage-memoire.js` remplace `localStorage` (la base SQLite du téléphone n'existe pas) ; test : `src/data/__tests__/theme-setting.test.ts`.
 
 Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (règle WCAG AA). C'est pourquoi `primary` en mode clair (`#0078bd`) est un peu plus foncé que le bleu du logo : le texte blanc des boutons reste lisible.
+
+![Apparence : Automatique en clair, Sombre choisi dans le Profil, puis la liste en sombre après rechargement](captures/etape-37-apparence.png)
 
 ### Identité de l'app : icône, écran de démarrage, identifiant
 
@@ -1100,7 +1102,7 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 - **`form-field.test.tsx`**, **`formulaire-ecran.test.tsx`**, **`formulaire-modifier-ecran.test.tsx`** : une question de formulaire, l'écran du formulaire et son éditeur (voir [Formulaire](#formulaire-srcappformulairetsx-srcappformulaire-modifiertsx)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).
 
-`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). Ces tests tournent avec les autres : `npm test`, et dans la CI.
+`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). De même, `expo-sqlite/localStorage/install` (le `localStorage` du téléphone, en SQLite) est remplacé par `jest/stockage-memoire.js`, un `localStorage` en mémoire. Ces tests tournent avec les autres : `npm test`, et dans la CI.
 
 ### Test de bout en bout (`.maestro/`)
 

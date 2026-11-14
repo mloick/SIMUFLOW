@@ -385,12 +385,14 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 7. Confort
 
-- **Mode sombre** · Disponible : l'app suit le réglage du téléphone.
+- **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Profil > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
 - **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Profil**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
-- **Profil** · Disponible : compte, notifications, exemples, règles apprises, puis **À propos** (serveur, présentation, confidentialité, version).
+- **Profil** · Disponible : compte, apparence, notifications, exemples, règles apprises, puis **À propos** (serveur, présentation, confidentialité, version).
+
+![Apparence : Automatique, puis Sombre choisi dans le Profil, et la liste en sombre](captures/etape-37-apparence.png)
 
 ![Texte agrandi : le détail d'un process et la simulation](captures/etape-13d-grands-textes.png)
 
