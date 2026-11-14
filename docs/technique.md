@@ -1203,7 +1203,7 @@ L'app parle français ou anglais. Le réglage « Langue » du Profil vaut `auto`
 - **React Compiler** : il mémorise ce qu'un écran calcule à partir de ses entrées. Un appel à `getT()` pendant l'affichage garderait donc l'ancienne langue. Dans un écran, on prend toujours les textes de `useT()` et on les passe aux fonctions d'aide (`syncText(t, status)` dans le Profil).
 - **Version web** : la page annonce sa langue (`document.documentElement.lang`), pour les lecteurs d'écran et la traduction du navigateur.
 
-**Écrans en anglais à cette étape** : onglets, titres de tous les écrans, Profil, connexion, mot de passe oublié et nouveau mot de passe, Mon profil et son formulaire, présentation du premier lancement. Les autres écrans passeront en anglais aux étapes suivantes.
+**Écrans en anglais à cette étape** : onglets, titres de tous les écrans, Profil, connexion, mot de passe oublié et nouveau mot de passe, Mon profil et son formulaire, présentation du premier lancement, liste des process (`(tabs)/index.tsx`, carte, squelette de chargement) et fiche d'un process (`process/[id].tsx`, avec le diagnostic `domain/diagnostic.ts`, les dates et échéances du suivi `tracking/format.ts`, les rappels `tracking/reminders.ts` et les notifications). Les textes de ces écrans sont dans `messages/fr-ecrans.ts` et `messages/en-ecrans.ts`. Les fonctions d'aide prennent les textes en paramètre (`diagnosticBadge(t, summary)`, `explainIssue(issue, process, t)`, `formatMoment(date, t)`). Les autres écrans passeront en anglais aux étapes suivantes.
 
 **Tests.**
 - Dans Jest, `jest/langue-fr.js` remplace la langue du téléphone par `fr-FR` (`moduleNameMapper`) : les tests lisent l'app en français, quelle que soit la machine.

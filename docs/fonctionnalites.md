@@ -449,7 +449,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 7. Confort
 
-- **Langue** · Disponible en partie : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Profil > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Pour l'instant, l'anglais couvre les onglets, le **Profil**, la connexion, le mot de passe oublié, **Mon profil** et la présentation ; les autres écrans restent en français et passeront en anglais aux prochaines étapes.
+- **Langue** · Disponible en partie : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Profil > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Pour l'instant, l'anglais couvre les onglets, le **Profil**, la connexion, le mot de passe oublié, **Mon profil**, la présentation, la **liste des process** et la **fiche d'un process** (diagnostic, suivi et rappels compris) ; les autres écrans restent en français et passeront en anglais aux prochaines étapes.
 - **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Profil > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
@@ -477,5 +477,5 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 ## 8. Prévu
 
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
-- **Interface en anglais, sur tous les écrans** · Prévue : la liste, la fiche d'un process, la simulation, l'import, l'export, les formulaires et le partage, en plusieurs étapes.
+- **Interface en anglais, sur tous les écrans** · Prévue : la simulation, l'import, l'export, les formulaires et le partage, en plusieurs étapes.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
