@@ -9,6 +9,7 @@
 import { useSyncExternalStore } from 'react';
 
 import '@/backend/local-storage';
+import { listLinkActivity } from '@/backend/links';
 import { listSharingActivity } from '@/backend/sharing';
 import { detectShareAlerts, type ShareAlert, type ShareAlertState, type ShareSnapshot } from '@/domain';
 import { getNotificationPermission, notifyNow } from '@/notifications/notifications';
@@ -57,7 +58,12 @@ function setSaved(next: Saved) {
 /** Ce que l'app voit maintenant : les partages reçus, et mes process partagés avec leurs membres et avis. */
 async function snapshot(): Promise<ShareSnapshot> {
   const mine = getImportEntries().filter((entry) => entry.cloudId && !entry.deleted);
-  const activity = await listSharingActivity(mine.map((entry) => entry.cloudId!));
+  const ids = mine.map((entry) => entry.cloudId!);
+  const [activity, links] = await Promise.all([
+    listSharingActivity(ids),
+    // Sans le script des liens d'acteur, les alertes des membres marchent quand même.
+    listLinkActivity(ids).catch(() => ({ links: [], reviews: [] })),
+  ]);
   return {
     shared: getSharedProcesses().map((item) => ({
       cloudId: item.cloudId,
@@ -70,10 +76,20 @@ async function snapshot(): Promise<ShareSnapshot> {
         cloudId: entry.cloudId!,
         localId: entry.process.id,
         process: entry.process,
-        members: activity.members
-          .filter((member) => member.process_id === entry.cloudId)
-          .map((member) => ({ id: member.member_id, actor: member.actor })),
-        reviews: activity.reviews.filter((review) => review.processId === entry.cloudId),
+        members: [
+          ...activity.members
+            .filter((member) => member.process_id === entry.cloudId)
+            .map((member) => ({ id: member.member_id, actor: member.actor })),
+          ...links.links
+            .filter((link) => link.processId === entry.cloudId)
+            .map((link) => ({ id: `lien:${link.id}`, actor: link.actor })),
+        ],
+        reviews: [
+          ...activity.reviews.filter((review) => review.processId === entry.cloudId),
+          ...links.reviews.filter((review) =>
+            links.links.some((link) => link.processId === entry.cloudId && review.memberId === `lien:${link.id}`),
+          ),
+        ],
       }))
       .filter((item) => item.members.length > 0),
   };

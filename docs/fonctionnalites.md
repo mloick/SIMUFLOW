@@ -8,7 +8,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
 2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
-3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation, alertes
+3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation, alertes, lien pour les acteurs sans compte
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
 6. [Compte et données](#6-compte-et-données) : synchronisation, version web, confidentialité
@@ -284,6 +284,19 @@ Il n'y a pas de serveur de notifications : c'est l'app qui regarde ce qui a chan
 
 ![Alertes du partage : le bandeau sur la liste des process, l'écran Alertes, puis le réglage dans le Profil](captures/etape-42-alertes.png)
 
+### Lien pour les acteurs sans compte · Disponible
+
+Un acteur n'a pas SimuFlow ? Dans **Partager**, la section **Liens pour les acteurs sans compte** liste les acteurs du schéma. Pour chacun :
+
+- **Créer un lien**, puis **Envoyer** : la feuille de partage du téléphone (Messages, Mail…), ou dans le navigateur une copie du lien ;
+- **Retirer** : le lien ne s'ouvre plus, et les avis donnés par ce lien sont retirés.
+
+La personne ouvre le lien dans son navigateur, sans compte ni installation. La page lui dit qui demande la relecture et de quelle partie il s'agit, puis demande : **« Vous êtes « Achats » ? Écrivez votre nom pour le confirmer. »** Après **C'est moi, je relis ma partie**, elle relit ses étapes comme un membre : **✓ Valider**, ou **À revoir…** avec un commentaire. Chaque avis porte son nom.
+
+De votre côté, le lien compte comme un membre dans **Suivi de la validation** (« Inès Moreau (lien) »), et ses avis déclenchent les mêmes alertes. Le nom écrit est une confirmation, pas une preuve d'identité : envoyez chaque lien à la bonne personne, et retirez-le s'il circule trop.
+
+![Lien pour les acteurs sans compte : les liens dans Partager, la page du lien qui demande le nom, la relecture, puis l'avis dans le suivi de la validation](captures/etape-43-lien-acteur.png)
+
 ## 4. Suivre une vraie demande
 
 ### Suivi en vrai · Disponible
@@ -460,7 +473,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Lien web pour les acteurs sans compte** · Prévue : un lien par acteur, ouvert dans le navigateur, où la personne confirme son nom avant de relire sa partie.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **Interface en anglais** · Prévue.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

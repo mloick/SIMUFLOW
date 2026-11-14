@@ -26,9 +26,33 @@ const STATUS_LABELS: Record<ReviewStatus, string> = { valide: 'Validée', a_revo
  * l'acteur qui lui est confié, ou tout le process), et pour chacune son avis :
  * validée, ou à revoir avec un commentaire. Chaque avis part tout de suite.
  */
-export function ReviewPanel({ shared }: { shared: SharedProcess }) {
+export type ReviewApi = {
+  load: () => Promise<StepReview[]>;
+  save: (review: StepReview) => Promise<void>;
+  remove: (stepId: string) => Promise<void>;
+};
+
+/** Les avis du compte connecté sur un process partagé avec lui. */
+const cloudReviews = (cloudId: string): ReviewApi => ({
+  load: () => listMyReviews(cloudId),
+  save: (review) => saveReview(cloudId, review),
+  remove: (stepId) => removeReview(cloudId, stepId),
+});
+
+export function ReviewPanel({
+  shared,
+  api: given,
+  note,
+}: {
+  shared: Pick<SharedProcess, 'process' | 'actor' | 'ownerName'> & { cloudId?: string };
+  /** Où lire et écrire les avis ; par défaut, ceux du compte connecté (`shared.cloudId`). */
+  api?: ReviewApi;
+  /** Remplace la phrase « … voit vos avis ». */
+  note?: string;
+}) {
   const theme = useTheme();
   const { process, actor, cloudId } = shared;
+  const api = useMemo(() => given ?? cloudReviews(cloudId ?? ''), [given, cloudId]);
   const mine = useMemo(() => myPartSteps(process, actor), [process, actor]);
   const all = useMemo(() => reviewableSteps(process), [process]);
   // Un acteur confié qui n'a plus d'étape (le schéma a changé) : tout est à relire.
@@ -42,10 +66,12 @@ export function ReviewPanel({ shared }: { shared: SharedProcess }) {
 
   const fetchReviews = useCallback(
     () =>
-      listMyReviews(cloudId).then(setReviews, (cause: unknown) =>
-        setLoadError(cause instanceof Error ? cause.message : 'Vos avis n’ont pas pu être lus.'),
-      ),
-    [cloudId],
+      api
+        .load()
+        .then(setReviews, (cause: unknown) =>
+          setLoadError(cause instanceof Error ? cause.message : 'Vos avis n’ont pas pu être lus.'),
+        ),
+    [api],
   );
 
   useEffect(() => {
@@ -63,13 +89,13 @@ export function ReviewPanel({ shared }: { shared: SharedProcess }) {
   const numbers = useMemo(() => new Map(process.steps.map((step, index) => [step.id, index + 1])), [process]);
 
   const save = async (review: StepReview) => {
-    await saveReview(cloudId, review);
+    await api.save(review);
     setReviews((list) => [...(list ?? []).filter((item) => item.stepId !== review.stepId), review]);
     setEditing(null);
   };
 
   const clear = async (stepId: string) => {
-    await removeReview(cloudId, stepId);
+    await api.remove(stepId);
     setReviews((list) => (list ?? []).filter((item) => item.stepId !== stepId));
     setEditing(null);
   };
@@ -104,7 +130,7 @@ export function ReviewPanel({ shared }: { shared: SharedProcess }) {
               : `${progress.validated} validée${progress.validated > 1 ? 's' : ''} · ${progress.toRevise} à revoir · ${progress.pending} à relire`}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {shared.ownerName} voit vos avis. Vous pouvez les changer tant que vous êtes membre.
+            {note ?? `${shared.ownerName} voit vos avis. Vous pouvez les changer tant que vous êtes membre.`}
           </ThemedText>
         </View>
       )}

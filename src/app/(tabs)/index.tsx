@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
@@ -44,9 +44,11 @@ export default function ProcessListScreen() {
   const { unread } = useShareAlerts();
 
   // Premier lancement : la présentation s'ouvre par-dessus la liste.
+  const pathname = usePathname();
   useEffect(() => {
-    if (!welcomeSeen) router.push('/bienvenue');
-  }, [welcomeSeen]);
+    // Pas par-dessus la page d'un lien d'acteur, ouverte par quelqu'un qui n'utilise pas l'app.
+    if (!welcomeSeen && !pathname.startsWith('/lien/')) router.push('/bienvenue');
+  }, [welcomeSeen, pathname]);
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
   // Vos process d'abord, puis ceux partagés avec vous, puis les exemples fournis avec l'app (section repliable).

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { inviteMember, listMembers, memberName, removeMember, type Member } from '@/backend/sharing';
+import { ActorLinks } from '@/components/actor-links';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -216,6 +217,8 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
           </ThemedText>
         )}
       </View>
+
+      {actors.length > 0 && <ActorLinks cloudId={cloudId} processName={process.name} actors={actors} />}
     </ScrollView>
   );
 }
