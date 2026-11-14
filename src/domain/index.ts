@@ -6,3 +6,4 @@ export * from './paths';
 export * from './summary';
 export * from './types';
 export * from './profile';
+export * from './review';

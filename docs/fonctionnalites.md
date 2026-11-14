@@ -8,7 +8,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
 2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
-3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs
+3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
 6. [Compte et données](#6-compte-et-données) : synchronisation, version web, confidentialité
@@ -241,9 +241,22 @@ Pour montrer un process sans vrais noms, cochez **Anonymiser les noms** à l'imp
 
 Sur la fiche d'un de vos process, **Partager avec les acteurs** ouvre **Partager**. Écrivez l'**identifiant** d'un collègue (`julie.martin`, voir **Mon profil**) ou son **adresse e-mail**, choisissez s'il le faut l'**acteur** du schéma dont il s'occupe, puis **Inviter**. Vous pouvez inviter autant de personnes qu'il faut (jusqu'à 100), plusieurs pour un même acteur, et en **retirer**. Il faut être connecté, et le process doit être sur votre compte (il y part à la synchronisation). Les exemples fournis avec l'app ne se partagent pas.
 
-Les membres pourront voir et jouer le process depuis leur compte, sans pouvoir le modifier. Ce qu'ils voient de leur côté, la validation et les commentaires par étape arrivent dans les étapes suivantes (voir **Prévu**).
+Les membres voient et jouent le process depuis leur compte, sans pouvoir le modifier (voir ci-dessous). Le suivi de leurs avis arrive dans une prochaine étape (voir **Prévu**).
 
 ![Partager : la liste des membres avec leur acteur, puis une invitation pour « Service B »](captures/etape-39-partage.png)
+
+### Relire et valider ma partie · Disponible
+
+Quand quelqu'un partage un process avec vous, il apparaît dans votre liste, sous **Partagés avec moi**, avec le nom de la personne qui le partage. Vous pouvez l'ouvrir, le simuler et suivre une demande, mais pas le modifier.
+
+Sur sa fiche, **Relire et valider ma partie** ouvre **Ma partie** : les étapes de l'acteur qui vous est confié (par exemple « Achats »), ou tout le process si aucun acteur ne vous est confié. **Tout le process** montre aussi les autres étapes. Pour chaque étape :
+
+- **✓ Valider** : l'étape est juste ;
+- **À revoir…** : dites ce qui ne va pas (délai, acteur, étape manquante…), puis **Enregistrer mon avis**.
+
+Chaque avis part tout de suite sur votre compte, et vous pouvez le changer ou le retirer. En haut, un encadré compte les étapes validées, à revoir et à relire, puis vous remercie quand votre partie est relue. Seuls vous et le propriétaire du process voyez vos avis : les autres membres ne les voient pas. Il n'y a pas de messagerie, seulement un commentaire par étape.
+
+![Ma partie : le process partagé dans la liste, sa fiche, puis une étape validée et une étape à revoir avec son commentaire](captures/etape-40-ma-partie.png)
 
 ## 4. Suivre une vraie demande
 
@@ -421,7 +434,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Valider à plusieurs** · Prévue : chaque membre invité voit le process partagé dans sa liste, sa partie mise en avant, valide ou commente chaque étape ; le propriétaire suit la validation et est prévenu. Plus tard, un lien web pour les acteurs sans compte.
+- **Suivre la validation** · Prévue : le propriétaire voit, étape par étape, qui a validé et ce qui est à revoir, et sait quand le process est entièrement validé ; les membres sont prévenus d'un nouveau partage. Plus tard, un lien web pour les acteurs sans compte.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **Interface en anglais** · Prévue.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

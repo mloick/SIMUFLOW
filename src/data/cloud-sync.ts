@@ -6,7 +6,8 @@
  * quand le réseau revient, après un import ou une suppression, et à la demande
  * (« Synchroniser »).
  * Les règles de lecture apprises (rules-store.ts) et les formulaires gardés
- * (form-store.ts) suivent, après les process.
+ * (form-store.ts) suivent, après les process, puis la liste des process
+ * partagés avec le compte (shared-store.ts).
  * Sans compte, les copies déjà envoyées sont retirées du téléphone (process,
  * règles et formulaires) : elles sont sur le serveur, et le prochain compte connecté ne doit
  * pas les voir.
@@ -21,14 +22,9 @@ import { createCloudProcess, deleteCloudProcess, listCloudProcesses, updateCloud
 import { getCloudRules, saveCloudRules } from '@/backend/reading-rules';
 import { getCloudForms, saveCloudForms } from '@/backend/saved-forms';
 
-import {
-  forgetCloudForms,
-  hasPendingForms,
-  subscribeSavedForms,
-  syncSavedForms,
-  type FormsApi,
-} from './form-store';
+import { forgetCloudForms, hasPendingForms, subscribeSavedForms, syncSavedForms, type FormsApi } from './form-store';
 import { getImportEntries, setImportEntries, subscribeImports } from './process-store';
+import { forgetShared, refreshShared } from './shared-store';
 import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
 
@@ -108,6 +104,7 @@ export async function syncNow() {
     } while (again && connected);
     if (connected) await syncRulesQuietly();
     if (connected) await syncFormsQuietly();
+    if (connected) await refreshShared();
     if (connected) setStatus({ state: 'done', at: new Date(), synced: true });
   } catch (error) {
     // Hors connexion ou serveur injoignable : les changements attendent la prochaine fois.
@@ -131,6 +128,7 @@ function forgetCloudCopies() {
   if (kept.length !== entries.length) setImportEntries(kept);
   forgetCloudRules();
   forgetCloudForms();
+  forgetShared();
   setStatus({ state: 'idle', synced: false });
 }
 

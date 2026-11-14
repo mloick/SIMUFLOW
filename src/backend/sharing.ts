@@ -51,6 +51,10 @@ export function sharingErrorMessage(error: { code?: string; message?: string }):
       return new SharingError('C’est vous : vous êtes déjà le propriétaire de ce process.');
     case '54000':
       return new SharingError('Un process compte au plus 100 membres.');
+    case '23503':
+      return new SharingError('Vous n’êtes plus membre de ce process : son propriétaire vous en a retiré.');
+    case '23514':
+      return new SharingError('Avis incomplet : dites ce qui est à revoir (1 000 caractères au plus).');
     case 'PGRST202':
     case '42883':
     case '42P01':

@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { splitExamples } from '@/data/examples';
 import { useProcessList } from '@/data/process-list';
+import { useSharedProcesses } from '@/data/shared-store';
 import { useWelcomeSeen } from '@/data/welcome-setting';
 import { summarize, type Process, type ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,7 +22,8 @@ const NO_PROCESSES: Process[] = [];
 
 /** Une ligne de la liste : une carte, le titre repliable « Exemples », ou l'invitation à ajouter un process. */
 type Row =
-  | { kind: 'card'; process: Process; summary: ProcessSummary }
+  | { kind: 'card'; process: Process; summary: ProcessSummary; sharedBy?: string }
+  | { kind: 'shared'; count: number }
   | { kind: 'examples'; count: number }
   | { kind: 'hint' };
 
@@ -37,6 +39,7 @@ export default function ProcessListScreen() {
   const [examplesOpen, setExamplesOpen] = useState(true);
   const reduceMotion = useReducedMotion();
   const welcomeSeen = useWelcomeSeen();
+  const shared = useSharedProcesses();
 
   // Premier lancement : la présentation s'ouvre par-dessus la liste.
   useEffect(() => {
@@ -44,23 +47,35 @@ export default function ProcessListScreen() {
   }, [welcomeSeen]);
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
-  // Vos process d'abord, puis les exemples fournis avec l'app, dans une section repliable.
+  // Vos process d'abord, puis ceux partagés avec vous, puis les exemples fournis avec l'app (section repliable).
   const rows = useMemo(() => {
     const search = normalizeForSearch(query);
-    const card = (process: Process): Row => ({ kind: 'card', process, summary: summarize(process) });
+    const card = (process: Process, sharedBy?: string): Row => ({
+      kind: 'card',
+      process,
+      summary: summarize(process),
+      sharedBy,
+    });
     const matches = processes.filter((process) => normalizeForSearch(process.name).includes(search));
     const { own, examples } = splitExamples(matches);
-    const result: Row[] = own.map(card);
-    if (own.length === 0 && !search && examples.length > 0) result.push({ kind: 'hint' });
+    const result: Row[] = own.map((process) => card(process));
+    // Les process que d'autres comptes partagent avec moi, entre les miens et les exemples.
+    const sharedMatches =
+      list.status === 'ready' ? shared.filter((item) => normalizeForSearch(item.process.name).includes(search)) : [];
+    if (own.length === 0 && sharedMatches.length === 0 && !search && examples.length > 0) result.push({ kind: 'hint' });
+    if (sharedMatches.length > 0) {
+      result.push({ kind: 'shared', count: sharedMatches.length });
+      result.push(...sharedMatches.map((item) => card(item.process, item.ownerName)));
+    }
     if (examples.length > 0) {
       result.push({ kind: 'examples', count: examples.length });
-      if (examplesOpen) result.push(...examples.map(card));
+      if (examplesOpen) result.push(...examples.map((process) => card(process)));
     }
     return result;
-  }, [processes, query, examplesOpen]);
+  }, [processes, shared, list.status, query, examplesOpen]);
 
   const openImport = () => router.push('/import');
-  const hasProcesses = processes.length > 0;
+  const hasProcesses = processes.length > 0 || (list.status === 'ready' && shared.length > 0);
 
   const header = (
     <View style={styles.header}>
@@ -142,6 +157,20 @@ export default function ProcessListScreen() {
               </View>
             );
           }
+          if (row.kind === 'shared') {
+            return (
+              <View style={styles.examplesHeader}>
+                <View style={styles.flex}>
+                  <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+                    Partagés avec moi · {row.count}
+                  </ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    À relire et valider : seul leur propriétaire peut les modifier.
+                  </ThemedText>
+                </View>
+              </View>
+            );
+          }
           if (row.kind === 'examples') {
             return (
               <Pressable
@@ -175,7 +204,7 @@ export default function ProcessListScreen() {
             // Les cartes arrivent l'une après l'autre en glissant vers le haut ;
             // rien ne bouge si « Réduire les animations » est activé.
             <Animated.View entering={reduceMotion ? undefined : FadeInDown.delay(index * 60).duration(300)}>
-              <ProcessCard process={row.process} summary={row.summary} />
+              <ProcessCard process={row.process} summary={row.summary} sharedBy={row.sharedBy} />
             </Animated.View>
           );
         }}

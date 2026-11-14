@@ -9,7 +9,15 @@ import type { Process, ProcessSource, ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { plural } from '@/utils/format';
 
-const SOURCE_LABELS: Record<ProcessSource, string> = { drawio: 'draw.io', scan: 'Scan', json: 'JSON', tableau: 'Tableau', bpmn: 'BPMN', visio: 'Visio', texte: 'Texte' };
+const SOURCE_LABELS: Record<ProcessSource, string> = {
+  drawio: 'draw.io',
+  scan: 'Scan',
+  json: 'JSON',
+  tableau: 'Tableau',
+  bpmn: 'BPMN',
+  visio: 'Visio',
+  texte: 'Texte',
+};
 
 /** Pastille du diagnostic : les erreurs d'abord, puis les avertissements. */
 export function diagnosticBadge(summary: ProcessSummary): { label: string; tone: BadgeTone } {
@@ -18,8 +26,16 @@ export function diagnosticBadge(summary: ProcessSummary): { label: string; tone:
   return { label: 'Aucune anomalie', tone: 'success' };
 }
 
-/** Carte d'un process dans la liste. Toute la carte ouvre le détail. */
-export function ProcessCard({ process, summary }: { process: Process; summary: ProcessSummary }) {
+/** Carte d'un process dans la liste. Toute la carte ouvre le détail. `sharedBy` : process partagé avec moi, par qui. */
+export function ProcessCard({
+  process,
+  summary,
+  sharedBy,
+}: {
+  process: Process;
+  summary: ProcessSummary;
+  sharedBy?: string;
+}) {
   const theme = useTheme();
   const meta = [
     plural(summary.stepCount, 'étape'),
@@ -33,7 +49,15 @@ export function ProcessCard({ process, summary }: { process: Process; summary: P
     <Pressable
       onPress={() => router.push({ pathname: '/process/[id]', params: { id: process.id } })}
       accessibilityRole="button"
-      accessibilityLabel={[process.name, meta, badge.label, source && `Source : ${source}`].filter(Boolean).join('. ')}
+      accessibilityLabel={[
+        process.name,
+        sharedBy && `Partagé par ${sharedBy}`,
+        meta,
+        badge.label,
+        source && `Source : ${source}`,
+      ]
+        .filter(Boolean)
+        .join('. ')}
       accessibilityHint="Ouvre le détail du process"
       style={({ pressed }) => [
         styles.card,
@@ -43,8 +67,20 @@ export function ProcessCard({ process, summary }: { process: Process; summary: P
         <ThemedText type="subtitle" style={styles.title}>
           {process.name}
         </ThemedText>
-        <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right' }} size={18} tintColor={theme.textSecondary} />
+        <SymbolView
+          name={{ ios: 'chevron.right', android: 'chevron_right' }}
+          size={18}
+          tintColor={theme.textSecondary}
+        />
       </View>
+      {sharedBy && (
+        <View style={styles.shared}>
+          <SymbolView name={{ ios: 'person.2', android: 'group' }} size={16} tintColor={theme.link} />
+          <ThemedText type="small" style={{ color: theme.link }}>
+            Partagé par {sharedBy}
+          </ThemedText>
+        </View>
+      )}
       <ThemedText themeColor="textSecondary">{meta}</ThemedText>
       <View style={styles.badges}>
         <Badge label={badge.label} tone={badge.tone} />
@@ -68,6 +104,11 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
+  },
+  shared: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
   },
   badges: {
     flexDirection: 'row',
