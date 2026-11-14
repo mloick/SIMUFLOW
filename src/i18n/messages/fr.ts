@@ -4,9 +4,13 @@
  * (un nombre, un nom).
  */
 
+import { frScreens } from './fr-ecrans';
+
 const PASSWORD_MIN = 8;
 
 export const fr = {
+  ...frScreens,
+
   common: {
     /** Pour les dates et les heures. */
     locale: 'fr-FR',
@@ -47,7 +51,7 @@ export const fr = {
   language: {
     heading: 'Langue',
     options: { auto: 'Automatique', fr: 'Français', en: 'English' },
-    autoHint: (current: string) => `Suit la langue du téléphone (actuellement : ${current}).`,
+    autoHint: (current: string): string => `Suit la langue du téléphone (actuellement : ${current}).`,
     fixedHint: 'Garde cette langue, quelle que soit celle du téléphone.',
     names: { fr: 'français', en: 'anglais' },
   },
@@ -67,7 +71,7 @@ export const fr = {
     account: 'Compte',
     signInInvite: 'Connectez-vous pour retrouver vos process sur tous vos appareils.',
     signInLink: 'Se connecter ou créer un compte →',
-    connectedAs: (email: string) => `Connecté : ${email}`,
+    connectedAs: (email: string): string => `Connecté : ${email}`,
     connected: 'Connecté',
     signOut: 'Se déconnecter',
     profileLoading: 'Lecture du profil…',
@@ -75,7 +79,7 @@ export const fr = {
     completeProfile: 'Compléter mon profil',
     editProfile: 'Modifier →',
     syncing: 'Synchronisation…',
-    syncedAt: (time: string) => `Process synchronisés à ${time}`,
+    syncedAt: (time: string): string => `Process synchronisés à ${time}`,
     syncIdle: 'Vos process importés sont gardés sur votre compte.',
     syncNow: 'Synchroniser',
     deleteAccount: 'Supprimer mon compte',
@@ -91,19 +95,19 @@ export const fr = {
     savedFormsEmpty:
       'Aucun pour l’instant. Importez un template de formulaire (Excel), puis touchez « Garder ce formulaire » : vous pourrez le remplir à nouveau et lui lier un workflow plus tard.',
     unnamedForm: 'Formulaire sans nom',
-    linkedTo: (name: string) => `lié à ${name}`,
+    linkedTo: (name: string): string => `lié à ${name}`,
     aWorkflow: 'un workflow',
     noWorkflow: 'sans workflow',
-    openForm: (name: string, link: string) => `Ouvrir le formulaire ${name}, ${link}`,
-    formQuestions: (count: number, link: string) => `${count} questions · ${link}`,
-    removeForm: (name: string) => `Retirer le formulaire ${name}`,
+    openForm: (name: string, link: string): string => `Ouvrir le formulaire ${name}, ${link}`,
+    formQuestions: (count: number, link: string): string => `${count} questions · ${link}`,
+    removeForm: (name: string): string => `Retirer le formulaire ${name}`,
     formsKeptAccount: 'Gardés avec leur workflow, sur ce téléphone et sur votre compte.',
     formsKeptLocal:
       'Gardés avec leur workflow sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.',
     rules: 'Règles de lecture apprises',
     rulesEmpty:
       'Aucune pour l’instant. Quand vous corrigez un process importé (un acteur renommé partout, une forme qui veut dire « décision »), SimuFlow le retient et le refait aux imports suivants.',
-    forgetRule: (text: string) => `Oublier la règle : ${text}`,
+    forgetRule: (text: string): string => `Oublier la règle : ${text}`,
     forget: 'Oublier',
     rulesKeptAccount: 'Gardées sur ce téléphone et sur votre compte.',
     rulesKeptLocal: 'Gardées sur ce téléphone. Connectez-vous pour les retrouver sur tous vos appareils.',
@@ -115,7 +119,7 @@ export const fr = {
     remindersHint: 'Le matin de l’échéance de chaque étape d’une demande suivie, puis en cas de retard.',
     shareAlerts: 'Alertes du partage',
     shareAlertsHint: 'Un process partagé avec vous, une étape à revoir, un process entièrement validé.',
-    seeAlerts: (unread: number) =>
+    seeAlerts: (unread: number): string =>
       unread > 0 ? `Voir les alertes · ${unread} nouvelle${unread > 1 ? 's' : ''}` : 'Voir les alertes',
     testNotification: 'Envoyer une notification d’essai',
     openSettings: 'Ouvrir les réglages',
@@ -124,7 +128,7 @@ export const fr = {
     notifOff: 'Rappels coupés : aucune notification ne sera envoyée.',
     notifDenied: 'Les notifications sont refusées pour SimuFlow dans les réglages du téléphone.',
     notifUndetermined: 'Le téléphone vous demandera l’autorisation au premier rappel.',
-    notifSent: (seconds: number) =>
+    notifSent: (seconds: number): string =>
       `Notification envoyée : elle arrive dans ${seconds} secondes, même téléphone verrouillé.`,
     notifReady: 'Les notifications sont programmées sur ce téléphone, sans serveur.',
     about: 'À propos',
@@ -135,7 +139,7 @@ export const fr = {
     replayWelcome: 'Revoir la présentation →',
     privacy: 'Politique de confidentialité ↗',
     opensInBrowser: 'Ouvre la page dans le navigateur.',
-    updateOf: (date: string, time: string) => `mise à jour du ${date} à ${time}`,
+    updateOf: (date: string, time: string): string => `mise à jour du ${date} à ${time}`,
     installedVersion: 'version installée',
     demo: 'Démo · état de la liste des process',
   },
@@ -145,7 +149,7 @@ export const fr = {
     next: 'Suivant',
     start: 'Commencer',
     previous: 'Précédent',
-    pageOf: (page: number, total: number) => `Page ${page} sur ${total}`,
+    pageOf: (page: number, total: number): string => `Page ${page} sur ${total}`,
     pages: [
       {
         title: 'Bienvenue dans SimuFlow',
@@ -190,7 +194,7 @@ export const fr = {
 
   signIn: {
     checkMail: 'Vérifiez vos e-mails',
-    confirmSent: (email: string) =>
+    confirmSent: (email: string): string =>
       `Un lien de confirmation a été envoyé à ${email}. Ouvrez-le, puis revenez vous connecter.`,
     taglineCreate: 'Créez un compte pour retrouver vos process sur tous vos appareils.',
     tagline: 'Validez vos workflows en les rejouant pas à pas.',
@@ -207,7 +211,7 @@ export const fr = {
   reset: {
     title: 'Mot de passe oublié',
     intro: 'Saisissez votre adresse : vous recevrez un lien par e-mail pour choisir un nouveau mot de passe.',
-    sent: (email: string) =>
+    sent: (email: string): string =>
       `Si un compte existe pour ${email}, un e-mail vient de lui être envoyé. Ouvrez le lien qu'il contient sur ce téléphone : SimuFlow s'ouvrira pour choisir un nouveau mot de passe. Le lien est valable une heure.`,
     resend: 'Renvoyer un e-mail',
     send: 'Recevoir un lien',
@@ -245,7 +249,7 @@ export const fr = {
       symbol: 'un symbole (par exemple ! ? # -)',
     },
     and: 'et',
-    passwordMissing: (list: string) => `Il manque au mot de passe ${list}.`,
+    passwordMissing: (list: string): string => `Il manque au mot de passe ${list}.`,
     emailEmpty: 'Saisissez votre adresse e-mail.',
     emailInvalid: "Cette adresse e-mail n'est pas valide.",
     passwordEmpty: 'Saisissez votre mot de passe.',
@@ -276,10 +280,10 @@ export const fr = {
     role: 'Rôle',
     noRole: 'Ne pas préciser',
     roleHelp: 'Une simple mention, visible des personnes avec qui vous partagerez un process.',
-    taken: (taken: string, other: string) => `« ${taken} » est déjà pris : « ${other} » est proposé à la place.`,
+    taken: (taken: string, other: string): string => `« ${taken} » est déjà pris : « ${other} » est proposé à la place.`,
     failed: 'Le profil n’a pas pu être enregistré.',
-    usernameMin: (min: number) => `Au moins ${min} caractères.`,
-    usernameMax: (max: number) => `Au plus ${max} caractères.`,
+    usernameMin: (min: number): string => `Au moins ${min} caractères.`,
+    usernameMax: (max: number): string => `Au plus ${max} caractères.`,
     usernameChars:
       'Minuscules sans accent, chiffres, point, tiret ou tiret bas ; commence par une lettre ou un chiffre.',
     firstNameRequired: 'Le prénom est obligatoire.',

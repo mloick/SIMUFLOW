@@ -504,7 +504,7 @@ export default function ImportScreen() {
                 </ThemedText>
               )}
               <View style={styles.badges}>
-                <Badge {...diagnosticBadge(summary)} />
+                <Badge {...diagnosticBadge(t, summary)} />
               </View>
             </View>
             <AnonymizeOption

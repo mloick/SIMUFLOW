@@ -1,10 +1,13 @@
 /** App texts in English: same keys as messages/fr.ts (TypeScript checks it). */
 
+import { enScreens } from './en-ecrans';
 import type { Messages } from './fr';
 
 const PASSWORD_MIN = 8;
 
 export const en: Messages = {
+  ...enScreens,
+
   common: {
     locale: 'en-GB',
     cancel: 'Cancel',

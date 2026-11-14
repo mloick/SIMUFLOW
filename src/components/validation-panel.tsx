@@ -89,7 +89,7 @@ export function ValidationPanel({ process, cloudId }: { process: Process; cloudI
             color: overview.fullyValidated ? theme.success : overview.toReviseCount > 0 ? theme.warning : theme.text,
           }}>
           {overview.fullyValidated ? '✓ ' : ''}
-          {validationSummary(overview)}
+          {validationSummary(t, overview)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {overview.fullyValidated

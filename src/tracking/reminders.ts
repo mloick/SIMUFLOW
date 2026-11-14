@@ -11,6 +11,7 @@
  */
 
 import type { Process } from '@/domain';
+import { getT } from '@/i18n';
 
 import { WORKDAY_START_HOUR } from './calendar';
 import { currentStep, stepOf, type Tracking } from './tracking';
@@ -24,14 +25,15 @@ export type Reminder = {
   trackingId: string;
 };
 
-const time = (date: Date) => date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
 /** Les rappels à venir d'une demande suivie. */
 export function remindersFor(process: Process, tracking: Tracking, now: Date): Reminder[] {
+  const t = getT();
+  const text = t.tracking.reminders;
+  const time = t.dates.time;
   const current = currentStep(tracking);
   if (!current?.dueAt) return [];
   const due = new Date(current.dueAt);
-  const title = stepOf(process, current)?.title || 'Étape sans titre';
+  const title = stepOf(process, current)?.title || text.untitled;
   const index = tracking.steps.length - 1;
   const morning = new Date(due.getFullYear(), due.getMonth(), due.getDate(), WORKDAY_START_HOUR);
   const reminders: Reminder[] = [];
@@ -39,16 +41,16 @@ export function remindersFor(process: Process, tracking: Tracking, now: Date): R
     reminders.push({
       id: `${tracking.id}-${index}-jour`,
       date: morning,
-      title: `Aujourd’hui : ${title}`,
-      body: `${tracking.label} · échéance à ${time(due)}.`,
+      title: text.todayTitle(title),
+      body: text.todayBody(tracking.label, time(due)),
       trackingId: tracking.id,
     });
   }
   reminders.push({
     id: `${tracking.id}-${index}-retard`,
     date: due,
-    title: `En retard : ${title}`,
-    body: `${tracking.label} · l’étape devait être terminée à ${time(due)}.`,
+    title: text.lateTitle(title),
+    body: text.lateBody(tracking.label, time(due)),
     trackingId: tracking.id,
   });
   return reminders.filter((reminder) => reminder.date.getTime() > now.getTime());

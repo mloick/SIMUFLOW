@@ -9,19 +9,20 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useValidationData } from '@/data/validation-data';
 import { validationOverview, type Process, type ValidationOverview } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
-import { plural } from '@/utils/format';
+import { useT, type Messages } from '@/i18n';
 
 /** « 2 membres sur 3 ont fini · 1 étape à revoir », ou « Process entièrement validé ». */
-export function validationSummary(overview: ValidationOverview): string {
+export function validationSummary(t: Messages, overview: ValidationOverview): string {
+  const text = t.validationCard;
   const count = overview.members.length;
-  if (overview.fullyValidated) {
-    return count > 1 ? `Process entièrement validé par les ${count} membres.` : 'Process entièrement validé.';
-  }
+  if (overview.fullyValidated) return text.allValidated(count);
   const done =
     overview.doneCount === 0
-      ? `Aucun membre n’a encore fini (${plural(count, 'membre')})`
-      : `${overview.doneCount} membre${overview.doneCount > 1 ? 's' : ''} sur ${count} ${overview.doneCount > 1 ? 'ont' : 'a'} fini`;
-  return overview.toReviseCount > 0 ? `${done} · ${plural(overview.toReviseCount, 'étape')} à revoir` : done;
+      ? text.noneDone(t.format.count(count, t.words.member))
+      : text.done(overview.doneCount, count);
+  return overview.toReviseCount > 0
+    ? `${done} · ${text.toRevise(t.format.count(overview.toReviseCount, t.words.step))}`
+    : done;
 }
 
 /**
@@ -31,6 +32,7 @@ export function validationSummary(overview: ValidationOverview): string {
  */
 export function ValidationCard({ process, cloudId }: { process: Process; cloudId: string }) {
   const theme = useTheme();
+  const t = useT();
   const data = useValidationData(cloudId);
   const overview = useMemo(
     () => (data.status === 'ready' ? validationOverview(process, data.members, data.reviews) : null),
@@ -52,14 +54,14 @@ export function ValidationCard({ process, cloudId }: { process: Process; cloudId
     body = (
       <>
         <ThemedText type="small" themeColor="textSecondary">
-          {validationSummary(overview)}
+          {validationSummary(t, overview)}
         </ThemedText>
         {overview.fullyValidated ? (
-          <Badge label="Validé" tone="success" />
+          <Badge label={t.validationCard.validated} tone="success" />
         ) : overview.toReviseCount > 0 ? (
-          <Badge label="À revoir" tone="warning" />
+          <Badge label={t.validationCard.revise} tone="warning" />
         ) : (
-          <Badge label="En cours" />
+          <Badge label={t.validationCard.inProgress} />
         )}
       </>
     );
@@ -69,12 +71,12 @@ export function ValidationCard({ process, cloudId }: { process: Process; cloudId
     <Pressable
       onPress={() => router.push({ pathname: '/validation/[id]', params: { id: process.id } })}
       accessibilityRole="button"
-      accessibilityHint="Ouvre le suivi de la validation, étape par étape"
+      accessibilityHint={t.validationCard.hint}
       style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <SymbolView name={{ ios: 'checklist', android: 'checklist' }} size={22} tintColor={theme.link} />
       <View style={styles.text}>
         <ThemedText type="link" style={{ color: theme.link }}>
-          Suivi de la validation
+          {t.validationCard.title}
         </ThemedText>
         {body}
       </View>

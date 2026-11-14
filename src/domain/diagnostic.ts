@@ -3,6 +3,7 @@
  * Règles reprises du prototype web (docs/technique.md, « Cœur du simulateur »).
  */
 
+import { getT, type Messages } from '@/i18n';
 import { buildGraph, canReachEnd, reachableFromStarts } from './graph';
 import type { Process } from './types';
 
@@ -103,42 +104,10 @@ export function diagnose(process: Process): Issue[] {
   return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 }
 
-const MESSAGES: Record<IssueCode, (params: Issue['params']) => string> = {
-  'no-start': () => 'Aucun point de départ : ajoutez une étape de début.',
-  'multiple-starts': (p) => `${p?.count} points de départ : la simulation demandera lequel utiliser.`,
-  'no-end': () => 'Aucune étape de fin : le process ne se termine nulle part.',
-  'empty-title': () => 'Étape sans titre.',
-  'isolated-step': () => 'Étape reliée à aucune autre.',
-  unreachable: () => 'Étape que l’on ne peut jamais atteindre depuis le début.',
-  'dead-end': () => 'Impasse : l’étape n’a pas de suite alors qu’elle n’est pas une fin.',
-  'cannot-finish': () => 'Aucune fin atteignable depuis cette étape (boucle sans sortie).',
-  'decision-single-exit': () => 'Décision avec une seule sortie.',
-  'unlabeled-branch': () => 'Branche sans libellé après une décision (oui, non…).',
-  'duplicate-label': (p) => `Deux branches portent le même libellé « ${p?.label} ».`,
-  'ambiguous-exits': () => 'Plusieurs sorties sans libellé : choix ou étapes en parallèle ? À préciser.',
-  'dangling-link': () => 'Lien relié à une étape qui n’existe pas.',
-};
-
-/** Message en français, pour l'utilisateur. */
-export function describeIssue(issue: Issue): string {
-  return MESSAGES[issue.code](issue.params);
+/** Message pour l'utilisateur, dans la langue de l'app. */
+export function describeIssue(issue: Issue, t: Messages = getT()): string {
+  return t.issues.messages[issue.code](issue.params?.count, issue.params?.label);
 }
-
-const TITLES: Record<IssueCode, string> = {
-  'no-start': 'Pas de départ',
-  'multiple-starts': 'Plusieurs départs',
-  'no-end': 'Pas de fin',
-  'empty-title': 'Étape sans titre',
-  'isolated-step': 'Étape isolée',
-  unreachable: 'Étape inatteignable',
-  'dead-end': 'Impasse',
-  'cannot-finish': 'Boucle sans sortie',
-  'decision-single-exit': 'Décision à une seule sortie',
-  'unlabeled-branch': 'Branche sans étiquette',
-  'duplicate-label': 'Libellés en double',
-  'ambiguous-exits': 'Sorties à préciser',
-  'dangling-link': 'Lien cassé',
-};
 
 export type IssueExplanation = {
   title: string;
@@ -146,25 +115,28 @@ export type IssueExplanation = {
   detail: string;
 };
 
-/** Titre court et phrase détaillée d'une anomalie, pour l'écran Détail. */
-export function explainIssue(issue: Issue, process: Process): IssueExplanation {
+/** Titre court et phrase détaillée d'une anomalie, pour l'écran Détail et le PDF. */
+export function explainIssue(issue: Issue, process: Process, t: Messages = getT()): IssueExplanation {
   const step = process.steps.find((s) => s.id === issue.stepId);
-  const name = `« ${step?.title.trim() || 'Sans titre'} »`;
-  const title = TITLES[issue.code];
+  const title = t.issues.titles[issue.code];
+  if (!step) return { title, detail: describeIssue(issue, t) };
 
-  if (!step) return { title, detail: describeIssue(issue) };
-
-  const details: Partial<Record<IssueCode, string>> = {
-    'dead-end': `${name} n’a aucune sortie.`,
-    'cannot-finish': `Depuis ${name}, aucune fin n’est atteignable.`,
-    unreachable: `On ne peut jamais arriver à ${name} depuis le départ.`,
-    'isolated-step': `${name} n’est reliée à aucune autre étape.`,
-    'decision-single-exit': `Décision ${name} : une seule sortie, il en faut au moins deux.`,
-    'unlabeled-branch': `Décision ${name} : une sortie n’a pas de libellé.`,
-    'duplicate-label': `Décision ${name} : deux sorties s’appellent « ${issue.params?.label} ».`,
-    'ambiguous-exits': `Plusieurs sorties de ${name} sans libellé : choix ou étapes en parallèle ?`,
-    'multiple-starts': `${issue.params?.count} points de départ, dont ${name}.`,
-  };
-
-  return { title, detail: details[issue.code] ?? describeIssue(issue) };
+  const { details } = t.issues;
+  const name = details.name(step.title.trim() || t.untitled);
+  const code = issue.code;
+  const detail =
+    code === 'dead-end' ||
+    code === 'cannot-finish' ||
+    code === 'unreachable' ||
+    code === 'isolated-step' ||
+    code === 'decision-single-exit' ||
+    code === 'unlabeled-branch' ||
+    code === 'ambiguous-exits'
+      ? details[code](name)
+      : code === 'duplicate-label'
+        ? details[code](name, issue.params?.label)
+        : code === 'multiple-starts'
+          ? details[code](name, issue.params?.count)
+          : describeIssue(issue, t);
+  return { title, detail };
 }
