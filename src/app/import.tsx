@@ -12,6 +12,7 @@ import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ColumnPicker } from '@/components/column-picker';
 import { SituationList } from '@/components/situation-list';
+import { TextSource } from '@/components/text-source';
 import { WorkbookPreview } from '@/components/workbook-preview';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { readFormBundle } from '@/data/form-chain';
@@ -19,7 +20,14 @@ import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
 import { addReadingRules, applyReadingRules, getLearnedHeaders } from '@/data/rules-store';
 import { anonymizeProcess, parseHiddenWords, summarize } from '@/domain';
-import { ImportError, importProcessFile, learnColumnRules, parseVisio, type ImportResult } from '@/import';
+import {
+  ImportError,
+  importProcessFile,
+  learnColumnRules,
+  parseProcessText,
+  parseVisio,
+  type ImportResult,
+} from '@/import';
 import {
   describeWorkbook,
   readFormTemplate,
@@ -44,7 +52,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 /** Un classeur peut contenir des images, qui ne sont pas lues : on accepte plus gros. */
 const MAX_TABLE_SIZE = 20 * 1024 * 1024;
 
-type FileKind = 'drawio' | 'bpmn' | 'visio' | 'json' | 'tableau' | 'formulaire';
+type FileKind = 'drawio' | 'bpmn' | 'visio' | 'json' | 'tableau' | 'formulaire' | 'texte';
 
 /** Préfixe unique des identifiants d'un import. */
 const newImportId = () => `import-${Date.now()}`;
@@ -91,6 +99,8 @@ export default function ImportScreen() {
 
   const [anonymous, setAnonymous] = useState(false);
   const [hiddenWords, setHiddenWords] = useState('');
+  /** Texte collé ou lu dans un .txt (source « Texte »). */
+  const [text, setText] = useState('');
 
   const chosen = picked?.result.processes[page];
   const anonymizer = useMemo(
@@ -155,6 +165,31 @@ export default function ImportScreen() {
     } catch (cause) {
       setPicked(null);
       setError(cause instanceof ImportError ? cause.message : 'Le fichier n’a pas pu être lu.');
+    }
+  };
+
+  /** Source « Texte » : lit le process écrit, une ligne par étape. */
+  const chooseText = () => {
+    setKind('texte');
+    setPicked(null);
+    setTable(null);
+    setChoosing(null);
+    setError(null);
+  };
+
+  const readText = (content: string, fileName?: string) => {
+    setTable(null);
+    try {
+      const fallback = fileName ? fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') : 'Process écrit';
+      const { result, applied } = applyReadingRules(parseProcessText(content, fallback, newImportId()));
+      setPicked({ fileName: fileName ?? 'Texte', result, applied });
+      setPage(0);
+      setName(result.processes[0].name);
+      setNameMissing(false);
+      setError(null);
+    } catch (cause) {
+      setPicked(null);
+      setError(cause instanceof ImportError ? cause.message : 'Le texte n’a pas pu être lu.');
     }
   };
 
@@ -357,6 +392,14 @@ export default function ImportScreen() {
             onPress={() => router.replace('/scanner')}
           />
           <SourceCard
+            icon={{ ios: 'text.alignleft', android: 'notes' }}
+            title="Texte"
+            description="Un process écrit, une ligne par étape : collé ou en .txt"
+            selected={kind === 'texte'}
+            onPress={chooseText}
+          />
+          {kind === 'texte' && <TextSource value={text} onChange={setText} onRead={readText} />}
+          <SourceCard
             icon={{ ios: 'curlybraces', android: 'data_object' }}
             title="Fichier JSON"
             description="Export d’un autre SimuFlow"
@@ -523,7 +566,7 @@ export default function ImportScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, borderTopColor: theme.border }]}>
         {picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            Fichier choisi : {picked.fileName}
+            {kind === 'texte' && picked.fileName === 'Texte' ? 'Source : texte collé' : `Fichier choisi : ${picked.fileName}`}
             {pageCount > 1
               ? ` · ${situationCount > 0 ? plural(pageCount, 'process', 'process') : plural(pageCount, table ? 'onglet' : 'page')}`
               : ''}

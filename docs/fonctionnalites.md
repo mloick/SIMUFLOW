@@ -42,6 +42,26 @@ Vos process importés restent sur le téléphone, et sur votre compte si vous ê
 
 </details>
 
+### Depuis un texte · Disponible
+
+Un process écrit suffit : choisissez **Texte**, collez-le (ou **Choisir un fichier .txt**), puis **Lire le texte**. Une ligne par étape, par exemple :
+
+```
+Process : Demande de matériel
+1. Employé : Faire la demande
+2. Responsable : Demande validée ? (2 JO)
+   oui → 3
+   non → 5
+3. Achats : Passer la commande (1 JO)
+4. Logistique : Livrer le matériel (5 JO) → 6
+5. Responsable : Prévenir du refus (1 JO) → 6
+6. Fin : Demande close
+```
+
+L'acteur vient avant « : », le délai entre parenthèses, la suite après une flèche. Sans flèche, l'étape mène à la ligne suivante. Sous une question, une ligne par cas (« oui → 3 »). Une simple liste sans numéros marche aussi. **Voir un exemple** remplit la zone. Pas d'IA : l'app suit ces règles simples, et ce qu'elle ne comprend pas apparaît en remarque, à corriger ensuite dans l'éditeur.
+
+![Lire un texte : l'exemple collé, l'aperçu, puis le process importé](captures/etape-36-import-texte.png)
+
 ### Depuis un tableau Excel ou CSV · Disponible
 
 Touchez **+**, puis **Tableau Excel ou CSV**. L'app lit le classeur sur le téléphone, sans l'envoyer nulle part, et dit ce que contient chaque onglet : tableau de process, workflow avec SLA et OLA, template de formulaire, liste, ou onglet non reconnu.

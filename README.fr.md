@@ -26,7 +26,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 
 ## Fonctionnalités
 
-- **Importer** un fichier draw.io, BPMN 2.0, Visio (`.vsdx`), JSON, Excel ou CSV, ou **photographier** un tableau de process.
+- **Importer** un fichier draw.io, BPMN 2.0, Visio (`.vsdx`), JSON, Excel ou CSV, coller un process **écrit en texte** (une ligne par étape), ou **photographier** un tableau de process.
 - **Diagnostiquer** : impasses, étapes inatteignables, chemins qui ne finissent jamais, décisions à sens unique, branches sans nom.
 - **Corriger** le process dans un éditeur ; l'app apprend des règles de lecture à partir de vos corrections.
 - **Simuler** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique.
