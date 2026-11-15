@@ -327,6 +327,12 @@ export const enScreens: ScreenMessages = {
     criticalBadge: 'critical',
     uniquePath: 'Single path',
     decision: 'Decision',
+    modesLabel: 'Simulation mode',
+    subtitle: (mode: string, n: number) => `${mode} · step ${n}`,
+    allSubtitle: (days: string | null) => (days ? `Every case · critical path ${days} WD` : 'Every case'),
+    to: (title: string) => `to ${title}`,
+    undo: 'Back',
+    restartShort: 'Restart',
   },
 
   diagram: {
@@ -336,6 +342,11 @@ export const enScreens: ScreenMessages = {
     all: 'All',
     allHint: 'Show the whole diagram',
     noActor: 'No actor',
+    follow: 'Auto follow',
+    followHint: 'Follow the current step',
+    fullscreen: 'Full screen',
+    exitFullscreen: 'Exit full screen',
+    minimap: 'Mini-map: tap to go to this place of the diagram',
   },
 
   editor: {

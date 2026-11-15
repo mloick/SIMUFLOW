@@ -1,25 +1,18 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AccessibilityInfo,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  type ScrollViewInstance,
-} from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import { useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PressableScale } from '@/components/pressable-scale';
 import { PrimaryButton } from '@/components/primary-button';
 import { ProcessDiagram } from '@/components/process-diagram';
 import { StateMessage } from '@/components/state-message';
-import { SymbolView } from '@/components/symbol';
+import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
-import { longestPath, shortestPath, type PathStep, type Process, type StepKind } from '@/domain';
+import { longestPath, shortestPath, type PathStep, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
@@ -34,10 +27,14 @@ const MODES: Mode[] = ['pas-a-pas', 'simple', 'complexe', 'tous'];
 const REPLAY_INTERVAL_MS = 450;
 
 /**
- * Simulation (maquette, écran 4) : on rejoue le process étape par étape. À
- * chaque décision, on choisit la sortie ; « Simple » et « Complexe » rejouent
- * le chemin le plus court et le plus long. « Tous » (maquette, écran 11) montre
- * tous les chemins à la fois, une couleur par famille.
+ * Simulation (refonte R9 à R11) : on rejoue le process étape par étape. Le
+ * schéma montre tout le process (les étapes à venir en transparence) et suit
+ * l'étape en cours (« Suivi auto ») tant qu'on ne le déplace pas au doigt. La
+ * carte d'étape en bas donne le genre, les jours cumulés et les choix côte à
+ * côte. « Simple » et « Complexe » rejouent le chemin le plus court et le plus
+ * long ; « Tous » montre tous les chemins, une couleur par famille.
+ * Plein écran : le schéma prend l'écran et la carte flotte. Téléphone tourné :
+ * schéma à gauche, carte à droite.
  */
 export default function SimulationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -67,7 +64,6 @@ function Simulator({ process }: { process: Process }) {
   const t = useT();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
-  const scrollRef = useRef<ScrollViewInstance>(null);
   const sim = useMemo(() => createSimulation(process), [process]);
   const [mode, setMode] = useState<Mode>('pas-a-pas');
   const layout = useMemo(() => layoutProcess(process), [process]);
@@ -82,6 +78,13 @@ function Simulator({ process }: { process: Process }) {
   const familyColors = useFamilyColors();
   // Famille isolée sur le schéma (vue « Tous »).
   const [isolated, setIsolated] = useState<string | null>(null);
+  // Plein écran : le schéma prend tout l'écran, la carte d'étape flotte en bas.
+  const [fullscreen, setFullscreen] = useState(false);
+  // Hauteur de la zone du schéma et de la carte flottante, mesurées.
+  const [areaHeight, setAreaHeight] = useState(0);
+  const [cardHeight, setCardHeight] = useState(0);
+  // Téléphone tourné : le schéma à gauche, la carte à droite.
+  const landscape = windowSize.width > windowSize.height && windowSize.width >= 600;
 
   const current = sim.current(state);
   const choices = sim.choices(state);
@@ -120,8 +123,6 @@ function Simulator({ process }: { process: Process }) {
 
   const restart = () => chooseMode('pas-a-pas');
   const colorOf = (index: number) => familyColors[index % familyColors.length];
-  // Grands textes : schéma plus bas, pour laisser la place au texte de l'étape.
-  const diagramHeight = Math.round(Math.min(340, Math.max(200, windowSize.height * (largeText ? 0.26 : 0.34))));
 
   if (state.status === 'no-start') {
     return (
@@ -138,225 +139,310 @@ function Simulator({ process }: { process: Process }) {
     );
   }
 
-  return (
-    <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Stack.Screen
-        options={{
-          title: t.titles.simulation,
-          headerBackTitle: t.simulation.backTitle,
-          headerShadowVisible: false,
-          headerStyle: { backgroundColor: theme.background },
-          headerTitleStyle: { color: theme.text },
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push({ pathname: '/export/[id]', params: { id: process.id } })}
-              accessibilityRole="button"
-              accessibilityLabel={t.simulation.export}
-              hitSlop={12}
-              style={styles.headerButton}>
-              <SymbolView name={{ ios: 'square.and.arrow.up', android: 'share' }} size={22} tintColor={theme.link} />
-            </Pressable>
-          ),
-        }}
-      />
+  const tous = mode === 'tous';
+  const subtitle = tous
+    ? t.simulation.allSubtitle(overview.critical ? t.format.num(overview.critical.duration) : null)
+    : t.simulation.subtitle(t.simulation.modes[mode], state.trail.length);
+  const progress = {
+    visitedSteps: new Set(state.trail.map((item) => item.stepId)),
+    visitedLinks: new Set(state.trail.flatMap((item) => (item.linkId ? [item.linkId] : []))),
+    currentId: current?.id,
+    candidateLinks: mode === 'pas-a-pas' ? choices.map((link) => link.id) : [],
+  };
 
-      <View style={[styles.modes, largeText && styles.modesWrap]} accessibilityRole="tablist">
-        {MODES.map((option) => {
-          const selected = option === mode;
-          return (
-            <Pressable
-              key={option}
-              onPress={() => chooseMode(option)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              style={[
-                styles.mode,
-                largeText && styles.modeWide,
-                selected
-                  ? { backgroundColor: theme.primary }
-                  : { backgroundColor: theme.surface, borderColor: theme.fieldBorder, borderWidth: 1 },
-              ]}>
-              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {t.simulation.modes[option]}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {mode === 'tous' ? (
-        <>
-          <View style={styles.diagram}>
-            <ProcessDiagram
-              key="tous"
-              layout={layout}
-              height={Math.round(Math.min(480, Math.max(240, windowSize.height * 0.5)))}
-              overview={paintFamilies(overview, familyColors, isolated)}
-              accessibilityLabel={t.simulation.allLabel(
-                t.format.count(overview.families.length, t.simulation.family),
-                isolated ? (overview.families.find((family) => family.id === isolated)?.label ?? null) : null,
-              )}
-            />
-          </View>
-          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.four }]}>
-            <OverviewList
-              process={process}
-              overview={overview}
-              colorOf={colorOf}
-              isolated={isolated}
-              onToggle={(familyId) => setIsolated((value) => (value === familyId ? null : familyId))}
-            />
-          </ScrollView>
-        </>
-      ) : (
-        <>
-          <View style={styles.diagram}>
-            <ProcessDiagram
-              key="parcours"
-              layout={layout}
-              height={diagramHeight}
-              progress={{
-                visitedSteps: new Set(state.trail.map((item) => item.stepId)),
-                visitedLinks: new Set(state.trail.flatMap((item) => (item.linkId ? [item.linkId] : []))),
-                currentId: current?.id,
-                candidateLinks: mode === 'pas-a-pas' ? choices.map((link) => link.id) : [],
-              }}
-              accessibilityLabel={t.simulation.trailLabel(
-                new Set(state.trail.map((item) => item.stepId)).size,
-                process.steps.length,
-                current ? current.title : null,
-              )}
-            />
-          </View>
-
-          <ScrollView
-            ref={scrollRef}
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: !reduceMotion })}
-            contentContainerStyle={styles.content}>
-            <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-              {t.simulation.trailTitle(process.name, t.format.num(state.days))}
-            </ThemedText>
-            {state.trail.map(({ stepId, linkId }, index) => {
-              const step = sim.graph.steps.get(stepId)!;
-              const label = linkId ? process.links.find((link) => link.id === linkId)?.label : undefined;
-              const isCurrent = index === state.trail.length - 1;
-              return (
-                <Animated.View
-                  key={`${index}-${stepId}`}
-                  entering={reduceMotion ? undefined : FadeInDown.duration(250)}
-                  accessible
-                  accessibilityLabel={[
-                    `${index + 1}. ${step.title}`,
-                    label && t.simulation.via(label),
-                    step.actor,
-                    step.duration ? t.format.count(step.duration, t.words.workingDay) : null,
-                    isCurrent && t.simulation.currentStep,
-                  ]
-                    .filter(Boolean)
-                    .join(', ')}
-                  style={[styles.row, { backgroundColor: isCurrent ? theme.primaryBackground : theme.surface }]}>
-                  <View style={[styles.dot, { backgroundColor: dotColor(step.kind, theme) }]} />
-                  <View style={styles.flex}>
-                    <ThemedText>
-                      {step.title || t.untitled}
-                      {step.duration ? ` · ${t.simulation.wd(t.format.num(step.duration))}` : ''}
-                    </ThemedText>
-                    {label && (
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t.simulation.via(label)}
-                      </ThemedText>
-                    )}
-                  </View>
-                  {step.actor && (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {step.actor}
-                    </ThemedText>
-                  )}
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-
-          <View
+  const modes = (
+    <View
+      style={[styles.modes, { backgroundColor: theme.surfaceMuted }, largeText && styles.modesWrap]}
+      accessibilityRole="tablist"
+      accessibilityLabel={t.simulation.modesLabel}>
+      {MODES.map((option) => {
+        const selected = option === mode;
+        return (
+          <Pressable
+            key={option}
+            onPress={() => chooseMode(option)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
             style={[
-              styles.panel,
-              { backgroundColor: theme.surface, paddingBottom: insets.bottom + Spacing.three, shadowColor: theme.text },
+              styles.mode,
+              largeText && styles.modeWide,
+              selected && [styles.modeOn, { backgroundColor: theme.surface }],
             ]}>
-            {state.status === 'running' && current && replaying && (
-              <View style={styles.panelTitle}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  {t.simulation.replaying(mode === 'simple')}
-                </ThemedText>
-                <ThemedText type="subtitle">{current.title || t.untitled}</ThemedText>
-              </View>
-            )}
+            <ThemedText
+              type="smallBold"
+              style={[styles.modeText, { color: selected ? theme.text : theme.textSecondary }]}>
+              {t.simulation.modes[option]}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
-            {state.status === 'running' && current && !replaying && (
-              <>
-                <View style={styles.panelTitle}>
-                  <ThemedText
-                    type="smallBold"
-                    style={{ color: current.kind === 'decision' ? theme.warning : theme.textSecondary }}>
-                    {[t.simulation.kinds[current.kind], current.actor].filter(Boolean).join(' · ')}
-                  </ThemedText>
-                  <ThemedText type="subtitle">{current.title || t.untitled}</ThemedText>
-                </View>
-                {choices.length === 1 ? (
-                  <PrimaryButton
-                    label={t.simulation.next}
-                    accessibilityLabel={t.simulation.nextLabel(sim.graph.steps.get(choices[0].to)?.title ?? '')}
-                    onPress={() => setState(sim.step(state, choices[0].id))}
-                  />
-                ) : (
-                  <View style={styles.choices}>
-                    {choices.map((link) => (
-                      <View key={link.id} style={styles.choice}>
-                        <PrimaryButton
-                          label={link.label || sim.graph.steps.get(link.to)?.title || t.simulation.exit}
-                          accessibilityLabel={t.simulation.choose(
-                            link.label || '',
-                            sim.graph.steps.get(link.to)?.title ?? '',
-                          )}
-                          onPress={() => setState(sim.step(state, link.id))}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
-
-            {state.status === 'finished' && (
-              <View style={styles.panelTitle}>
-                <ThemedText type="smallBold" style={{ color: theme.success }}>
-                  {t.simulation.endReached}
-                </ThemedText>
-                <ThemedText type="subtitle">
-                  {t.format.count(state.trail.length, t.words.step)} · {t.simulation.wd(t.format.num(state.days))}
-                </ThemedText>
-              </View>
-            )}
-
-            {state.status === 'stuck' && current && (
-              <View style={styles.panelTitle}>
-                <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                  {t.simulation.deadEnd}
-                </ThemedText>
-                <ThemedText type="subtitle">{t.simulation.noExit(current.title)}</ThemedText>
-              </View>
-            )}
-
-            <View style={styles.secondary}>
-              {mode === 'pas-a-pas' && state.trail.length > 1 && (
-                <TextButton label={t.simulation.stepBack} onPress={() => setState(sim.back(state))} />
-              )}
-              {(state.status !== 'running' || mode !== 'pas-a-pas') && (
-                <TextButton label={t.simulation.restart} onPress={restart} />
-              )}
+  // La carte d'étape : genre et jours cumulés, titre, choix côte à côte, Retour et Recommencer.
+  const stepCard = (
+    <View style={styles.cardContent}>
+      {state.status === 'running' && current && (
+        <>
+          <View style={styles.cardTop}>
+            <View
+              style={[
+                styles.kindPill,
+                { backgroundColor: current.kind === 'decision' ? theme.warningBackground : theme.primaryBackground },
+              ]}>
+              <ThemedText
+                type="smallBold"
+                style={[styles.kindText, { color: current.kind === 'decision' ? theme.warning : theme.link }]}>
+                {replaying ? t.simulation.replaying(mode === 'simple') : t.simulation.kinds[current.kind]}
+              </ThemedText>
             </View>
+            <View style={styles.flex} />
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {t.simulation.wd(t.format.num(state.days))}
+            </ThemedText>
           </View>
+          <View style={styles.cardTitle}>
+            <ThemedText style={styles.stepTitle}>{current.title || t.untitled}</ThemedText>
+            {(current.actor || current.duration) && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {[current.actor, current.duration ? t.format.count(current.duration, t.words.workingDay) : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </ThemedText>
+            )}
+          </View>
+          {!replaying &&
+            (choices.length === 1 ? (
+              <PrimaryButton
+                label={t.simulation.next}
+                accessibilityLabel={t.simulation.nextLabel(sim.graph.steps.get(choices[0].to)?.title ?? '')}
+                onPress={() => setState(sim.step(state, choices[0].id))}
+              />
+            ) : (
+              <View style={styles.choices}>
+                {choices.map((link) => {
+                  const target = sim.graph.steps.get(link.to)?.title ?? '';
+                  return (
+                    <PressableScale
+                      key={link.id}
+                      onPress={() => setState(sim.step(state, link.id))}
+                      accessibilityRole="button"
+                      accessibilityLabel={t.simulation.choose(link.label || '', target)}
+                      style={[styles.choice, { backgroundColor: theme.primaryBackground, borderColor: theme.primary }]}>
+                      <ThemedText style={[styles.choiceLabel, { color: theme.link }]} numberOfLines={2}>
+                        {link.label || target || t.simulation.exit}
+                      </ThemedText>
+                      {!!link.label && (
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                          {t.simulation.to(target)}
+                        </ThemedText>
+                      )}
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            ))}
         </>
       )}
+
+      {state.status === 'finished' && (
+        <View style={[styles.result, { backgroundColor: theme.successBackground }]}>
+          <SymbolView
+            name={{ ios: 'checkmark.circle.fill', android: 'check_circle' }}
+            size={22}
+            tintColor={theme.success}
+          />
+          <View style={styles.flex}>
+            <ThemedText type="smallBold" style={{ color: theme.success }}>
+              {t.simulation.endReached}
+            </ThemedText>
+            <ThemedText style={styles.stepTitle}>
+              {t.format.count(state.trail.length, t.words.step)} · {t.simulation.wd(t.format.num(state.days))}
+            </ThemedText>
+          </View>
+        </View>
+      )}
+
+      {state.status === 'stuck' && current && (
+        <View style={[styles.result, { backgroundColor: theme.dangerBackground }]}>
+          <SymbolView name={{ ios: 'xmark.octagon.fill', android: 'cancel' }} size={22} tintColor={theme.danger} />
+          <View style={styles.flex}>
+            <ThemedText type="smallBold" style={{ color: theme.danger }}>
+              {t.simulation.deadEnd}
+            </ThemedText>
+            <ThemedText style={styles.stepTitle}>{t.simulation.noExit(current.title)}</ThemedText>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.secondary}>
+        <TextButton
+          icon={{ ios: 'arrow.uturn.backward', android: 'undo' }}
+          label={t.simulation.undo}
+          accessibilityLabel={t.simulation.stepBack}
+          disabled={mode !== 'pas-a-pas' || state.trail.length <= 1}
+          onPress={() => setState(sim.back(state))}
+        />
+        <TextButton
+          icon={{ ios: 'arrow.counterclockwise', android: 'restart_alt' }}
+          label={t.simulation.restartShort}
+          accessibilityLabel={t.simulation.restart}
+          onPress={restart}
+        />
+      </View>
+    </View>
+  );
+
+  const familyList = (
+    <ScrollView contentContainerStyle={styles.familyList}>
+      <OverviewList
+        process={process}
+        overview={overview}
+        colorOf={colorOf}
+        isolated={isolated}
+        onToggle={(familyId) => setIsolated((value) => (value === familyId ? null : familyId))}
+      />
+    </ScrollView>
+  );
+
+  const diagram = (height: number, extra?: { bottomInset?: number; topInset?: number }) =>
+    tous ? (
+      <ProcessDiagram
+        key="tous"
+        layout={layout}
+        height={height}
+        overview={paintFamilies(overview, familyColors, isolated)}
+        fullscreen={fullscreen}
+        onToggleFullscreen={landscape ? undefined : () => setFullscreen((value) => !value)}
+        {...extra}
+        accessibilityLabel={t.simulation.allLabel(
+          t.format.count(overview.families.length, t.simulation.family),
+          isolated ? (overview.families.find((family) => family.id === isolated)?.label ?? null) : null,
+        )}
+      />
+    ) : (
+      <ProcessDiagram
+        key="parcours"
+        layout={layout}
+        height={height}
+        progress={progress}
+        fullscreen={fullscreen}
+        onToggleFullscreen={landscape ? undefined : () => setFullscreen((value) => !value)}
+        {...extra}
+        accessibilityLabel={t.simulation.trailLabel(
+          progress.visitedSteps.size,
+          process.steps.length,
+          current ? current.title : null,
+        )}
+      />
+    );
+
+  const header = (
+    <Stack.Screen
+      options={{
+        headerShown: !fullscreen,
+        title: process.name,
+        headerTitle: () => (
+          <View style={styles.headerTitle}>
+            <ThemedText style={styles.headerName} numberOfLines={1}>
+              {process.name}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              {subtitle}
+            </ThemedText>
+          </View>
+        ),
+        headerBackTitle: t.simulation.backTitle,
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: theme.background },
+        headerRight: () => (
+          <Pressable
+            onPress={() => router.push({ pathname: '/export/[id]', params: { id: process.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={t.simulation.export}
+            hitSlop={8}
+            style={[styles.headerButton, { backgroundColor: theme.surface }]}>
+            <SymbolView name={{ ios: 'square.and.arrow.down', android: 'download' }} size={20} tintColor={theme.text} />
+          </Pressable>
+        ),
+      }}
+    />
+  );
+
+  // Paysage : schéma à gauche, modes et carte à droite.
+  if (landscape) {
+    return (
+      <View style={[styles.screen, styles.row, { backgroundColor: theme.background }]}>
+        {header}
+        <View
+          style={[
+            styles.flex,
+            { paddingLeft: insets.left + Spacing.three, paddingBottom: insets.bottom + Spacing.two },
+          ]}
+          onLayout={(event) => setAreaHeight(event.nativeEvent.layout.height)}>
+          {areaHeight > 0 && diagram(areaHeight - insets.bottom - Spacing.two)}
+        </View>
+        <ScrollView
+          style={styles.side}
+          contentContainerStyle={[
+            styles.sideContent,
+            { paddingRight: insets.right + Spacing.three, paddingBottom: insets.bottom + Spacing.three },
+          ]}>
+          {modes}
+          {tous ? (
+            <View style={styles.familyList}>
+              <OverviewList
+                process={process}
+                overview={overview}
+                colorOf={colorOf}
+                isolated={isolated}
+                onToggle={(familyId) => setIsolated((value) => (value === familyId ? null : familyId))}
+              />
+            </View>
+          ) : (
+            <View style={[styles.card, styles.cardSide, { backgroundColor: theme.surface }]}>{stepCard}</View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Plein écran : le schéma sous la barre d'état, la carte flottante en bas.
+  if (fullscreen) {
+    return (
+      <View style={[styles.screen, { backgroundColor: theme.background }]}>
+        {header}
+        {diagram(windowSize.height, { topInset: insets.top, bottomInset: cardHeight + insets.bottom + Spacing.three })}
+        <View
+          onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
+          style={[
+            styles.card,
+            styles.floating,
+            tous && styles.floatingList,
+            { backgroundColor: theme.surface, bottom: insets.bottom + Spacing.three },
+          ]}>
+          {tous ? familyList : stepCard}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.screen, { backgroundColor: theme.background }]}>
+      {header}
+      <View style={styles.padded}>{modes}</View>
+      <View style={[styles.flex, styles.padded]} onLayout={(event) => setAreaHeight(event.nativeEvent.layout.height)}>
+        {areaHeight > 0 && diagram(areaHeight)}
+      </View>
+      <View
+        style={[
+          styles.card,
+          styles.docked,
+          tous && styles.dockedList,
+          { backgroundColor: theme.surface, paddingBottom: insets.bottom + Spacing.three },
+        ]}>
+        {tous ? familyList : stepCard}
+      </View>
     </View>
   );
 }
@@ -465,69 +551,123 @@ function FamilyRow({
   );
 }
 
-function TextButton({ label, onPress }: { label: string; onPress: () => void }) {
+function TextButton({
+  icon,
+  label,
+  accessibilityLabel,
+  disabled = false,
+  onPress,
+}: {
+  icon: SymbolViewProps['name'];
+  label: string;
+  accessibilityLabel: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   const theme = useTheme();
+  const color = disabled ? theme.textSecondary : theme.link;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.textButton}>
-      <ThemedText type="smallBold" style={{ color: theme.link }}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [styles.textButton, { opacity: disabled ? 0.5 : pressed ? 0.6 : 1 }]}>
+      <SymbolView name={icon} size={16} tintColor={color} />
+      <ThemedText type="smallBold" style={{ color }}>
         {label}
       </ThemedText>
     </Pressable>
   );
 }
 
-function dotColor(kind: StepKind, theme: ReturnType<typeof useTheme>) {
-  if (kind === 'start') return theme.text;
-  if (kind === 'decision') return theme.warning;
-  if (kind === 'end') return theme.success;
-  return theme.primary;
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  headerButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row' },
   flex: { flex: 1 },
-  diagram: {
-    paddingHorizontal: Spacing.three,
+  padded: {
+    paddingHorizontal: Spacing.three - Spacing.one,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  headerTitle: { alignItems: 'center', maxWidth: 220 },
+  headerName: { fontSize: 16, lineHeight: 20, fontWeight: 800 },
+  headerButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   modes: {
     flexDirection: 'row',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.two,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+    gap: Spacing.one,
+    padding: Spacing.one,
+    marginBottom: Spacing.three - Spacing.half * 3,
+    borderRadius: Radius.medium,
   },
-  mode: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: Radius.small,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  mode: { flex: 1, minHeight: 40, borderRadius: Radius.small, alignItems: 'center', justifyContent: 'center' },
+  modeOn: { boxShadow: '0 2px 8px rgba(14, 27, 44, 0.12)' },
+  modeText: { fontWeight: 700 },
   // Grands textes : les quatre modes sur deux lignes.
   modesWrap: { flexWrap: 'wrap' },
   modeWide: { flex: 0, flexGrow: 1, flexBasis: '45%' },
-  content: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    paddingBottom: Spacing.four,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+  card: { borderRadius: Radius.sheet - 2 },
+  docked: {
+    marginTop: Spacing.three - Spacing.one,
+    paddingHorizontal: Spacing.four - Spacing.half * 2,
+    paddingTop: Spacing.three + Spacing.half,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    boxShadow: '0 -8px 24px rgba(14, 27, 44, 0.10)',
   },
-  row: {
+  dockedList: { maxHeight: '45%' },
+  floating: {
+    position: 'absolute',
+    left: Spacing.three - Spacing.one,
+    right: Spacing.three - Spacing.one,
+    padding: Spacing.three + Spacing.half,
+    boxShadow: '0 12px 32px rgba(14, 27, 44, 0.25)',
+  },
+  floatingList: { maxHeight: '40%' },
+  side: { width: 360, flexGrow: 0 },
+  sideContent: { paddingLeft: Spacing.three, gap: Spacing.three - Spacing.one },
+  cardSide: { padding: Spacing.three + Spacing.half },
+  cardContent: { gap: Spacing.three - Spacing.one, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  kindPill: {
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.three - Spacing.one,
+    paddingVertical: Spacing.half,
+  },
+  kindText: { fontSize: 12, lineHeight: 18, fontWeight: 800 },
+  cardTitle: { gap: Spacing.half },
+  stepTitle: { fontSize: 19, lineHeight: 25, fontWeight: 800 },
+  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  choice: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    minHeight: 64,
+    justifyContent: 'center',
+    gap: Spacing.half,
+    paddingHorizontal: Spacing.three - Spacing.one,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.medium,
+    borderWidth: 1.5,
+  },
+  choiceLabel: { fontSize: 16, lineHeight: 21, fontWeight: 800 },
+  result: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Radius.small,
+    gap: Spacing.three - Spacing.one,
+    padding: Spacing.three - Spacing.one,
+    borderRadius: Radius.medium,
   },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  secondary: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
+  textButton: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one + Spacing.half,
+    paddingHorizontal: Spacing.one,
+  },
+  familyList: { gap: Spacing.two, paddingBottom: Spacing.two },
   family: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -542,20 +682,4 @@ const styles = StyleSheet.create({
   familyLabel: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.two },
   shrink: { flexShrink: 1 },
   badge: { borderRadius: Radius.pill, paddingHorizontal: Spacing.two, overflow: 'hidden' },
-  panel: {
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: -8 },
-    elevation: 8,
-  },
-  panelTitle: { gap: Spacing.half },
-  choices: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  choice: { flexGrow: 1, flexBasis: '45%' },
-  secondary: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: Spacing.three },
-  textButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.two },
 });

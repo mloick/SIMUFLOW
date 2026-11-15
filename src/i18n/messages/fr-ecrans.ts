@@ -347,6 +347,12 @@ export const frScreens = {
     criticalBadge: 'critique',
     uniquePath: 'Chemin unique',
     decision: 'Décision',
+    modesLabel: 'Mode de simulation',
+    subtitle: (mode: string, n: number): string => `${mode} · étape ${n}`,
+    allSubtitle: (days: string | null): string => (days ? `Tous les cas · chemin critique ${days} JO` : 'Tous les cas'),
+    to: (title: string): string => `vers ${title}`,
+    undo: 'Retour',
+    restartShort: 'Recommencer',
   },
 
   diagram: {
@@ -356,6 +362,11 @@ export const frScreens = {
     all: 'Tout',
     allHint: 'Afficher tout le schéma',
     noActor: 'Sans acteur',
+    follow: 'Suivi auto',
+    followHint: 'Suivre l’étape en cours',
+    fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
+    minimap: 'Mini-carte : touchez pour aller à cet endroit du schéma',
   },
 
   editor: {

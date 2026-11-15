@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Defs, G, Marker, Path, Polygon, Rect, Text as SvgText, TSpan } from 'react-native-svg';
 
+import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
@@ -38,6 +39,8 @@ const FRAME_PADDING = 20;
 const MOVE = { duration: 450, easing: Easing.out(Easing.cubic) };
 /** Écart entre les traits de deux familles sur une même flèche. */
 const FAMILY_GAP = 4.5;
+/** Largeur de la mini-carte. */
+const MINIMAP_WIDTH = 110;
 /** Sur le web, le texte SVG serait sinon dans une police à empattements. */
 const FONT = Platform.select({
   web: 'Inter, system-ui, sans-serif',
@@ -76,12 +79,24 @@ export function ProcessDiagram({
   overview,
   height = 260,
   accessibilityLabel,
+  fullscreen = false,
+  onToggleFullscreen,
+  bottomInset = 0,
+  topInset = 0,
 }: {
   layout: DiagramLayout;
   progress?: DiagramProgress;
   overview?: DiagramOverview;
   height?: number;
   accessibilityLabel: string;
+  /** Plein écran : cadre sans bord ni coins arrondis. */
+  fullscreen?: boolean;
+  /** Bouton plein écran de la barre d'outils (absent sans cette fonction). */
+  onToggleFullscreen?: () => void;
+  /** Place prise en bas par la carte d'étape flottante : la mini-carte et le cadrage restent au-dessus. */
+  bottomInset?: number;
+  /** Place prise en haut (barre d'état) en plein écran. */
+  topInset?: number;
 }) {
   const theme = useTheme();
   const t = useT();
@@ -97,6 +112,11 @@ export function ProcessDiagram({
   // Taille à laquelle le SVG est vraiment dessiné. Pendant un geste, on étire
   // l'image ; à la fin, on redessine à la bonne taille pour que le texte reste net.
   const [renderScale, setRenderScale] = useState(1);
+  // Suivi auto : la vue suit l'étape en cours. Glisser, pincer ou zoomer le coupe ; la cible le remet.
+  const [follow, setFollow] = useState(true);
+  // Hauteur vraiment visible (sans la carte d'étape flottante ni la barre d'état).
+  const viewTop = topInset;
+  const viewHeight = Math.max(120, height - bottomInset - topInset);
   const width = layout.width;
   const layoutHeight = layout.height;
 
@@ -123,28 +143,44 @@ export function ProcessDiagram({
   const showBox = useCallback(
     (box: Box, minScale: number, anchor?: Box) => {
       if (frameWidth === 0) return;
-      const fit = Math.min((frameWidth - FRAME_PADDING * 2) / box.width, (height - FRAME_PADDING * 2) / box.height);
+      const fit = Math.min((frameWidth - FRAME_PADDING * 2) / box.width, (viewHeight - FRAME_PADDING * 2) / box.height);
       const k = clamp(Math.min(FRAME_MAX_SCALE, Math.max(minScale, fit)));
       let nx = frameWidth / 2 - (box.x + box.width / 2) * k;
-      let ny = height / 2 - (box.y + box.height / 2) * k;
+      let ny = viewTop + viewHeight / 2 - (box.y + box.height / 2) * k;
       if (anchor) {
         nx = keepInside(nx, anchor.x * k, (anchor.x + anchor.width) * k, frameWidth);
-        ny = keepInside(ny, anchor.y * k, (anchor.y + anchor.height) * k, height);
+        ny = viewTop + keepInside(ny - viewTop, anchor.y * k, (anchor.y + anchor.height) * k, viewHeight);
       }
       moveTo(nx, ny, k);
     },
-    [frameWidth, height, moveTo],
+    [frameWidth, viewHeight, viewTop, moveTo],
   );
 
   /** Zoom des boutons − et +, autour du centre du cadre. */
   const zoomBy = (factor: number) => {
+    setFollow(false);
     const k = clamp(scale.get() * factor);
     const ratio = k / scale.get();
     moveTo(frameWidth / 2 - (frameWidth / 2 - x.get()) * ratio, height / 2 - (height / 2 - y.get()) * ratio, k);
   };
 
   const whole: Box = { x: 0, y: 0, width, height: layoutHeight };
-  const showAll = () => showBox(whole, MIN_SCALE);
+  const showAll = () => {
+    setFollow(false);
+    showBox(whole, MIN_SCALE);
+  };
+  /** Remet le suivi auto et recadre tout de suite sur l'étape en cours. */
+  const followCurrent = () => {
+    setFollow(true);
+    frameFocus();
+  };
+  /** Mini-carte : centre la vue sur le point touché, à l'échelle actuelle. */
+  const jumpTo = (mx: number, my: number) => {
+    setFollow(false);
+    const k = scale.get();
+    moveTo(frameWidth / 2 - (mx / miniK) * k, viewTop + viewHeight / 2 - (my / miniK) * k, k);
+  };
+  const miniK = MINIMAP_WIDTH / Math.max(width, 1);
 
   // Cadrage automatique : à chaque étape, l'étape en cours et ses sorties
   // possibles ; à la fin du parcours, tout le chemin ; en vue « Tous », tout le schéma.
@@ -161,7 +197,7 @@ export function ProcessDiagram({
       ? [progress.currentId, ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
       : [...progress.visitedSteps];
   const focusKey = overview ? 'tous' : `${progress?.currentId}|${focusIds.join('|')}`;
-  useEffect(() => {
+  const frameFocus = () => {
     if (overview) {
       showBox(whole, MIN_SCALE);
       return;
@@ -170,7 +206,10 @@ export function ProcessDiagram({
     const current = progress?.currentId ? layout.nodes.get(progress.currentId) : undefined;
     // Pendant le choix, on reste lisible ; à la fin, on montre le chemin entier, plus petit.
     if (box) showBox(box, choosing ? FRAME_MIN_SCALE : PATH_MIN_SCALE, current);
-    // focusKey résume focusIds ; whole dépend de la taille du schéma.
+  };
+  useEffect(() => {
+    if (follow || overview) frameFocus();
+    // focusKey résume focusIds ; frameFocus dépend de ce qui est affiché.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey, showBox, overview]);
 
@@ -180,6 +219,10 @@ export function ProcessDiagram({
     runOnJS(setRenderScale)(scale.get());
   };
   const pan = usePanGesture({
+    onActivate: () => {
+      'worklet';
+      runOnJS(setFollow)(false);
+    },
     onUpdate: (event) => {
       'worklet';
       x.set(bound(x.get() + event.changeX, width * scale.get(), frameWidth));
@@ -187,6 +230,10 @@ export function ProcessDiagram({
     },
   });
   const pinch = usePinchGesture({
+    onActivate: () => {
+      'worklet';
+      runOnJS(setFollow)(false);
+    },
     onUpdate: (event) => {
       'worklet';
       const k = clamp(scale.get() * event.scaleChange);
@@ -206,6 +253,15 @@ export function ProcessDiagram({
     [renderScale],
   );
 
+  // Cadre de la mini-carte : la partie du schéma visible à l'écran.
+  const miniFrame = useAnimatedStyle(() => ({
+    left: (-x.get() / scale.get()) * miniK,
+    top: ((viewTop - y.get()) / scale.get()) * miniK,
+    width: (frameWidth / scale.get()) * miniK,
+    height: (viewHeight / scale.get()) * miniK,
+  }));
+  const showMinimap = !overview && frameWidth > 0 && layout.width * FRAME_MIN_SCALE > frameWidth * 0.9;
+
   // Une pointe de flèche par couleur utilisée.
   const arrowColors = new Set([
     theme.primary,
@@ -215,16 +271,12 @@ export function ProcessDiagram({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
-          {t.diagram.title}
-        </ThemedText>
-        <ToolButton label="−" hint={t.diagram.zoomOut} onPress={() => zoomBy(1 / 1.25)} />
-        <ToolButton label="+" hint={t.diagram.zoomIn} onPress={() => zoomBy(1.25)} />
-        <ToolButton label={t.diagram.all} hint={t.diagram.allHint} onPress={showAll} />
-      </View>
       <View
-        style={[styles.frame, { height, backgroundColor: theme.surface, borderColor: theme.border }]}
+        style={[
+          styles.frame,
+          fullscreen && styles.frameFull,
+          { height, backgroundColor: fullscreen ? theme.background : theme.surface },
+        ]}
         onLayout={(event) => setFrameWidth(event.nativeEvent.layout.width)}>
         <GestureDetector gesture={gesture}>
           <View style={StyleSheet.absoluteFill} collapsable={false}>
@@ -309,6 +361,22 @@ export function ProcessDiagram({
                     );
                   })}
 
+                {/* Les flèches à venir, en transparence : on voit où le process peut mener. */}
+                {progress &&
+                  layout.edges.map((edge) =>
+                    progress.visitedLinks.has(edge.id) || candidates.has(edge.id) ? null : (
+                      <Path
+                        key={`a-venir-${edge.id}`}
+                        d={pathOf(edge.points)}
+                        fill="none"
+                        stroke={theme.textSecondary}
+                        strokeWidth={1.5}
+                        strokeDasharray="6 7"
+                        opacity={0.3}
+                      />
+                    ),
+                  )}
+
                 {progress &&
                   layout.edges.map((edge) => {
                     const visited = progress.visitedLinks.has(edge.id);
@@ -340,7 +408,13 @@ export function ProcessDiagram({
                   }
                   // Même clé pour une étape fantôme puis parcourue : le fondu ne joue qu'à son apparition.
                   const visited = progress?.visitedSteps.has(node.id);
-                  if (!visited && !ghosts.has(node.id)) return null;
+                  // Étape à venir : en transparence, sans fondu.
+                  if (!visited && !ghosts.has(node.id))
+                    return (
+                      <G key={`a-venir-${node.id}`} opacity={0.35}>
+                        <NodeShape node={node} ghost />
+                      </G>
+                    );
                   return (
                     <FadeIn key={node.id}>
                       <NodeShape node={node} current={node.id === progress?.currentId} ghost={!visited} />
@@ -351,6 +425,89 @@ export function ProcessDiagram({
             </Animated.View>
           </View>
         </GestureDetector>
+
+        {progress && follow && (
+          <View
+            pointerEvents="none"
+            style={[styles.followPill, { backgroundColor: theme.primary, top: viewTop + Spacing.three - Spacing.one }]}>
+            <SymbolView name={{ ios: 'scope', android: 'my_location' }} size={14} tintColor={theme.onPrimary} />
+            <ThemedText type="smallBold" style={[styles.followText, { color: theme.onPrimary }]}>
+              {t.diagram.follow}
+            </ThemedText>
+          </View>
+        )}
+
+        <View style={[styles.tools, { top: viewTop + Spacing.three - Spacing.one }]}>
+          {onToggleFullscreen && (
+            <ToolButton
+              icon={
+                fullscreen
+                  ? { ios: 'arrow.down.right.and.arrow.up.left', android: 'close_fullscreen' }
+                  : { ios: 'arrow.up.left.and.arrow.down.right', android: 'open_in_full' }
+              }
+              hint={fullscreen ? t.diagram.exitFullscreen : t.diagram.fullscreen}
+              active={fullscreen}
+              onPress={onToggleFullscreen}
+            />
+          )}
+          {progress && (
+            <ToolButton
+              icon={{ ios: 'scope', android: 'my_location' }}
+              hint={t.diagram.followHint}
+              active={follow}
+              onPress={followCurrent}
+            />
+          )}
+          <ToolButton
+            icon={{ ios: 'rectangle.dashed', android: 'fit_screen' }}
+            hint={t.diagram.allHint}
+            onPress={showAll}
+          />
+          <ToolButton icon={{ ios: 'plus', android: 'add' }} hint={t.diagram.zoomIn} onPress={() => zoomBy(1.25)} />
+          <ToolButton
+            icon={{ ios: 'minus', android: 'remove' }}
+            hint={t.diagram.zoomOut}
+            onPress={() => zoomBy(1 / 1.25)}
+          />
+        </View>
+
+        {showMinimap && (
+          <Pressable
+            onPress={(event) => jumpTo(event.nativeEvent.locationX, event.nativeEvent.locationY)}
+            accessibilityRole="button"
+            accessibilityLabel={t.diagram.minimap}
+            style={[
+              styles.minimap,
+              {
+                width: MINIMAP_WIDTH,
+                height: layout.height * miniK,
+                bottom: bottomInset + Spacing.three - Spacing.one,
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}>
+            {[...layout.nodes.values()].map((node) => {
+              const visited = progress?.visitedSteps.has(node.id);
+              const current = node.id === progress?.currentId;
+              return (
+                <View
+                  key={node.id}
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    left: node.x * miniK,
+                    top: node.y * miniK,
+                    width: Math.max(4, node.width * miniK),
+                    height: Math.max(3, node.height * miniK),
+                    borderRadius: 2,
+                    backgroundColor: current ? theme.primary : visited ? theme.text : theme.border,
+                  }}
+                />
+              );
+            })}
+            <Animated.View pointerEvents="none" style={[styles.miniFrame, { borderColor: theme.link }, miniFrame]} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -554,45 +711,70 @@ function EdgeLabel({ point, label, color }: { point: Point; label: string; color
   );
 }
 
-function ToolButton({ label, hint, onPress }: { label: string; hint: string; onPress: () => void }) {
+/** Bouton rond de la barre d'outils flottante du schéma ; `active` : en couleur de la palette. */
+function ToolButton({
+  icon,
+  hint,
+  active = false,
+  onPress,
+}: {
+  icon: SymbolViewProps['name'];
+  hint: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={hint}
-      hitSlop={4}
+      accessibilityState={{ selected: active }}
+      hitSlop={2}
       style={({ pressed }) => [
         styles.tool,
-        {
-          backgroundColor: pressed ? theme.surfaceMuted : theme.surface,
-          borderColor: theme.border,
-        },
+        { backgroundColor: active ? theme.primary : theme.surface, opacity: pressed ? 0.75 : 1 },
       ]}>
-      <ThemedText type="smallBold" style={{ color: theme.link }}>
-        {label}
-      </ThemedText>
+      <SymbolView name={icon} size={19} tintColor={active ? theme.onPrimary : theme.text} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   frame: {
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.large + 2,
     overflow: 'hidden',
   },
+  frameFull: { borderRadius: 0 },
   container: { gap: Spacing.one },
   content: { position: 'absolute', left: 0, top: 0, transformOrigin: 'left top' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  title: { flex: 1 },
+  tools: { position: 'absolute', right: Spacing.three - Spacing.half * 3, gap: Spacing.two },
   tool: {
-    minWidth: 44,
-    minHeight: 36,
-    paddingHorizontal: Spacing.two,
-    borderRadius: Radius.small,
-    borderWidth: StyleSheet.hairlineWidth,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '0 4px 12px rgba(14, 27, 44, 0.16)',
   },
+  followPill: {
+    position: 'absolute',
+    left: Spacing.three - Spacing.one,
+    height: 30,
+    paddingHorizontal: Spacing.three - Spacing.one,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one + Spacing.half,
+  },
+  followText: { fontSize: 12, lineHeight: 16, fontWeight: 800 },
+  minimap: {
+    position: 'absolute',
+    right: Spacing.three - Spacing.half * 3,
+    borderRadius: Radius.small - 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    boxShadow: '0 4px 12px rgba(14, 27, 44, 0.16)',
+  },
+  miniFrame: { position: 'absolute', borderWidth: 2, borderRadius: 3 },
 });
