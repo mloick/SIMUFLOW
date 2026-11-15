@@ -23,9 +23,10 @@ import {
 } from '@/data/process-store';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
-import { countPaths, explainIssue, summarize, type Issue, type Process } from '@/domain';
+import { countPaths, explainIssue, hasDelays, slaOf, summarize, type Issue, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
+import { overviewOf } from '@/simulation/families';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
@@ -258,6 +259,8 @@ function ProcessDetail({ process }: { process: Process }) {
           <DiagnosticList process={process} shown={shown} folded={folded} onShow={showStep} />
         </Accordion>
 
+        {hasDelays(process) && <DelaysSection process={process} />}
+
         {summary.actors.length > 0 && (
           <Accordion
             icon={{ ios: 'person.3', android: 'groups' }}
@@ -463,6 +466,52 @@ function TrackingList({ process, onStart }: { process: Process; onStart: () => v
   );
 }
 
+/** Mode Délais : le SLA promis au client, le plus long cumul d'OLA, et s'il tient dans le SLA. */
+function DelaysSection({ process }: { process: Process }) {
+  const theme = useTheme();
+  const t = useT();
+  const d = t.delays;
+  const overview = useMemo(() => overviewOf(process, t), [process, t]);
+  const sla = slaOf(process);
+  const longest = overview.critical?.duration ?? 0;
+  const timed = process.steps.filter((step) => (step.duration ?? 0) > 0).length;
+  const work = process.steps.filter((step) => step.kind === 'task').length;
+  const exceeds = sla !== undefined && longest > sla;
+  const days = (value: number) => t.format.count(value, t.words.workingDay);
+  const rows: [string, string][] = [
+    [d.detailSla, sla !== undefined ? days(sla) : d.noSla],
+    [d.longest, days(longest)],
+    [d.olaSteps, `${timed} / ${Math.max(work, timed)}`],
+  ];
+
+  return (
+    <Accordion
+      icon={{ ios: 'timer', android: 'timer' }}
+      title={d.detailTitle}
+      summary={sla !== undefined ? d.summary(t.format.num(sla)) : d.noSla}
+      tone={exceeds ? 'warning' : sla !== undefined ? 'success' : undefined}
+      help={d.detailHelp}>
+      {rows.map(([label, value], index) => (
+        <View
+          key={label}
+          style={[styles.line, index === 0 ? styles.firstLine : { borderTopColor: theme.border }]}
+          accessible>
+          <ThemedText style={styles.flex}>{label}</ThemedText>
+          <ThemedText type="smallBold">{value}</ThemedText>
+        </View>
+      ))}
+      <ThemedText
+        type="small"
+        style={[
+          styles.delayVerdict,
+          { color: sla === undefined ? theme.textSecondary : exceeds ? theme.warning : theme.success },
+        ]}>
+        {sla === undefined ? d.addSla : exceeds ? d.exceeds(days(longest - sla)) : d.fits}
+      </ThemedText>
+    </Accordion>
+  );
+}
+
 function StatTile({
   value,
   label,
@@ -629,6 +678,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three - Spacing.half * 3,
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  delayVerdict: { marginTop: Spacing.two },
+  firstLine: { borderTopWidth: 0, marginTop: 0, paddingTop: 0 },
   bar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3 },
   trackingText: { alignItems: 'flex-start' },

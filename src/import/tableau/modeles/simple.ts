@@ -16,6 +16,7 @@
  */
 
 import type { ImportResult } from '@/import/errors';
+import { slaFromText } from '@/import/text';
 import {
   learnedHeaderKind,
   type ColumnKind,
@@ -79,10 +80,27 @@ function titleAbove(rows: string[][], headerIndex: number): string | undefined {
   return undefined;
 }
 
+/**
+ * Le SLA écrit dans l'onglet, hors des colonnes du tableau : une cellule
+ * « SLA : 6 JO », ou « SLA » suivi de « 6 JO » dans la cellule d'à côté.
+ */
+export function sheetSla(sheet: Sheet): number | undefined {
+  for (const row of filledRows(sheet)) {
+    for (let index = 0; index < row.length; index++) {
+      const cell = (row[index] ?? '').trim();
+      if (!/\bSLA\b/i.test(cell)) continue;
+      const found = slaFromText(cell) ?? slaFromText(`${cell} ${row[index + 1] ?? ''}`);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
+}
+
 function toProcess(table: ScannedTable, sheet: Sheet, idPrefix: string): ImportResult {
   const result = tableToProcess(table, table.title ?? sheet.name, idPrefix);
+  const sla = sheetSla(sheet);
   return {
-    processes: result.processes.map((process) => ({ ...process, source: 'tableau' })),
+    processes: result.processes.map((process) => ({ ...process, source: 'tableau', ...(sla !== undefined ? { sla } : {}) })),
     warnings: result.warnings,
   };
 }

@@ -22,6 +22,16 @@ export function cellText(value: string | null | undefined): string {
     .trim();
 }
 
+/**
+ * SLA écrit dans un texte ou une cellule : « SLA : 6 JO », « SLA client 5 jours
+ * ouvrés », « SLA = 4 ». Sans unité, le nombre compte en jours ouvrés.
+ */
+export function slaFromText(text: string): number | undefined {
+  const match = text.match(/\bSLA\b(?:\s*client)?\s*(?:[:=]|de|en)?\s*(\d+(?:[.,]\d+)?)(?![\d.,]|\s*%)/i);
+  const value = match ? Number(match[1].replace(',', '.')) : NaN;
+  return value > 0 ? value : undefined;
+}
+
 /** Délai écrit dans le texte d'une étape : « 2 JO », « 1,5 jour ouvré », « 3 BD », « 5 jours », « 2 j ». */
 export function durationOf(text: string): number | undefined {
   const match = text.match(

@@ -13,7 +13,7 @@ export type ProcessRow = {
   owner_id: string;
   name: string;
   source: ProcessSource | null;
-  content: { steps: Step[]; links: Link[]; editedAt?: string };
+  content: { steps: Step[]; links: Link[]; sla?: number; editedAt?: string };
   created_at: string;
   updated_at: string;
 };
@@ -30,6 +30,7 @@ export function toRow(process: Process): ProcessRowInput {
     content: {
       steps: process.steps,
       links: process.links,
+      ...(process.sla !== undefined ? { sla: process.sla } : {}),
       ...(process.editedAt ? { editedAt: process.editedAt } : {}),
     },
   };
@@ -47,6 +48,7 @@ export function fromRow(row: ProcessRow): Process {
     ...(row.source && SOURCES.includes(row.source) ? { source: row.source } : {}),
     steps: content.steps,
     links: content.links,
+    ...(typeof content.sla === 'number' && content.sla > 0 ? { sla: content.sla } : {}),
     ...(typeof content.editedAt === 'string' ? { editedAt: content.editedAt } : {}),
   };
 }

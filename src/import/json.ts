@@ -4,7 +4,10 @@
  *
  *   { "format": "simuflow", "version": 1, "name": "…",
  *     "steps": [{ "id": "…", "kind": "start", "title": "…", "actor": "…", "duration": 2 }],
- *     "links": [{ "from": "…", "to": "…", "label": "oui" }] }
+ *     "links": [{ "from": "…", "to": "…", "label": "oui" }],
+ *     "sla": 6 }
+ *
+ * `duration` est l'OLA de l'étape et `sla` le délai promis au client, en jours ouvrés (facultatifs).
  *
  * Chaque erreur dit où elle se trouve (« Étape 3 : … ») pour être corrigée.
  */
@@ -65,7 +68,11 @@ export function parseProcessJson(text: string, fileName: string, idPrefix = 'jso
   });
 
   const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : fileName.replace(/\.json$/i, '');
-  return { processes: [{ id: `${idPrefix}-1`, name, source: 'json', steps, links }], warnings: [] };
+  if (data.sla !== undefined && (typeof data.sla !== 'number' || !(data.sla >= 0))) {
+    throw new ImportError('SLA invalide : un nombre de jours ouvrés est attendu.');
+  }
+  const sla = typeof data.sla === 'number' && data.sla > 0 ? { sla: data.sla } : {};
+  return { processes: [{ id: `${idPrefix}-1`, name, source: 'json', ...sla, steps, links }], warnings: [] };
 }
 
 /** Process → texte JSON au format SimuFlow (pour l'exporter ou le partager). */
@@ -77,6 +84,7 @@ export function processToJson(process: Process): string {
       name: process.name,
       steps: process.steps.map(({ layout: _layout, shape: _shape, ...step }) => step),
       links: process.links,
+      ...(process.sla !== undefined ? { sla: process.sla } : {}),
     },
     null,
     2,

@@ -9,7 +9,7 @@ Ce document décrit le code de SimuFlow tel qu'il est aujourd'hui, pour un déve
 2. [Lire un process : import](#2-lire-un-process--import) : draw.io, BPMN, Visio, JSON, Excel et CSV, règles apprises
 3. [Scanner et module natif](#3-scanner-et-module-natif) : Swift avec Vision, Kotlin avec ML Kit, Tesseract sur le web
 4. [Écrans](#4-écrans) : navigation, liste, import, formulaire, détail, éditeur, simulation, export
-5. [Suivre une vraie demande](#5-suivre-une-vraie-demande) : jours ouvrés, rappels locaux
+5. [Suivre une vraie demande](#5-suivre-une-vraie-demande) : jours ouvrés, mode Délais (SLA / OLA), rappels locaux
 6. [Données et backend](#6-données-et-backend) : stockage local, synchronisation, Supabase
 7. [Interface](#7-interface) : thème, identité, accessibilité
 8. [Tests et CI](#8-tests-et-ci)
@@ -756,7 +756,7 @@ En mode développement, la page Profil propose « Démo · état de la liste des
 - **Chiffres** : trois tuiles (étapes, chemins possibles avec `countPaths`, « 2000+ » au-delà du plafond, points à corriger). La dernière est teintée rouge s'il y a une erreur, orange s'il n'y a que des avertissements, verte sinon.
 - **« Lancer la simulation »** : grand bouton qui ouvre `/simulation/[id]`.
 - **Actions rapides** : quatre boutons ronds, Modifier (ou « Ma partie » pour un process partagé avec moi), Exporter (`/export/[id]`), Partager (`/partage/[id]` sur un compte, sinon le résumé en texte) et Suivre (commence un suivi en vrai).
-- **Sections repliables** (`Accordion`, `src/components/accordion.tsx` : tuile d'icône, titre, résumé à droite, chevron, bouton « ? » facultatif qui ouvre la feuille d'aide ; le contenu apparaît en fondu) : Diagnostic (ouverte s'il y a un point, avec `explainIssue`), Acteurs (une barre par acteur, longueur selon son nombre d'étapes), Étapes, Partage (carte de validation), Ma partie, Suivi en vrai. « Voir » sur une anomalie ouvre les étapes, puis y fait défiler et surligne l'étape (`onLayout`, `scrollTo`).
+- **Sections repliables** (`Accordion`, `src/components/accordion.tsx` : tuile d'icône, titre, résumé à droite, chevron, bouton « ? » facultatif qui ouvre la feuille d'aide ; le contenu apparaît en fondu) : Diagnostic (ouverte s'il y a un point, avec `explainIssue`), Délais (SLA / OLA) si le process a un SLA ou un OLA (voir « Mode Délais »), Acteurs (une barre par acteur, longueur selon son nombre d'étapes), Étapes, Partage (carte de validation), Ma partie, Suivi en vrai. « Voir » sur une anomalie ouvre les étapes, puis y fait défiler et surligne l'étape (`onLayout`, `scrollTo`).
 
 L'écran relit le process à chaque changement (`useImportedProcesses`).
 
@@ -775,7 +775,8 @@ L'écran relit le process à chaque changement (`useImportedProcesses`).
 
 Pour corriger un process pendant sa validation, sans retoucher le fichier d'origine. Les modifications sont des fonctions pures (`src/domain/edit.ts`) qui renvoient un nouveau process : l'écran garde un brouillon, et « Annuler » l'abandonne (avec confirmation s'il a changé).
 
-- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai en jours ouvrés (vide = aucun).
+- **Le SLA du process** (`setSla`, `src/domain/delays.ts`) : une carte en haut, « SLA client (jours ouvrés) », vide = aucun.
+- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai OLA en jours ouvrés (vide = aucun).
 - **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
 - **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
 - **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
@@ -812,7 +813,7 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 
 Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
 
-**Refonte R9 à R11.** L'en-tête montre le nom et « Pas à pas · étape 2 », avec un bouton rond d'export. Sous les modes (contrôle segmenté), le schéma remplit toute la place mesurée, et la **carte de l'étape** est posée en bas : pastille du rôle, jours ouvrés cumulés, titre, acteur et délai ; « Étape suivante », ou un bouton par sortie côte à côte (« oui », « vers … ») ; les encadrés « Fin atteinte » et « Impasse » ; puis « Retour » (pas à pas seulement) et « Recommencer ». En mode « Tous », la liste des familles prend la place de la carte. Le **schéma** (`process-diagram.tsx`) a une barre d'outils verticale de boutons ronds (plein écran, suivre l'étape, voir tout, zoom + et −), une pastille « Suivi auto » (le cadrage suit l'étape en cours ; un glissement, un pincement ou un zoom l'arrête, le bouton cible la relance), une **minicarte** en bas à droite quand le schéma est bien plus large que le cadre (points des étapes, rectangle de la zone vue, toucher pour y aller), et les étapes à venir en fantôme (flèches en pointillés). **Plein écran** : l'en-tête disparaît, la carte flotte sur le schéma. **Paysage** (largeur plus grande que la hauteur et au moins 600 points) : le schéma à gauche, une colonne de 360 points à droite avec les modes et la carte. `app.json` passe donc `orientation` de `portrait` à `default` : après ce changement, `npx expo prebuild --clean --platform ios`, puis recompiler (`npm run ios:iphone`). Le « Déroulé » en liste n'est plus affiché : la carte et le schéma le remplacent. Test d'écran : `simulation-ecran.test.tsx` (étape suivante, retour, décision, fin).
+**Refonte R9 à R11.** L'en-tête montre le nom et « Pas à pas · étape 2 », avec un bouton rond d'export. Sous les modes (contrôle segmenté), le schéma remplit toute la place mesurée, et la **carte de l'étape** est posée en bas : pastille du rôle, jours ouvrés cumulés, titre, acteur et délai ; si le process a un SLA, une barre « SLA client · 3 sur 6 jours ouvrés » (verte, orange aux trois quarts, rouge au-delà) ; « Étape suivante », ou un bouton par sortie côte à côte (« oui », « vers … ») ; les encadrés « Fin atteinte » (avec « SLA tenu » ou « SLA dépassé ») et « Impasse » ; puis « Retour » (pas à pas seulement) et « Recommencer ». En mode « Tous », la liste des familles prend la place de la carte. Le **schéma** (`process-diagram.tsx`) a une barre d'outils verticale de boutons ronds (plein écran, suivre l'étape, voir tout, zoom + et −), une pastille « Suivi auto » (le cadrage suit l'étape en cours ; un glissement, un pincement ou un zoom l'arrête, le bouton cible la relance), une **minicarte** en bas à droite quand le schéma est bien plus large que le cadre (points des étapes, rectangle de la zone vue, toucher pour y aller), et les étapes à venir en fantôme (flèches en pointillés). **Plein écran** : l'en-tête disparaît, la carte flotte sur le schéma. **Paysage** (largeur plus grande que la hauteur et au moins 600 points) : le schéma à gauche, une colonne de 360 points à droite avec les modes et la carte. `app.json` passe donc `orientation` de `portrait` à `default` : après ce changement, `npx expo prebuild --clean --platform ios`, puis recompiler (`npm run ios:iphone`). Le « Déroulé » en liste n'est plus affiché : la carte et le schéma le remplacent. Test d'écran : `simulation-ecran.test.tsx` (étape suivante, retour, décision, fin).
 
 ![Simulation (refonte R9 à R11) : pas à pas avec la minicarte, puis en plein écran](captures/etape-r9-simulation.png)
 
@@ -878,7 +879,7 @@ La simulation rejoue un process sur le papier ; le suivi accompagne une vraie de
 
 La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie demande** : chaque étape a une échéance réelle, calculée en jours ouvrés.
 
-**Calendrier** (`calendar.ts`, TypeScript pur, testé). Jours ouvrés français : du lundi au vendredi, sans les onze jours fériés de métropole. Pâques est calculé chaque année (`easterSunday`, méthode de Meeus) ; le lundi de Pâques, l'Ascension (Pâques + 39 jours) et le lundi de Pentecôte (+ 50) en découlent. Une journée de travail va de 9 h à 17 h : un délai de 0,5 jour ouvré fait 4 heures de travail. `addWorkingDays(début, jours)` avance dans ces heures seulement (1 jour ouvré commencé le vendredi à 14 h finit le lundi à 14 h ; commencé un samedi, il part du lundi 9 h). `workingDaysBetween` mesure le temps de travail écoulé entre deux moments, en jours ouvrés arrondis au dixième.
+**Calendrier** (`calendar.ts`, TypeScript pur, testé). Jours ouvrés français : du lundi au vendredi, sans les onze jours fériés de métropole. Pâques est calculé chaque année (`easterSunday`, méthode de Meeus) ; le lundi de Pâques, l'Ascension (Pâques + 39 jours) et le lundi de Pentecôte (+ 50) en découlent. Une journée de travail va de 9 h à 17 h : un délai de 0,5 jour ouvré fait 4 heures de travail. `addWorkingDays(début, jours)` avance dans ces heures seulement (1 jour ouvré commencé le vendredi à 14 h finit le lundi à 14 h ; commencé un samedi, il part du lundi 9 h). `workingDaysBetween` mesure le temps de travail écoulé entre deux moments, en jours ouvrés arrondis au dixième ; `workingMinutesBetween` donne la même mesure en minutes, sans arrondi (pour les chronos du mode Délais).
 
 ![Suivi en vrai : la section de la fiche, une demande en cours avec ses étapes passées, puis l'étape suivante](captures/etape-11b-suivi.png)
 
@@ -908,6 +909,38 @@ Tests : 6 sur le calendrier (Pâques, jours fériés mobiles, week-end, jour fé
 
 </details>
 
+### Mode Délais (SLA / OLA) (`src/domain/delays.ts`, `src/tracking/delays.ts`)
+
+Deux délais, en jours ouvrés : l'**OLA** d'une étape (le délai de son équipe, `Step.duration`) et le **SLA** du process (le délai promis au client, `Process.sla`, facultatif). Le SLA est gardé dans la colonne `content` (JSON) de la table `processes`, à côté des étapes et des liens (`src/backend/process-row.ts`) : **aucun script SQL à lancer**.
+
+**Règles** (`src/domain/delays.ts`, TypeScript pur, testé). `delayLevel(consommé, prévu)` rend `ok` (vert), `warning` (orange, à partir de `WARNING_RATIO` = 75 % du délai) ou `late` (rouge, délai dépassé) ; `delayRatio` donne la part consommée entre 0 et 1 ; `slaOf`, `hasDelays` et `setSla` lisent, testent et changent le SLA.
+
+**Lecture à l'import.** Workflow SLA / OLA (`src/import/tableau/modeles/parcours.ts`) : chaque situation reçoit son SLA (`Process.sla`) et chaque task son OLA (`duration`, déjà lu avant). Tableau simple (`modeles/simple.ts`) : une colonne « OLA » vaut une colonne « Délai » (`src/scan/table.ts`), et `sheetSla` cherche dans l'onglet une cellule « SLA : 5 JO », ou « SLA » suivi de « 5 JO » dans la cellule d'à côté. Texte (`src/import/texte.ts`) : une ligne qui commence par « SLA » donne le SLA et n'est pas une étape. `slaFromText` (`src/import/text.ts`) lit « SLA : 6 JO », « SLA client 4,5 jours ouvrés », « SLA = 3 », mais pas « SLA 95 % ». JSON : champ `sla`. BPMN : attribut `simuflow:sla` sur `<bpmn:process>`, écrit à l'export et relu à l'import.
+
+**Chronos d'une demande suivie** (`src/tracking/delays.ts`, TypeScript pur, testé). Au départ, `startTracking` garde le SLA du process et son échéance (`Tracking.sla`, `Tracking.slaDueAt`) : changer le process ensuite ne déplace pas l'échéance d'une demande en cours. `clockOf(début, échéance, maintenant, fin?)` rend un `DelayClock` : niveau, jours ouvrés restants (négatifs = retard), part consommée, délai prévu, arrêté ou non, en minutes de travail exactes (`workingMinutesBetween`). `slaClock` et `olaClock` l'appliquent au SLA de la demande et à l'OLA d'une étape ; `splitWorkingTime` découpe un temps en jours de 8 h, heures et minutes (« 1 j 4 h », « 3 h 05 », « 12 min »). `delayReport` fait le bilan d'une demande close : SLA tenu ou non (temps passé, avance ou retard), OLA tenus sur le nombre d'étapes qui en ont, et les étapes en retard.
+
+**Écrans.**
+
+- **Suivi** (`src/app/suivi/[id].tsx`) : la carte du chrono SLA en haut, celle de l'OLA dans l'étape en cours (`DelayMeter`, `src/components/delay-meter.tsx` : titre, temps restant ou retard en grand, pastille « Dans les temps », « Bientôt dépassé » ou « Dépassé », barre de progression, échéance). L'icône clignote doucement une fois le délai dépassé, sauf avec « Réduire les animations ». L'heure est relue toutes les 15 secondes. Une demande close affiche le « Bilan des délais ».
+- **Fiche** (`src/app/process/[id].tsx`) : la section « Délais (SLA / OLA) » donne le SLA, le chemin le plus long en additionnant les OLA (chemin critique de `overviewOf`), le nombre d'étapes avec un OLA, et dit si le chemin le plus long tient dans le SLA (la section est orange sinon).
+- **Éditeur** : le champ « SLA client » ; **simulation** : la barre du SLA (voir ces écrans).
+- **Rappels** : « SLA bientôt dépassé » puis « SLA dépassé » (voir « Notifications »).
+
+Les exemples « Demande d'accès » (SLA 3 JO, tenu par tous les chemins) et « Gestion d'un incident » (SLA 4 JO, dépassé par le chemin le plus long, 5 JO) le montrent sans rien importer.
+
+![Mode Délais pendant un suivi : le chrono du SLA en orange et celui de l'OLA en vert, puis le bilan d'une demande terminée](captures/etape-35-delais-suivi.png)
+
+![Simulation : la barre du SLA pendant le parcours, puis un chemin qui dépasse le SLA](captures/etape-35-delais-simulation.png)
+
+![La section Délais de la fiche, et le champ SLA client dans l'éditeur](captures/etape-35-delais-editeur.png)
+
+<details>
+<summary>Tests</summary>
+
+Tests : 4 sur les règles (`src/domain/__tests__/delays.test.ts` : niveaux, part consommée, SLA ajouté et retiré, OLA sans SLA), 7 sur les chronos, les rappels et le bilan (`src/tracking/__tests__/delays.test.ts`), 5 sur la lecture du SLA à l'import (`src/import/__tests__/sla.test.ts` : texte, classeur SLA / OLA, tableau simple, texte libre, aller-retour JSON et BPMN).
+
+</details>
+
 ### Notifications (`src/notifications/`)
 
 Des **notifications locales** : le téléphone les programme et les affiche lui-même, sans serveur, avec `expo-notifications`. Elles servent aux rappels d'échéance des demandes suivies en vrai (voir « Suivi en vrai »). Pas de notification « push » envoyée par un serveur : sur iPhone, il faudrait un compte Apple Developer payant. Le plugin est donc configuré sans elles.
@@ -923,7 +956,7 @@ Des **notifications locales** : le téléphone les programme et les affiche lui-
 <details>
 <summary>Détail</summary>
 
-**Rappels d'échéance** (`src/tracking/reminders.ts`, TypeScript pur, testé). Pour l'étape en cours de chaque demande suivie qui a une échéance, `remindersFor` prévoit deux rappels : le jour de l'échéance à 9 h (« Aujourd'hui : Commander », « Demande du 31 oct. · échéance à 14:00. »), puis à l'échéance (« En retard : Commander »). Un rappel déjà passé n'est pas prévu. Chaque rappel a un identifiant stable (suivi, rang de l'étape, « jour » ou « retard »). `allReminders` les réunit pour toutes les demandes en cours dont le process existe encore. Quatre tests.
+**Rappels d'échéance** (`src/tracking/reminders.ts`, TypeScript pur, testé). Pour l'étape en cours de chaque demande suivie qui a une échéance, `remindersFor` prévoit deux rappels : le jour de l'échéance à 9 h (« Aujourd'hui : Commander », « Demande du 31 oct. · échéance à 14:00. »), puis à l'échéance (« En retard : Commander »). Un rappel déjà passé n'est pas prévu. Chaque rappel a un identifiant stable (suivi, rang de l'étape, « jour » ou « retard »). Si la demande a un SLA (mode Délais), deux rappels de plus pour toute la demande : « SLA bientôt dépassé » quand les trois quarts du SLA sont consommés (`warningMoment`), puis « SLA dépassé » à son échéance (identifiants `…-sla-bientot` et `…-sla-depasse`). `allReminders` les réunit pour toutes les demandes en cours dont le process existe encore. Quatre tests, plus un sur les rappels du SLA (`delays.test.ts`).
 
 **Programmation** (`useDeadlineReminders`, `src/notifications/use-deadline-reminders.ts`, appelé dans `src/app/_layout.tsx`). À chaque changement d'une demande suivie (étape terminée, suivi commencé ou arrêté), d'un process ou du réglage « Rappels d'échéance », `scheduleReminders` retire les rappels programmés (reconnus à `data.kind = 'echeance'`, les autres notifications restent) et programme les nouveaux à leur date (`SchedulableTriggerInputTypes.DATE`, canal Android « Échéances »). Rappels coupés dans les Réglages : aucun. L'autorisation est demandée au premier rappel à programmer, si elle ne l'a jamais été. Toucher un rappel ouvre l'écran de suivi de la demande (`useLastNotificationResponse`, aussi quand le rappel lance l'app).
 

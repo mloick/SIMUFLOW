@@ -122,7 +122,7 @@ function boundsOf(root: Element): Map<string, NonNullable<Step['layout']>> {
 
 type Node = { id: string; type: string; name: string; duration?: number };
 
-/** Espace de noms de SimuFlow : le titre et le délai exacts d'une étape exportée (`simuflow:titre`, `simuflow:duree`). */
+/** Espace de noms de SimuFlow : le titre et le délai exacts d'une étape exportée (`simuflow:titre`, `simuflow:duree`), le SLA du process (`simuflow:sla`). */
 const SIMUFLOW_NS = 'https://mloick.github.io/SIMUFLOW/bpmn';
 
 const simuflowAttribute = (element: Element, name: string) =>
@@ -225,7 +225,8 @@ function readProcess(
     ...(link.label ? { label: link.label } : {}),
   }));
   for (const [type, count] of skipped) warnings.push(`${name} : ${count} ${SKIPPED[type]} non lu(s).`);
-  return { id, name, source: 'bpmn', steps, links: finalLinks };
+  const sla = Number(simuflowAttribute(process, 'sla'));
+  return { id, name, source: 'bpmn', ...(sla > 0 ? { sla } : {}), steps, links: finalLinks };
 }
 
 function parseXml(text: string): Element {

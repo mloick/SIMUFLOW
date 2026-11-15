@@ -32,6 +32,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Simuler** pas à pas, ou voir tous les chemins d'un coup avec le chemin critique.
 - **Exporter** en PDF (avec un résumé en clair de chaque cas), draw.io, BPMN 2.0 ou JSON, anonymisé si besoin.
 - **Suivre une vraie demande**, avec des échéances en jours ouvrés français et un rappel le jour J.
+- **Mode Délais (SLA / OLA)** : chaque étape a son délai pour son équipe (OLA) et le process son délai promis au client (SLA), lus dans le tableau importé ou saisis dans l'éditeur. Pendant le suivi, deux chronos passent du vert à l'orange puis au rouge, une notification prévient avant le dépassement du SLA et un bilan dit à la fin si les délais ont été tenus ; la simulation compare les jours cumulés au SLA.
 - **Partager** un process avec ses acteurs : inviter des collègues par identifiant ou e-mail, et relier chacun à un acteur du schéma ; ils le lisent sans pouvoir le modifier, et chacun relit sa partie : chaque étape est validée, ou signalée à revoir avec un commentaire. Le propriétaire suit qui a fini, ce qui est à corriger, et voit « entièrement validé » à la fin. Des alertes dans l'app (et en notification sur le téléphone) annoncent un nouveau partage, une étape à revoir et un process entièrement validé. Les acteurs sans compte reçoivent un lien web par acteur : ils confirment leur nom et relisent leur partie dans le navigateur.
 - **Synchroniser** entre appareils avec un compte, en restant utilisable hors connexion ; tout est supprimé avec le compte.
 - **Vos couleurs** : quatre palettes (Océan, Aurore, Menthe, Corail), chacune en clair et en sombre, au choix dans les Réglages ; l'app utilise la police Plus Jakarta Sans. Un petit bouton « ? » à côté de chaque réglage ouvre une courte explication.
@@ -46,7 +47,7 @@ La visite complète, avec captures, est dans le [guide des fonctionnalités](doc
 ## Fonctions du téléphone
 
 - **Caméra avec lecture du texte sur l'appareil.** Un module Expo local écrit en Swift (Vision) et en Kotlin (ML Kit) lit la photo sur le téléphone ; le reste du scanner (lignes, tableau, process) est en TypeScript. Sur le web, le même écran utilise Tesseract (WebAssembly). La photo ne quitte jamais l'appareil.
-- **Notifications locales, sans serveur.** Pour une demande suivie en vrai, un rappel arrive le matin de l'échéance de chaque étape, puis à nouveau si elle est dépassée ; le toucher ouvre la demande. L'interrupteur et une notification d'essai sont dans l'onglet Réglages.
+- **Notifications locales, sans serveur.** Pour une demande suivie en vrai, un rappel arrive le matin de l'échéance de chaque étape, puis à nouveau si elle est dépassée ; si le process a un SLA, un rappel arrive aussi aux trois quarts du SLA, puis à son dépassement. Le toucher ouvre la demande. L'interrupteur et une notification d'essai sont dans l'onglet Réglages.
 
 ## Démarrer
 
