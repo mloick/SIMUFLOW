@@ -458,7 +458,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 - **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Réglages > À propos**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
 - **Réglages** · Disponible : le troisième onglet. En haut, la carte de votre profil ; puis l'apparence, la langue, les notifications, les exemples, et **À propos** (présentation, confidentialité, version, serveur). Un bouton **?** explique chaque réglage.
-- **Profil** · Disponible : ouvert par la carte du haut des **Réglages** : compte, synchronisation, mes formulaires, règles apprises, suppression du compte.
+- **Profil** · Disponible : ouvert par la carte du haut des **Réglages**. Une bannière à vos couleurs avec vos initiales, votre nom, votre identifiant et votre rôle (**Modifier** pour les changer), vos chiffres (process, partagés, formulaires), la synchronisation avec son bouton, vos formulaires et les règles apprises, **Se déconnecter**, et **Supprimer mon compte** replié (toujours demandé deux fois).
 
 ![Langue : la présentation et la connexion en anglais sur un téléphone en anglais, le réglage Langue du Profil, puis Français choisi](captures/etape-44-langue.png)
 
@@ -469,6 +469,8 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 ![Le nouveau bouton, le « ? » d'Apparence et son explication, en Aurore et en Menthe sombre](captures/etape-r2-briques.png)
 
 ![L'onglet Réglages : la carte du profil, l'apparence et la langue, les notifications et À propos, en Corail sombre, puis la page Profil](captures/etape-r3-reglages.png)
+
+![La page Profil : connecté, la suppression dépliée, la carte du profil dans les Réglages, puis sans compte en sombre](captures/etape-r4-profil.png)
 
 ![Apparence : Automatique, puis Sombre choisi dans le Profil, et la liste en sombre](captures/etape-37-apparence.png)
 

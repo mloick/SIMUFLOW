@@ -27,5 +27,7 @@ jest.mock('react-native-reanimated', () => {
     Easing: { linear: immediate, ease: immediate, out: immediate, in: immediate, inOut: immediate, bezier: () => immediate },
     FadeIn: animation,
     FadeOut: animation,
+    FadeInDown: animation,
+    FadeInUp: animation,
   };
 });
