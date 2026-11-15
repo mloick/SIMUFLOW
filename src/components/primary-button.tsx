@@ -1,47 +1,59 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import { PressableScale } from '@/components/pressable-scale';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Bouton principal, plein, couleur de la marque. */
+/**
+ * Bouton de la refonte : plein, couleur de la palette (`primary`), ou doux
+ * (`secondary` : fond teinté, texte couleur lien). Se tasse sous le doigt.
+ */
 export function PrimaryButton({
   label,
   onPress,
   accessibilityLabel,
   disabled = false,
+  variant = 'primary',
 }: {
   label: string;
   onPress: () => void;
   accessibilityLabel?: string;
   disabled?: boolean;
+  variant?: 'primary' | 'secondary';
 }) {
   const theme = useTheme();
+  const filled = variant === 'primary';
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         styles.button,
-        { backgroundColor: theme.primary, opacity: disabled ? 0.45 : pressed ? 0.8 : 1 },
+        { backgroundColor: filled ? theme.primary : theme.primaryBackground, opacity: disabled ? 0.45 : 1 },
       ]}>
-      <ThemedText type="link" style={{ color: theme.onPrimary }}>
+      <ThemedText type="link" style={[styles.label, { color: filled ? theme.onPrimary : theme.link }]}>
         {label}
       </ThemedText>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: Radius.small,
+    borderRadius: Radius.medium,
     paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+  },
+  label: {
+    fontWeight: 800,
+    textAlign: 'center',
   },
 });

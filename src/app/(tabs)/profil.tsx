@@ -1,44 +1,22 @@
-import Constants from "expo-constants";
-import { Link, router } from "expo-router";
-import * as Updates from "expo-updates";
-import * as WebBrowser from "expo-web-browser";
-import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  AppState,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  View,
-} from "react-native";
+import Constants from 'expo-constants';
+import { Link, router } from 'expo-router';
+import * as Updates from 'expo-updates';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, AppState, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
-import { deleteAccount, signOut, useSession } from "@/backend/auth";
-import { checkServer, type ServerStatus } from "@/backend/health";
-import { ThemedText } from "@/components/themed-text";
-import { PRIVACY_URL } from "@/constants/links";
-import {
-  MaxContentWidth,
-  Palettes,
-  PALETTES,
-  Radius,
-  Spacing,
-} from "@/constants/theme";
-import { syncNow, useSyncStatus, type SyncStatus } from "@/data/cloud-sync";
-import {
-  DEMO_SCENARIOS,
-  setDemoScenario,
-  useDemoScenario,
-} from "@/data/process-store";
-import { forgetReadingRule, useReadingRules } from "@/data/rules-store";
-import {
-  removeSavedForm,
-  showSavedForm,
-  useSavedForms,
-} from "@/data/form-store";
-import { describeRule } from "@/import";
-import { useTheme } from "@/hooks/use-theme";
+import { deleteAccount, signOut, useSession } from '@/backend/auth';
+import { checkServer, type ServerStatus } from '@/backend/health';
+import { HelpButton } from '@/components/help-button';
+import { ThemedText } from '@/components/themed-text';
+import { PRIVACY_URL } from '@/constants/links';
+import { MaxContentWidth, Palettes, PALETTES, Radius, Spacing } from '@/constants/theme';
+import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
+import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
+import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
+import { removeSavedForm, showSavedForm, useSavedForms } from '@/data/form-store';
+import { describeRule } from '@/import';
+import { useTheme } from '@/hooks/use-theme';
 import {
   cancelAllNotifications,
   getNotificationPermission,
@@ -46,27 +24,20 @@ import {
   sendTestNotification,
   TEST_DELAY_SECONDS,
   type NotificationPermission,
-} from "@/notifications/notifications";
+} from '@/notifications/notifications';
 import {
   setRemindersEnabled,
   setShareAlertsEnabled,
   useRemindersEnabled,
   useShareAlertsEnabled,
-} from "@/notifications/settings";
-import { setExamplesShown, useExamplesShown } from "@/data/examples-setting";
-import { setPalette, usePalette } from "@/data/palette-setting";
-import { setThemeMode, THEME_MODES, useThemeMode } from "@/data/theme-setting";
-import { useMyProfile } from "@/data/profile-store";
-import { useShareAlerts } from "@/data/share-alerts-store";
-import { displayName } from "@/domain";
-import {
-  LANGUAGE_SETTINGS,
-  type Messages,
-  setLanguageSetting,
-  useLanguage,
-  useLanguageSetting,
-  useT,
-} from "@/i18n";
+} from '@/notifications/settings';
+import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
+import { setPalette, usePalette } from '@/data/palette-setting';
+import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
+import { useMyProfile } from '@/data/profile-store';
+import { useShareAlerts } from '@/data/share-alerts-store';
+import { displayName } from '@/domain';
+import { LANGUAGE_SETTINGS, type Messages, setLanguageSetting, useLanguage, useLanguageSetting, useT } from '@/i18n';
 
 /** Le Profil : le compte, les réglages, puis les informations sur l'app. */
 export default function ProfileScreen() {
@@ -76,8 +47,7 @@ export default function ProfileScreen() {
     <ScrollView
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}
-    >
+      contentContainerStyle={styles.content}>
       <ThemedText type="title" accessibilityRole="header">
         {t.profil.title}
       </ThemedText>
@@ -110,17 +80,10 @@ function Account() {
     setError(result.ok ? null : result.message);
   };
 
-  const box = [
-    styles.box,
-    { backgroundColor: theme.surface, borderColor: theme.border },
-  ];
+  const box = [styles.box, { backgroundColor: theme.surface, borderColor: theme.border }];
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.account}
       </ThemedText>
       {session === undefined ? (
@@ -142,19 +105,9 @@ function Account() {
           <View
             style={[styles.row, styles.identity]}
             accessible
-            accessibilityLabel={t.profil.connectedAs(session.user.email ?? "")}
-          >
-            <View
-              style={[
-                styles.avatar,
-                { backgroundColor: theme.primaryBackground },
-              ]}
-            >
-              <ThemedText
-                type="smallBold"
-                style={{ color: theme.link }}
-                maxFontSizeMultiplier={1.4}
-              >
+            accessibilityLabel={t.profil.connectedAs(session.user.email ?? '')}>
+            <View style={[styles.avatar, { backgroundColor: theme.primaryBackground }]}>
+              <ThemedText type="smallBold" style={{ color: theme.link }} maxFontSizeMultiplier={1.4}>
                 {initials(session.user.email)}
               </ThemedText>
             </View>
@@ -170,12 +123,7 @@ function Account() {
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
           <SyncRow />
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <Pressable
-            onPress={leave}
-            disabled={busy}
-            accessibilityRole="button"
-            style={styles.row}
-          >
+          <Pressable onPress={leave} disabled={busy} accessibilityRole="button" style={styles.row}>
             {busy ? (
               <ActivityIndicator color={theme.danger} />
             ) : (
@@ -187,11 +135,7 @@ function Account() {
         </View>
       )}
       {error && (
-        <ThemedText
-          type="small"
-          style={{ color: theme.danger }}
-          accessibilityRole="alert"
-        >
+        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
           {error}
         </ThemedText>
       )}
@@ -208,23 +152,14 @@ function SavedForms() {
   const forms = useSavedForms();
   const open = (index: number) => {
     showSavedForm(forms[index]);
-    router.push("/formulaire");
+    router.push('/formulaire');
   };
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.savedForms}
       </ThemedText>
-      <View
-        style={[
-          styles.box,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {forms.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
             {t.profil.savedFormsEmpty}
@@ -235,41 +170,28 @@ function SavedForms() {
             const link = saved.workflow
               ? t.profil.linkedTo(
                   saved.workflow.source ||
-                    (saved.workflow.kind === "process"
-                      ? saved.workflow.process.name
-                      : t.profil.aWorkflow),
+                    (saved.workflow.kind === 'process' ? saved.workflow.process.name : t.profil.aWorkflow),
                 )
               : t.profil.noWorkflow;
             return (
               <View key={saved.id}>
-                {index > 0 && (
-                  <View
-                    style={[styles.divider, { backgroundColor: theme.border }]}
-                  />
-                )}
+                {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
                 <View style={[styles.row, styles.identity]}>
                   <Pressable
                     onPress={() => open(index)}
                     accessibilityRole="button"
                     accessibilityLabel={t.profil.openForm(name, link)}
-                    style={styles.flex}
-                  >
-                    <ThemedText style={{ color: theme.link }}>
-                      {name}
-                    </ThemedText>
+                    style={styles.flex}>
+                    <ThemedText style={{ color: theme.link }}>{name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {t.profil.formQuestions(
-                        saved.form.questions.length,
-                        link,
-                      )}
+                      {t.profil.formQuestions(saved.form.questions.length, link)}
                     </ThemedText>
                   </Pressable>
                   <Pressable
                     onPress={() => removeSavedForm(saved.id)}
                     accessibilityRole="button"
                     accessibilityLabel={t.profil.removeForm(name)}
-                    hitSlop={8}
-                  >
+                    hitSlop={8}>
                     <ThemedText type="link" style={{ color: theme.danger }}>
                       {t.common.remove}
                     </ThemedText>
@@ -295,19 +217,10 @@ function ReadingRules() {
   const session = useSession();
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.rules}
       </ThemedText>
-      <View
-        style={[
-          styles.box,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         {rules.length === 0 ? (
           <ThemedText themeColor="textSecondary" style={styles.boxText}>
             {t.profil.rulesEmpty}
@@ -317,19 +230,14 @@ function ReadingRules() {
             const text = describeRule(rule, t);
             return (
               <View key={text}>
-                {index > 0 && (
-                  <View
-                    style={[styles.divider, { backgroundColor: theme.border }]}
-                  />
-                )}
+                {index > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
                 <View style={[styles.row, styles.identity]}>
                   <ThemedText style={styles.flex}>{text}</ThemedText>
                   <Pressable
                     onPress={() => forgetReadingRule(rule)}
                     accessibilityRole="button"
                     accessibilityLabel={t.profil.forgetRule(text)}
-                    hitSlop={8}
-                  >
+                    hitSlop={8}>
                     <ThemedText type="link" style={{ color: theme.danger }}>
                       {t.profil.forget}
                     </ThemedText>
@@ -352,40 +260,26 @@ function ProfileRow() {
   const theme = useTheme();
   const t = useT();
   const state = useMyProfile();
-  const profile = state.status === "ready" ? state.profile : null;
+  const profile = state.status === 'ready' ? state.profile : null;
   let detail: string;
-  if (state.status === "loading" || state.status === "none")
-    detail = t.profil.profileLoading;
-  else if (state.status === "error") detail = state.message;
+  if (state.status === 'loading' || state.status === 'none') detail = t.profil.profileLoading;
+  else if (state.status === 'error') detail = state.message;
   else if (!profile) detail = t.profil.profileMissing;
-  else
-    detail = [
-      `@${profile.username}`,
-      profile.role ? t.roles[profile.role] : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+  else detail = [`@${profile.username}`, profile.role ? t.roles[profile.role] : null].filter(Boolean).join(' · ');
   return (
     <Link href="/mon-profil" accessibilityRole="button" style={styles.row}>
       <View style={[styles.flex, styles.profileText]}>
-        <ThemedText>
-          {profile ? displayName(profile) : t.profil.completeProfile}
-        </ThemedText>
+        <ThemedText>{profile ? displayName(profile) : t.profil.completeProfile}</ThemedText>
         <ThemedText
           type="small"
           style={{
-            color:
-              state.status === "error" ? theme.danger : theme.textSecondary,
+            color: state.status === 'error' ? theme.danger : theme.textSecondary,
           }}
-          numberOfLines={2}
-        >
+          numberOfLines={2}>
           {detail}
         </ThemedText>
       </View>
-      <ThemedText type="link">
-        {" "}
-        {profile ? t.profil.editProfile : "→"}
-      </ThemedText>
+      <ThemedText type="link"> {profile ? t.profil.editProfile : '→'}</ThemedText>
     </Link>
   );
 }
@@ -398,22 +292,13 @@ function LanguageSetting() {
   const language = useLanguage();
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-        nativeID="langue"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="langue">
         {t.language.heading}
       </ThemedText>
       <View
-        style={[
-          styles.segments,
-          { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
-        ]}
+        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
         accessibilityRole="radiogroup"
-        accessibilityLabelledBy="langue"
-      >
+        accessibilityLabelledBy="langue">
         {LANGUAGE_SETTINGS.map((option) => {
           const selected = option === current;
           return (
@@ -423,15 +308,8 @@ function LanguageSetting() {
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               accessibilityLabel={t.language.options[option]}
-              style={[
-                styles.segment,
-                selected && { backgroundColor: theme.primary },
-              ]}
-            >
-              <ThemedText
-                type="smallBold"
-                style={{ color: selected ? theme.onPrimary : theme.text }}
-              >
+              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
                 {t.language.options[option]}
               </ThemedText>
             </Pressable>
@@ -439,9 +317,7 @@ function LanguageSetting() {
         })}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {current === "auto"
-          ? t.language.autoHint(t.language.names[language])
-          : t.language.fixedHint}
+        {current === 'auto' ? t.language.autoHint(t.language.names[language]) : t.language.fixedHint}
       </ThemedText>
     </View>
   );
@@ -455,22 +331,16 @@ function AppearanceSetting() {
   const palette = usePalette();
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-        nativeID="apparence"
-      >
-        {t.theme.heading}
-      </ThemedText>
+      <View style={styles.headingRow}>
+        <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="apparence">
+          {t.theme.heading}
+        </ThemedText>
+        <HelpButton title={t.theme.heading} text={t.theme.helpText} />
+      </View>
       <View
-        style={[
-          styles.palettes,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
+        style={[styles.palettes, { backgroundColor: theme.surface, borderColor: theme.border }]}
         accessibilityRole="radiogroup"
-        accessibilityLabel={t.theme.colors}
-      >
+        accessibilityLabel={t.theme.colors}>
         {PALETTES.map((id) => {
           const selected = id === palette;
           const swatch = Palettes[id].light;
@@ -481,32 +351,13 @@ function AppearanceSetting() {
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               accessibilityLabel={t.theme.paletteLabel(t.theme.palettes[id])}
-              style={styles.paletteOption}
-            >
-              <View
-                style={[
-                  styles.paletteRing,
-                  { borderColor: selected ? theme.text : "transparent" },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.paletteSwatch,
-                    { backgroundColor: swatch.primary },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.paletteAccent,
-                      { backgroundColor: swatch.accent },
-                    ]}
-                  />
+              style={styles.paletteOption}>
+              <View style={[styles.paletteRing, { borderColor: selected ? theme.text : 'transparent' }]}>
+                <View style={[styles.paletteSwatch, { backgroundColor: swatch.primary }]}>
+                  <View style={[styles.paletteAccent, { backgroundColor: swatch.accent }]} />
                 </View>
               </View>
-              <ThemedText
-                type="small"
-                style={{ fontWeight: selected ? 800 : 600 }}
-              >
+              <ThemedText type="small" style={{ fontWeight: selected ? 800 : 600 }}>
                 {t.theme.palettes[id]}
               </ThemedText>
             </Pressable>
@@ -514,13 +365,9 @@ function AppearanceSetting() {
         })}
       </View>
       <View
-        style={[
-          styles.segments,
-          { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
-        ]}
+        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
         accessibilityRole="radiogroup"
-        accessibilityLabelledBy="apparence"
-      >
+        accessibilityLabelledBy="apparence">
         {THEME_MODES.map((option) => {
           const selected = option === current;
           return (
@@ -530,15 +377,8 @@ function AppearanceSetting() {
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               accessibilityLabel={t.theme.options[option]}
-              style={[
-                styles.segment,
-                selected && { backgroundColor: theme.primary },
-              ]}
-            >
-              <ThemedText
-                type="smallBold"
-                style={{ color: selected ? theme.onPrimary : theme.text }}
-              >
+              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
+              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
                 {t.theme.options[option]}
               </ThemedText>
             </Pressable>
@@ -546,7 +386,7 @@ function AppearanceSetting() {
         })}
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        {current === "auto" ? t.theme.autoHint : t.theme.fixedHint}
+        {current === 'auto' ? t.theme.autoHint : t.theme.fixedHint}
       </ThemedText>
     </View>
   );
@@ -559,19 +399,10 @@ function ExamplesSetting() {
   const shown = useExamplesShown();
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.processList}
       </ThemedText>
-      <View
-        style={[
-          styles.box,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={[styles.row, styles.identity]}>
           <View style={styles.flex}>
             <ThemedText>{t.profil.showExamples}</ThemedText>
@@ -598,19 +429,14 @@ function NotificationSettings() {
   const enabled = useRemindersEnabled();
   const alertsEnabled = useShareAlertsEnabled();
   const { unread } = useShareAlerts();
-  const [permission, setPermission] = useState<NotificationPermission | null>(
-    null,
-  );
+  const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [sent, setSent] = useState(false);
 
   // L'autorisation peut changer dans les réglages du téléphone : on la relit au retour dans l'app.
   useEffect(() => {
     const refresh = () => getNotificationPermission().then(setPermission);
     refresh();
-    const subscription = AppState.addEventListener(
-      "change",
-      (state) => state === "active" && refresh(),
-    );
+    const subscription = AppState.addEventListener('change', (state) => state === 'active' && refresh());
     return () => subscription.remove();
   }, []);
 
@@ -618,14 +444,12 @@ function NotificationSettings() {
     setRemindersEnabled(next);
     setSent(false);
     if (!next) return cancelAllNotifications();
-    if (permission === "undetermined")
-      setPermission(await requestNotificationPermission());
+    if (permission === 'undetermined') setPermission(await requestNotificationPermission());
   };
 
   const toggleAlerts = async (next: boolean) => {
     setShareAlertsEnabled(next);
-    if (next && permission === "undetermined")
-      setPermission(await requestNotificationPermission());
+    if (next && permission === 'undetermined') setPermission(await requestNotificationPermission());
   };
 
   const test = async () => {
@@ -633,23 +457,14 @@ function NotificationSettings() {
     setSent(true);
   };
 
-  const unavailable = permission === "unavailable";
-  const active = enabled && permission === "granted";
+  const unavailable = permission === 'unavailable';
+  const active = enabled && permission === 'granted';
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.notifications}
       </ThemedText>
-      <View
-        style={[
-          styles.box,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={[styles.row, styles.identity]}>
           <View style={styles.flex}>
             <ThemedText>{t.profil.reminders}</ThemedText>
@@ -682,11 +497,7 @@ function NotificationSettings() {
           />
         </View>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <Pressable
-          onPress={() => router.push("/alertes")}
-          accessibilityRole="button"
-          style={styles.row}
-        >
+        <Pressable onPress={() => router.push('/alertes')} accessibilityRole="button" style={styles.row}>
           <ThemedText type="link" style={{ color: theme.link }}>
             {t.profil.seeAlerts(unread)}
           </ThemedText>
@@ -694,11 +505,7 @@ function NotificationSettings() {
         {active && (
           <>
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <Pressable
-              onPress={test}
-              accessibilityRole="button"
-              style={styles.row}
-            >
+            <Pressable onPress={test} accessibilityRole="button" style={styles.row}>
               <ThemedText type="link" style={{ color: theme.link }}>
                 {t.profil.testNotification}
               </ThemedText>
@@ -706,19 +513,11 @@ function NotificationSettings() {
           </>
         )}
       </View>
-      <ThemedText
-        type="small"
-        themeColor="textSecondary"
-        accessibilityLiveRegion="polite"
-      >
+      <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite">
         {notificationText(t.profil, enabled, permission, sent)}
       </ThemedText>
-      {enabled && permission === "denied" && (
-        <Pressable
-          onPress={() => Linking.openSettings()}
-          accessibilityRole="button"
-          hitSlop={8}
-        >
+      {enabled && permission === 'denied' && (
+        <Pressable onPress={() => Linking.openSettings()} accessibilityRole="button" hitSlop={8}>
           <ThemedText type="link" style={{ color: theme.link }}>
             {t.profil.openSettings}
           </ThemedText>
@@ -729,31 +528,31 @@ function NotificationSettings() {
 }
 
 function notificationText(
-  t: Messages["profil"],
+  t: Messages['profil'],
   enabled: boolean,
   permission: NotificationPermission | null,
   sent: boolean,
 ): string {
-  if (permission === "unavailable") return t.notifUnavailable;
+  if (permission === 'unavailable') return t.notifUnavailable;
   if (!enabled) return t.notifOff;
-  if (permission === "denied") return t.notifDenied;
-  if (permission === "undetermined") return t.notifUndetermined;
+  if (permission === 'denied') return t.notifDenied;
+  if (permission === 'undetermined') return t.notifUndetermined;
   if (sent) return t.notifSent(TEST_DELAY_SECONDS);
   return t.notifReady;
 }
 
 function syncText(t: Messages, status: SyncStatus): string {
   switch (status.state) {
-    case "syncing":
+    case 'syncing':
       return t.profil.syncing;
-    case "done":
+    case 'done':
       return t.profil.syncedAt(
         status.at.toLocaleTimeString(t.common.locale, {
-          hour: "2-digit",
-          minute: "2-digit",
+          hour: '2-digit',
+          minute: '2-digit',
         }),
       );
-    case "error":
+    case 'error':
       return status.message;
     default:
       return t.profil.syncIdle;
@@ -765,7 +564,7 @@ function SyncRow() {
   const theme = useTheme();
   const t = useT();
   const status = useSyncStatus();
-  const syncing = status.state === "syncing";
+  const syncing = status.state === 'syncing';
   return (
     <View style={[styles.row, styles.identity]} accessible={false}>
       {syncing ? (
@@ -775,8 +574,7 @@ function SyncRow() {
           style={[
             styles.dot,
             {
-              backgroundColor:
-                status.state === "error" ? theme.warning : theme.success,
+              backgroundColor: status.state === 'error' ? theme.warning : theme.success,
             },
           ]}
         />
@@ -786,12 +584,10 @@ function SyncRow() {
         style={[
           styles.flex,
           {
-            color:
-              status.state === "error" ? theme.warning : theme.textSecondary,
+            color: status.state === 'error' ? theme.warning : theme.textSecondary,
           },
         ]}
-        accessibilityLiveRegion="polite"
-      >
+        accessibilityLiveRegion="polite">
         {syncText(t, status)}
       </ThemedText>
       {!syncing && (
@@ -830,12 +626,7 @@ function DeleteAccount() {
         <Pressable
           onPress={() => setConfirming(true)}
           accessibilityRole="button"
-          style={[
-            styles.box,
-            styles.row,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-          ]}
-        >
+          style={[styles.box, styles.row, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <ThemedText type="link" style={{ color: theme.danger }}>
             {t.profil.deleteAccount}
           </ThemedText>
@@ -849,12 +640,8 @@ function DeleteAccount() {
 
   return (
     <View
-      style={[
-        styles.confirm,
-        { backgroundColor: theme.dangerBackground, borderColor: theme.danger },
-      ]}
-      accessibilityRole="alert"
-    >
+      style={[styles.confirm, { backgroundColor: theme.dangerBackground, borderColor: theme.danger }]}
+      accessibilityRole="alert">
       <ThemedText type="smallBold" style={{ color: theme.danger }}>
         {t.profil.deleteConfirmTitle}
       </ThemedText>
@@ -862,11 +649,7 @@ function DeleteAccount() {
         {t.profil.deleteConfirmText}
       </ThemedText>
       {error && (
-        <ThemedText
-          type="small"
-          style={{ color: theme.danger }}
-          accessibilityRole="alert"
-        >
+        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
           {error}
         </ThemedText>
       )}
@@ -878,11 +661,7 @@ function DeleteAccount() {
           }}
           disabled={busy}
           accessibilityRole="button"
-          style={[
-            styles.confirmButton,
-            { borderColor: theme.fieldBorder, backgroundColor: theme.surface },
-          ]}
-        >
+          style={[styles.confirmButton, { borderColor: theme.fieldBorder, backgroundColor: theme.surface }]}>
           <ThemedText type="smallBold">{t.common.cancel}</ThemedText>
         </Pressable>
         <Pressable
@@ -890,11 +669,7 @@ function DeleteAccount() {
           disabled={busy}
           accessibilityRole="button"
           accessibilityLabel={t.profil.deleteConfirmLabel}
-          style={[
-            styles.confirmButton,
-            { borderColor: theme.danger, backgroundColor: theme.danger },
-          ]}
-        >
+          style={[styles.confirmButton, { borderColor: theme.danger, backgroundColor: theme.danger }]}>
           {busy ? (
             <ActivityIndicator color={theme.background} />
           ) : (
@@ -909,20 +684,15 @@ function DeleteAccount() {
 }
 
 /** « camille.martin@exemple.fr » → « CM ». */
-function initials(email = "") {
+function initials(email = '') {
   const parts = email
-    .split("@")[0]
+    .split('@')[0]
     .split(/[._-]+/)
     .filter(Boolean);
-  return (
-    parts.length > 1 ? parts[0][0] + parts[1][0] : email.slice(0, 2)
-  ).toUpperCase();
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : email.slice(0, 2)).toUpperCase();
 }
 
-function statusText(
-  t: Messages["profil"],
-  status: ServerStatus | "checking",
-): string {
+function statusText(t: Messages['profil'], status: ServerStatus | 'checking'): string {
   return {
     checking: t.serverChecking,
     ok: t.serverOk,
@@ -935,10 +705,10 @@ function statusText(
 function ServerRow() {
   const theme = useTheme();
   const t = useT();
-  const [status, setStatus] = useState<ServerStatus | "checking">("checking");
+  const [status, setStatus] = useState<ServerStatus | 'checking'>('checking');
 
   const check = useCallback(async () => {
-    setStatus("checking");
+    setStatus('checking');
     setStatus(await checkServer());
   }, []);
 
@@ -952,34 +722,20 @@ function ServerRow() {
     };
   }, []);
 
-  const color =
-    status === "ok"
-      ? theme.success
-      : status === "checking"
-        ? theme.textSecondary
-        : theme.danger;
+  const color = status === 'ok' ? theme.success : status === 'checking' ? theme.textSecondary : theme.danger;
   return (
     <View style={[styles.row, styles.identity]}>
-      <View
-        style={[styles.row, styles.identity, styles.flex]}
-        accessible
-        accessibilityLiveRegion="polite"
-      >
-        {status === "checking" ? (
+      <View style={[styles.row, styles.identity, styles.flex]} accessible accessibilityLiveRegion="polite">
+        {status === 'checking' ? (
           <ActivityIndicator color={theme.textSecondary} />
         ) : (
           <View style={[styles.dot, { backgroundColor: color }]} />
         )}
-        <ThemedText
-          style={[
-            styles.flex,
-            { color: status === "checking" ? theme.textSecondary : theme.text },
-          ]}
-        >
+        <ThemedText style={[styles.flex, { color: status === 'checking' ? theme.textSecondary : theme.text }]}>
           {statusText(t.profil, status)}
         </ThemedText>
       </View>
-      {status !== "checking" && status !== "ok" && (
+      {status !== 'checking' && status !== 'ok' && (
         <Pressable onPress={check} accessibilityRole="button" hitSlop={8}>
           <ThemedText type="smallBold" style={{ color: theme.link }}>
             {t.common.retry}
@@ -999,32 +755,23 @@ function About() {
   const theme = useTheme();
   const t = useT();
   const locale = t.common.locale;
-  const version = Constants.expoConfig?.version ?? "";
+  const version = Constants.expoConfig?.version ?? '';
   const update =
     !Updates.isEmbeddedLaunch && Updates.createdAt
       ? t.profil.updateOf(
           Updates.createdAt.toLocaleDateString(locale),
           Updates.createdAt.toLocaleTimeString(locale, {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: '2-digit',
+            minute: '2-digit',
           }),
         )
       : t.profil.installedVersion;
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.about}
       </ThemedText>
-      <View
-        style={[
-          styles.box,
-          { backgroundColor: theme.surface, borderColor: theme.border },
-        ]}
-      >
+      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <ServerRow />
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <Link href="/bienvenue" accessibilityRole="button" style={styles.row}>
@@ -1035,17 +782,12 @@ function About() {
           onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
           accessibilityRole="link"
           accessibilityHint={t.profil.opensInBrowser}
-          style={styles.row}
-        >
+          style={styles.row}>
           <ThemedText type="link">{t.profil.privacy}</ThemedText>
         </Pressable>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={styles.row}>
-          <ThemedText
-            type="small"
-            themeColor="textSecondary"
-            style={styles.flex}
-          >
+          <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
             SimuFlow {version} · {update}
           </ThemedText>
         </View>
@@ -1062,11 +804,7 @@ function DemoScenarioPicker() {
 
   return (
     <View style={styles.section}>
-      <ThemedText
-        type="smallBold"
-        themeColor="textSecondary"
-        accessibilityRole="header"
-      >
+      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {t.profil.demo}
       </ThemedText>
       <View style={styles.options} accessibilityRole="radiogroup">
@@ -1084,12 +822,8 @@ function DemoScenarioPicker() {
                   backgroundColor: selected ? theme.primary : theme.surface,
                   borderColor: theme.border,
                 },
-              ]}
-            >
-              <ThemedText
-                type="smallBold"
-                style={{ color: selected ? theme.onPrimary : theme.text }}
-              >
+              ]}>
+              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
                 {t.errors.demo[option.value]}
               </ThemedText>
             </Pressable>
@@ -1105,9 +839,9 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
     padding: Spacing.four,
     paddingBottom: Spacing.five,
-    width: "100%",
+    width: '100%',
     maxWidth: MaxContentWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   section: {
     gap: Spacing.two,
@@ -1121,8 +855,8 @@ const styles = StyleSheet.create({
   boxText: { paddingVertical: Spacing.three },
   row: {
     minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: Spacing.two,
   },
   identity: { gap: Spacing.three },
@@ -1137,15 +871,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   confirmButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: Spacing.two,
     marginTop: Spacing.one,
   },
   confirmButton: {
     flex: 1,
     minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: Radius.small,
     borderWidth: 1,
   },
@@ -1153,20 +887,25 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dot: { width: 10, height: 10, borderRadius: 5 },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   palettes: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.medium,
     borderWidth: StyleSheet.hairlineWidth,
   },
   paletteOption: {
-    alignItems: "center",
+    alignItems: 'center',
     gap: Spacing.one,
     minWidth: 64,
   },
@@ -1180,17 +919,17 @@ const styles = StyleSheet.create({
   paletteSwatch: {
     flex: 1,
     borderRadius: 999,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   paletteAccent: {
-    position: "absolute",
+    position: 'absolute',
     right: 0,
     bottom: 0,
-    width: "50%",
-    height: "50%",
+    width: '50%',
+    height: '50%',
   },
   segments: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: Spacing.one,
     padding: Spacing.one,
     borderRadius: Radius.medium,
@@ -1199,18 +938,18 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: Radius.small,
   },
   options: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.two,
   },
   option: {
     minHeight: 44,
-    justifyContent: "center",
+    justifyContent: 'center',
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,

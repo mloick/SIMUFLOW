@@ -4,9 +4,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
+export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral' | 'primary';
 
-/** Pastille de la maquette : état du diagnostic ou source du process. */
+/** Pastille : état du diagnostic, source du process, ou mise en avant aux couleurs de la palette (`primary`). */
 export function Badge({ label, tone = 'neutral' }: { label: string; tone?: BadgeTone }) {
   const theme = useTheme();
   const colors = {
@@ -14,6 +14,7 @@ export function Badge({ label, tone = 'neutral' }: { label: string; tone?: Badge
     warning: { text: theme.warning, background: theme.warningBackground },
     danger: { text: theme.danger, background: theme.dangerBackground },
     neutral: { text: theme.textSecondary, background: theme.surfaceMuted },
+    primary: { text: theme.link, background: theme.primaryBackground },
   }[tone];
 
   return (
