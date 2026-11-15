@@ -1,9 +1,10 @@
+import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { requestPasswordReset } from '@/backend/auth';
-import { checkEmail } from '@/backend/auth-messages';
+import { checkEmail, recoveryWebUrl } from '@/backend/auth-messages';
 import { PrimaryButton } from '@/components/primary-button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -12,6 +13,17 @@ import { useT } from '@/i18n';
 
 /** Adresse où le lien de l'e-mail rouvre l'app (simuflow://nouveau-mot-de-passe sur le téléphone). */
 export const RECOVERY_PATH = 'nouveau-mot-de-passe';
+
+/**
+ * Sur le téléphone : simuflow://nouveau-mot-de-passe. Sur le web : l'adresse du site
+ * avec son sous-dossier (https://mloick.github.io/SIMUFLOW/app/nouveau-mot-de-passe).
+ */
+function recoveryUrl(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return recoveryWebUrl(window.location.origin, Constants.expoConfig?.experiments?.baseUrl, RECOVERY_PATH);
+  }
+  return Linking.createURL(RECOVERY_PATH);
+}
 
 /**
  * Mot de passe oublié, étape 1 : l'adresse. Supabase envoie un e-mail avec un
@@ -30,7 +42,7 @@ export function ResetPasswordForm({ initialEmail, onCancel }: { initialEmail: st
     setError(problem);
     if (problem) return;
     setBusy(true);
-    const result = await requestPasswordReset(email, Linking.createURL(RECOVERY_PATH));
+    const result = await requestPasswordReset(email, recoveryUrl());
     setBusy(false);
     if (!result.ok) return setError(result.message);
     setSent(true);

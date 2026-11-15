@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { authErrorMessage, checkCredentials, checkNewPassword, parseRecoveryLink } from '../auth-messages';
+import { authErrorMessage, checkCredentials, checkNewPassword, parseRecoveryLink, recoveryWebUrl } from '../auth-messages';
 
 describe('checkCredentials', () => {
   const ok = { email: 'camille@exemple.fr', password: 'Secret-12' };
@@ -72,3 +72,19 @@ describe('mot de passe oublié', () => {
     expect(parseRecoveryLink(null)).toBeNull();
   });
 });
+
+describe('recoveryWebUrl', () => {
+  it('garde le sous-dossier du site (GitHub Pages)', () => {
+    expect(recoveryWebUrl('https://mloick.github.io', '/SIMUFLOW/app')).toBe(
+      'https://mloick.github.io/SIMUFLOW/app/nouveau-mot-de-passe',
+    );
+  });
+  it('accepte un sous-dossier sans barre ou avec barre finale', () => {
+    expect(recoveryWebUrl('https://exemple.fr/', 'app/')).toBe('https://exemple.fr/app/nouveau-mot-de-passe');
+  });
+  it('sans sous-dossier, va à la racine', () => {
+    expect(recoveryWebUrl('http://localhost:8081')).toBe('http://localhost:8081/nouveau-mot-de-passe');
+    expect(recoveryWebUrl('http://localhost:8081', '/')).toBe('http://localhost:8081/nouveau-mot-de-passe');
+  });
+});
+
