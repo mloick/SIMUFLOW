@@ -41,8 +41,10 @@ import { useT, type Messages } from '@/i18n';
  */
 export default function ProcessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  useImportedProcesses(); // relit le process après une modification
-  const process = getProcess(id);
+  // Lu dans la liste renvoyée par le hook (et pas seulement avec getProcess) : le
+  // React Compiler garderait sinon l'ancien process après une modification.
+  const imported = useImportedProcesses();
+  const process = imported.find((item) => item.id === id) ?? getProcess(id);
   const theme = useTheme();
   const t = useT();
 
