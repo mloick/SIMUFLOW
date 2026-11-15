@@ -137,6 +137,10 @@ Chaque process a sa carte : sa source (draw.io, BPMN…) ou qui vous l'a partag�
 
 ![L'accueil en clair et en sombre : la carte Reprendre, les filtres et les cartes des process](captures/etape-r6-accueil.png)
 
+Pendant le chargement, des cartes grises traversées d'un reflet tiennent la place. Sans aucun process, un dessin propose **Ajouter un process** ou **Voir les exemples**. Si le serveur ne répond pas, **Réessayer** relance. Sans réseau, un bandeau dit que vos process restent disponibles.
+
+![Chargement, liste vide, erreur et hors connexion](captures/etape-r7-etats.png)
+
 <details>
 <summary>Plus de captures</summary>
 
@@ -462,7 +466,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 - **Explications « ? »** · Disponible : à côté de certains réglages, un petit bouton **?** ouvre une explication en bas de l'écran ; **Compris** la referme. Chaque réglage de l'onglet **Réglages** a le sien. Les boutons, eux, s'enfoncent légèrement sous le doigt (rien ne bouge si « Réduire les animations » est activé).
 - **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Réglages > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
-- **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
+- **Animations douces** · Disponible : un reflet traverse la liste pendant le chargement, et les cartes arrivent en glissant ; rien ne bouge si « Réduire les animations » est activé.
 - **Présentation au premier lancement** · Disponible : après l'écran **Connectez-vous** (ou **Continuer sans compte**), quatre pages, à revoir depuis **Réglages > À propos**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
 - **Réglages** · Disponible : le troisième onglet. En haut, la carte de votre profil ; puis l'apparence, la langue, les notifications, les exemples, et **À propos** (présentation, confidentialité, version, serveur). Un bouton **?** explique chaque réglage.

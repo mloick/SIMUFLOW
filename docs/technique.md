@@ -86,7 +86,7 @@ Trois règles tiennent l'ensemble :
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, accueil `home-header.tsx`, `filter-chips.tsx`, `resume-card.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, accueil `home-header.tsx`, `filter-chips.tsx`, `resume-card.tsx`, dessin de la liste vide `empty-illustration.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), alertes du partage (share-alerts-store.ts), membres et avis d'un process pour son propriétaire (validation-data.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -575,11 +575,15 @@ Test de composant : `src/components/__tests__/accueil-ecran.test.tsx` (bonjour, 
 
 | État | Quand | Affichage |
 | --- | --- | --- |
-| Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
-| Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
-| Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
-| Vide | Aucun process : rien d'importé, et les exemples masqués dans les Réglages | Message et bouton « Ajouter un process » (`state-message.tsx`) |
+| Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des nouvelles cartes (tuile, nom, chiffres), sans spinner, traversé par un reflet en boucle (`list-skeleton.tsx`) |
+| Erreur | Cette première synchronisation a échoué côté serveur | Grande tuile rouge avec un triangle, message et bouton « Réessayer », qui relance la synchronisation |
+| Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau foncé « Hors ligne · vos process restent disponibles » au-dessus de la dernière version enregistrée |
+| Vide | Aucun process : rien d'importé, et les exemples masqués dans les Réglages | Dessin (`empty-illustration.tsx` : le chemin en S se trace sur un disque teinté), message, bouton « Ajouter un process » et lien « Voir les exemples », qui réactive le réglage (`setExamplesShown(true)`) |
 | Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
+
+**Refonte R7.** `StateMessage` (`state-message.tsx`, aussi utilisé par les autres écrans pour « introuvable » ou « erreur ») a une tuile de 84 points aux coins de 28, un titre plus gras, un lien facultatif sous le bouton (`secondary`) et peut prendre un dessin à la place de l'icône (`illustration`). Il arrive en glissant vers le haut (`FadeInDown`). Avec « Réduire les animations », rien ne bouge : pas de reflet sur le squelette, dessin affiché d'un coup, message sans glissement. Le test de l'accueil couvre les quatre états.
+
+![États de la liste (refonte R7) : chargement, vide, erreur, hors connexion](captures/etape-r7-etats.png)
 
 Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.
 
@@ -1338,7 +1342,7 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 
 - **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
 - **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; avec `sharedBy`, « Partagé par Hugo » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (quatre tests).
-- **`accueil-ecran.test.tsx`** : l'accueil, avec la liste, le suivi et la session remplacés par des valeurs fixes. Il dit « Bonjour Sans compte », montre « Vos process » et les filtres avec leur nombre (pas de « Partagés » sans partage) ; « À corriger » ne garde que le process qui a un avertissement ; « Reprendre » ouvre le suivi en cours ; la cloche ouvre les alertes et « Nouveau » l'import (quatre tests).
+- **`accueil-ecran.test.tsx`** : l'accueil, avec la liste, le suivi et la session remplacés par des valeurs fixes. Il dit « Bonjour Sans compte », montre « Vos process » et les filtres avec leur nombre (pas de « Partagés » sans partage) ; « À corriger » ne garde que le process qui a un avertissement ; « Reprendre » ouvre le suivi en cours ; la cloche ouvre les alertes et « Nouveau » l'import ; puis les états : squelette, « Réessayer » qui relance, liste vide dont « Voir les exemples » réactive le réglage, et bandeau hors ligne (huit tests).
 - **`situation-list.test.tsx`** : la liste des situations d'un workflow SLA / OLA (voir [Importer](#importer-srcappimporttsx)).
 - **`form-field.test.tsx`**, **`formulaire-ecran.test.tsx`**, **`formulaire-modifier-ecran.test.tsx`** : une question de formulaire, l'écran du formulaire et son éditeur (voir [Formulaire](#formulaire-srcappformulairetsx-srcappformulaire-modifiertsx)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).

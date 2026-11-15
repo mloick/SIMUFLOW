@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  interpolate,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -14,44 +15,47 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 
+const WIDTHS = ['70%', '55%', '80%', '60%'] as const;
+
 /**
- * État « chargement » : la forme des cartes, sans spinner (maquette, état 1).
- * Les cartes « respirent » doucement (opacité), sauf si « Réduire les
- * animations » est activé dans les réglages du téléphone.
+ * État « chargement » (refonte R7) : la forme des nouvelles cartes (tuile,
+ * nom, chiffres), sans spinner. Un reflet clair les traverse en boucle ; avec
+ * « Réduire les animations », elles restent immobiles.
  */
 export function ListSkeleton({ count = 4 }: { count?: number }) {
   const theme = useTheme();
   const t = useT();
-  const bar = { backgroundColor: theme.field };
+  const bar = { backgroundColor: theme.surfaceMuted };
   const reduceMotion = useReducedMotion();
-  const opacity = useSharedValue(1);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
     if (reduceMotion) {
-      cancelAnimation(opacity);
-      opacity.value = 1;
+      cancelAnimation(progress);
+      progress.value = 0;
       return;
     }
-    // Aller-retour infini entre opaque et à moitié transparent.
-    opacity.value = withRepeat(withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [opacity, reduceMotion]);
+    progress.value = withRepeat(withTiming(1, { duration: 1300, easing: Easing.linear }), -1, false);
+  }, [progress, reduceMotion]);
 
-  const pulse = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const shine = useAnimatedStyle(() => ({
+    opacity: reduceMotion ? 0 : 0.5,
+    transform: [{ translateX: interpolate(progress.value, [0, 1], [-120, 420]) }, { skewX: '-20deg' }],
+  }));
 
   return (
-    <Animated.View
-      style={[styles.list, pulse]}
-      accessible
-      accessibilityLabel={t.list.loading}
-      accessibilityState={{ busy: true }}>
-      {Array.from({ length: count }, (_, index) => (
-        <View key={index} style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <View style={[styles.bar, styles.title, bar]} />
-          <View style={[styles.bar, styles.meta, bar]} />
-          <View style={[styles.bar, styles.badge, bar]} />
+    <View style={styles.list} accessible accessibilityLabel={t.list.loading} accessibilityState={{ busy: true }}>
+      {WIDTHS.slice(0, count).map((width, index) => (
+        <View key={index} style={[styles.card, { backgroundColor: theme.surface }]}>
+          <View style={[styles.tile, bar]} />
+          <View style={styles.lines}>
+            <View style={[styles.bar, styles.title, bar, { width }]} />
+            <View style={[styles.bar, styles.meta, bar]} />
+          </View>
+          <Animated.View pointerEvents="none" style={[styles.shine, { backgroundColor: theme.border }, shine]} />
         </View>
       ))}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -60,15 +64,32 @@ const styles = StyleSheet.create({
     gap: Spacing.three - Spacing.one,
   },
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.three - Spacing.one,
-    padding: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
+    padding: Spacing.three - Spacing.one,
+    borderRadius: Radius.large,
+    overflow: 'hidden',
+  },
+  tile: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+  },
+  lines: {
+    flex: 1,
+    gap: Spacing.two,
   },
   bar: {
     borderRadius: Radius.pill,
   },
-  title: { width: '55%', height: 18 },
-  meta: { width: '75%', height: 12 },
-  badge: { width: '35%', height: 24 },
+  title: { height: 14 },
+  meta: { width: '50%', height: 10 },
+  shine: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 60,
+  },
 });
