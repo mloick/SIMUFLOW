@@ -36,6 +36,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Sync** across devices with an account, offline first; everything is deleted with the account.
 - **Your colors**: four palettes (Ocean, Aurora, Mint, Coral), each in light and dark, chosen in Settings; the app uses the Plus Jakarta Sans font. A small « ? » button next to each setting opens a short explanation.
 - **Home screen**: search, filters (All, To fix, Shared, Examples) with their counts, a « Resume » card that takes you back to the request you are tracking, the alerts bell, a « New » button, and clear loading, empty, error and offline states.
+- **Redesigned screens**: the process detail has key figures, a big « Start the simulation » button, four quick actions and folding sections; the simulation docks a step card under a live diagram with auto-follow, a minimap, full screen and a landscape layout; « New process » shows the eight sources as tiles; the scanner has an animated viewfinder; tracking, alerts, sharing, forms and export share the same style.
 - **French or English**: every screen follows the phone's language, or the choice made in Settings. What you import stays as written, and so do the exported files and the four examples, in French.
 
 The full tour, with screenshots, is in the [features guide](docs/fonctionnalites.md) (French). The screen mockups are in [`docs/maquette/`](docs/maquette/).
@@ -57,7 +58,7 @@ npm run ios:simulateur   # build and open in the iOS Simulator
 npm run ios:iphone       # build and install on an iPhone plugged in over USB
 ```
 
-SimuFlow is a development build, not Expo Go, because it includes a local native module. The `ios/` and `android/` folders are generated (Continuous Native Generation) and never committed. After changing `app.json` or adding a native module, run `npx expo prebuild --clean --platform ios` and build again. Otherwise `npx expo start` is enough once the app is installed. `npm run nettoyer` deletes build files to free disk space.
+SimuFlow is a development build, not Expo Go, because it includes a local native module. The `ios/` and `android/` folders are generated (Continuous Native Generation) and never committed. After changing `app.json` or adding a native module, run `npx expo prebuild --clean --platform ios` and build again. The app now turns to landscape (`orientation: default` in `app.json`), so an iPhone build made before that change must be rebuilt. Otherwise `npx expo start` is enough once the app is installed. `npm run nettoyer` deletes build files to free disk space.
 
 | Target | Command |
 | --- | --- |
