@@ -60,6 +60,16 @@ export function checkNewPassword(password: string): string | null {
   return passwordProblem(password);
 }
 
+/**
+ * Adresse du lien « Mot de passe oublié » pour la version web. `Linking.createURL`
+ * ignore le `baseUrl` d'app.json sur le web (il donnerait
+ * https://mloick.github.io/nouveau-mot-de-passe, une page 404) : on l'ajoute ici.
+ */
+export function recoveryWebUrl(origin: string, baseUrl = '', path = 'nouveau-mot-de-passe'): string {
+  const base = baseUrl.replace(/^\/*/, '/').replace(/\/+$/, '');
+  return `${origin.replace(/\/+$/, '')}${base === '/' ? '' : base}/${path}`;
+}
+
 /** Ce que contient le lien « Mot de passe oublié » qui rouvre l'app. */
 export type RecoveryLink =
   | { kind: 'session'; accessToken: string; refreshToken: string }
