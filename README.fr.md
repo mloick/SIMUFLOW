@@ -44,7 +44,7 @@ La visite complète, avec captures, est dans le [guide des fonctionnalités](doc
 ## Fonctions du téléphone
 
 - **Caméra avec lecture du texte sur l'appareil.** Un module Expo local écrit en Swift (Vision) et en Kotlin (ML Kit) lit la photo sur le téléphone ; le reste du scanner (lignes, tableau, process) est en TypeScript. Sur le web, le même écran utilise Tesseract (WebAssembly). La photo ne quitte jamais l'appareil.
-- **Notifications locales, sans serveur.** Pour une demande suivie en vrai, un rappel arrive le matin de l'échéance de chaque étape, puis à nouveau si elle est dépassée ; le toucher ouvre la demande. L'interrupteur et une notification d'essai sont dans l'onglet Profil.
+- **Notifications locales, sans serveur.** Pour une demande suivie en vrai, un rappel arrive le matin de l'échéance de chaque étape, puis à nouveau si elle est dépassée ; le toucher ouvre la demande. L'interrupteur et une notification d'essai sont dans l'onglet Réglages.
 
 ## Démarrer
 

@@ -44,7 +44,7 @@ The full tour, with screenshots, is in the [features guide](docs/fonctionnalites
 ## Phone features
 
 - **Camera with on-device text recognition.** A local Expo module written in Swift (Vision) and Kotlin (ML Kit) reads the photo on the phone; the rest of the scanner (rows, table, process) is TypeScript. On the web, the same screen uses Tesseract (WebAssembly). The photo never leaves the device.
-- **Local notifications, no server.** For a request you follow for real, a reminder arrives the morning of each step's deadline, then again once it is missed; tapping it opens the request. The switch and a test notification are in the Profile tab.
+- **Local notifications, no server.** For a request you follow for real, a reminder arrives the morning of each step's deadline, then again once it is missed; tapping it opens the request. The switch and a test notification are in the Settings tab.
 
 ## Getting started
 
