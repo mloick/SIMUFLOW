@@ -129,12 +129,18 @@ Dans le navigateur, **Prendre ou choisir une photo** ouvre l'appareil photo ou u
 
 ### Vos process · Disponible
 
-L'écran **Process** liste vos process, avec le nombre d'étapes, de décisions et d'acteurs, et une pastille : vert sans anomalie, orange pour des avertissements, rouge pour des erreurs. La recherche ignore les accents. Dessous, la section **Exemples** propose quatre process fictifs pour essayer ; coupez **Afficher les exemples** dans **Profil** pour les masquer.
+L'écran **Process** est l'accueil. En haut, votre avatar et **Bonjour** ouvrent votre profil, le bouton **?** explique l'app en trois étapes, et la cloche ouvre les alertes du partage (une pastille rouge compte les nouvelles).
 
-![La liste sans process à vous, puis avec vos process et les exemples repliés, et le réglage du Profil](captures/etape-13b-exemples.png)
+Dessous, la recherche (elle ignore les accents) et des filtres : **Tous**, **À corriger**, **Partagés** et **Exemples**, chacun avec son nombre. Si une vraie demande est en cours de suivi, la carte **Reprendre** y ramène, à la bonne étape.
+
+Chaque process a sa carte : sa source (draw.io, BPMN…) ou qui vous l'a partagé, le nombre d'étapes, de décisions et d'acteurs, et une pastille : vert sans anomalie, orange pour des avertissements, rouge pour des erreurs. Les quatre **Exemples** fictifs sont là pour essayer ; coupez **Afficher les exemples** dans **Réglages** pour les masquer. Le bouton **Nouveau**, en bas, ajoute un process.
+
+![L'accueil en clair et en sombre : la carte Reprendre, les filtres et les cartes des process](captures/etape-r6-accueil.png)
 
 <details>
 <summary>Plus de captures</summary>
+
+![Avant la refonte : la liste sans process à vous, puis avec vos process et les exemples repliés](captures/etape-13b-exemples.png)
 
 ![La liste des process et ses différents états](captures/etape-4a-liste.png)
 
@@ -278,7 +284,7 @@ SimuFlow vous prévient dans trois cas :
 - **Une étape à revoir** : un membre signale une étape de votre process ;
 - **Process entièrement validé** : tous les membres ont validé votre process.
 
-Les alertes arrivent quand l'app se synchronise : à l'ouverture, au retour dans l'app, quand le réseau revient, ou avec **Synchroniser**. Sur iPhone et Android, chacune s'affiche aussi en notification, et la toucher ouvre le process ou son suivi. Dans le navigateur, il n'y a pas de notification, mais un bandeau en haut de la liste des process annonce les nouvelles alertes. Il ouvre l'écran **Alertes**, qui les garde toutes. Dans **Profil**, **Alertes du partage** coupe les notifications, et **Voir les alertes** ouvre la liste.
+Les alertes arrivent quand l'app se synchronise : à l'ouverture, au retour dans l'app, quand le réseau revient, ou avec **Synchroniser**. Sur iPhone et Android, chacune s'affiche aussi en notification, et la toucher ouvre le process ou son suivi. Dans le navigateur, il n'y a pas de notification, mais la cloche de l'accueil compte les nouvelles alertes. Il ouvre l'écran **Alertes**, qui les garde toutes. Dans **Profil**, **Alertes du partage** coupe les notifications, et **Voir les alertes** ouvre la liste.
 
 Il n'y a pas de serveur de notifications : c'est l'app qui regarde ce qui a changé quand elle s'ouvre. Une alerte n'arrive donc pas tant que l'app reste fermée.
 

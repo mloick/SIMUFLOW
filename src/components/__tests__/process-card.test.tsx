@@ -36,6 +36,12 @@ describe('ProcessCard', () => {
     expect(screen.queryByText('Aucune anomalie')).not.toBeOnTheScreen();
   });
 
+  it('dit qui partage le process', async () => {
+    await render(<ProcessCard process={demandeMateriel} summary={summarize(demandeMateriel)} sharedBy="Hugo" />);
+
+    expect(screen.getByText('Partagé par Hugo')).toBeOnTheScreen();
+  });
+
   it('ouvre le détail du process quand on la touche', async () => {
     await render(<ProcessCard process={demandeMateriel} summary={summarize(demandeMateriel)} />);
 
