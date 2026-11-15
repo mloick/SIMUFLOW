@@ -86,7 +86,7 @@ Trois règles tiennent l'ensemble :
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, accueil `home-header.tsx`, `filter-chips.tsx`, `resume-card.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), alertes du partage (share-alerts-store.ts), membres et avis d'un process pour son propriétaire (validation-data.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -491,7 +491,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | --- | --- | --- |
 | `_layout.tsx` | | Pile de navigation principale (thème clair ou sombre, écran de démarrage) |
 | `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Réglages |
-| `(tabs)/index.tsx` | `/` | Liste des process |
+| `(tabs)/index.tsx` | `/` | Accueil : liste des process |
 | `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
 | `(tabs)/reglages.tsx` | `/reglages` | Réglages : carte du profil, apparence, langue, notifications, exemples, à propos |
 | `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : bannière, chiffres, synchronisation, formulaires gardés, règles apprises, déconnexion, suppression du compte |
@@ -549,7 +549,18 @@ Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pa
 
 ### Liste des process
 
-`src/app/(tabs)/index.tsx` reprend l'écran 2 de la maquette : titre, champ de recherche, une carte par process et un bouton « + » qui ouvre l'import. Chaque carte (`process-card.tsx`) affiche le nombre d'étapes, de décisions et d'acteurs, une pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie ») et la source (draw.io ou Scan). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
+`src/app/(tabs)/index.tsx` est l'accueil (refonte R6). De haut en bas :
+
+- **En-tête** (`src/components/home-header.tsx`, `HomeHeader`) : l'avatar rond couleur de la palette (initiales, ou une silhouette sans compte) et « Bonjour » avec le nom (ou « Sans compte ») ouvrent `/profil` ; un bouton rond « ? » ouvre « Comment ça marche » (trois étapes) dans la feuille d'aide `HelpSheet` ; la cloche ouvre `/alertes`, avec en pastille rouge le nombre d'alertes du partage pas encore vues (`useShareAlerts().unread`, « 9+ » au-delà). Elle remplace l'ancien bandeau « N nouvelles alertes ».
+- **Titre** « Vos process », puis la **recherche** (sans accents, police Plus Jakarta Sans, `fontFaceFor(400)`).
+- **Filtres** (`src/components/filter-chips.tsx`, `FilterChips`) : pastilles qui défilent de côté, avec leur nombre : **Tous**, **À corriger** (vos process et ceux partagés avec vous qui ont au moins une erreur ou un avertissement), **Partagés** (partagés avec vous), **Exemples**. Une pastille à 0 est cachée, sauf Tous et celle choisie. La choisie est foncée (`accessibilityState.selected`). La recherche s'applique dans chaque filtre.
+- **Carte « Reprendre »** (`src/components/resume-card.tsx`) : la dernière demande suivie en vrai qui n'est pas terminée (`useTrackings()`, dont le process est encore là), avec son nom, son libellé et « Étape N · titre de l'étape en cours ». Fond `primary`, chemin en S en filigrane, bouton lecture ; elle ouvre `/suivi/[id]`. Affichée seulement dans Tous, sans recherche.
+- **Cartes** : une par process. Chaque carte (`process-card.tsx`, refonte) se tasse sous le doigt (`PressableScale`) : une tuile à gauche (teintée orange ou rouge s'il y a quelque chose à corriger, sinon couleur de la palette ; deux silhouettes pour un process partagé), le nom, la source (draw.io, BPMN, Scan…) ou « Partagé par … », le nombre d'étapes, de décisions et d'acteurs, et la pastille de diagnostic (erreurs d'abord, puis avertissements, sinon « Aucune anomalie »). Ces chiffres viennent de `summarize` (`src/domain/summary.ts`), qui appelle le diagnostic. Toute la carte ouvre le détail.
+- **Bouton flottant « Nouveau »** (pilule foncée, couleur du texte) : ouvre l'import.
+
+![Accueil (refonte R6) : en clair et en sombre, avec la carte « Reprendre » et les filtres](captures/etape-r6-accueil.png)
+
+Test de composant : `src/components/__tests__/accueil-ecran.test.tsx` (bonjour, filtres et leur nombre, filtre « À corriger », « Reprendre » ouvre le suivi, cloche et « Nouveau »).
 
 **Données.** `useProcessList()` (`src/data/process-list.ts`) affiche les process importés (et ceux du compte, voir « Synchronisation avec le serveur »), puis les quatre process d'exemple de `demo-processes.ts`. Deux exemples contiennent des anomalies exprès.
 
@@ -558,7 +569,7 @@ Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pa
 <details>
 <summary>Détail</summary>
 
-**Exemples à part** (`src/data/examples.ts`, testé ; `examples-setting.ts`). `splitExamples` sépare vos process des exemples (reconnus à leur identifiant). L'écran affiche d'abord vos process, puis un titre repliable « Exemples · 4 » (`accessibilityState.expanded`) et les exemples dessous. Sans aucun process à vous, une invitation en pointillés dit où ils apparaîtront. Le réglage « Afficher les exemples » des Réglages (gardé sur le téléphone, clé `simuflow.exemples`, activé par défaut) les retire de la liste ; leur lien direct (`/process/demande-acces`) marche toujours. Le test de bout en bout (Maestro) touche « Demande d’accès » : il faut que les exemples soient affichés.
+**Exemples à part** (`src/data/examples.ts`, testé ; `examples-setting.ts`). `splitExamples` sépare vos process des exemples (reconnus à leur identifiant). Dans le filtre Tous, l'écran affiche d'abord vos process, puis « Partagés avec moi · N », puis un titre « Exemples · 4 » et les exemples dessous ; le filtre Exemples les montre seuls. Sans aucun process à vous, une invitation en pointillés dit où ils apparaîtront. Le réglage « Afficher les exemples » des Réglages (gardé sur le téléphone, clé `simuflow.exemples`, activé par défaut) les retire de la liste ; leur lien direct (`/process/demande-acces`) marche toujours. Le test de bout en bout (Maestro) touche « Demande d’accès » : il faut que les exemples soient affichés.
 
 **Les 5 états** (maquette, écran 10), calculés à partir de l'état réel de l'app par `listState` (`src/data/list-state.ts`, testé) :
 
@@ -1108,7 +1119,7 @@ Pas de serveur de notifications : un « push » sur iPhone demande un compte App
 - **Lecture** : `listSharingActivity(cloudIds)` (`src/backend/sharing.ts`) lit en deux requêtes les membres (`process_members`) et les avis (`step_reviews`, avec `updated_at`) de tous mes process sur le compte.
 - **Sur le téléphone** (`src/data/share-alerts-store.ts`) : `checkShareAlerts` construit l'instantané à partir des process importés (`getImportEntries`) et des partages reçus (`getSharedProcesses`). Il garde l'état (`simuflow.alertes-etat`) et les 30 dernières alertes (`simuflow.alertes`, avec la date de dernière lecture), puis envoie chaque alerte avec `notifyNow` si le réglage est actif et l'autorisation accordée. La vérification est lancée par `syncNow` (`cloud-sync.ts`) juste après `refreshShared`. Un échec ne change rien. À la déconnexion, `forgetShareAlerts` efface tout : le compte suivant repart de zéro, sans alertes sur l'existant.
 - **Notifications** (`src/notifications/notifications.ts`) : `notifyNow` affiche tout de suite (`trigger: null`, canal Android « Partage des process »). Elle porte `data.kind = 'partage'` et le chemin de l'écran, que `useShareAlertTaps` ouvre quand on la touche (`useShareAlertNavigation`, dans `_layout.tsx`). Dans le navigateur (`notifications.web.ts`), rien. Réglage « Alertes du partage » dans `settings.ts`, qui partage maintenant `createSwitch` avec « Rappels d'échéance ». L'activer demande l'autorisation si elle n'a jamais été demandée.
-- **Écrans** : un bandeau « 2 nouvelles alertes du partage » en haut de la liste des process (`useShareAlerts().unread`), l'écran `src/app/alertes.tsx` (icône, titre, texte, date ; toucher ouvre l'écran ; l'ouvrir marque tout comme vu, `markShareAlertsSeen`), et dans le Profil l'interrupteur et « Voir les alertes · N nouvelles ».
+- **Écrans** : la cloche de l'accueil, avec le nombre de nouvelles alertes en pastille (`useShareAlerts().unread` ; un bandeau jusqu'à la refonte R6), l'écran `src/app/alertes.tsx` (icône, titre, texte, date ; toucher ouvre l'écran ; l'ouvrir marque tout comme vu, `markShareAlertsSeen`), et dans le Profil l'interrupteur et « Voir les alertes · N nouvelles ».
 
 ![Alertes du partage : le bandeau sur la liste des process, l'écran Alertes, puis le réglage dans le Profil](captures/etape-42-alertes.png)
 
@@ -1326,7 +1337,8 @@ Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les doss
 Les tests unitaires vérifient des fonctions ; un test de composant affiche un vrai composant, comme sur le téléphone, puis le lit et le touche comme le ferait un utilisateur : par son texte et son rôle d'accessibilité (« bouton », « titre »), jamais par son code. Bibliothèque : React Native Testing Library (`@testing-library/react-native`, avec `test-renderer`), dans Jest avec `jest-expo`.
 
 - **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
-- **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (trois tests).
+- **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; avec `sharedBy`, « Partagé par Hugo » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (quatre tests).
+- **`accueil-ecran.test.tsx`** : l'accueil, avec la liste, le suivi et la session remplacés par des valeurs fixes. Il dit « Bonjour Sans compte », montre « Vos process » et les filtres avec leur nombre (pas de « Partagés » sans partage) ; « À corriger » ne garde que le process qui a un avertissement ; « Reprendre » ouvre le suivi en cours ; la cloche ouvre les alertes et « Nouveau » l'import (quatre tests).
 - **`situation-list.test.tsx`** : la liste des situations d'un workflow SLA / OLA (voir [Importer](#importer-srcappimporttsx)).
 - **`form-field.test.tsx`**, **`formulaire-ecran.test.tsx`**, **`formulaire-modifier-ecran.test.tsx`** : une question de formulaire, l'écran du formulaire et son éditeur (voir [Formulaire](#formulaire-srcappformulairetsx-srcappformulaire-modifiertsx)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).

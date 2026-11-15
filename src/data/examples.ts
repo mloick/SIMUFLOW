@@ -1,6 +1,6 @@
 /**
  * Les process d'exemple (demo-processes.ts), à part des process de l'utilisateur :
- * la liste les range dans une section « Exemples », repliable. Le réglage qui
+ * la liste les range dans une section « Exemples », et le filtre « Exemples » les montre seuls. Le réglage qui
  * les masque est dans examples-setting.ts. Fonctions pures, testées.
  */
 

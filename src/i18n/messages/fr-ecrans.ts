@@ -46,23 +46,40 @@ export const frScreens = {
   },
 
   list: {
+    title: 'Vos process',
+    hello: 'Bonjour',
+    guest: 'Sans compte',
+    openProfile: 'Ouvre mon profil',
+    alerts: (n: number): string =>
+      n === 0
+        ? 'Alertes du partage'
+        : n > 1
+          ? `Alertes du partage, ${n} nouvelles`
+          : 'Alertes du partage, une nouvelle',
+    helpTitle: 'Comment ça marche',
+    helpText:
+      '1. Ajoutez un process : un fichier draw.io, BPMN, Visio, Excel, un texte, ou une photo avec le Scanner.\n\n2. Rejouez-le pas à pas, ou tous les cas d’un coup : SimuFlow montre les impasses et le chemin le plus long.\n\n3. Corrigez-le dans l’app, faites valider chaque acteur, puis suivez une vraie demande.',
     search: 'Rechercher un process',
-    newAlerts: (n: number): string => (n > 1 ? `${n} nouvelles alertes du partage` : 'Une nouvelle alerte du partage'),
+    filters: 'Filtrer les process',
+    filter: { all: 'Tous', fix: 'À corriger', shared: 'Partagés', examples: 'Exemples' },
+    filterLabel: (name: string, n: number): string => `${name}, ${n}`,
+    resume: 'Reprendre',
+    resumeStep: (n: number, title: string): string => `Étape ${n} · ${title}`,
+    resumeHint: 'Ouvre le suivi de cette demande',
     offline: 'Hors connexion. Vous voyez la dernière version enregistrée.',
     errorTitle: 'Impossible de charger vos process',
     errorText: 'Le serveur n’a pas répondu. Vos données ne sont pas perdues.',
     emptyTitle: 'Aucun process pour l’instant',
     emptyText: 'Importez un fichier draw.io ou scannez un tableau pour commencer.',
     add: 'Ajouter un process',
+    newProcess: 'Nouveau',
     noMatch: (query: string): string => `Aucun process ne correspond à « ${query} ».`,
-    hint: 'Vos process apparaîtront ici. Touchez + pour en importer un ou scanner un tableau, ou essayez d’abord les exemples ci-dessous.',
+    noneInFilter: 'Aucun process dans ce filtre.',
+    hint: 'Vos process apparaîtront ici. Touchez « Nouveau » pour en importer un ou scanner un tableau, ou essayez d’abord les exemples ci-dessous.',
     shared: (n: number): string => `Partagés avec moi · ${n}`,
     sharedHint: 'À relire et valider : seul leur propriétaire peut les modifier.',
     examples: (n: number): string => `Exemples · ${n}`,
-    examplesLabel: (n: number): string => `Exemples, ${n} process`,
     examplesHint: 'Fournis avec l’app, pour essayer. Masquez-les dans les Réglages.',
-    collapse: 'Replie les exemples',
-    expand: 'Affiche les exemples',
     loading: 'Chargement des process',
   },
 
