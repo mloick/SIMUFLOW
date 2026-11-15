@@ -390,13 +390,15 @@ Pour essayer : `template-formulaire.xlsx`, seul ou avec `workflow-sla-ola.xlsx`,
 
 ### Compte et synchronisation · Disponible
 
-Dans **Réglages**, touchez la carte du haut (**Se connecter**), puis **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
+Au premier lancement, SimuFlow s'ouvre sur **Connectez-vous** : connectez-vous, créez un compte, ou touchez **Continuer sans compte** (tout reste alors sur le téléphone ; **Pourquoi un compte ?** l'explique). L'œil à droite du mot de passe l'affiche. Plus tard, dans **Réglages**, touchez la carte du haut (**Se connecter**), puis **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
 
 Connecté, **Compléter mon profil** (dans la section Compte) demande votre prénom, votre nom, un **identifiant** (proposé d'après votre nom, par exemple `julie.martin`, unique) et votre rôle : **Chef de projet**, **Collaborateur** ou non précisé. C'est une simple mention. L'identifiant servira à vous inviter sur un process partagé.
 
 ![Mon profil : l'identifiant proposé d'après le nom, puis un identifiant déjà pris et la variante proposée](captures/etape-38-mon-profil.png)
 
 Connecté, vos process, règles de lecture et formulaires gardés vous suivent sur tous vos appareils. Sans réseau, rien n'est perdu : la liste affiche « Hors connexion » et l'app envoie les changements dès le retour du réseau. **Supprimer mon compte** efface le compte et ses données, sur le serveur et sur le téléphone. Le serveur est hébergé à Paris ; **À propos** dit s'il est joignable.
+
+![Lancement et connexion : clair, sombre, et « Pourquoi un compte ? »](captures/etape-r5-connexion.png)
 
 ![Synchronisation : un process venu du compte, le Profil synchronisé, puis hors connexion](captures/etape-8-synchro.png)
 
@@ -455,7 +457,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 - **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Réglages > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
-- **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Réglages > À propos**.
+- **Présentation au premier lancement** · Disponible : après l'écran **Connectez-vous** (ou **Continuer sans compte**), quatre pages, à revoir depuis **Réglages > À propos**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
 - **Réglages** · Disponible : le troisième onglet. En haut, la carte de votre profil ; puis l'apparence, la langue, les notifications, les exemples, et **À propos** (présentation, confidentialité, version, serveur). Un bouton **?** explique chaque réglage.
 - **Profil** · Disponible : ouvert par la carte du haut des **Réglages**. Une bannière à vos couleurs avec vos initiales, votre nom, votre identifiant et votre rôle (**Modifier** pour les changer), vos chiffres (process, partagés, formulaires), la synchronisation avec son bouton, vos formulaires et les règles apprises, **Se déconnecter**, et **Supprimer mon compte** replié (toujours demandé deux fois).

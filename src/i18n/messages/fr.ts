@@ -259,6 +259,20 @@ export const fr = {
     haveAccount: 'Déjà un compte ?',
     noAccount: 'Pas encore de compte ?',
     switchCreate: 'Créer un compte',
+    title: 'Connectez-vous',
+    subtitle: 'Retrouvez vos process sur tous vos appareils.',
+    titleCreate: 'Créez votre compte',
+    subtitleCreate: 'Gratuit, en trente secondes.',
+    passwordPlaceholder: '8 caractères au moins',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
+    or: 'ou',
+    continueWithout: 'Continuer sans compte',
+    why: 'Pourquoi un compte ?',
+    whyText:
+      'Avec un compte, vos process vous suivent sur tous vos appareils et vous pouvez les partager avec les acteurs. Sans compte, tout reste sur ce téléphone.',
+    close: 'Fermer',
+    illustration: { start: 'Départ', step: 'Qualifier', wait: 'Valider · 2 JO' },
   },
 
   reset: {

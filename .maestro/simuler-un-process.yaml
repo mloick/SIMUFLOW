@@ -9,10 +9,19 @@ appId: fr.simuflow.app
 name: Simuler un process pas à pas
 ---
 - launchApp
-# Premier lancement : la présentation s'ouvre d'abord. On attend elle ou la liste, puis on la passe.
+# Premier lancement : l'écran « Connectez-vous » s'ouvre d'abord, puis la présentation.
+# On attend l'un d'eux ou la liste, on continue sans compte, puis on passe la présentation.
 - extendedWaitUntil:
-    visible: 'Passer|.*Demande d.accès.*'
+    visible: 'Continuer sans compte|Passer|.*Demande d.accès.*'
     timeout: 60000
+- runFlow:
+    when:
+      visible: 'Continuer sans compte'
+    commands:
+      - tapOn: 'Continuer sans compte'
+      - extendedWaitUntil:
+          visible: 'Passer'
+          timeout: 10000
 - runFlow:
     when:
       visible: 'Passer'
