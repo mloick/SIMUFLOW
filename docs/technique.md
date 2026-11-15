@@ -490,10 +490,11 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | Fichier | Route | Écran |
 | --- | --- | --- |
 | `_layout.tsx` | | Pile de navigation principale (thème clair ou sombre, écran de démarrage) |
-| `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Profil |
+| `(tabs)/_layout.tsx` | | Barre d'onglets native : Process, Scanner, Réglages |
 | `(tabs)/index.tsx` | `/` | Liste des process |
 | `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
-| `(tabs)/profil.tsx` | `/profil` | Profil : compte, réglages, à propos |
+| `(tabs)/reglages.tsx` | `/reglages` | Réglages : carte du profil, apparence, langue, notifications, exemples, à propos |
+| `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : compte, synchronisation, formulaires gardés, règles apprises |
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
@@ -512,7 +513,19 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 
 **Premier lancement** (`bienvenue.tsx`, `src/data/welcome-setting.ts`). Tant que la présentation n'a pas été vue (clé `simuflow.bienvenue` sur le téléphone), la liste l'ouvre par-dessus elle (`router.push('/bienvenue')`, `presentation: 'fullScreenModal'`). Quatre pages : bienvenue (logo), ajouter ses process, rejouer et corriger, suivre une vraie demande. Dans un navigateur, une page « Installez SimuFlow » s'ajoute en deuxième (voir « Version web »). « Suivant », « Précédent » (toujours à sa place, invisible sur la première page, pour que les boutons ne bougent pas), « Passer » et, à la fin, « Commencer » ; les points annoncent « Page 2 sur 4 » ; chaque page arrive en fondu, sauf avec « Réduire les animations ». « Commencer » ou « Passer » la marquent vue. Elles referment l'écran par `router.dismissTo('/')`, et `unstable_settings = { anchor: '(tabs)' }` dans `_layout.tsx` garde les onglets sous les écrans modaux : le retour fonctionne même si la présentation est le premier écran affiché. Le Profil propose « Revoir la présentation ». Le test Maestro passe la présentation si elle s'affiche (`runFlow` avec `when: visible`).
 
-**Profil** (`(tabs)/profil.tsx`). Un titre, une phrase, puis sept sections, chacune un titre (`accessibilityRole="header"`) et un encadré : **Compte** (connexion, profil, synchronisation, suppression), **Langue** (`LanguageSetting` : trois boutons radio Automatique, Français, English, et une phrase qui dit la langue suivie), **Apparence** (`AppearanceSetting` : quatre pastilles de palette, puis trois boutons radio Automatique, Clair, Sombre, et une phrase qui dit ce que fait le choix), **Notifications** (rappels d'échéance, alertes du partage, « Voir les alertes »), **Liste des process** (afficher les exemples), **Règles de lecture apprises**, et **À propos** : l'état du serveur (`ServerRow`), « Revoir la présentation » et la version (`About`). En développement seulement, « Démo · état de la liste des process » suit. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
+**Réglages** (`(tabs)/reglages.tsx`, refonte R3). Troisième onglet (icône `slider.horizontal.3` / `tune`), à la place de l'ancien onglet Profil. Un titre, puis la **carte du profil** (`ProfileCard` : avatar rond couleur de la palette avec les initiales, ou une silhouette sans compte ; nom et « Mon profil, mon compte, mes données », ou « Se connecter » ; elle ouvre `/profil`). Puis des groupes `SettingsGroup` (`src/components/settings-row.tsx` : titre en petites capitales, bouton « ? » facultatif, carte arrondie, phrase d'état facultative dessous) faits de lignes `SettingsRow` (icône dans une pastille teintée, libellé, « ? », puis un interrupteur `Toggle`, une valeur ou une flèche) :
+
+- **Apparence** : quatre pastilles de palette, puis Automatique / Clair / Sombre (`Segmented`, boutons radio) ; le « ? » explique les deux.
+- **Langue** : Automatique / Français / English, avec son « ? ».
+- **Notifications** : « Rappels d'échéance » et « Alertes du partage » (interrupteurs, chacun avec son « ? »), « Voir les alertes » (avec « 2 nouvelles »), « Notification d'essai » quand tout est accordé ; la phrase d'état et « Ouvrir les réglages » sous la carte.
+- **Liste des process** : « Afficher les exemples ».
+- **À propos** : « Revoir la présentation », « Politique de confidentialité » (navigateur), « Version » (le « ? » donne aussi la date de la mise à jour à distance), « Serveur SimuFlow » (`ServerRow` : point vert Joignable, rouge Injoignable ; toucher l'état relance la vérification).
+
+Les longues phrases d'aide d'avant sont dans les « ? ». Test de composant : `src/components/__tests__/reglages-ecran.test.tsx` (carte sans compte, groupes, palette, « ? »).
+
+![L'onglet Réglages : la carte du profil, l'apparence et la langue, les notifications et À propos, en Corail sombre, puis la page Profil](captures/etape-r3-reglages.png)
+
+**Profil** (`profil.tsx`, écran de la pile, titre « Profil »). Une phrase, puis **Compte** (connexion, profil, synchronisation, déconnexion, suppression), **Mes formulaires**, **Règles de lecture apprises**, et en développement seulement « Démo · état de la liste des process ». Il sera redessiné à l'étape R4. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
 
 ![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 
@@ -540,12 +553,12 @@ Les routes sont typées (`typedRoutes`) : un lien vers un écran qui n'existe pa
 | Chargement | Connecté, première synchronisation en cours, aucun process du compte encore sur le téléphone | Squelette de la forme des cartes, sans spinner (`list-skeleton.tsx`) |
 | Erreur | Cette première synchronisation a échoué côté serveur | Message et bouton « Réessayer », qui relance la synchronisation |
 | Hors connexion | Le téléphone n'a pas Internet (`expo-network`, `src/data/network.ts`) | Bandeau orange au-dessus de la dernière version enregistrée |
-| Vide | Aucun process : rien d'importé, et les exemples masqués dans le Profil | Message et bouton « Ajouter un process » (`state-message.tsx`) |
+| Vide | Aucun process : rien d'importé, et les exemples masqués dans les Réglages | Message et bouton « Ajouter un process » (`state-message.tsx`) |
 | Contenu | Sinon | Les cartes ; si la recherche ne trouve rien, une phrase le dit |
 
 Sans réseau, la liste reste utilisable : les process sont lus sur le téléphone, et les changements partent quand le réseau revient.
 
-En mode développement, l'onglet Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états (`useSimulatedProcessList`, `src/data/process-store.ts`) ; « Contenu » revient à la liste réelle. Ce choix n'existe pas dans l'app publiée (`__DEV__`).
+En mode développement, la page Profil propose « Démo · état de la liste des process » pour forcer chacun de ces états (`useSimulatedProcessList`, `src/data/process-store.ts`) ; « Contenu » revient à la liste réelle. Ce choix n'existe pas dans l'app publiée (`__DEV__`).
 
 ![États réels : chargement du compte, erreur du serveur, contenu, hors connexion](captures/etape-8-etats.png)
 
@@ -846,7 +859,7 @@ Des **notifications locales** : le téléphone les programme et les affiche lui-
 - **Au démarrage** (`configureNotifications`, appelé dans `src/app/_layout.tsx`) : `setNotificationHandler` affiche aussi les notifications quand l'app est ouverte (bannière, liste, son). Sur Android, un canal « Échéances des process » (`echeances`, importance haute) que l'utilisateur peut régler dans les réglages du téléphone.
 - **Autorisation** : `getNotificationPermission` la lit sans rien demander, `requestNotificationPermission` affiche la fenêtre du système (une seule fois). Les deux rendent `granted`, `denied` (refusée pour de bon) ou `undetermined` (pas encore demandée). Une autorisation « provisoire » d'iOS compte comme accordée.
 - **Notification d'essai** (`sendTestNotification`) : programmée 5 secondes plus tard (`TIME_INTERVAL`), le temps de verrouiller le téléphone.
-- **Web** : `notifications.web.ts` répond `unavailable` ; le Profil le dit.
+- **Web** : `notifications.web.ts` répond `unavailable` ; les Réglages le disent.
 
 ![Profil : la section Notifications, notification d'essai envoyée (clair) et mode sombre](captures/etape-11a-notifications.png)
 
@@ -855,9 +868,9 @@ Des **notifications locales** : le téléphone les programme et les affiche lui-
 
 **Rappels d'échéance** (`src/tracking/reminders.ts`, TypeScript pur, testé). Pour l'étape en cours de chaque demande suivie qui a une échéance, `remindersFor` prévoit deux rappels : le jour de l'échéance à 9 h (« Aujourd'hui : Commander », « Demande du 31 oct. · échéance à 14:00. »), puis à l'échéance (« En retard : Commander »). Un rappel déjà passé n'est pas prévu. Chaque rappel a un identifiant stable (suivi, rang de l'étape, « jour » ou « retard »). `allReminders` les réunit pour toutes les demandes en cours dont le process existe encore. Quatre tests.
 
-**Programmation** (`useDeadlineReminders`, `src/notifications/use-deadline-reminders.ts`, appelé dans `src/app/_layout.tsx`). À chaque changement d'une demande suivie (étape terminée, suivi commencé ou arrêté), d'un process ou du réglage « Rappels d'échéance », `scheduleReminders` retire les rappels programmés (reconnus à `data.kind = 'echeance'`, les autres notifications restent) et programme les nouveaux à leur date (`SchedulableTriggerInputTypes.DATE`, canal Android « Échéances »). Rappels coupés dans le Profil : aucun. L'autorisation est demandée au premier rappel à programmer, si elle ne l'a jamais été. Toucher un rappel ouvre l'écran de suivi de la demande (`useLastNotificationResponse`, aussi quand le rappel lance l'app).
+**Programmation** (`useDeadlineReminders`, `src/notifications/use-deadline-reminders.ts`, appelé dans `src/app/_layout.tsx`). À chaque changement d'une demande suivie (étape terminée, suivi commencé ou arrêté), d'un process ou du réglage « Rappels d'échéance », `scheduleReminders` retire les rappels programmés (reconnus à `data.kind = 'echeance'`, les autres notifications restent) et programme les nouveaux à leur date (`SchedulableTriggerInputTypes.DATE`, canal Android « Échéances »). Rappels coupés dans les Réglages : aucun. L'autorisation est demandée au premier rappel à programmer, si elle ne l'a jamais été. Toucher un rappel ouvre l'écran de suivi de la demande (`useLastNotificationResponse`, aussi quand le rappel lance l'app).
 
-**Profil, section « Notifications ».** Un interrupteur « Rappels d'échéance », activé par défaut et gardé sur le téléphone (`settings.ts`, `localStorage`). L'activer demande l'autorisation si elle n'a jamais été demandée ; le couper retire les notifications programmées (`cancelAllScheduledNotificationsAsync`). Quand tout est accordé, « Envoyer une notification d'essai ». Une phrase dit l'état : autorisation refusée (avec « Ouvrir les réglages »), à demander, notification envoyée. L'autorisation est relue au retour dans l'app (`AppState`), si l'utilisateur l'a changée dans les réglages.
+**Réglages, groupe « Notifications ».** Un interrupteur « Rappels d'échéance », activé par défaut et gardé sur le téléphone (`settings.ts`, `localStorage`). L'activer demande l'autorisation si elle n'a jamais été demandée ; le couper retire les notifications programmées (`cancelAllScheduledNotificationsAsync`). Quand tout est accordé, « Envoyer une notification d'essai ». Une phrase dit l'état : autorisation refusée (avec « Ouvrir les réglages »), à demander, notification envoyée. L'autorisation est relue au retour dans l'app (`AppState`), si l'utilisateur l'a changée dans les réglages.
 
 </details>
 
@@ -929,7 +942,7 @@ Supabase fournit le backend : une base PostgreSQL, l'authentification et une API
 
 **Client.** `client.ts` crée le client Supabase partagé. La session (le jeton de connexion) est gardée dans le trousseau chiffré du téléphone : `secure-session-storage.ts` branche `expo-secure-store` (Keychain sur iOS, clé du Keystore sur Android), avec `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY` : lisible dès le premier déverrouillage du téléphone, jamais copiée vers un autre appareil. `createSessionStorage` (`session-storage.ts`, sans dépendance, cinq tests) fait le lien : une session laissée par une version précédente dans `localStorage` (base SQLite, non chiffrée) est déplacée dans le trousseau à la première lecture puis effacée, sans déconnecter personne ; la déconnexion efface les deux emplacements. Sur le web, `secure-session-storage.web.ts` garde la session dans le `localStorage` du navigateur. `localStorage` reste fourni sur iOS et Android par `expo-sqlite/localStorage/install` (`local-storage.ts`, version web vide `local-storage.web.ts`) pour les réglages et les demandes suivies. Le plugin `expo-secure-store` est déclaré dans `app.json` avec `faceIDPermission: false` : l'app n'utilise pas Face ID et ne demande donc pas cette autorisation. Le jeton expire au bout d'une heure ; le client le renouvelle tant que l'app est au premier plan (`startAutoRefresh` / `stopAutoRefresh` selon `AppState`). `react-native-url-polyfill` complète l'objet `URL` de React Native, dont le client a besoin. `expo-sqlite` et `expo-secure-store` étant des modules natifs, l'app compilée par Xcode doit être recompilée (`npx expo prebuild --clean --platform ios`, puis `npm run ios:iphone`).
 
-**Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Le Profil l'affiche en tête de la section « À propos », avec « Réessayer » en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
+**Test du serveur.** `checkServer()` (`health.ts`) interroge `/auth/v1/health` avec la clé publique et renvoie `ok`, `error` (le serveur répond mal) ou `unreachable` (pas de réseau, serveur en pause ou plus de 8 secondes). Les Réglages l'affichent en bas du groupe « À propos » (toucher l'état réessaie), en cas d'échec. Quatre tests couvrent l'adresse appelée, la clé envoyée, l'erreur et l'absence de réseau.
 
 ![Profil : le serveur joignable (clair), puis injoignable (sombre)](captures/etape-7a-serveur.png)
 
@@ -1192,7 +1205,7 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 
 ![Apparence : Automatique en clair, Sombre choisi dans le Profil, puis la liste en sombre après rechargement](captures/etape-37-apparence.png)
 
-**Palettes (refonte, étape R1).** Dans le Profil, la section Apparence commence par quatre pastilles (`AppearanceSetting`, boutons radio) : la couleur principale et, dans un quart, la couleur d'accent ; un anneau entoure la palette choisie. Contrastes vérifiés selon WCAG pour chaque palette : texte blanc sur `primary` (4,8:1 au plus bas, Océan), `link` sur le fond, sur `surfaceMuted` et sur `primaryBackground` (5:1 au plus bas). En clair, `link` est un peu plus foncé que `primary` pour cette raison.
+**Palettes (refonte, étape R1).** Dans les Réglages, le groupe Apparence commence par quatre pastilles (`AppearanceGroup`, boutons radio) : la couleur principale et, dans un quart, la couleur d'accent ; un anneau entoure la palette choisie. Contrastes vérifiés selon WCAG pour chaque palette : texte blanc sur `primary` (4,8:1 au plus bas, Océan), `link` sur le fond, sur `surfaceMuted` et sur `primaryBackground` (5:1 au plus bas). En clair, `link` est un peu plus foncé que `primary` pour cette raison.
 
 ![Les quatre palettes : Océan, Aurore dans le Profil, Menthe en sombre, Corail](captures/etape-r1-palettes.png)
 
@@ -1207,7 +1220,7 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 | `Toggle` | Interrupteur de 52 × 32 : la pastille glisse et le fond passe à `primary`. Rôle `switch` avec son état `checked`. Sans glissement si les animations sont réduites. |
 | `HelpButton`, `HelpSheet` | Bouton « ? » rond de 36 points (libellé « Expliquer : … ») qui ouvre une feuille en bas de l'écran (`Modal` transparent, coins `Radius.sheet` de 28) : titre, explication, bouton « Compris ». Elle se ferme aussi en touchant le fond ou par le geste retour ; fondu au lieu de glisser si les animations sont réduites. Remplacera les longues phrases d'aide sous les réglages. |
 
-Ces briques suivent la palette et le mode choisis. Le bouton « ? » est déjà à côté du titre Apparence du Profil. Test de composant : `src/components/__tests__/briques.test.tsx`.
+Ces briques suivent la palette et le mode choisis. Les Réglages s'en servent (R3). Test de composant : `src/components/__tests__/briques.test.tsx`.
 
 ![Les briques : le bouton « Lancer la simulation », le bouton « ? » d'Apparence, sa feuille d'explication en Aurore, puis en Menthe sombre](captures/etape-r2-briques.png)
 
@@ -1215,7 +1228,7 @@ Ces briques suivent la palette et le mode choisis. Le bouton « ? » est déjà 
 
 ### Langue de l'app (`src/i18n/`)
 
-L'app parle français ou anglais. Le réglage « Langue » du Profil vaut `auto`, `fr` ou `en`. Il est gardé dans `localStorage` sous `simuflow.langue` (rien n'est gardé pour `auto`).
+L'app parle français ou anglais. Le réglage « Langue » des Réglages vaut `auto`, `fr` ou `en`. Il est gardé dans `localStorage` sous `simuflow.langue` (rien n'est gardé pour `auto`).
 
 - **Automatique** : `resolveLanguage` prend le français si la langue du téléphone commence par `fr`, l'anglais sinon. La langue du téléphone est lue par `Intl.DateTimeFormat().resolvedOptions().locale` (`device-locale.ts`), intégré à Hermes et aux navigateurs : pas de module natif, donc pas de nouvelle build.
 - **Textes** : `messages/fr.ts` est la référence. `messages/en.ts` est typé `Messages` (`typeof fr`) : une clé manquante ou en trop est une erreur TypeScript. Les textes des écrans (liste, fiche, simulation, suivi, éditeur, import, Scanner, export, formulaires, partage, alertes, messages du serveur) sont rangés par écran dans `messages/fr-ecrans.ts` et `messages/en-ecrans.ts` (typé `ScreenMessages`), puis repris dans les deux catalogues. Une valeur est un texte, ou une fonction quand le texte contient un nombre ou un nom (`seeAlerts(2)` donne « Voir les alertes · 2 nouvelles » ou « See alerts · 2 new »). `common.locale` (`fr-FR` ou `en-GB`) sert aux dates et aux heures.
@@ -1433,13 +1446,13 @@ Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page ser
 
 **Ouvrir un écran par son adresse.** GitHub Pages ne connaît que des fichiers : `/SIMUFLOW/app/process/gestion-incident` n'en est pas un. La publication copie donc `index.html` en `404.html` à la racine du site. Pour toute adresse inconnue, GitHub Pages sert cette page : l'app démarre et Expo Router ouvre l'écran demandé. Le rechargement d'une page et les liens partagés marchent ainsi.
 
-**Ce qui change dans le navigateur.** Les données sans compte sont dans le stockage local du navigateur (`localStorage`), la session aussi (`secure-session-storage.web.ts`). Les fichiers exportés sont téléchargés, le PDF passe par la fenêtre d'impression. Le Scanner lit la photo dans le navigateur (voir « Scanner dans la version web »), et les notifications ne sont pas disponibles (le Profil le dit). Pour « Mot de passe oublié », l'adresse de retour est celle de la version web : elle doit être autorisée dans Supabase (Authentication > URL Configuration > Redirect URLs : `https://mloick.github.io/SIMUFLOW/**`).
+**Ce qui change dans le navigateur.** Les données sans compte sont dans le stockage local du navigateur (`localStorage`), la session aussi (`secure-session-storage.web.ts`). Les fichiers exportés sont téléchargés, le PDF passe par la fenêtre d'impression. Le Scanner lit la photo dans le navigateur (voir « Scanner dans la version web »), et les notifications ne sont pas disponibles (les Réglages le disent). Pour « Mot de passe oublié », l'adresse de retour est celle de la version web : elle doit être autorisée dans Supabase (Authentication > URL Configuration > Redirect URLs : `https://mloick.github.io/SIMUFLOW/**`).
 
 **Vérifié** avec Playwright sur l'export servi comme sur GitHub Pages (même chemin, même page 404) : accueil du site, bouton « Ouvrir l'app web », présentation, liste, détail, simulation, Profil, Scanner, et rechargement d'un écran par son adresse, sans erreur dans la console.
 
 ![Version web : l'accueil du site, la liste, la simulation et le Scanner dans le navigateur](captures/etape-16-version-web.png)
 
-**Dans l'app.** `src/constants/links.ts` donne `SITE_URL` et `PRIVACY_URL`. Le Profil (« À propos ») et l'écran de création de compte ouvrent la politique dans le navigateur intégré (`WebBrowser.openBrowserAsync`, `expo-web-browser`). À la création du compte, une phrase dit où sont gardées les données avant l'envoi.
+**Dans l'app.** `src/constants/links.ts` donne `SITE_URL` et `PRIVACY_URL`. Les Réglages (« À propos ») et l'écran de création de compte ouvrent la politique dans le navigateur intégré (`WebBrowser.openBrowserAsync`, `expo-web-browser`). À la création du compte, une phrase dit où sont gardées les données avant l'envoi.
 
 ![Le site : accueil et politique de confidentialité en clair, accueil en sombre](captures/etape-14a-site.png)
 

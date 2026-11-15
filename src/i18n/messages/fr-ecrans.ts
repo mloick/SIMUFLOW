@@ -60,7 +60,7 @@ export const frScreens = {
     sharedHint: 'À relire et valider : seul leur propriétaire peut les modifier.',
     examples: (n: number): string => `Exemples · ${n}`,
     examplesLabel: (n: number): string => `Exemples, ${n} process`,
-    examplesHint: 'Fournis avec l’app, pour essayer. Masquez-les dans le Profil.',
+    examplesHint: 'Fournis avec l’app, pour essayer. Masquez-les dans les Réglages.',
     collapse: 'Replie les exemples',
     expand: 'Affiche les exemples',
     loading: 'Chargement des process',

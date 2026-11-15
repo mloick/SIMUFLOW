@@ -58,7 +58,7 @@ export const enScreens: ScreenMessages = {
     sharedHint: 'To review and validate: only their owner can change them.',
     examples: (n: number) => `Examples · ${n}`,
     examplesLabel: (n: number) => `Examples, ${n} processes`,
-    examplesHint: 'Included with the app, to try things out. Hide them in Profile.',
+    examplesHint: 'Included with the app, to try things out. Hide them in Settings.',
     collapse: 'Collapses the examples',
     expand: 'Shows the examples',
     loading: 'Loading processes',

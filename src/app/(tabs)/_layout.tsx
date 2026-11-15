@@ -24,9 +24,9 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="doc.viewfinder" md="document_scanner" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="profil">
-        <NativeTabs.Trigger.Label>{t.tabs.profile}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="person.crop.circle" md="person" />
+      <NativeTabs.Trigger name="reglages">
+        <NativeTabs.Trigger.Label>{t.tabs.settings}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="slider.horizontal.3" md="tune" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

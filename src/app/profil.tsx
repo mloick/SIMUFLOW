@@ -1,45 +1,25 @@
-import Constants from 'expo-constants';
 import { Link, router } from 'expo-router';
-import * as Updates from 'expo-updates';
-import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { deleteAccount, signOut, useSession } from '@/backend/auth';
-import { checkServer, type ServerStatus } from '@/backend/health';
-import { HelpButton } from '@/components/help-button';
 import { ThemedText } from '@/components/themed-text';
-import { PRIVACY_URL } from '@/constants/links';
-import { MaxContentWidth, Palettes, PALETTES, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { syncNow, useSyncStatus, type SyncStatus } from '@/data/cloud-sync';
 import { DEMO_SCENARIOS, setDemoScenario, useDemoScenario } from '@/data/process-store';
 import { forgetReadingRule, useReadingRules } from '@/data/rules-store';
 import { removeSavedForm, showSavedForm, useSavedForms } from '@/data/form-store';
 import { describeRule } from '@/import';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  cancelAllNotifications,
-  getNotificationPermission,
-  requestNotificationPermission,
-  sendTestNotification,
-  TEST_DELAY_SECONDS,
-  type NotificationPermission,
-} from '@/notifications/notifications';
-import {
-  setRemindersEnabled,
-  setShareAlertsEnabled,
-  useRemindersEnabled,
-  useShareAlertsEnabled,
-} from '@/notifications/settings';
-import { setExamplesShown, useExamplesShown } from '@/data/examples-setting';
-import { setPalette, usePalette } from '@/data/palette-setting';
-import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
 import { useMyProfile } from '@/data/profile-store';
-import { useShareAlerts } from '@/data/share-alerts-store';
 import { displayName } from '@/domain';
-import { LANGUAGE_SETTINGS, type Messages, setLanguageSetting, useLanguage, useLanguageSetting, useT } from '@/i18n';
+import { type Messages, useT } from '@/i18n';
 
-/** Le Profil : le compte, les réglages, puis les informations sur l'app. */
+/**
+ * La page Profil, ouverte depuis la carte en tête des Réglages : le compte et
+ * sa synchronisation, les formulaires gardés et les règles de lecture apprises.
+ * (Elle sera redessinée à l'étape R4 de la refonte.)
+ */
 export default function ProfileScreen() {
   const theme = useTheme();
   const t = useT();
@@ -48,18 +28,10 @@ export default function ProfileScreen() {
       style={{ backgroundColor: theme.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
-      <ThemedText type="title" accessibilityRole="header">
-        {t.profil.title}
-      </ThemedText>
       <ThemedText themeColor="textSecondary">{t.profil.intro}</ThemedText>
       <Account />
-      <LanguageSetting />
-      <AppearanceSetting />
-      <NotificationSettings />
-      <ExamplesSetting />
       <SavedForms />
       <ReadingRules />
-      <About />
       {__DEV__ && <DemoScenarioPicker />}
     </ScrollView>
   );
@@ -284,263 +256,6 @@ function ProfileRow() {
   );
 }
 
-/** Langue : automatique (comme le téléphone), français ou anglais. */
-function LanguageSetting() {
-  const theme = useTheme();
-  const t = useT();
-  const current = useLanguageSetting();
-  const language = useLanguage();
-  return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="langue">
-        {t.language.heading}
-      </ThemedText>
-      <View
-        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
-        accessibilityRole="radiogroup"
-        accessibilityLabelledBy="langue">
-        {LANGUAGE_SETTINGS.map((option) => {
-          const selected = option === current;
-          return (
-            <Pressable
-              key={option}
-              onPress={() => setLanguageSetting(option)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
-              accessibilityLabel={t.language.options[option]}
-              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
-              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {t.language.options[option]}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        {current === 'auto' ? t.language.autoHint(t.language.names[language]) : t.language.fixedHint}
-      </ThemedText>
-    </View>
-  );
-}
-
-/** Apparence : la palette (Océan, Aurore, Menthe, Corail), puis automatique, clair ou sombre. */
-function AppearanceSetting() {
-  const theme = useTheme();
-  const t = useT();
-  const current = useThemeMode();
-  const palette = usePalette();
-  return (
-    <View style={styles.section}>
-      <View style={styles.headingRow}>
-        <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" nativeID="apparence">
-          {t.theme.heading}
-        </ThemedText>
-        <HelpButton title={t.theme.heading} text={t.theme.helpText} />
-      </View>
-      <View
-        style={[styles.palettes, { backgroundColor: theme.surface, borderColor: theme.border }]}
-        accessibilityRole="radiogroup"
-        accessibilityLabel={t.theme.colors}>
-        {PALETTES.map((id) => {
-          const selected = id === palette;
-          const swatch = Palettes[id].light;
-          return (
-            <Pressable
-              key={id}
-              onPress={() => setPalette(id)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
-              accessibilityLabel={t.theme.paletteLabel(t.theme.palettes[id])}
-              style={styles.paletteOption}>
-              <View style={[styles.paletteRing, { borderColor: selected ? theme.text : 'transparent' }]}>
-                <View style={[styles.paletteSwatch, { backgroundColor: swatch.primary }]}>
-                  <View style={[styles.paletteAccent, { backgroundColor: swatch.accent }]} />
-                </View>
-              </View>
-              <ThemedText type="small" style={{ fontWeight: selected ? 800 : 600 }}>
-                {t.theme.palettes[id]}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
-      <View
-        style={[styles.segments, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
-        accessibilityRole="radiogroup"
-        accessibilityLabelledBy="apparence">
-        {THEME_MODES.map((option) => {
-          const selected = option === current;
-          return (
-            <Pressable
-              key={option}
-              onPress={() => setThemeMode(option)}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
-              accessibilityLabel={t.theme.options[option]}
-              style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
-              <ThemedText type="smallBold" style={{ color: selected ? theme.onPrimary : theme.text }}>
-                {t.theme.options[option]}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        {current === 'auto' ? t.theme.autoHint : t.theme.fixedHint}
-      </ThemedText>
-    </View>
-  );
-}
-
-/** Afficher ou masquer les process d'exemple dans la liste. */
-function ExamplesSetting() {
-  const theme = useTheme();
-  const t = useT();
-  const shown = useExamplesShown();
-  return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        {t.profil.processList}
-      </ThemedText>
-      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <View style={[styles.row, styles.identity]}>
-          <View style={styles.flex}>
-            <ThemedText>{t.profil.showExamples}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t.profil.showExamplesHint}
-            </ThemedText>
-          </View>
-          <Switch
-            value={shown}
-            onValueChange={setExamplesShown}
-            trackColor={{ true: theme.link }}
-            accessibilityLabel={t.profil.showExamples}
-          />
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** Réglage des rappels d'échéance, état de l'autorisation et notification d'essai. */
-function NotificationSettings() {
-  const theme = useTheme();
-  const t = useT();
-  const enabled = useRemindersEnabled();
-  const alertsEnabled = useShareAlertsEnabled();
-  const { unread } = useShareAlerts();
-  const [permission, setPermission] = useState<NotificationPermission | null>(null);
-  const [sent, setSent] = useState(false);
-
-  // L'autorisation peut changer dans les réglages du téléphone : on la relit au retour dans l'app.
-  useEffect(() => {
-    const refresh = () => getNotificationPermission().then(setPermission);
-    refresh();
-    const subscription = AppState.addEventListener('change', (state) => state === 'active' && refresh());
-    return () => subscription.remove();
-  }, []);
-
-  const toggle = async (next: boolean) => {
-    setRemindersEnabled(next);
-    setSent(false);
-    if (!next) return cancelAllNotifications();
-    if (permission === 'undetermined') setPermission(await requestNotificationPermission());
-  };
-
-  const toggleAlerts = async (next: boolean) => {
-    setShareAlertsEnabled(next);
-    if (next && permission === 'undetermined') setPermission(await requestNotificationPermission());
-  };
-
-  const test = async () => {
-    await sendTestNotification();
-    setSent(true);
-  };
-
-  const unavailable = permission === 'unavailable';
-  const active = enabled && permission === 'granted';
-  return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        {t.profil.notifications}
-      </ThemedText>
-      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <View style={[styles.row, styles.identity]}>
-          <View style={styles.flex}>
-            <ThemedText>{t.profil.reminders}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t.profil.remindersHint}
-            </ThemedText>
-          </View>
-          <Switch
-            value={enabled && !unavailable}
-            onValueChange={toggle}
-            disabled={unavailable || permission === null}
-            trackColor={{ true: theme.link }}
-            accessibilityLabel={t.profil.reminders}
-          />
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <View style={[styles.row, styles.identity]}>
-          <View style={styles.flex}>
-            <ThemedText>{t.profil.shareAlerts}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t.profil.shareAlertsHint}
-            </ThemedText>
-          </View>
-          <Switch
-            value={alertsEnabled && !unavailable}
-            onValueChange={toggleAlerts}
-            disabled={unavailable || permission === null}
-            trackColor={{ true: theme.link }}
-            accessibilityLabel={t.profil.shareAlerts}
-          />
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <Pressable onPress={() => router.push('/alertes')} accessibilityRole="button" style={styles.row}>
-          <ThemedText type="link" style={{ color: theme.link }}>
-            {t.profil.seeAlerts(unread)}
-          </ThemedText>
-        </Pressable>
-        {active && (
-          <>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <Pressable onPress={test} accessibilityRole="button" style={styles.row}>
-              <ThemedText type="link" style={{ color: theme.link }}>
-                {t.profil.testNotification}
-              </ThemedText>
-            </Pressable>
-          </>
-        )}
-      </View>
-      <ThemedText type="small" themeColor="textSecondary" accessibilityLiveRegion="polite">
-        {notificationText(t.profil, enabled, permission, sent)}
-      </ThemedText>
-      {enabled && permission === 'denied' && (
-        <Pressable onPress={() => Linking.openSettings()} accessibilityRole="button" hitSlop={8}>
-          <ThemedText type="link" style={{ color: theme.link }}>
-            {t.profil.openSettings}
-          </ThemedText>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-function notificationText(
-  t: Messages['profil'],
-  enabled: boolean,
-  permission: NotificationPermission | null,
-  sent: boolean,
-): string {
-  if (permission === 'unavailable') return t.notifUnavailable;
-  if (!enabled) return t.notifOff;
-  if (permission === 'denied') return t.notifDenied;
-  if (permission === 'undetermined') return t.notifUndetermined;
-  if (sent) return t.notifSent(TEST_DELAY_SECONDS);
-  return t.notifReady;
-}
-
 function syncText(t: Messages, status: SyncStatus): string {
   switch (status.state) {
     case 'syncing':
@@ -690,110 +405,6 @@ function initials(email = '') {
     .split(/[._-]+/)
     .filter(Boolean);
   return (parts.length > 1 ? parts[0][0] + parts[1][0] : email.slice(0, 2)).toUpperCase();
-}
-
-function statusText(t: Messages['profil'], status: ServerStatus | 'checking'): string {
-  return {
-    checking: t.serverChecking,
-    ok: t.serverOk,
-    unreachable: t.serverUnreachable,
-    error: t.serverError,
-  }[status];
-}
-
-/** Le serveur Supabase répond-il ? Vérifié à l'ouverture de l'écran, et à la demande. */
-function ServerRow() {
-  const theme = useTheme();
-  const t = useT();
-  const [status, setStatus] = useState<ServerStatus | 'checking'>('checking');
-
-  const check = useCallback(async () => {
-    setStatus('checking');
-    setStatus(await checkServer());
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    checkServer().then((result) => {
-      if (active) setStatus(result);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const color = status === 'ok' ? theme.success : status === 'checking' ? theme.textSecondary : theme.danger;
-  return (
-    <View style={[styles.row, styles.identity]}>
-      <View style={[styles.row, styles.identity, styles.flex]} accessible accessibilityLiveRegion="polite">
-        {status === 'checking' ? (
-          <ActivityIndicator color={theme.textSecondary} />
-        ) : (
-          <View style={[styles.dot, { backgroundColor: color }]} />
-        )}
-        <ThemedText style={[styles.flex, { color: status === 'checking' ? theme.textSecondary : theme.text }]}>
-          {statusText(t.profil, status)}
-        </ThemedText>
-      </View>
-      {status !== 'checking' && status !== 'ok' && (
-        <Pressable onPress={check} accessibilityRole="button" hitSlop={8}>
-          <ThemedText type="smallBold" style={{ color: theme.link }}>
-            {t.common.retry}
-          </ThemedText>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-/**
- * À propos : l'état du serveur, la présentation à revoir, la politique de confidentialité,
- * et la version de l'app
- * avec la date de la mise à jour à distance (EAS Update) en cours, s'il y en a une.
- */
-function About() {
-  const theme = useTheme();
-  const t = useT();
-  const locale = t.common.locale;
-  const version = Constants.expoConfig?.version ?? '';
-  const update =
-    !Updates.isEmbeddedLaunch && Updates.createdAt
-      ? t.profil.updateOf(
-          Updates.createdAt.toLocaleDateString(locale),
-          Updates.createdAt.toLocaleTimeString(locale, {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        )
-      : t.profil.installedVersion;
-  return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-        {t.profil.about}
-      </ThemedText>
-      <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <ServerRow />
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <Link href="/bienvenue" accessibilityRole="button" style={styles.row}>
-          <ThemedText type="link">{t.profil.replayWelcome}</ThemedText>
-        </Link>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <Pressable
-          onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
-          accessibilityRole="link"
-          accessibilityHint={t.profil.opensInBrowser}
-          style={styles.row}>
-          <ThemedText type="link">{t.profil.privacy}</ThemedText>
-        </Pressable>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <View style={styles.row}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-            SimuFlow {version} · {update}
-          </ThemedText>
-        </View>
-      </View>
-    </View>
-  );
 }
 
 /** Mode développement : force un état de la liste des process, pour le montrer. */
