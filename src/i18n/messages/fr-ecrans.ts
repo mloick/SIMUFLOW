@@ -150,7 +150,29 @@ export const frScreens = {
     steps: 'Étapes',
     deleteHint: 'Demande une confirmation',
     deleteProcess: 'Supprimer ce process',
-    simulate: '▶  Lancer la simulation',
+    simulate: 'Lancer la simulation',
+    more: 'Plus d’actions',
+    actionsTitle: 'Actions',
+    exportAll: 'Exporter en PDF, draw.io, BPMN ou JSON',
+    sendSummary: 'Envoyer le résumé',
+    quick: { edit: 'Modifier', export: 'Exporter', share: 'Partager', track: 'Suivre', myPart: 'Ma partie' },
+    edited: (date: string): string => `corrigé le ${date}`,
+    points: (n: number): string => (n === 0 ? 'Rien' : n > 1 ? `${n} points` : '1 point'),
+    actorSteps: (actor: string, n: number): string => `${actor} · ${n} étape${n > 1 ? 's' : ''}`,
+    inProgress: (n: number): string => (n > 1 ? `${n} en cours` : n === 1 ? '1 en cours' : 'Aucun'),
+    help: {
+      diagnostic:
+        'SimuFlow relit le schéma et signale ce qui bloque : une étape sans sortie (impasse), une étape que rien n’atteint, une décision avec une seule branche. Touchez « Voir » pour aller à l’étape.',
+      actors:
+        'Qui porte chaque étape. La barre montre la charge : un acteur qui porte beaucoup d’étapes peut devenir un goulot.',
+      steps: 'Toutes les étapes du process, dans l’ordre du schéma, avec leur acteur et leur délai en jours ouvrés.',
+      sharing:
+        'Invitez chaque acteur par son identifiant ou son e-mail. Il relit sa partie et la valide, ou laisse un commentaire. Vous voyez qui a validé.',
+      myPart:
+        'Ce process vous a été partagé. Relisez les étapes de votre partie : validée, ou à revoir avec un commentaire.',
+      tracking:
+        'Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule chaque échéance en jours ouvrés et vous le rappelle le jour même.',
+    },
     simulateLabel: 'Lancer la simulation',
     trackingIntro:
       'Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule l’échéance de chaque étape en jours ouvrés.',

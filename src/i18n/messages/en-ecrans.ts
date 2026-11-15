@@ -142,7 +142,27 @@ export const enScreens: ScreenMessages = {
     steps: 'Steps',
     deleteHint: 'Asks for confirmation',
     deleteProcess: 'Delete this process',
-    simulate: '▶  Start the simulation',
+    simulate: 'Start the simulation',
+    more: 'More actions',
+    actionsTitle: 'Actions',
+    exportAll: 'Export as PDF, draw.io, BPMN or JSON',
+    sendSummary: 'Send the summary',
+    quick: { edit: 'Edit', export: 'Export', share: 'Share', track: 'Track', myPart: 'My part' },
+    edited: (date: string) => `fixed on ${date}`,
+    points: (n: number) => (n === 0 ? 'None' : n > 1 ? `${n} issues` : '1 issue'),
+    actorSteps: (actor: string, n: number) => `${actor} · ${n} step${n > 1 ? 's' : ''}`,
+    inProgress: (n: number) => (n > 0 ? `${n} ongoing` : 'None'),
+    help: {
+      diagnostic:
+        'SimuFlow reads the diagram again and flags what blocks: a step with no way out (dead end), a step nothing reaches, a decision with a single branch. Tap “See” to go to the step.',
+      actors: 'Who owns each step. The bar shows the load: an actor who owns many steps can become a bottleneck.',
+      steps: 'Every step of the process, in diagram order, with its actor and its time in working days.',
+      sharing:
+        'Invite each actor by username or e-mail. They review their part and validate it, or leave a comment. You see who validated.',
+      myPart: 'This process was shared with you. Review the steps of your part: validated, or to fix with a comment.',
+      tracking:
+        'A real request starts? Track it step by step: SimuFlow works out each deadline in working days and reminds you on the day.',
+    },
     simulateLabel: 'Start the simulation',
     trackingIntro:
       'A real request is starting? Track it step by step: SimuFlow works out the deadline of each step in working days.',
