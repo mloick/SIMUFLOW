@@ -4,7 +4,7 @@ SimuFlow est développé avec Claude Code (Anthropic). Ce document dit ce qui a 
 
 ## Les outils
 
-- **Claude Code sur le web**, dans un projet claude.ai : une conversation principale tient la feuille de route et prépare l'oral ; chaque étape a sa propre conversation, qui travaille sur une copie du dépôt dans le cloud, ouvre la pull request et me fait un récap.
+- **Claude Code sur le web**, dans un projet claude.ai : une conversation principale tient la feuille de route ; chaque étape a sa propre conversation, qui travaille sur une copie du dépôt dans le cloud, ouvre la pull request et me fait un récap.
 - **Claude Code sur mon Mac**, dans VS Code (extensions Claude Code, Expo Tools, ESLint, Prettier) : pour ce qui demande le Mac, comme compiler l'app avec Xcode ou lancer Maestro.
 - **Ce que l'IA ne fait pas** : compiler pour l'iPhone, tester sur le téléphone, toucher au tableau de bord Supabase. C'est moi qui le fais.
 
@@ -21,12 +21,12 @@ Claude garde des notes d'une conversation à l'autre : la feuille de route et l'
 
 ### Skills
 
-Pas de skill personnalisée dans le dépôt : les règles du projet tiennent dans `AGENTS.md` et `CLAUDE.md`. Claude utilise ses skills intégrées pour les documents à part (récap du backend, audit de la checklist, maquette des écrans, pitch de l'oral).
+Pas de skill personnalisée dans le dépôt : les règles du projet tiennent dans `AGENTS.md` et `CLAUDE.md`. Claude utilise ses skills intégrées pour les documents à part (récap du backend, audit de la checklist, maquette des écrans, présentation).
 
 ### Outils connectés (MCP)
 
 - **GitHub** : branches, pull requests, résultat des vérifications, fusion quand je le demande.
-- **Claude Docs et Artifacts** : documents de travail hors du dépôt (maquette des 10 écrans, cadrage mobile, audit de la checklist du cours, explication du backend pour l'oral, pitch).
+- **Claude Docs et Artifacts** : documents de travail hors du dépôt (maquette des 10 écrans, cadrage mobile, audit de la checklist, explication du backend, présentation).
 - Pas d'outil connecté à Supabase : l'IA n'a jamais accès à la base ni à la clé secrète.
 
 ### Garde-fous automatiques
@@ -34,9 +34,9 @@ Pas de skill personnalisée dans le dépôt : les règles du projet tiennent dan
 - **Vérifications** (`.github/workflows/verifications.yml`) : types, lint et tests à chaque pull request. Une case rouge, on ne fusionne pas.
 - **Robot de documentation** (`.github/workflows/documentation.yml`) : après chaque push qui touche le code, Claude relit les changements et complète la documentation sur la même branche.
 
-### La checklist du cours
+### Une checklist de qualité
 
-Depuis l'étape 8, la feuille de route suit la checklist du projet final : chaque étape dit quels points elle coche. La checklist sécurité (`docs/securite.md`) a servi de grille de relecture et a fait trouver trois corrections (étape 14c).
+Depuis l'étape 8, la feuille de route suit une checklist (fonctions attendues d'une app mobile complète, sécurité, tests, documentation) : chaque étape dit quels points elle coche. La checklist sécurité (`docs/securite.md`) a servi de grille de relecture et a fait trouver trois corrections (étape 14c).
 
 ## Les prompts
 
@@ -52,7 +52,7 @@ Je donne la direction en une phrase, souvent dictée ; les règles détaillées 
 
 - **Une petite étape à la fois.** Claude fait une seule étape, sur une branche, dans une pull request, et attend. Rien n'avance sans ma validation.
 - **Je teste, puis je fusionne.** Claude teste dans son environnement (types, lint, tests, version web avec des captures) ; je teste sur mon iPhone avec le vrai serveur. Claude ne fusionne que quand je dis « fusionne ».
-- **Un récap après chaque étape** (« comment j'ai procédé »), plus détaillé pour le backend, avec les points de la checklist cochés, pour pouvoir l'expliquer à l'oral.
+- **Un récap après chaque étape** (« comment j'ai procédé »), plus détaillé pour le backend, avec les points de la checklist cochés, pour pouvoir l'expliquer et défendre chaque choix.
 - **Je garde la main sur les secrets.** Le SQL est versionné dans `supabase/migrations/` ; c'est moi qui l'exécute dans le tableau de bord. La clé `service_role` et le mot de passe de la base ne quittent jamais mon compte.
 - **Des commandes à copier-coller.** Chaque test sur le Mac arrive avec la commande exacte (`git fetch`, `git checkout -f <branche>`, recompilation si besoin).
 

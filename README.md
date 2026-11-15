@@ -14,13 +14,13 @@
 
 <p align="center"><img src="docs/captures/etape-6b-schema.png" width="840" alt="Step-by-step simulation: the diagram lights up and each decision asks which branch to follow, in light and dark mode"></p>
 
-SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. It runs on iPhone, Android and [in the browser](https://mloick.github.io/SIMUFLOW/app/). Version 1.0, built solo for a Master's mobile development course. All examples in the app and the docs are fictional.
+SimuFlow is a mobile app that turns a business workflow into an interactive, checked walkthrough. It runs on iPhone, Android and [in the browser](https://mloick.github.io/SIMUFLOW/app/). Version 1.0, a personal project by Loïck, designed and built solo. All examples in the app and the docs are fictional.
 
 ## In five lines
 
-- **For whom**: project managers and analysts who design IT service management (ITSM) workflows with business teams.
+- **For whom**: any project manager and their team, in any field (IT, logistics, HR, purchasing, finance, customer service…), who model a process and need everyone involved to validate it. An IT support workflow is just one example among many.
 - **Problem**: a static diagram is hard to validate. Dead ends, one-way decisions and inconsistent delays show up too late, once the workflow is live.
-- **Promise**: SimuFlow makes them visible in under a minute, and lets you replay the process branch by branch.
+- **Promise**: SimuFlow makes them visible in under a minute, lets you replay the process branch by branch, and has each actor validate their part, across all the processes of a team project.
 - **Three key screens**: Detail (diagnostic), Simulation (step by step), Scanner (from a photo to a process).
 - **Two phone features**: the camera with on-device text recognition (a native module in Swift and Kotlin), and local deadline reminders.
 

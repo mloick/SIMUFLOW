@@ -1,6 +1,6 @@
 # SimuFlow en bref
 
-SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le voyez s'animer, étape par étape, et l'app vous signale ce qui cloche. Elle marche sur iPhone, sur Android et [dans le navigateur](https://mloick.github.io/SIMUFLOW/app/). Tous les exemples sont fictifs.
+SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le voyez s'animer, étape par étape, et l'app vous signale ce qui cloche. Elle s'adresse à tout chef de projet et à son équipe, quel que soit le métier (informatique, logistique, RH, achats, finance…) : on regroupe les process d'un chantier dans un projet, et chacun valide sa partie. Elle marche sur iPhone, sur Android et [dans le navigateur](https://mloick.github.io/SIMUFLOW/app/). Tous les exemples sont fictifs.
 
 Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous certaines captures, **Plus de captures** déplie les autres écrans.
 

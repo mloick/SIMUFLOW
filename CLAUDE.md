@@ -2,7 +2,7 @@
 
 # SimuFlow
 
-Application mobile de simulation de workflows (projet de Master 2, développement mobile). Interface et documentation en français ; le README principal est en anglais.
+Application mobile de simulation de workflows, projet personnel de Loïck. Interface et documentation en français ; le README principal est en anglais.
 
 ## Se repérer
 
@@ -19,6 +19,14 @@ Toute modification du code (`src/`, `app.json`, `package.json`, `modules/`) met 
 Si une modification ne change rien pour un document, ne pas le toucher.
 
 Chaque étape qui change un écran ajoute ses captures dans `docs/captures/` (nommées `etape-<numéro>-<sujet>.png`, compressées), dans la même pull request, et les affiche dans `docs/technique.md` et `docs/fonctionnalites.md` à l'endroit qui décrit l'écran.
+
+## Présentation du projet
+
+Dans tous les textes publics (README, docs, site, description du dépôt) :
+
+- SimuFlow est le projet personnel de Loïck. Ne pas le présenter comme un projet d'école, de cours ou de Master (ni « pour le cours », « pour l'oral », « étudiant »).
+- Le public est tout chef de projet et son équipe, quel que soit le secteur (informatique, logistique, RH, achats, finance…), pour modéliser, simuler et faire valider des process. Un workflow informatique ou ITSM n'est qu'un exemple parmi d'autres, jamais le public visé.
+- Mettre en avant le travail en équipe : projets qui regroupent plusieurs process, validation de chaque partie par son acteur.
 
 ## Confidentialité
 
