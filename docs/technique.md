@@ -1416,7 +1416,7 @@ Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `
 npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
 ```
 
-Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » du Profil, `About` (`src/app/(tabs)/profil.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
+Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » des Réglages, `About` (`src/app/(tabs)/reglages.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
