@@ -6,25 +6,25 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, setProcessProject, useImportedProcesses } from '@/data/process-store';
-import { useProjects } from '@/data/project-store';
+import { useAllProjects } from '@/data/project-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 
 /**
  * « Ranger dans un projet », depuis la fiche d'un process : la liste de vos
- * projets, « Aucun projet » pour l'en sortir, et « Nouveau projet », qui crée
+ * projets (ceux que je dirige et ceux de mon équipe), « Aucun projet » pour l'en sortir, et « Nouveau projet », qui crée
  * le projet et y range le process.
  */
 export default function PickProjectScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   useImportedProcesses(); // relit le projet du process
   const process = getProcess(id);
-  const projects = useProjects();
+  const projects = useAllProjects();
   const theme = useTheme();
   const t = useT();
   const current = process?.projectId ?? null;
   const options = [
-    ...projects.map((project) => ({ id: project.id as string | null, label: project.name })),
+    ...projects.map(({ project }) => ({ id: project.id as string | null, label: project.name })),
     { id: null, label: t.projects.noProject },
   ];
 

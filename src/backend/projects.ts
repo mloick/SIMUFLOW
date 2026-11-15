@@ -1,12 +1,13 @@
 /**
  * Lecture et écriture des projets du compte connecté sur le serveur (table
  * `public.projects`, voir 20261120000000_projets.sql). Les règles de sécurité
- * (RLS) limitent chaque requête aux projets dont le compte est le chef.
+ * (RLS) limitent les changements aux projets dont le compte est le chef.
  */
 
 import type { Project } from '@/domain';
 
 import { supabase } from './client';
+import { getT } from '@/i18n';
 
 const TABLE = 'projects';
 
@@ -33,9 +34,20 @@ export function projectFromRow(row: ProjectRow): Project {
   };
 }
 
-/** Les projets du compte, du plus récent au plus ancien. */
+/**
+ * Les projets dont le compte est le chef, du plus récent au plus ancien. Ceux
+ * dont il est collaborateur sont aussi lisibles, mais ne se synchronisent pas
+ * (voir project-team.ts).
+ */
 export async function listCloudProjects(): Promise<Project[]> {
-  const { data, error } = await supabase.from(TABLE).select('*').order('created_at', { ascending: false });
+  const { data: auth } = await supabase.auth.getSession();
+  const userId = auth.session?.user.id;
+  if (!userId) throw new Error(getT().errors.signInRequired);
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('chef_id', userId)
+    .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data as ProjectRow[]).map(projectFromRow);
 }

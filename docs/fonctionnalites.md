@@ -160,11 +160,23 @@ Un **projet** range ensemble les process d'un même chantier, par exemple « Mig
 
 L'écran d'un projet montre sa description et ses process. **Ajouter des process** affiche vos process à cocher : touchez-en un pour le ranger dans le projet, ou l'en sortir. Depuis la fiche d'un process, **Ranger dans un projet** fait la même chose, et peut créer le projet au passage. Un process est dans un seul projet à la fois et reste aussi dans votre liste. Le bouton **…** du projet le renomme ou le supprime : ses process restent, hors projet.
 
-Les projets sont gardés sur le téléphone et, connecté, synchronisés avec votre compte. Pour l'instant, un projet n'est visible que par vous : l'équipe du projet arrive à l'étape suivante.
+Les projets sont gardés sur le téléphone et, connecté, synchronisés avec votre compte.
 
 ![Mes projets sur l'accueil, puis l'écran d'un projet avec ses process](captures/etape-46-projets.png)
 
 ![Ranger dans un projet depuis la fiche d'un process, puis Ajouter des process depuis le projet](captures/etape-46-ranger-process.png)
+
+### L'équipe d'un projet · Disponible
+
+Sur l'écran d'un projet, la section **Équipe** montre le chef (★) et les collaborateurs. Le chef invite des collègues avec leur **identifiant** ou leur **adresse e-mail** (il faut être connecté). Toute l'équipe voit le projet dans **Mes projets** (avec « Chef » ou « Collaborateur »), lit tous ses process et peut y ranger les siens. Les process des autres apparaissent avec « Partagé par … » ; on peut les ouvrir, les simuler et suivre une demande, sans les modifier.
+
+Le rôle dépend du projet, pas du compte : on peut être chef d'un projet et collaborateur d'un autre. Le chef touche un collaborateur pour **Nommer chef de projet** (il reste dans le projet comme collaborateur) ou **Retirer du projet**. Un collaborateur peut **Quitter le projet** depuis le bouton **…**. Quand quelqu'un quitte le projet ou en est retiré, ses process en sortent. Si un chef supprime son compte, le projet passe au collaborateur le plus ancien.
+
+Les acteurs restent choisis process par process, dans **Partager** : si le process est rangé dans un projet, les membres de l'équipe sont proposés en premier, et toucher un nom remplit « Qui inviter ? ».
+
+![L'équipe d'un projet vue par le chef, le menu d'un collaborateur, puis un projet vu par un collaborateur](captures/etape-47-equipe-projet.png)
+
+![Mes projets avec le rôle dans chacun, puis Partager qui propose l'équipe du projet](captures/etape-47-partage-equipe.png)
 
 ### Voir les problèmes · Disponible
 
@@ -452,7 +464,7 @@ Pour essayer : `template-formulaire.xlsx`, seul ou avec `workflow-sla-ola.xlsx`,
 
 Au premier lancement, SimuFlow s'ouvre sur **Connectez-vous** : connectez-vous, créez un compte, ou touchez **Continuer sans compte** (tout reste alors sur le téléphone ; **Pourquoi un compte ?** l'explique). L'œil à droite du mot de passe l'affiche. Plus tard, dans **Réglages**, touchez la carte du haut (**Se connecter**), puis **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
 
-Connecté, **Compléter mon profil** (dans la section Compte) demande votre prénom, votre nom, un **identifiant** (proposé d'après votre nom, par exemple `julie.martin`, unique) et votre rôle : **Chef de projet**, **Collaborateur** ou non précisé. C'est une simple mention. L'identifiant servira à vous inviter sur un process partagé.
+Connecté, **Compléter mon profil** (dans la section Compte) demande votre prénom, votre nom, un **identifiant** (proposé d'après votre nom, par exemple `julie.martin`, unique) et votre **fonction habituelle** : **Chef de projet**, **Collaborateur** ou non précisée. C'est une simple mention, qui ne donne aucun droit : le rôle de chef se décide dans chaque projet. L'identifiant servira à vous inviter sur un process partagé.
 
 ![Mon profil : l'identifiant proposé d'après le nom, puis un identifiant déjà pris et la variante proposée](captures/etape-38-mon-profil.png)
 
@@ -551,6 +563,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Équipe d'un projet** · Prévue : inviter des collaborateurs dans un projet, qui verront tous ses process ; choisir les acteurs de chaque process parmi l'équipe ; passer le rôle de chef de projet à quelqu'un d'autre.
+- **Onglet Projets** · Prévue : les projets dans leur propre onglet de la barre du bas (Process, Scanner, Projets, Réglages).
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

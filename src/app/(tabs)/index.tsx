@@ -19,11 +19,11 @@ import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme
 import { splitExamples } from '@/data/examples';
 import { setExamplesShown } from '@/data/examples-setting';
 import { useProcessList } from '@/data/process-list';
-import { useProjects } from '@/data/project-store';
+import { useAllProjects, type ProjectView } from '@/data/project-view';
 import { useSharedProcesses } from '@/data/shared-store';
 import { useTrackings } from '@/data/tracking-store';
 import { useWelcomeSeen } from '@/data/welcome-setting';
-import { summarize, type Process, type ProcessSummary, type Project } from '@/domain';
+import { summarize, type Process, type ProcessSummary } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';
 import type { Tracking } from '@/tracking/tracking';
@@ -62,7 +62,7 @@ export default function ProcessListScreen() {
   const welcomeSeen = useWelcomeSeen();
   const shared = useSharedProcesses();
   const trackings = useTrackings();
-  const projects = useProjects();
+  const projects = useAllProjects();
 
   // Premier lancement : l'écran de lancement s'ouvre par-dessus la liste.
   const pathname = usePathname();
@@ -168,7 +168,9 @@ export default function ProcessListScreen() {
       {list.status === 'ready' &&
         filter === 'all' &&
         !query.trim() &&
-        (projects.length > 0 || groups.own.length > 0) && <ProjectsSection projects={projects} processes={processes} />}
+        (projects.length > 0 || groups.own.length > 0) && (
+          <ProjectsSection projects={projects} processes={allProcesses} />
+        )}
     </View>
   );
 
@@ -267,7 +269,7 @@ export default function ProcessListScreen() {
  * process), puis « Nouveau projet ». Sans projet, une seule ligne propose d'en
  * créer un.
  */
-function ProjectsSection({ projects, processes }: { projects: Project[]; processes: Process[] }) {
+function ProjectsSection({ projects, processes }: { projects: ProjectView[]; processes: Process[] }) {
   const theme = useTheme();
   const t = useT();
   const openNew = () => router.push('/projet/nouveau');
@@ -303,7 +305,7 @@ function ProjectsSection({ projects, processes }: { projects: Project[]; process
           </ThemedText>
         </PressableScale>
       </View>
-      {projects.map((project) => {
+      {projects.map(({ project, role }) => {
         const count = processes.filter((process) => process.projectId === project.id).length;
         return (
           <PressableScale
@@ -321,7 +323,7 @@ function ProjectsSection({ projects, processes }: { projects: Project[]; process
                 {project.name}
               </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {t.projects.count(count)}
+                {`${t.projects.count(count)} · ${role === 'chef' ? t.projects.chefBadge : t.projects.collaboratorBadge}`}
               </ThemedText>
             </View>
             <SymbolView

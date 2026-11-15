@@ -337,9 +337,10 @@ export const en: Messages = {
     username: 'Username',
     usernameHint: 'Unique, it is used to invite you to a process.',
     usernameHelp: 'Suggested from your name, you can change it. Unique: it is used to invite you.',
-    role: 'Role',
+    role: 'Usual role',
     noRole: 'Prefer not to say',
-    roleHelp: 'Just a mention, visible to the people you share a process with.',
+    roleHelp:
+      'Just a mention, so people recognize you. It gives no rights: the project manager role is set in each project.',
     taken: (taken: string, other: string) => `“${taken}” is already taken: “${other}” is suggested instead.`,
     failed: 'The profile could not be saved.',
     usernameMin: (min: number) => `At least ${min} characters.`,

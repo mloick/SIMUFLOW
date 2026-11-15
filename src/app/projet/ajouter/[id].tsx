@@ -6,7 +6,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { setProcessProject, useImportedProcesses } from '@/data/process-store';
-import { getProject, useProjects } from '@/data/project-store';
+import { useAllProjects } from '@/data/project-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useT } from '@/i18n';
 
@@ -14,11 +14,14 @@ import { useT } from '@/i18n';
  * « Ajouter des process » : vos process (importés, pas les exemples ni ceux
  * partagés avec vous), à cocher. Toucher une ligne range le process dans le
  * projet, ou l'en sort ; un process déjà dans un autre projet change de projet.
+ * Un collaborateur y range aussi ses propres process.
  */
 export default function AddToProjectScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  useProjects(); // relit le nom des projets
-  const project = getProject(id);
+  const all = useAllProjects();
+  const findProject = (projectId: string | null | undefined) =>
+    all.find((item) => item.project.id === projectId)?.project;
+  const project = findProject(id);
   const processes = useImportedProcesses();
   const theme = useTheme();
   const t = useT();
@@ -37,7 +40,7 @@ export default function AddToProjectScreen() {
         }
         renderItem={({ item: process }) => {
           const inThis = process.projectId === id;
-          const other = !inThis ? getProject(process.projectId) : undefined;
+          const other = !inThis ? findProject(process.projectId) : undefined;
           return (
             <Pressable
               onPress={() => setProcessProject(process.id, inThis ? null : id)}
@@ -58,7 +61,7 @@ export default function AddToProjectScreen() {
               </View>
               <View style={styles.text}>
                 <ThemedText type="smallBold">{process.name}</ThemedText>
-                {(inThis || other) && (
+                {(inThis || other !== undefined) && (
                   <ThemedText type="small" themeColor="textSecondary">
                     {inThis ? t.projects.inThis : t.projects.inOther(other!.name)}
                   </ThemedText>

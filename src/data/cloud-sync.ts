@@ -8,7 +8,8 @@
  * Les projets (project-store.ts) passent juste avant les process, qui peuvent
  * y être rangés. Les règles de lecture apprises (rules-store.ts) et les formulaires gardés
  * (form-store.ts) suivent, après les process, puis la liste des process
- * partagés avec le compte (shared-store.ts) et les alertes du partage
+ * partagés avec le compte (shared-store.ts), avec les projets dont il est
+ * collaborateur (team-projects-store.ts), et les alertes du partage
  * (share-alerts-store.ts).
  * Sans compte, les copies déjà envoyées sont retirées du téléphone (process,
  * règles et formulaires) : elles sont sur le serveur, et le prochain compte connecté ne doit
@@ -31,6 +32,7 @@ import { forgetCloudProjects, hasPendingProjects, subscribeProjects, syncProject
 import type { ProjectApi } from './project-sync';
 import { checkShareAlerts, forgetShareAlerts } from './share-alerts-store';
 import { forgetShared, refreshShared } from './shared-store';
+import { forgetTeamProjects, refreshTeamProjects } from './team-projects-store';
 import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
 import { mergeAfterSync, syncEntries, type CloudApi } from './sync';
 import { getT } from '@/i18n';
@@ -131,6 +133,7 @@ export async function syncNow() {
     } while (again && connected);
     if (connected) await syncRulesQuietly();
     if (connected) await syncFormsQuietly();
+    if (connected) await refreshTeamProjects();
     if (connected) await refreshShared();
     if (connected) await checkShareAlerts();
     if (connected) setStatus({ state: 'done', at: new Date(), synced: true });
@@ -158,6 +161,7 @@ function forgetCloudCopies() {
   forgetCloudRules();
   forgetCloudForms();
   forgetShared();
+  forgetTeamProjects();
   forgetShareAlerts();
   setStatus({ state: 'idle', synced: false });
 }

@@ -349,9 +349,10 @@ export const fr = {
     username: 'Identifiant',
     usernameHint: 'Unique, il sert à vous inviter sur un process.',
     usernameHelp: 'Proposé d’après votre nom, modifiable. Unique : il sert à vous inviter.',
-    role: 'Rôle',
+    role: 'Fonction habituelle',
     noRole: 'Ne pas préciser',
-    roleHelp: 'Une simple mention, visible des personnes avec qui vous partagerez un process.',
+    roleHelp:
+      'Une simple mention, pour vous reconnaître. Elle ne donne aucun droit : le rôle de chef de projet se décide dans chaque projet.',
     taken: (taken: string, other: string): string =>
       `« ${taken} » est déjà pris : « ${other} » est proposé à la place.`,
     failed: 'Le profil n’a pas pu être enregistré.',
