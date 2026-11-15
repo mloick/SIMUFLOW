@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnonymizeOption } from '@/components/anonymize-option';
 import { Badge } from '@/components/badge';
 import { diagnosticBadge } from '@/components/process-card';
+import { PressableScale } from '@/components/pressable-scale';
 import { PrimaryButton } from '@/components/primary-button';
 import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
@@ -14,7 +15,7 @@ import { ColumnPicker } from '@/components/column-picker';
 import { SituationList } from '@/components/situation-list';
 import { TextSource } from '@/components/text-source';
 import { WorkbookPreview } from '@/components/workbook-preview';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { readFormBundle } from '@/data/form-chain';
 import { showForm } from '@/data/form-store';
 import { addImportedProcess } from '@/data/process-store';
@@ -133,7 +134,8 @@ export default function ImportScreen() {
   const pick = async (nextKind: FileKind) => {
     setKind(nextKind);
     const selection = await DocumentPicker.getDocumentAsync({
-      type: nextKind === 'json' ? ['application/json', 'text/plain'] : nextKind === 'tableau' ? TABLE_FILE_TYPES : '*/*',
+      type:
+        nextKind === 'json' ? ['application/json', 'text/plain'] : nextKind === 'tableau' ? TABLE_FILE_TYPES : '*/*',
       copyToCacheDirectory: true,
       multiple: nextKind === 'formulaire' || nextKind === 'tableau',
     });
@@ -150,8 +152,7 @@ export default function ImportScreen() {
     }
     setTable(null);
     try {
-      if (asset.size && asset.size > MAX_FILE_SIZE)
-        throw new ImportError(getT().importer.tooBig(5));
+      if (asset.size && asset.size > MAX_FILE_SIZE) throw new ImportError(getT().importer.tooBig(5));
       // Un .vsdx est une archive zip : il se lit en octets, pas en texte.
       const read =
         nextKind === 'visio' || /\.vsdx$/i.test(asset.name)
@@ -181,7 +182,9 @@ export default function ImportScreen() {
   const readText = (content: string, fileName?: string) => {
     setTable(null);
     try {
-      const fallback = fileName ? fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') : getT().importer.writtenProcess;
+      const fallback = fileName
+        ? fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')
+        : getT().importer.writtenProcess;
       const { result, applied } = applyReadingRules(parseProcessText(content, fallback, newImportId()));
       setPicked({ fileName: fileName ?? 'Texte', result, applied });
       setPage(0);
@@ -198,13 +201,13 @@ export default function ImportScreen() {
     setPicked(null);
     setChoosing(null);
     try {
-      if (asset.size && asset.size > MAX_TABLE_SIZE)
-        throw new ImportError(getT().importer.tooBig(20));
+      if (asset.size && asset.size > MAX_TABLE_SIZE) throw new ImportError(getT().importer.tooBig(20));
       const workbook = readTableFile(asset.name, await readPickedBytes(asset));
       const learned = getLearnedHeaders();
       const report = describeWorkbook(workbook, learned);
       const { situations, skipped } = workbookToSituations(workbook);
-      const form = report.kind === 'formulaire' || report.kind === 'formulaire-workflow' ? readFormTemplate(workbook) : null;
+      const form =
+        report.kind === 'formulaire' || report.kind === 'formulaire-workflow' ? readFormTemplate(workbook) : null;
       setTable({
         fileName: asset.name,
         workbook,
@@ -288,7 +291,10 @@ export default function ImportScreen() {
     if (!table?.form) return;
     showForm(table.form, {
       source: table.fileName,
-      workflow: table.situations.length > 0 ? { kind: 'situations', source: table.fileName, situations: table.situations } : null,
+      workflow:
+        table.situations.length > 0
+          ? { kind: 'situations', source: table.fileName, situations: table.situations }
+          : null,
     });
     router.push('/formulaire');
   };
@@ -313,6 +319,50 @@ export default function ImportScreen() {
         }}
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.sources}>
+          <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+            {t.importer.sourcesLabel}
+          </ThemedText>
+          <View style={styles.grid}>
+            {SOURCES.map((source) => (
+              <SourceTile
+                key={source.id}
+                icon={source.icon}
+                title={t.importer.sources[source.id][0]}
+                description={t.importer.sources[source.id][1]}
+                selected={kind === source.id}
+                onPress={() =>
+                  source.id === 'scan'
+                    ? router.replace('/scanner')
+                    : source.id === 'texte'
+                      ? chooseText()
+                      : pick(source.id as Exclude<FileKind, 'texte'>)
+                }
+              />
+            ))}
+          </View>
+          {kind !== 'texte' && (
+            <View style={[styles.explain, { backgroundColor: kind ? theme.primaryBackground : theme.surfaceMuted }]}>
+              <SymbolView
+                name={{ ios: 'info.circle', android: 'info' }}
+                size={18}
+                tintColor={kind ? theme.link : theme.textSecondary}
+              />
+              <View style={styles.flex}>
+                {kind && (
+                  <ThemedText type="smallBold" style={{ color: theme.link }}>
+                    {t.importer.sources[kind][0]}
+                  </ThemedText>
+                )}
+                <ThemedText type="small" themeColor={kind ? 'text' : 'textSecondary'}>
+                  {kind ? t.importer.explain[kind] : t.importer.pickHint}
+                </ThemedText>
+              </View>
+            </View>
+          )}
+          {kind === 'texte' && <TextSource value={text} onChange={setText} onRead={readText} />}
+        </View>
+
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="nom-label">
             {t.importer.name}
@@ -344,69 +394,6 @@ export default function ImportScreen() {
               {t.importer.nameRequired}
             </ThemedText>
           )}
-        </View>
-
-        <View style={styles.sources}>
-          <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
-            {t.importer.source}
-          </ThemedText>
-          <SourceCard
-            icon={{ ios: 'doc', android: 'description' }}
-            title={t.importer.sources.drawio[0]}
-            description={t.importer.sources.drawio[1]}
-            selected={kind === 'drawio'}
-            onPress={() => pick('drawio')}
-          />
-          <SourceCard
-            icon={{ ios: 'point.3.connected.trianglepath.dotted', android: 'account_tree' }}
-            title={t.importer.sources.bpmn[0]}
-            description={t.importer.sources.bpmn[1]}
-            selected={kind === 'bpmn'}
-            onPress={() => pick('bpmn')}
-          />
-          <SourceCard
-            icon={{ ios: 'square.on.circle', android: 'schema' }}
-            title={t.importer.sources.visio[0]}
-            description={t.importer.sources.visio[1]}
-            selected={kind === 'visio'}
-            onPress={() => pick('visio')}
-          />
-          <SourceCard
-            icon={{ ios: 'list.bullet.rectangle', android: 'dynamic_form' }}
-            title={t.importer.sources.formulaire[0]}
-            description={t.importer.sources.formulaire[1]}
-            selected={kind === 'formulaire'}
-            onPress={() => pick('formulaire')}
-          />
-          <SourceCard
-            icon={{ ios: 'tablecells', android: 'table_chart' }}
-            title={t.importer.sources.tableau[0]}
-            description={t.importer.sources.tableau[1]}
-            selected={kind === 'tableau'}
-            onPress={() => pick('tableau')}
-          />
-          <SourceCard
-            icon={{ ios: 'viewfinder', android: 'document_scanner' }}
-            title={t.importer.sources.scan[0]}
-            description={t.importer.sources.scan[1]}
-            selected={false}
-            onPress={() => router.replace('/scanner')}
-          />
-          <SourceCard
-            icon={{ ios: 'text.alignleft', android: 'notes' }}
-            title={t.importer.sources.texte[0]}
-            description={t.importer.sources.texte[1]}
-            selected={kind === 'texte'}
-            onPress={chooseText}
-          />
-          {kind === 'texte' && <TextSource value={text} onChange={setText} onRead={readText} />}
-          <SourceCard
-            icon={{ ios: 'curlybraces', android: 'data_object' }}
-            title={t.importer.sources.json[0]}
-            description={t.importer.sources.json[1]}
-            selected={kind === 'json'}
-            onPress={() => pick('json')}
-          />
         </View>
 
         {error && (
@@ -570,7 +557,9 @@ export default function ImportScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, borderTopColor: theme.border }]}>
         {picked && (
           <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {kind === 'texte' && picked.fileName === 'Texte' ? t.importer.pastedText : t.importer.chosenFile(picked.fileName)}
+            {kind === 'texte' && picked.fileName === 'Texte'
+              ? t.importer.pastedText
+              : t.importer.chosenFile(picked.fileName)}
             {pageCount > 1
               ? ` · ${t.format.count(pageCount, situationCount > 0 ? t.importer.process : table ? t.importer.sheet : t.importer.page)}`
               : ''}
@@ -607,7 +596,20 @@ export default function ImportScreen() {
   );
 }
 
-function SourceCard({
+/** Les 8 sources, dans l'ordre des tuiles. */
+const SOURCES: { id: FileKind | 'scan'; icon: SymbolViewProps['name'] }[] = [
+  { id: 'drawio', icon: { ios: 'doc', android: 'description' } },
+  { id: 'bpmn', icon: { ios: 'point.3.connected.trianglepath.dotted', android: 'account_tree' } },
+  { id: 'visio', icon: { ios: 'square.on.circle', android: 'schema' } },
+  { id: 'tableau', icon: { ios: 'tablecells', android: 'table_chart' } },
+  { id: 'formulaire', icon: { ios: 'list.bullet.rectangle', android: 'dynamic_form' } },
+  { id: 'scan', icon: { ios: 'viewfinder', android: 'document_scanner' } },
+  { id: 'texte', icon: { ios: 'text.alignleft', android: 'notes' } },
+  { id: 'json', icon: { ios: 'curlybraces', android: 'data_object' } },
+];
+
+/** Tuile d'une source (refonte R12) : icône, nom et courte description ; la choisie est entourée. */
+function SourceTile({
   icon,
   title,
   description,
@@ -622,31 +624,28 @@ function SourceCard({
 }) {
   const theme = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${description}`}
       accessibilityState={{ selected }}
-      style={({ pressed }) => [
-        styles.source,
+      style={[
+        styles.tile,
         {
-          backgroundColor: pressed ? theme.surfaceMuted : theme.surface,
-          borderColor: selected ? theme.primary : theme.fieldBorder,
-          borderWidth: selected ? 2 : 1,
+          backgroundColor: selected ? theme.primaryBackground : theme.surface,
+          borderColor: selected ? theme.primary : 'transparent',
         },
       ]}>
-      <View style={[styles.sourceIcon, { backgroundColor: theme.primaryBackground }]}>
-        <SymbolView name={icon} size={24} tintColor={theme.link} />
+      <View style={[styles.tileIcon, { backgroundColor: selected ? theme.primary : theme.primaryBackground }]}>
+        <SymbolView name={icon} size={22} tintColor={selected ? theme.onPrimary : theme.link} />
       </View>
-      <View style={styles.flex}>
-        <ThemedText type="smallBold" style={styles.sourceTitle}>
-          {title}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {description}
-        </ThemedText>
-      </View>
-    </Pressable>
+      <ThemedText type="smallBold" style={styles.tileTitle} numberOfLines={2}>
+        {title}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2} style={styles.tileText}>
+        {description}
+      </ThemedText>
+    </PressableScale>
   );
 }
 
@@ -661,27 +660,39 @@ const styles = StyleSheet.create({
   },
   field: { gap: Spacing.one },
   input: {
-    minHeight: 48,
-    borderRadius: Radius.small,
+    minHeight: 50,
+    borderRadius: Radius.medium,
+    fontFamily: fontFaceFor(400),
     paddingHorizontal: Spacing.three,
     fontSize: 16,
   },
-  sources: { gap: Spacing.two },
-  source: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Radius.medium,
+  sources: { gap: Spacing.three - Spacing.one },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three - Spacing.half * 3 },
+  tile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    minHeight: 120,
+    gap: Spacing.one,
+    padding: Spacing.three - Spacing.half,
+    borderRadius: Radius.large - 2,
+    borderWidth: 2,
   },
-  sourceIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.small,
+  tileIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.one,
   },
-  sourceTitle: { fontSize: 16 },
+  tileTitle: { fontWeight: 800 },
+  tileText: { fontSize: 12, lineHeight: 16 },
+  explain: {
+    flexDirection: 'row',
+    gap: Spacing.three - Spacing.half * 3,
+    padding: Spacing.three - Spacing.half,
+    borderRadius: Radius.medium,
+  },
   flex: { flex: 1 },
   card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   preview: { gap: Spacing.one, padding: Spacing.three },

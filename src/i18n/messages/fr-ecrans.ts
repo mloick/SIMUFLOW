@@ -435,6 +435,22 @@ export const frScreens = {
     name: 'Nom du process',
     namePlaceholder: 'Rempli à partir du fichier',
     nameRequired: 'Le nom est obligatoire.',
+    sourcesLabel: 'Choisir une source',
+    pickHint: 'Touchez une source : SimuFlow vous dit ce qu’il va lire, puis vous choisissez le fichier.',
+    explain: {
+      drawio:
+        'Chaque forme devient une étape, chaque flèche un lien ; les couloirs donnent les acteurs. Les losanges sont des décisions.',
+      bpmn: 'Les tâches, passerelles et événements du fichier BPMN 2.0 deviennent des étapes ; les pools et couloirs donnent les acteurs.',
+      visio: 'Les formes et connecteurs des premières pages sont lus ; les couloirs donnent les acteurs.',
+      formulaire:
+        'Le template devient un formulaire à remplir ; ajoutez son workflow pour simuler la demande qu’il lance.',
+      tableau:
+        'Une ligne par étape : SimuFlow trouve les colonnes étape, acteur, délai et étape suivante, même nommées autrement.',
+      scan: 'Photographiez un tableau imprimé : le texte est lu sur le téléphone, puis vous vérifiez les colonnes.',
+      texte:
+        'Une ligne par étape, « Acteur : étape (2 JO) ». Une question suivie de « oui → 3 » et « non → 5 » fait une décision.',
+      json: 'Un process exporté par SimuFlow, relu tel quel.',
+    } as Record<string, string>,
     source: 'Source',
     sources: {
       drawio: ['Fichier draw.io', 'Depuis Fichiers, un mail ou Drive'],
@@ -543,6 +559,7 @@ export const frScreens = {
     description: 'Acteurs → Service A, B… ; e-mails, téléphones et liens masqués',
     otherWords: 'Autres mots à masquer',
     placeholder: 'Nom de l’entreprise, d’un client… séparés par des virgules',
+    help: 'Pour montrer un process sans dévoiler de vrais noms. Les acteurs deviennent Service A, Service B… ; les e-mails, numéros de téléphone et liens sont masqués. Ajoutez d’autres mots à masquer, comme le nom de l’entreprise. Votre fichier d’origine ne change pas.',
   },
 
   situations: {

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { HelpButton } from '@/components/help-button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -37,32 +38,35 @@ export function AnonymizeOption({
   const description = descriptionProp ?? t.anonymize.description;
   return (
     <View style={styles.option}>
-      <Pressable
-        onPress={onToggle}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked }}
-        accessibilityHint={description}
-        style={styles.check}>
-        <View
-          style={[
-            styles.box,
-            checked
-              ? { backgroundColor: theme.primary, borderColor: theme.primary }
-              : { borderColor: theme.fieldBorder, backgroundColor: theme.surface },
-          ]}>
-          {checked && (
-            <ThemedText type="smallBold" style={{ color: theme.onPrimary, lineHeight: 16 }} maxFontSizeMultiplier={1}>
-              ✓
+      <View style={styles.row}>
+        <Pressable
+          onPress={onToggle}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked }}
+          accessibilityHint={description}
+          style={styles.check}>
+          <View
+            style={[
+              styles.box,
+              checked
+                ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                : { borderColor: theme.fieldBorder, backgroundColor: theme.surface },
+            ]}>
+            {checked && (
+              <ThemedText type="smallBold" style={{ color: theme.onPrimary, lineHeight: 16 }} maxFontSizeMultiplier={1}>
+                ✓
+              </ThemedText>
+            )}
+          </View>
+          <View style={styles.flex}>
+            <ThemedText>{label}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {description}
             </ThemedText>
-          )}
-        </View>
-        <View style={styles.flex}>
-          <ThemedText>{label}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {description}
-          </ThemedText>
-        </View>
-      </Pressable>
+          </View>
+        </Pressable>
+        <HelpButton title={label} text={t.anonymize.help} />
+      </View>
       {checked && (
         <View style={styles.field}>
           <ThemedText type="smallBold" nativeID="mots-masques-label">
@@ -95,7 +99,8 @@ export function AnonymizeOption({
 const styles = StyleSheet.create({
   option: { gap: Spacing.two },
   flex: { flex: 1 },
-  check: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 44 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  check: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 44 },
   box: {
     width: 22,
     height: 22,

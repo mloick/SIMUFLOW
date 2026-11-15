@@ -414,6 +414,19 @@ export const enScreens: ScreenMessages = {
     name: 'Process name',
     namePlaceholder: 'Filled in from the file',
     nameRequired: 'The name is required.',
+    sourcesLabel: 'Choose a source',
+    pickHint: 'Tap a source: SimuFlow tells you what it will read, then you choose the file.',
+    explain: {
+      drawio: 'Each shape becomes a step, each arrow a link; lanes give the actors. Diamonds are decisions.',
+      bpmn: 'Tasks, gateways and events of the BPMN 2.0 file become steps; pools and lanes give the actors.',
+      visio: 'The shapes and connectors of the first pages are read; swimlanes give the actors.',
+      formulaire: 'The form template becomes a fillable form; add its workflow to simulate the request it starts.',
+      tableau:
+        'One row per step: SimuFlow finds the step, actor, time and next step columns, even if they are named differently.',
+      scan: 'Take a photo of a printed table: the text is read on the phone, then you check the columns.',
+      texte: 'One line per step, “Actor: step (2 WD)”. A question followed by “yes → 3” and “no → 5” makes a decision.',
+      json: 'A process exported by SimuFlow, read as it is.',
+    } as Record<string, string>,
     source: 'Source',
     sources: {
       drawio: ['draw.io file', 'From Files, an email or Drive'],
@@ -521,6 +534,7 @@ export const enScreens: ScreenMessages = {
     description: 'Actors → Service A, B…; emails, phone numbers and links hidden',
     otherWords: 'Other words to hide',
     placeholder: 'Company name, a client… separated by commas',
+    help: 'To show a process without revealing real names. Actors become Service A, Service B…; e-mails, phone numbers and links are hidden. Add other words to hide, such as the company name. Your original file does not change.',
   },
 
   situations: {
