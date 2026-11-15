@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/use-theme';
 
 /**
  * Prend le relais de l'écran de démarrage natif (même logo, même fond), puis
@@ -13,7 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
  * animations » est activé.
  */
 export function SplashOverlay() {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const [visible, setVisible] = useState(true);
 
@@ -21,7 +20,7 @@ export function SplashOverlay() {
   return (
     <Animated.View
       exiting={reduceMotion ? undefined : FadeOut.duration(300)}
-      style={[styles.overlay, { backgroundColor: Colors[scheme].background }]}>
+      style={[styles.overlay, { backgroundColor: theme.background }]}>
       <View
         onLayout={() => {
           SplashScreen.hideAsync().finally(() => setVisible(false));

@@ -17,7 +17,7 @@ Une page pour se repérer vite, avant de lire le code. Le détail est dans [tech
 | Les données gardées sur le téléphone, la synchronisation | `src/data/` (`process-store.ts`, `cloud-sync.ts`, `*-store.ts`) |
 | Le serveur Supabase (compte, process, profil, partage, liens) | `src/backend/` ; tables et règles dans `supabase/migrations/`, leurs tests dans `supabase/tests/` |
 | Le suivi en vrai, les jours ouvrés, les rappels | `src/tracking/` et `src/notifications/` |
-| Couleurs, espacements | `src/constants/theme.ts` |
+| Couleurs (4 palettes), police, espacements | `src/constants/theme.ts` ; palette choisie dans `src/data/palette-setting.ts` |
 | Petites fonctions (pluriel, fichiers, partage, confirmation) | `src/utils/` (`.web.ts` = version navigateur) |
 
 ## Règles à suivre

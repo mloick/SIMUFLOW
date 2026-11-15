@@ -56,6 +56,9 @@ export const en: Messages = {
     options: { auto: 'Automatic', light: 'Light', dark: 'Dark' },
     autoHint: "Follows the phone's setting.",
     fixedHint: "Keeps this mode, whatever the phone's setting.",
+    colors: 'Colors',
+    palettes: { ocean: 'Ocean', aurore: 'Aurora', menthe: 'Mint', corail: 'Coral' },
+    paletteLabel: (name: string): string => `${name} palette`,
   },
 
   roles: { chef_de_projet: 'Project manager', collaborateur: 'Team member' },

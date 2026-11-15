@@ -34,6 +34,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Follow a real request** with deadlines in French working days and a reminder on the due date.
 - **Share** a process with its actors: invite colleagues by username or e-mail and link each one to a step owner of the diagram; they can read it, not change it, and each member reviews their part: every step is validated, or flagged with a comment. The owner follows who has finished, what needs fixing, and sees « fully validated » at the end. In-app alerts (and phone notifications) announce a new share, a step to fix, and a fully validated process. Actors without an account get a web link per actor: they confirm their name and review their part in the browser.
 - **Sync** across devices with an account, offline first; everything is deleted with the account.
+- **Your colors**: four palettes (Ocean, Aurora, Mint, Coral), each in light and dark, chosen in Profile; the app uses the Plus Jakarta Sans font.
 - **French or English**: every screen follows the phone's language, or the choice made in Profile. What you import stays as written, and so do the exported files and the four examples, in French.
 
 The full tour, with screenshots, is in the [features guide](docs/fonctionnalites.md) (French). The screen mockups are in [`docs/maquette/`](docs/maquette/).
@@ -131,7 +132,7 @@ All in French.
 
 ## Tech stack
 
-Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), Supabase (`@supabase/supabase-js` 2), Reanimated 4, react-native-svg, expo-camera, expo-notifications, expo-secure-store, expo-sqlite. Tests: Jest 30 with `jest-expo`, React Native Testing Library, Maestro. CI: GitHub Actions.
+Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), Supabase (`@supabase/supabase-js` 2), Reanimated 4, react-native-svg, Plus Jakarta Sans (`@expo-google-fonts`), expo-camera, expo-notifications, expo-secure-store, expo-sqlite. Tests: Jest 30 with `jest-expo`, React Native Testing Library, Maestro. CI: GitHub Actions.
 
 ## License
 
