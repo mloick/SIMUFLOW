@@ -38,7 +38,7 @@ const HEADERS: Record<ColumnKind, string[]> = {
   number: ['n', 'no', 'num', 'numero', '#'],
   step: ['etape', 'etapes', 'tache', 'taches', 'activite', 'action', 'operation'],
   actor: ['acteur', 'acteurs', 'responsable', 'qui', 'service', 'role', 'equipe', 'porteur'],
-  delay: ['delai', 'delais', 'duree', 'temps', 'charge'],
+  delay: ['delai', 'delais', 'duree', 'temps', 'charge', 'ola'],
   next: ['suite', 'suivant', 'ensuite', 'apres', 'vers', 'etapesuivante'],
 };
 

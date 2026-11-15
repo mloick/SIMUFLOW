@@ -29,6 +29,7 @@
 import { delayOf, tableToProcess } from '@/scan/to-process';
 
 import { ImportError, type ImportResult } from './errors';
+import { slaFromText } from './text';
 
 /** Au-delà, ce n'est plus un process écrit à la main. */
 const MAX_LINES = 500;
@@ -72,9 +73,16 @@ export function parseProcessText(text: string, name: string, idPrefix = 'texte')
   let title: string | undefined;
   const rows: Row[] = [];
   let auto = 0;
+  let sla: number | undefined;
 
   for (const raw of lines) {
     const line = raw.trim();
+    // « SLA : 6 JO » sur sa ligne : le délai promis au client, pas une étape.
+    const slaLine = /^SLA\b/i.test(line) ? slaFromText(line) : undefined;
+    if (slaLine !== undefined) {
+      sla = slaLine;
+      continue;
+    }
     const heading = rows.length === 0 && !title ? line.match(TITLE) : null;
     if (heading) {
       title = heading[1].trim();
@@ -113,7 +121,7 @@ export function parseProcessText(text: string, name: string, idPrefix = 'texte')
   }
 
   const result = tableToProcess(table, title || name, idPrefix);
-  const process = { ...result.processes[0], source: 'texte' as const };
+  const process = { ...result.processes[0], source: 'texte' as const, ...(sla !== undefined ? { sla } : {}) };
   // Pas de remarque « pas d'acteur » pour un départ, une fin, ou un texte sans aucun acteur.
   const kinds = new Map(process.steps.map((step) => [step.id.slice(`${idPrefix}-s`.length), step.kind]));
   const warnings = result.warnings

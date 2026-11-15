@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/badge';
+import { DelayMeter } from '@/components/delay-meter';
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
 import { SymbolView } from '@/components/symbol';
@@ -14,10 +15,11 @@ import { getTracking, removeTracking, saveTracking, useTrackings } from '@/data/
 import type { Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { workingDaysBetween } from '@/tracking/calendar';
+import { delayReport, olaClock, slaClock, splitWorkingTime, type DelayClock } from '@/tracking/delays';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { completeStep, currentStep, nextChoices, stepOf, type Tracking } from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
-import { useT } from '@/i18n';
+import { useT, type Messages } from '@/i18n';
 
 /**
  * Suivi d'une demande réelle : l'étape en cours avec son échéance (jours
@@ -54,11 +56,11 @@ export default function TrackingScreen() {
   return <TrackingDetail tracking={tracking} process={process} />;
 }
 
-/** L'heure actuelle, relue chaque minute pour que les échéances restent justes. */
+/** L'heure actuelle, relue toutes les 15 secondes pour que les chronos et les échéances restent justes. */
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60_000);
+    const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
   }, []);
   return now;
@@ -73,6 +75,9 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
   const choices = nextChoices(process, tracking);
   const done = tracking.steps.filter((step) => step.doneAt).reverse();
   const titleOf = (stepId: string) => process.steps.find((step) => step.id === stepId)?.title || t.untitled;
+  const sla = slaClock(tracking, now);
+  const ola = current ? olaClock(current, now) : null;
+  const report = delayReport(tracking);
 
   const complete = (linkId?: string) => saveTracking(completeStep(process, tracking, new Date(), linkId));
 
@@ -110,6 +115,8 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
           </ThemedText>
         </View>
 
+        {sla && current && <Clock title={t.delays.sla} clock={sla} t={t} />}
+
         {current ? (
           <View style={[styles.card, styles.current, { backgroundColor: theme.surface }]}>
             <View style={styles.pillRow}>
@@ -133,17 +140,13 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
                 <ThemedText themeColor="textSecondary">{stepOf(process, current)?.actor}</ThemedText>
               </View>
             )}
-            <View style={styles.metaRow} accessible>
-              <SymbolView name={{ ios: 'clock', android: 'schedule' }} size={16} tintColor={theme.textSecondary} />
-              <ThemedText style={styles.flex}>
-                {current.dueAt ? t.tracking.due(formatMoment(current.dueAt, t)) : t.tracking.noDue}
-              </ThemedText>
-            </View>
-            {current.dueAt && (
-              <View style={styles.badgeRow}>
-                <Badge {...timingBadge(current, now, t)} />
+            {!current.dueAt && (
+              <View style={styles.metaRow} accessible>
+                <SymbolView name={{ ios: 'clock', android: 'schedule' }} size={16} tintColor={theme.textSecondary} />
+                <ThemedText style={styles.flex}>{t.tracking.noDue}</ThemedText>
               </View>
             )}
+            {ola && <Clock title={t.delays.ola} clock={ola} t={t} />}
             {choices.length > 1 ? (
               <View style={styles.choices}>
                 <ThemedText type="smallBold">{t.tracking.whichNext}</ThemedText>
@@ -179,6 +182,56 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
                 ),
               )}
             </ThemedText>
+          </View>
+        )}
+
+        {report && (report.sla || report.ola.total > 0) && (
+          <View style={styles.section}>
+            <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+              {t.delays.reportTitle}
+            </ThemedText>
+            <View style={[styles.card, styles.report, { backgroundColor: theme.surface }]} accessible>
+              {report.sla && (
+                <View style={styles.metaRow}>
+                  <View
+                    style={[
+                      styles.reportIcon,
+                      { backgroundColor: report.sla.met ? theme.successBackground : theme.dangerBackground },
+                    ]}>
+                    <SymbolView
+                      name={
+                        report.sla.met ? { ios: 'checkmark', android: 'check' } : { ios: 'xmark', android: 'close' }
+                      }
+                      size={16}
+                      weight="bold"
+                      tintColor={report.sla.met ? theme.success : theme.danger}
+                    />
+                  </View>
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold" style={{ color: report.sla.met ? theme.success : theme.danger }}>
+                      {report.sla.met ? t.delays.slaMet : t.delays.slaMissed}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {(report.sla.met ? t.delays.slaMetText : t.delays.slaMissedText)(
+                        workingTime(report.sla.used, t),
+                        t.format.count(report.sla.budget, t.words.workingDay),
+                        workingTime(report.sla.margin, t),
+                      )}
+                    </ThemedText>
+                  </View>
+                </View>
+              )}
+              {report.ola.total > 0 && (
+                <View style={styles.reportLine}>
+                  <ThemedText type="smallBold">{t.delays.olaCount(report.ola.met, report.ola.total)}</ThemedText>
+                  {report.lateSteps.length > 0 && (
+                    <ThemedText type="small" style={{ color: theme.danger }}>
+                      {t.delays.olaLate(report.lateSteps.map(titleOf).join(', '))}
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
         )}
 
@@ -249,9 +302,36 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
   );
 }
 
+/** « 1 j 4 h », « 3 h 05 », « 12 min » : un temps de travail, en valeur absolue. */
+function workingTime(days: number, t: Messages): string {
+  const parts = splitWorkingTime(days);
+  return t.delays.time(parts.days, parts.hours, parts.minutes);
+}
+
+/** Le chrono d'un délai : temps restant (ou retard), couleur, barre et échéance. */
+function Clock({ title, clock, t }: { title: string; clock: DelayClock; t: Messages }) {
+  const late = clock.remaining < 0;
+  const time = workingTime(clock.remaining, t);
+  const caption = late ? t.delays.lateBy : t.delays.left;
+  return (
+    <DelayMeter
+      title={`${title} · ${t.format.count(clock.budget, t.words.workingDay)}`}
+      value={time}
+      caption={caption}
+      level={clock.level}
+      ratio={late ? 1 : clock.ratio}
+      footer={t.delays.due(formatMoment(clock.dueAt, t))}
+      accessibilityLabel={t.delays.clockLabel(title, time, late, t.delays.levels[clock.level])}
+    />
+  );
+}
+
 const DOT = 26;
 const styles = StyleSheet.create({
   answer: { gap: Spacing.half, padding: Spacing.three },
+  report: { gap: Spacing.three, padding: Spacing.three },
+  reportIcon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  reportLine: { gap: Spacing.half },
   screen: { flex: 1 },
   content: { gap: Spacing.four, padding: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   titleBlock: { gap: Spacing.one },

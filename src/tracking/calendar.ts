@@ -101,9 +101,9 @@ export function addWorkingDays(start: Date, days: number): Date {
   }
 }
 
-/** Jours ouvrés écoulés entre deux moments (heures de travail / 8), arrondis au dixième. */
-export function workingDaysBetween(from: Date, to: Date): number {
-  if (to.getTime() <= from.getTime()) return -workingDaysBetween(to, from);
+/** Minutes de travail écoulées entre deux moments, sans arrondi (négatif si `to` est avant `from`). */
+export function workingMinutesBetween(from: Date, to: Date): number {
+  if (to.getTime() <= from.getTime()) return to.getTime() === from.getTime() ? 0 : -workingMinutesBetween(to, from);
   let moment = nextWorkingMoment(from);
   let total = 0;
   while (moment.getTime() < to.getTime()) {
@@ -111,5 +111,10 @@ export function workingDaysBetween(from: Date, to: Date): number {
     total += end - moment.getTime();
     moment = nextWorkingMoment(new Date(at(moment, WORKDAY_END_HOUR).getTime()));
   }
-  return Math.round((total / (WORKDAY_HOURS * HOUR)) * 10) / 10;
+  return total / 60_000;
+}
+
+/** Jours ouvrés écoulés entre deux moments (heures de travail / 8), arrondis au dixième. */
+export function workingDaysBetween(from: Date, to: Date): number {
+  return Math.round((workingMinutesBetween(from, to) / (WORKDAY_HOURS * 60)) * 10) / 10;
 }

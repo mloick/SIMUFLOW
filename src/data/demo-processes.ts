@@ -56,6 +56,8 @@ export const demoProcesses: Process[] = [
     id: 'demande-acces',
     name: 'Demande d’accès',
     source: 'drawio',
+    // Mode Délais : 3 jours ouvrés promis au demandeur.
+    sla: 3,
     steps: demandeAccesSteps,
     links: links('da', [
       ['debut', 'verifier'],
@@ -72,6 +74,8 @@ export const demoProcesses: Process[] = [
     id: 'gestion-incident',
     name: 'Gestion d’un incident',
     source: 'drawio',
+    // Mode Délais : le chemin le plus long (contournement puis correction, 5 JO) dépasse ce SLA.
+    sla: 4,
     steps: incidentSteps,
     links: links('gi', [
       ['debut', 'qualifier'],

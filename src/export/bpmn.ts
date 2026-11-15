@@ -294,7 +294,9 @@ export function processToBpmn(process: Process): string {
     '  <bpmn:collaboration id="Collaboration_1">',
     `    <bpmn:participant id="Participant_1" name="${attr(process.name)}" processRef="Process_1" />`,
     '  </bpmn:collaboration>',
-    `  <bpmn:process id="Process_1" name="${attr(process.name)}" isExecutable="false">`,
+    `  <bpmn:process id="Process_1" name="${attr(process.name)}" isExecutable="false"` +
+      (process.sla !== undefined ? ` simuflow:sla="${process.sla}"` : '') +
+      '>',
     ...body,
     '  </bpmn:process>',
     '  <bpmndi:BPMNDiagram id="Diagram_1">',

@@ -8,7 +8,7 @@
  * Les dates sont des chaînes ISO, pour être enregistrées telles quelles.
  */
 
-import type { Link, Process, Step } from '@/domain';
+import { slaOf, type Link, type Process, type Step } from '@/domain';
 
 import { addWorkingDays, nextWorkingMoment } from './calendar';
 
@@ -28,6 +28,10 @@ export type Tracking = {
   /** Nom de la demande suivie (« Demande du 31/10 »). */
   label: string;
   startedAt: string;
+  /** SLA du process au départ, en jours ouvrés (mode Délais) : gardé tel quel même si le process change ensuite. */
+  sla?: number;
+  /** Échéance du SLA : départ + SLA, en jours ouvrés. */
+  slaDueAt?: string;
   steps: TrackedStep[];
   /** Fin atteinte (ou étape sans suite terminée) : la demande est close. */
   finishedAt?: string;
@@ -55,7 +59,19 @@ function enter(process: Process, stepId: string, now: Date, linkId?: string): Tr
 export function startTracking(process: Process, now: Date, id: string, label: string): Tracking | null {
   const first = process.steps.find((step) => step.kind === 'start') ?? process.steps[0];
   if (!first) return null;
-  return { id, processId: process.id, label, startedAt: now.toISOString(), steps: [enter(process, first.id, now)] };
+  const tracking: Tracking = {
+    id,
+    processId: process.id,
+    label,
+    startedAt: now.toISOString(),
+    steps: [enter(process, first.id, now)],
+  };
+  const sla = slaOf(process);
+  if (sla !== undefined) {
+    tracking.sla = sla;
+    tracking.slaDueAt = addWorkingDays(nextWorkingMoment(now), sla).toISOString();
+  }
+  return tracking;
 }
 
 /** L'étape en cours (la dernière, tant que la demande n'est pas close). */

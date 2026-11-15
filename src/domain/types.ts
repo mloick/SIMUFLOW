@@ -13,7 +13,7 @@ export type Step = {
   title: string;
   /** Personne ou équipe qui réalise l'étape. */
   actor?: string;
-  /** Délai de l'étape, en jours ouvrés. */
+  /** Délai de l'étape pour son équipe (OLA), en jours ouvrés. */
   duration?: number;
   /** Forme sur le schéma d'origine (« rhombus », « hexagon », « rounded »…), pour les règles de lecture apprises. */
   shape?: string;
@@ -39,6 +39,8 @@ export type Process = {
   source?: ProcessSource;
   steps: Step[];
   links: Link[];
+  /** SLA : délai promis au client pour tout le process, en jours ouvrés (mode Délais). */
+  sla?: number;
   /** Dernière correction dans l'éditeur de l'app (date ISO). */
   editedAt?: string;
 };

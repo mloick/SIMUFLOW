@@ -16,6 +16,7 @@ import {
   removeLink,
   removeStep,
   renameLink,
+  setSla,
   summarize,
   updateStep,
   type Process,
@@ -29,7 +30,7 @@ import { useT } from '@/i18n';
 const KINDS: StepKind[] = ['start', 'task', 'decision', 'end'];
 
 /**
- * Éditeur d'un process importé : titre, rôle, acteur et délai de chaque étape,
+ * Éditeur d'un process importé : SLA du process (mode Délais), titre, rôle, acteur et délai (OLA) de chaque étape,
  * noms des branches, étapes et cas ajoutés ou retirés. Les changements restent un brouillon jusqu'à
  * « Enregistrer » ; le diagnostic suit en direct.
  */
@@ -126,6 +127,30 @@ function Editor({ original }: { original: Process }) {
           {t.format.count(summary.stepCount, t.words.step)} · {t.format.count(summary.decisionCount, t.words.decision)}{' '}
           · {toFix > 0 ? t.editor.toFix(t.format.count(toFix, t.editor.point)) : t.editor.noIssue}
         </ThemedText>
+
+        <View
+          style={[
+            styles.card,
+            styles.form,
+            styles.delays,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}>
+          <Label text={t.delays.slaField} />
+          <Field
+            value={draft.sla !== undefined ? t.format.num(draft.sla) : ''}
+            placeholder={t.delays.slaPlaceholder}
+            keyboardType="decimal-pad"
+            onCommit={(text) => {
+              const value = text.trim().replace(',', '.');
+              setDraft((current) => setSla(current, value ? Number(value) : null));
+            }}
+            accessibilityLabel={t.delays.slaFieldLabel}
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            {t.delays.slaHint}
+          </ThemedText>
+        </View>
+
         <ThemedText type="small" themeColor="textSecondary">
           {t.editor.tapStep}
         </ThemedText>
@@ -494,6 +519,7 @@ const styles = StyleSheet.create({
   number: { width: 22, textAlign: 'center' },
   flex: { flex: 1 },
   form: { gap: Spacing.two, padding: Spacing.three, paddingTop: Spacing.one },
+  delays: { paddingTop: Spacing.three },
   input: {
     minHeight: 44,
     borderRadius: Radius.small,

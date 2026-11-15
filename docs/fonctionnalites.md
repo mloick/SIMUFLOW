@@ -162,7 +162,7 @@ La fiche d'un process donne ses chiffres clés (étapes, chemins possibles, poin
 
 ### Corriger un process · Disponible
 
-Touchez **Modifier** sur la fiche, puis une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur, son délai et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
+Touchez **Modifier** sur la fiche. En haut, le **SLA client** du process (voir « Mode Délais »). Touchez une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur, son délai (OLA) et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
 
 ![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
 
@@ -332,6 +332,32 @@ L'étape en cours est en grand ; les étapes passées s'alignent en frise, coch�
 Dans **Réglages**, activez **Rappels d'échéance**. Le téléphone vous prévient **le matin du jour de l'échéance**, puis **à l'échéance** si l'étape n'est pas finie ; toucher le rappel ouvre la demande. Tout est programmé sur le téléphone, sans serveur. **Envoyer une notification d'essai** en envoie une 5 secondes plus tard.
 
 ![Profil : la section Notifications, en clair et en sombre](captures/etape-11a-notifications.png)
+
+### Mode Délais (SLA / OLA) · Disponible
+
+Deux délais, comme dans un outil de tickets :
+
+- l'**OLA** est le délai d'une étape pour son équipe (par exemple 3 jours ouvrés pour le groupe A) ;
+- le **SLA** est le délai promis au client pour toute la demande (par exemple 6 jours ouvrés).
+
+**D'où viennent les délais.** Ils sont lus à l'import : dans un classeur « SLA / OLA », chaque situation reçoit son SLA et chaque task son OLA ; dans un tableau simple, la colonne **OLA** (ou Délai) donne le délai des étapes et une cellule « SLA : 5 JO » au-dessus du tableau donne le SLA ; dans un texte, une ligne « SLA : 4 JO ». On peut aussi les saisir à la main dans **Modifier** : le champ **SLA client** en haut, et le **Délai OLA** dans chaque étape.
+
+**Sur la fiche**, la section **Délais (SLA / OLA)** donne le SLA, le chemin le plus long (en additionnant les OLA) et dit s'il tient dans le SLA.
+
+**Pendant un suivi**, deux chronos affichent le temps de travail restant : celui du **SLA client** en haut, celui de l'**OLA de l'étape** dans l'étape en cours. Ils sont **verts** au début, passent à l'**orange** quand les trois quarts du délai sont passés, puis au **rouge** une fois le délai dépassé. Une notification prévient quand le SLA est **bientôt dépassé**, puis quand il l'est. À la fin, le **bilan des délais** dit si le SLA a été tenu (avec l'avance ou le retard) et combien d'OLA ont été tenus.
+
+![Mode Délais pendant un suivi : le chrono du SLA en orange et celui de l'OLA en vert, puis le bilan d'une demande terminée](captures/etape-35-delais-suivi.png)
+
+**Dans la simulation**, une barre sous l'étape compare les jours cumulés au SLA, en vert, orange puis rouge ; à la fin, l'app dit « SLA tenu » ou « SLA dépassé ».
+
+<details>
+<summary>Plus de captures</summary>
+
+![Simulation : la barre du SLA pendant le parcours, puis un chemin qui dépasse le SLA](captures/etape-35-delais-simulation.png)
+
+![La section Délais de la fiche, et le champ SLA client dans l'éditeur](captures/etape-35-delais-editeur.png)
+
+</details>
 
 ## 5. Formulaires de demande
 

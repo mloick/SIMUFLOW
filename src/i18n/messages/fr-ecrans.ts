@@ -239,6 +239,51 @@ export const frScreens = {
     },
   },
 
+
+  /** Mode Délais (SLA / OLA) : chronos, bilan, éditeur, simulation, détail. */
+  delays: {
+    sla: 'SLA client',
+    ola: 'OLA de l’étape',
+    budget: (days: string): string => `Délai : ${days}`,
+    time: (days: number, hours: number, minutes: number): string =>
+      days > 0 ? `${days} j ${hours} h` : hours > 0 ? `${hours} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`,
+    left: 'restants',
+    lateBy: 'de retard',
+    levels: { ok: 'Dans les temps', warning: 'Bientôt dépassé', late: 'Dépassé' },
+    clockLabel: (title: string, time: string, late: boolean, level: string): string =>
+      `${title} : ${time} ${late ? 'de retard' : 'restants'}, ${level}`,
+    due: (date: string): string => `Échéance : ${date}`,
+    reportTitle: 'Bilan des délais',
+    slaMet: 'SLA tenu',
+    slaMissed: 'SLA dépassé',
+    slaMetText: (used: string, budget: string, margin: string): string =>
+      `${used} pour un SLA de ${budget} : ${margin} d’avance.`,
+    slaMissedText: (used: string, budget: string, late: string): string =>
+      `${used} pour un SLA de ${budget} : ${late} de retard.`,
+    olaCount: (met: number, total: number): string => `OLA tenus : ${met} sur ${total}`,
+    olaLate: (steps: string): string => `Dépassés : ${steps}`,
+    simSla: (used: string, budget: string): string => `${used} sur ${budget}`,
+    simMet: (used: string, budget: string): string => `SLA tenu : ${used} sur ${budget}.`,
+    simMissed: (used: string, late: string): string => `SLA dépassé : ${used}, soit ${late} de trop.`,
+    simLabel: (used: string, budget: string, level: string): string =>
+      `SLA client : ${used} consommés sur ${budget}, ${level}`,
+    editorTitle: 'Délais du process',
+    slaField: 'SLA client (jours ouvrés)',
+    slaPlaceholder: 'Aucun',
+    slaFieldLabel: 'Délai promis au client pour tout le process, en jours ouvrés',
+    slaHint: 'Le délai de chaque étape pour son équipe (OLA) se règle dans l’étape.',
+    detailTitle: 'Délais (SLA / OLA)',
+    detailHelp:
+      'Le SLA est le délai promis au client pour tout le process ; l’OLA est le délai de chaque étape pour son équipe. Pendant un suivi, un chrono passe du vert à l’orange (les trois quarts du délai sont passés) puis au rouge, et une notification prévient avant le dépassement.',
+    detailSla: 'SLA client',
+    summary: (days: string): string => `SLA ${days} JO`,
+    noSla: 'Aucun',
+    longest: 'Chemin le plus long (OLA cumulés)',
+    olaSteps: 'Étapes avec un OLA',
+    fits: 'Le chemin le plus long tient dans le SLA.',
+    exceeds: (late: string): string => `Le chemin le plus long dépasse le SLA de ${late}.`,
+    addSla: 'Ajoute un SLA dans l’éditeur pour suivre le délai promis au client.',
+  },
   tracking: {
     notFound: 'Suivi introuvable',
     notFoundText: 'Cette demande ou son process n’existe plus sur ce téléphone.',
@@ -277,6 +322,10 @@ export const frScreens = {
       todayBody: (label: string, time: string): string => `${label} · échéance à ${time}.`,
       lateTitle: (title: string): string => `En retard : ${title}`,
       lateBody: (label: string, time: string): string => `${label} · l’étape devait être terminée à ${time}.`,
+      slaSoonTitle: (label: string): string => `SLA bientôt dépassé : ${label}`,
+      slaSoonBody: (date: string): string => `Les trois quarts du délai promis au client sont passés. Échéance : ${date}.`,
+      slaLateTitle: (label: string): string => `SLA dépassé : ${label}`,
+      slaLateBody: (date: string): string => `Le délai promis au client est passé (${date}).`,
     },
   },
 
@@ -397,9 +446,9 @@ export const frScreens = {
     actorPlaceholder: 'Service, équipe ou rôle',
     actorLabel: 'Acteur de l’étape',
     chooseActor: (actor: string): string => `Choisir l’acteur ${actor}`,
-    delay: 'Délai (jours ouvrés)',
+    delay: 'Délai OLA (jours ouvrés)',
     delayPlaceholder: 'Aucun',
-    delayLabel: 'Délai de l’étape, en jours ouvrés',
+    delayLabel: 'Délai de l’étape pour son équipe (OLA), en jours ouvrés',
     branches: 'Branches',
     nextStep: 'Étape suivante',
     to: (title: string): string => `Vers « ${title} »`,

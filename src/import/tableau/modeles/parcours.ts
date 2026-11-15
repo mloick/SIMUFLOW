@@ -121,7 +121,14 @@ export function situationToProcess(situation: Situation, idPrefix: string): Proc
     link(from, closure, steps.find((step) => step.id === from)?.title === 'Cas complexe ?' ? 'Non' : undefined);
   }
 
-  return { id: `${idPrefix}-1`, name: situationName(situation), source: 'tableau', steps, links };
+  return {
+    id: `${idPrefix}-1`,
+    name: situationName(situation),
+    source: 'tableau',
+    ...(situation.slaDays !== null && situation.slaDays > 0 ? { sla: situation.slaDays } : {}),
+    steps,
+    links,
+  };
 }
 
 /** Le niveau le plus grave des avertissements d'une situation ; `null` : lue sans ambiguïté. */

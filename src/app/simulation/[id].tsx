@@ -12,7 +12,7 @@ import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
-import { longestPath, shortestPath, type PathStep, type Process } from '@/domain';
+import { delayLevel, delayRatio, longestPath, shortestPath, slaOf, type PathStep, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
@@ -122,6 +122,11 @@ function Simulator({ process }: { process: Process }) {
   };
 
   const restart = () => chooseMode('pas-a-pas');
+  // Mode Délais : les jours cumulés comparés au SLA promis au client.
+  const sla = slaOf(process);
+  const slaLevel = sla !== undefined ? delayLevel(state.days, sla) : null;
+  const slaColor = slaLevel ? { ok: theme.success, warning: theme.warning, late: theme.danger }[slaLevel] : theme.text;
+  const days = (value: number) => t.format.count(value, t.words.workingDay);
   const colorOf = (index: number) => familyColors[index % familyColors.length];
 
   if (state.status === 'no-start') {
@@ -211,6 +216,14 @@ function Simulator({ process }: { process: Process }) {
               </ThemedText>
             )}
           </View>
+          {sla !== undefined && slaLevel && (
+            <SlaBar
+              label={`${t.delays.sla} · ${t.delays.simSla(t.format.num(state.days), days(sla))}`}
+              accessibilityLabel={t.delays.simLabel(days(state.days), days(sla), t.delays.levels[slaLevel])}
+              color={slaColor}
+              ratio={delayRatio(state.days, sla)}
+            />
+          )}
           {!replaying &&
             (choices.length === 1 ? (
               <PrimaryButton
@@ -259,6 +272,13 @@ function Simulator({ process }: { process: Process }) {
             <ThemedText style={styles.stepTitle}>
               {t.format.count(state.trail.length, t.words.step)} · {t.simulation.wd(t.format.num(state.days))}
             </ThemedText>
+            {sla !== undefined && (
+              <ThemedText type="smallBold" style={{ color: state.days > sla ? theme.danger : theme.success }}>
+                {state.days > sla
+                  ? t.delays.simMissed(days(state.days), days(state.days - sla))
+                  : t.delays.simMet(t.format.num(state.days), days(sla))}
+              </ThemedText>
+            )}
           </View>
         </View>
       )}
@@ -582,7 +602,39 @@ function TextButton({
   );
 }
 
+/** La barre du SLA dans la carte d'étape : jours cumulés sur le SLA, en vert, orange puis rouge. */
+function SlaBar({
+  label,
+  accessibilityLabel,
+  color,
+  ratio,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  color: string;
+  ratio: number;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.sla} accessible accessibilityLabel={accessibilityLabel}>
+      <View style={styles.slaHead}>
+        <SymbolView name={{ ios: 'timer', android: 'timer' }} size={14} tintColor={color} />
+        <ThemedText type="smallBold" style={{ color }}>
+          {label}
+        </ThemedText>
+      </View>
+      <View style={[styles.slaTrack, { backgroundColor: theme.surfaceMuted }]}>
+        <View style={[styles.slaFill, { backgroundColor: color, width: `${Math.round(ratio * 100)}%` }]} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  sla: { gap: Spacing.one },
+  slaHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  slaTrack: { height: 6, borderRadius: Radius.pill, overflow: 'hidden' },
+  slaFill: { height: '100%', borderRadius: Radius.pill },
   screen: { flex: 1 },
   row: { flexDirection: 'row' },
   flex: { flex: 1 },
