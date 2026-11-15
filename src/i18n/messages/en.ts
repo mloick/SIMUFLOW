@@ -22,11 +22,12 @@ export const en: Messages = {
     offline: 'Server unreachable: check your Internet connection.',
   },
 
-  tabs: { process: 'Processes', scanner: 'Scanner', profile: 'Profile' },
+  tabs: { process: 'Processes', scanner: 'Scanner', settings: 'Settings' },
 
   titles: {
     signIn: 'Sign in',
     myProfile: 'My profile',
+    profile: 'Profile',
     newPassword: 'New password',
     process: 'Process',
     edit: 'Edit',
@@ -69,11 +70,35 @@ export const en: Messages = {
       'Four palettes, each in light and dark: Ocean (the SimuFlow blue), Aurora (violet and pink), Mint (green and amber) and Coral (terracotta and navy). The whole app changes right away. Automatic follows the phone’s light or dark setting. Both choices are kept on this phone.',
   },
 
+  settings: {
+    title: 'Settings',
+    profileSubtitle: 'My profile, my account, my data',
+    signInTitle: 'Sign in',
+    signInSubtitle: 'To find your processes on all your devices',
+    openProfile: 'Open my profile',
+    mode: 'Mode',
+    languageHelp:
+      'Automatic follows the phone’s language. Français or English keeps that language, whatever the phone’s. What you import stays as written.',
+    seeAlerts: 'See alerts',
+    newAlerts: (count: number): string => `${count} new`,
+    testNotification: 'Test notification',
+    send: 'Send',
+    replayWelcome: 'Watch the introduction again',
+    privacy: 'Privacy policy',
+    version: 'Version',
+    versionHelp:
+      'The installed version, and the date of the last update received without going through the store. Fixes arrive on their own, at the next launch.',
+    server: 'SimuFlow server',
+    serverHelp:
+      'The server keeps your account, your synced processes and shares. Without it, the app still works: everything stays on this phone.',
+    serverStatus: { checking: 'Checking…', ok: 'Reachable', unreachable: 'Unreachable', error: 'Error' },
+  },
+
   roles: { chef_de_projet: 'Project manager', collaborateur: 'Team member' },
 
   profil: {
     title: 'Profile',
-    intro: 'Your account, your settings and information about the app.',
+    intro: 'Your account, your kept forms and what the app learned from your corrections.',
     account: 'Account',
     signInInvite: 'Sign in to find your processes on all your devices.',
     signInLink: 'Sign in or create an account →',

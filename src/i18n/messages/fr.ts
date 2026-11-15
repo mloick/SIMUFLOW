@@ -26,12 +26,13 @@ export const fr = {
     offline: 'Serveur injoignable : vérifiez la connexion Internet.',
   },
 
-  tabs: { process: 'Process', scanner: 'Scanner', profile: 'Profil' },
+  tabs: { process: 'Process', scanner: 'Scanner', settings: 'Réglages' },
 
   /** Titres des écrans, dans la barre du haut. */
   titles: {
     signIn: 'Connexion',
     myProfile: 'Mon profil',
+    profile: 'Profil',
     newPassword: 'Nouveau mot de passe',
     process: 'Process',
     edit: 'Modifier',
@@ -74,11 +75,35 @@ export const fr = {
       'Quatre palettes, chacune en clair et en sombre : Océan (le bleu SimuFlow), Aurore (violet et rose), Menthe (vert et ambre) et Corail (terre cuite et bleu marine). Toute l’app change tout de suite. Automatique suit le réglage clair ou sombre du téléphone. Les deux choix restent gardés sur ce téléphone.',
   },
 
+  settings: {
+    title: 'Réglages',
+    profileSubtitle: 'Mon profil, mon compte, mes données',
+    signInTitle: 'Se connecter',
+    signInSubtitle: 'Pour retrouver vos process sur tous vos appareils',
+    openProfile: 'Ouvrir mon profil',
+    mode: 'Mode',
+    languageHelp:
+      'Automatique suit la langue du téléphone. Français ou English garde cette langue, quelle que soit celle du téléphone. Ce que vous importez reste écrit tel quel.',
+    seeAlerts: 'Voir les alertes',
+    newAlerts: (count: number): string => `${count} nouvelle${count > 1 ? 's' : ''}`,
+    testNotification: 'Notification d’essai',
+    send: 'Envoyer',
+    replayWelcome: 'Revoir la présentation',
+    privacy: 'Politique de confidentialité',
+    version: 'Version',
+    versionHelp:
+      'La version installée, et la date de la dernière mise à jour reçue sans passer par le store. Les corrections arrivent toutes seules, au lancement suivant.',
+    server: 'Serveur SimuFlow',
+    serverHelp:
+      'Le serveur garde votre compte, vos process synchronisés et les partages. Sans lui, l’app marche quand même : tout reste sur ce téléphone.',
+    serverStatus: { checking: 'Vérification…', ok: 'Joignable', unreachable: 'Injoignable', error: 'Erreur' },
+  },
+
   roles: { chef_de_projet: 'Chef de projet', collaborateur: 'Collaborateur' },
 
   profil: {
     title: 'Profil',
-    intro: 'Votre compte, vos réglages et les informations sur l’app.',
+    intro: 'Votre compte, vos formulaires gardés et ce que l’app a appris de vos corrections.',
     account: 'Compte',
     signInInvite: 'Connectez-vous pour retrouver vos process sur tous vos appareils.',
     signInLink: 'Se connecter ou créer un compte →',

@@ -78,6 +78,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="connexion" options={{ title: t.titles.signIn, presentation: 'modal' }} />
+          <Stack.Screen name="profil" options={{ title: t.titles.profile }} />
           <Stack.Screen name="mon-profil" options={{ title: t.titles.myProfile, presentation: 'modal' }} />
           <Stack.Screen
             name="bienvenue"

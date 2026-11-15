@@ -307,7 +307,7 @@ Sur la fiche, **Suivre une demande** démarre un suivi. Chaque étape reçoit so
 
 ### Rappels d'échéance · Disponible
 
-Dans **Profil**, activez **Rappels d'échéance**. Le téléphone vous prévient **le matin du jour de l'échéance**, puis **à l'échéance** si l'étape n'est pas finie ; toucher le rappel ouvre la demande. Tout est programmé sur le téléphone, sans serveur. **Envoyer une notification d'essai** en envoie une 5 secondes plus tard.
+Dans **Réglages**, activez **Rappels d'échéance**. Le téléphone vous prévient **le matin du jour de l'échéance**, puis **à l'échéance** si l'étape n'est pas finie ; toucher le rappel ouvre la demande. Tout est programmé sur le téléphone, sans serveur. **Envoyer une notification d'essai** en envoie une 5 secondes plus tard.
 
 ![Profil : la section Notifications, en clair et en sombre](captures/etape-11a-notifications.png)
 
@@ -390,7 +390,7 @@ Pour essayer : `template-formulaire.xlsx`, seul ou avec `workflow-sla-ola.xlsx`,
 
 ### Compte et synchronisation · Disponible
 
-Dans **Profil**, **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
+Dans **Réglages**, touchez la carte du haut (**Se connecter**), puis **Se connecter ou créer un compte**. Le mot de passe demande au moins 8 caractères, avec minuscule, majuscule, chiffre et symbole ; l'app dit ce qui manque. **Mot de passe oublié ?** envoie un lien valable une heure, qui rouvre l'app sur **Nouveau mot de passe**. La connexion est gardée dans le coffre chiffré du téléphone.
 
 Connecté, **Compléter mon profil** (dans la section Compte) demande votre prénom, votre nom, un **identifiant** (proposé d'après votre nom, par exemple `julie.martin`, unique) et votre rôle : **Chef de projet**, **Collaborateur** ou non précisé. C'est une simple mention. L'identifiant servira à vous inviter sur un process partagé.
 
@@ -443,21 +443,22 @@ Le site https://mloick.github.io/SIMUFLOW/ présente l'app et sa **politique de 
 
 ### Mises à jour sans réinstaller · Disponible
 
-Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes seules, au lancement suivant. La ligne de version, en bas du **Profil**, indique la dernière mise à jour reçue.
+Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes seules, au lancement suivant. Dans **Réglages > À propos**, la ligne **Version** indique la version ; son bouton **?** donne la date de la dernière mise à jour reçue.
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
 ## 7. Confort
 
-- **Langue** · Disponible : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Profil > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Tous les écrans passent en anglais : la liste, la fiche, la simulation, le suivi, l'import, le Scanner, l'export, les formulaires, le partage et les alertes. Ce que vous importez reste écrit tel quel. Les fichiers exportés, les quatre exemples, les remarques détaillées de lecture d'un tableau Excel et le format du texte à coller restent en français.
-- **Couleurs** · Disponible : quatre palettes, chacune en clair et en sombre : **Océan** (le bleu SimuFlow, par défaut), **Aurore** (violet et rose), **Menthe** (vert et ambre) et **Corail** (terre cuite et bleu marine). Touchez une pastille dans **Profil > Apparence** : toute l'app change tout de suite, et le choix est gardé sur le téléphone. Les textes utilisent une nouvelle police, Plus Jakarta Sans.
-- **Explications « ? »** · Disponible : à côté de certains réglages, un petit bouton **?** ouvre une explication en bas de l'écran ; **Compris** la referme. Le premier est à côté d'**Apparence**, dans le Profil. Les boutons, eux, s'enfoncent légèrement sous le doigt (rien ne bouge si « Réduire les animations » est activé).
-- **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Profil > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
+- **Langue** · Disponible : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Réglages > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Tous les écrans passent en anglais : la liste, la fiche, la simulation, le suivi, l'import, le Scanner, l'export, les formulaires, le partage et les alertes. Ce que vous importez reste écrit tel quel. Les fichiers exportés, les quatre exemples, les remarques détaillées de lecture d'un tableau Excel et le format du texte à coller restent en français.
+- **Couleurs** · Disponible : quatre palettes, chacune en clair et en sombre : **Océan** (le bleu SimuFlow, par défaut), **Aurore** (violet et rose), **Menthe** (vert et ambre) et **Corail** (terre cuite et bleu marine). Touchez une pastille dans **Réglages > Apparence** : toute l'app change tout de suite, et le choix est gardé sur le téléphone. Les textes utilisent une nouvelle police, Plus Jakarta Sans.
+- **Explications « ? »** · Disponible : à côté de certains réglages, un petit bouton **?** ouvre une explication en bas de l'écran ; **Compris** la referme. Chaque réglage de l'onglet **Réglages** a le sien. Les boutons, eux, s'enfoncent légèrement sous le doigt (rien ne bouge si « Réduire les animations » est activé).
+- **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Réglages > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
-- **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Profil**.
+- **Présentation au premier lancement** · Disponible : quatre pages, à revoir depuis **Réglages > À propos**.
 - **Icône et écran de démarrage** · Disponible : le logo en S, en clair ou en sombre.
-- **Profil** · Disponible : compte, langue, apparence, notifications, exemples, règles apprises, puis **À propos** (serveur, présentation, confidentialité, version).
+- **Réglages** · Disponible : le troisième onglet. En haut, la carte de votre profil ; puis l'apparence, la langue, les notifications, les exemples, et **À propos** (présentation, confidentialité, version, serveur). Un bouton **?** explique chaque réglage.
+- **Profil** · Disponible : ouvert par la carte du haut des **Réglages** : compte, synchronisation, mes formulaires, règles apprises, suppression du compte.
 
 ![Langue : la présentation et la connexion en anglais sur un téléphone en anglais, le réglage Langue du Profil, puis Français choisi](captures/etape-44-langue.png)
 
@@ -466,6 +467,8 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 ![Les quatre palettes : Océan, Aurore (dans le Profil), Menthe en sombre, Corail](captures/etape-r1-palettes.png)
 
 ![Le nouveau bouton, le « ? » d'Apparence et son explication, en Aurore et en Menthe sombre](captures/etape-r2-briques.png)
+
+![L'onglet Réglages : la carte du profil, l'apparence et la langue, les notifications et À propos, en Corail sombre, puis la page Profil](captures/etape-r3-reglages.png)
 
 ![Apparence : Automatique, puis Sombre choisi dans le Profil, et la liste en sombre](captures/etape-37-apparence.png)
 
