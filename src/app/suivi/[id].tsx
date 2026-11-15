@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge } from '@/components/badge';
 import { PrimaryButton } from '@/components/primary-button';
 import { StateMessage } from '@/components/state-message';
+import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, useImportedProcesses } from '@/data/process-store';
 import { getTracking, removeTracking, saveTracking, useTrackings } from '@/data/tracking-store';
 import type { Process } from '@/domain';
@@ -22,6 +23,10 @@ import { useT } from '@/i18n';
  * Suivi d'une demande réelle : l'étape en cours avec son échéance (jours
  * ouvrés), le bouton pour la terminer (ou choisir la branche à une décision),
  * puis l'historique des étapes passées.
+ *
+ * Refonte R14 : grande carte de l'étape en cours (pastille, acteur, échéance
+ * avec icône), choix d'une décision en boutons secondaires, et historique en
+ * frise : une pastille cochée par étape, reliées par un trait.
  */
 export default function TrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -106,26 +111,46 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
         </View>
 
         {current ? (
-          <View style={[styles.card, styles.current, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              {t.tracking.current}
+          <View style={[styles.card, styles.current, { backgroundColor: theme.surface }]}>
+            <View style={styles.pillRow}>
+              <View style={[styles.pill, { backgroundColor: theme.primaryBackground }]}>
+                <ThemedText type="smallBold" style={{ color: theme.link }}>
+                  {t.tracking.current}
+                </ThemedText>
+              </View>
+              {done.length > 0 && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {t.tracking.doneCount(done.length)}
+                </ThemedText>
+              )}
+            </View>
+            <ThemedText style={styles.currentTitle} accessibilityRole="header">
+              {titleOf(current.stepId)}
             </ThemedText>
-            <ThemedText type="subtitle">{titleOf(current.stepId)}</ThemedText>
             {stepOf(process, current)?.actor && (
-              <ThemedText themeColor="textSecondary">{stepOf(process, current)?.actor}</ThemedText>
+              <View style={styles.metaRow}>
+                <SymbolView name={{ ios: 'person', android: 'person' }} size={16} tintColor={theme.textSecondary} />
+                <ThemedText themeColor="textSecondary">{stepOf(process, current)?.actor}</ThemedText>
+              </View>
             )}
-            <View style={styles.dueRow} accessible>
-              <ThemedText>
+            <View style={styles.metaRow} accessible>
+              <SymbolView name={{ ios: 'clock', android: 'schedule' }} size={16} tintColor={theme.textSecondary} />
+              <ThemedText style={styles.flex}>
                 {current.dueAt ? t.tracking.due(formatMoment(current.dueAt, t)) : t.tracking.noDue}
               </ThemedText>
-              {current.dueAt && <Badge {...timingBadge(current, now, t)} />}
             </View>
+            {current.dueAt && (
+              <View style={styles.badgeRow}>
+                <Badge {...timingBadge(current, now, t)} />
+              </View>
+            )}
             {choices.length > 1 ? (
               <View style={styles.choices}>
                 <ThemedText type="smallBold">{t.tracking.whichNext}</ThemedText>
                 {choices.map((link) => (
                   <PrimaryButton
                     key={link.id}
+                    variant="secondary"
                     label={`${link.label ?? t.tracking.next} → ${titleOf(link.to)}`}
                     onPress={() => complete(link.id)}
                   />
@@ -140,15 +165,11 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
             )}
           </View>
         ) : (
-          <View
-            style={[
-              styles.card,
-              styles.current,
-              { backgroundColor: theme.successBackground, borderColor: theme.border },
-            ]}>
-            <ThemedText type="subtitle" style={{ color: theme.success }}>
-              {t.tracking.finished}
-            </ThemedText>
+          <View style={[styles.card, styles.current, { backgroundColor: theme.successBackground }]}>
+            <View style={[styles.doneIcon, { backgroundColor: theme.success }]}>
+              <SymbolView name={{ ios: 'checkmark', android: 'check' }} size={22} weight="bold" tintColor="#ffffff" />
+            </View>
+            <ThemedText style={[styles.currentTitle, { color: theme.success }]}>{t.tracking.finished}</ThemedText>
             <ThemedText style={{ color: theme.success }}>
               {t.tracking.finishedIn(
                 formatMoment(tracking.finishedAt!, t),
@@ -166,7 +187,7 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
               {t.tracking.answers}
             </ThemedText>
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.card, { backgroundColor: theme.surface }]}>
               {tracking.answers.map((line, index) => (
                 <View
                   key={`${line.label}-${index}`}
@@ -189,20 +210,29 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
             <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
               {t.tracking.pastSteps}
             </ThemedText>
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.card, styles.timeline, { backgroundColor: theme.surface }]}>
               {done.map((step, index) => (
-                <View
-                  key={`${step.stepId}-${step.startedAt}`}
-                  accessible
-                  style={[
-                    styles.row,
-                    index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
-                  ]}>
-                  <ThemedText>{titleOf(step.stepId)}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {t.tracking.doneOn(formatMoment(step.doneAt!, t))}
-                  </ThemedText>
-                  <Badge {...timingBadge(step, now, t)} />
+                <View key={`${step.stepId}-${step.startedAt}`} accessible style={styles.timelineRow}>
+                  <View style={styles.rail} importantForAccessibility="no-hide-descendants">
+                    <View style={[styles.dot, { backgroundColor: theme.successBackground }]}>
+                      <SymbolView
+                        name={{ ios: 'checkmark', android: 'check' }}
+                        size={13}
+                        weight="bold"
+                        tintColor={theme.success}
+                      />
+                    </View>
+                    {index < done.length - 1 && <View style={[styles.line, { backgroundColor: theme.border }]} />}
+                  </View>
+                  <View style={styles.timelineText}>
+                    <ThemedText type="smallBold">{titleOf(step.stepId)}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {t.tracking.doneOn(formatMoment(step.doneAt!, t))}
+                    </ThemedText>
+                    <View style={styles.badgeRow}>
+                      <Badge {...timingBadge(step, now, t)} />
+                    </View>
+                  </View>
                 </View>
               ))}
             </View>
@@ -219,17 +249,28 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
   );
 }
 
+const DOT = 26;
 const styles = StyleSheet.create({
   answer: { gap: Spacing.half, padding: Spacing.three },
   screen: { flex: 1 },
   content: { gap: Spacing.four, padding: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   titleBlock: { gap: Spacing.one },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  current: { gap: Spacing.two, padding: Spacing.three },
-  dueRow: { alignItems: 'flex-start', gap: Spacing.one, marginBottom: Spacing.one },
-  choices: { gap: Spacing.two },
+  card: { borderRadius: Radius.large, overflow: 'hidden' },
+  current: { gap: Spacing.two + Spacing.half, padding: Spacing.three + Spacing.one },
+  pillRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
+  pill: { paddingHorizontal: Spacing.two + Spacing.one, paddingVertical: Spacing.one, borderRadius: Radius.pill },
+  currentTitle: { fontSize: 22, lineHeight: 28, fontWeight: 800, fontFamily: fontFaceFor(800) },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  badgeRow: { flexDirection: 'row' },
+  doneIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  choices: { gap: Spacing.two, marginTop: Spacing.one },
   section: { gap: Spacing.two },
-  row: { alignItems: 'flex-start', gap: Spacing.one, padding: Spacing.three },
+  timeline: { padding: Spacing.three },
+  timelineRow: { flexDirection: 'row', gap: Spacing.three },
+  rail: { width: DOT, alignItems: 'center' },
+  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, alignItems: 'center', justifyContent: 'center' },
+  line: { flex: 1, width: 2, marginVertical: Spacing.half },
+  timelineText: { flex: 1, gap: Spacing.half, paddingBottom: Spacing.three },
   flex: { flex: 1 },
   stop: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,9 +1,20 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { router, useIsFocused } from 'expo-router';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HelpSheet } from '@/components/help-button';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { SymbolView } from '@/components/symbol';
@@ -57,6 +68,7 @@ export default function ScannerScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState<Reading>({ state: 'idle' });
+  const [help, setHelp] = useState(false);
 
   /** Lit le texte de la photo et le range en lignes de tableau. */
   const read = async (uri: string) => {
@@ -131,7 +143,9 @@ export default function ScannerScreen() {
           accessibilityLiveRegion="polite">
           {readingText(reading, t)}
         </ThemedText>
-        {done?.table && done.table.rows.length > 0 && <TablePreview table={done.table} label={s.tableFound} />}
+        {done?.table && done.table.rows.length > 0 && (
+          <TablePreview table={done.table} label={s.tableFound} columnsLabel={s.columns} />
+        )}
         {done && !done.table && done.rows.length > 0 && (
           <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel={s.textRead}>
             {done.rows.map((row, index) => (
@@ -225,14 +239,17 @@ export default function ScannerScreen() {
               accessibilityLabel={s.preview}
             />
           )}
-          <Corners />
+          <Corners scanning={ready && !busy} />
+          <View style={styles.hint} pointerEvents="none">
+            <ThemedText
+              type="small"
+              style={[styles.hintText, error && styles.error]}
+              accessibilityLiveRegion="polite"
+              accessibilityRole={error ? 'alert' : undefined}>
+              {error ?? s.hold}
+            </ThemedText>
+          </View>
         </View>
-        <ThemedText
-          style={[styles.status, error && styles.error]}
-          accessibilityLiveRegion="polite"
-          accessibilityRole={error ? 'alert' : undefined}>
-          {error ?? s.hold}
-        </ThemedText>
         <View style={styles.controls}>
           <View style={styles.side} />
           <Pressable
@@ -268,11 +285,29 @@ export default function ScannerScreen() {
         { paddingTop: insets.top + Spacing.four, paddingBottom: insets.bottom + BottomTabInset + Spacing.three },
       ]}>
       <View style={styles.content}>
-        <ThemedText type="title" style={styles.light} accessibilityRole="header">
-          {s.title}
-        </ThemedText>
-        <ThemedText style={styles.muted}>{s.intro}</ThemedText>
+        <View style={styles.header}>
+          <View style={styles.flex}>
+            <ThemedText type="title" style={styles.light} accessibilityRole="header">
+              {s.title}
+            </ThemedText>
+            {!photo && <ThemedText style={styles.muted}>{s.intro}</ThemedText>}
+          </View>
+          <Pressable
+            onPress={() => setHelp(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t.help.explain(s.helpTitle)}
+            hitSlop={6}
+            style={({ pressed }) => [styles.helpButton, { opacity: pressed ? 0.7 : 1 }]}>
+            <SymbolView
+              name={{ ios: 'questionmark', android: 'question_mark' }}
+              size={16}
+              weight="bold"
+              tintColor={SCAN.text}
+            />
+          </Pressable>
+        </View>
         {body}
+        <HelpSheet visible={help} title={s.helpTitle} text={s.help} onClose={() => setHelp(false)} />
       </View>
     </View>
   );
@@ -313,40 +348,72 @@ function readingText(reading: Reading, t: Messages): string {
   }
 }
 
-/** Le tableau trouvé : les titres de colonnes, puis une ligne par étape. */
-function TablePreview({ table, label }: { table: ScannedTable; label: string }) {
+/** Le tableau trouvé (refonte R13) : les colonnes reconnues en pastilles, puis une ligne par étape. */
+function TablePreview({ table, label, columnsLabel }: { table: ScannedTable; label: string; columnsLabel: string }) {
   const flex = (index: number) =>
     table.columns[index].kind === 'step' ? 2.2 : table.columns[index].kind === 'number' ? 0.5 : 1;
   return (
-    <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel={label}>
-      <View style={styles.tableRow}>
+    <View style={styles.preview}>
+      <ThemedText type="smallBold" style={styles.muted}>
+        {columnsLabel}
+      </ThemedText>
+      <View style={styles.chips}>
         {table.columns.map((column, index) => (
-          <ThemedText key={index} type="smallBold" style={[styles.accent, { flex: flex(index) }]} numberOfLines={1}>
-            {column.label}
-          </ThemedText>
+          <View key={index} style={styles.chip}>
+            <ThemedText type="small" style={styles.accent} numberOfLines={1}>
+              {column.label}
+            </ThemedText>
+          </View>
         ))}
       </View>
-      {table.rows.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.tableRow}>
-          {row.map((cell, index) => (
-            <ThemedText key={index} type="small" style={[cell ? styles.light : styles.muted, { flex: flex(index) }]}>
-              {cell || '–'}
-            </ThemedText>
-          ))}
-        </View>
-      ))}
-    </ScrollView>
+      <ScrollView style={styles.rows} contentContainerStyle={styles.rowsContent} accessibilityLabel={label}>
+        {table.rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={[styles.tableRow, rowIndex > 0 && styles.tableRowLine]}>
+            {row.map((cell, index) => (
+              <ThemedText key={index} type="small" style={[cell ? styles.light : styles.muted, { flex: flex(index) }]}>
+                {cell || '–'}
+              </ThemedText>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
-/** Les quatre coins du viseur, comme dans la maquette. */
-function Corners() {
+/**
+ * Le viseur (refonte R13) : quatre coins et une ligne de balayage qui descend
+ * puis remonte tant que l'appareil est prêt. Avec « Réduire les animations »,
+ * la ligne reste immobile au milieu.
+ */
+function Corners({ scanning }: { scanning: boolean }) {
+  const reduceMotion = useReducedMotion();
+  const progress = useSharedValue(0.5);
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    if (!scanning || reduceMotion) {
+      cancelAnimation(progress);
+      progress.value = 0.5;
+      return;
+    }
+    progress.value = 0;
+    progress.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad) }), -1, true);
+    return () => cancelAnimation(progress);
+  }, [scanning, reduceMotion, progress]);
+  const lineStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: progress.value * Math.max(0, height - CORNER * 2) }],
+  }));
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none" importantForAccessibility="no-hide-descendants">
+    <View
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none"
+      importantForAccessibility="no-hide-descendants"
+      onLayout={(event) => setHeight(event.nativeEvent.layout.height)}>
       <View style={[styles.corner, styles.topLeft]} />
       <View style={[styles.corner, styles.topRight]} />
       <View style={[styles.corner, styles.bottomLeft]} />
       <View style={[styles.corner, styles.bottomRight]} />
+      {scanning && <Animated.View style={[styles.scanLine, lineStyle]} />}
     </View>
   );
 }
@@ -362,6 +429,17 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
+  flex: { flex: 1, gap: Spacing.one },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
+  helpButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginTop: Spacing.two,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: SCAN.button,
+  },
   light: { color: SCAN.text },
   muted: { color: SCAN.textSecondary },
   center: { flex: 1 },
@@ -369,18 +447,70 @@ const styles = StyleSheet.create({
   frame: {
     flex: 1,
     minHeight: 240,
-    borderRadius: Radius.medium,
+    borderRadius: Radius.sheet,
     overflow: 'hidden',
     backgroundColor: SCAN.frame,
   },
-  corner: { position: 'absolute', width: CORNER, height: CORNER, borderColor: SCAN.text },
-  topLeft: { top: Spacing.three, left: Spacing.three, borderTopWidth: 3, borderLeftWidth: 3 },
-  topRight: { top: Spacing.three, right: Spacing.three, borderTopWidth: 3, borderRightWidth: 3 },
-  bottomLeft: { bottom: Spacing.three, left: Spacing.three, borderBottomWidth: 3, borderLeftWidth: 3 },
-  bottomRight: { bottom: Spacing.three, right: Spacing.three, borderBottomWidth: 3, borderRightWidth: 3 },
+  corner: { position: 'absolute', width: CORNER, height: CORNER, borderColor: SCAN.accent },
+  topLeft: { top: Spacing.four, left: Spacing.four, borderTopWidth: 4, borderLeftWidth: 4, borderTopLeftRadius: 14 },
+  topRight: {
+    top: Spacing.four,
+    right: Spacing.four,
+    borderTopWidth: 4,
+    borderRightWidth: 4,
+    borderTopRightRadius: 14,
+  },
+  bottomLeft: {
+    bottom: Spacing.four,
+    left: Spacing.four,
+    borderBottomWidth: 4,
+    borderLeftWidth: 4,
+    borderBottomLeftRadius: 14,
+  },
+  bottomRight: {
+    bottom: Spacing.four,
+    right: Spacing.four,
+    borderBottomWidth: 4,
+    borderRightWidth: 4,
+    borderBottomRightRadius: 14,
+  },
+  scanLine: {
+    position: 'absolute',
+    top: CORNER,
+    left: Spacing.four + Spacing.two,
+    right: Spacing.four + Spacing.two,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: SCAN.accent,
+    boxShadow: '0 0 12px 2px rgba(124,199,240,0.7)',
+  },
+  hint: {
+    position: 'absolute',
+    left: Spacing.four,
+    right: Spacing.four,
+    bottom: Spacing.four + CORNER + Spacing.two,
+    alignItems: 'center',
+  },
+  hintText: {
+    color: SCAN.text,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(11,22,33,0.72)',
+    overflow: 'hidden',
+  },
   status: { color: SCAN.accent },
   error: { color: '#f4a49c' },
-  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    padding: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: SCAN.button,
+  },
   full: { alignSelf: 'stretch' },
   actions: { alignSelf: 'stretch', gap: Spacing.two },
   links: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -391,14 +521,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(11,22,33,0.5)',
   },
-  rows: { maxHeight: 220, borderRadius: Radius.small, backgroundColor: SCAN.frame },
-  rowsContent: { gap: Spacing.one, padding: Spacing.three },
-  tableRow: { flexDirection: 'row', gap: Spacing.two },
+  preview: { gap: Spacing.two },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one + Spacing.half },
+  chip: {
+    paddingHorizontal: Spacing.two + Spacing.one,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(124,199,240,0.16)',
+  },
+  rows: { maxHeight: 220, borderRadius: Radius.medium, backgroundColor: SCAN.frame },
+  rowsContent: { padding: Spacing.three },
+  tableRow: { flexDirection: 'row', gap: Spacing.two, paddingVertical: Spacing.two },
+  tableRowLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,198,214,0.25)' },
   accent: { color: SCAN.accent },
   side: { width: 48, height: 48 },
   sideButton: {
-    borderRadius: Radius.medium,
-    backgroundColor: SCAN.button,
+    borderRadius: Radius.pill,
+    backgroundColor: SCAN.frame,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -84,13 +84,7 @@ function Editor({ original }: { original: FormTemplate }) {
   };
   const cancel = () => {
     if (latest.current === original) return router.back();
-    confirmAction(
-      fe.discardTitle,
-      fe.discardText,
-      fe.discard,
-      () => router.back(),
-      fe.keepEditing,
-    );
+    confirmAction(fe.discardTitle, fe.discardText, fe.discard, () => router.back(), fe.keepEditing);
   };
   const add = (after: number, type?: QuestionType) => {
     const { form, n } = addQuestion(draft, after, type);
@@ -203,30 +197,24 @@ function QuestionEditor({
   const [forOption, setForOption] = useState(ALWAYS);
   const complements = complementTypes(question);
   const choices = answersOf(question);
-  const blockEnd = form.questions.filter((item) => item.n === question.n || item.partOf === question.n).at(-1)?.n ?? question.n;
+  const blockEnd =
+    form.questions.filter((item) => item.n === question.n || item.partOf === question.n).at(-1)?.n ?? question.n;
   const title = question.label.split('\n')[0] || fe.untitled;
   const kind = listKind(question.type);
   const sources = conditionSources(form, question.n);
   const chosenSource = sources.find((item) => item.n === source);
-  const labelOf = (n: number) => form.questions.find((item) => item.n === n)?.label.split('\n')[0] ?? t.field.question(n);
+  const labelOf = (n: number) =>
+    form.questions.find((item) => item.n === n)?.label.split('\n')[0] ?? t.field.question(n);
   const update = (patch: Partial<Omit<FormQuestion, 'n'>>) => onChange(updateQuestion(form, question.n, patch));
 
   const remove = () => {
     const linked = dependants(form, question.n).filter((item) => item.partOf !== question.n).length;
     const own = form.questions.filter((item) => item.partOf === question.n).length;
     const parts = [
-      linked > 0
-        ? fe.dependants(linked, t.format.count(linked, t.words.question))
-        : fe.removed,
+      linked > 0 ? fe.dependants(linked, t.format.count(linked, t.words.question)) : fe.removed,
       own > 0 ? fe.complementsRemoved(own) : null,
     ];
-    confirmAction(
-      fe.deleteTitle(title),
-      parts.filter(Boolean).join(' '),
-      fe.delete,
-      onRemove,
-      fe.keep,
-    );
+    confirmAction(fe.deleteTitle(title), parts.filter(Boolean).join(' '), fe.delete, onRemove, fe.keep);
   };
 
   return (
@@ -268,7 +256,12 @@ function QuestionEditor({
       {open && (
         <View style={styles.form}>
           <Label text={fe.label} />
-          <Field value={question.label} onCommit={(label) => update({ label })} accessibilityLabel={fe.labelA11y} multiline />
+          <Field
+            value={question.label}
+            onCommit={(label) => update({ label })}
+            accessibilityLabel={fe.labelA11y}
+            multiline
+          />
 
           <Label text={fe.type} />
           <View style={styles.options} accessibilityRole="radiogroup">
@@ -282,7 +275,10 @@ function QuestionEditor({
                   accessibilityState={{ selected }}
                   style={[
                     styles.option,
-                    { backgroundColor: selected ? theme.primary : theme.background, borderColor: selected ? theme.primary : theme.border },
+                    {
+                      backgroundColor: selected ? theme.primary : theme.background,
+                      borderColor: selected ? theme.primary : theme.border,
+                    },
                   ]}>
                   <ThemedText type="small" style={{ color: selected ? theme.onPrimary : theme.text }}>
                     {fe.types[item.type] ?? item.label}
@@ -353,7 +349,11 @@ function QuestionEditor({
                           accessibilityLabel={fe.atLeastOneLabel(field)}
                           style={styles.switchRow}>
                           <SymbolView
-                            name={checked ? { ios: 'checkmark.square.fill', android: 'check_box' } : { ios: 'square', android: 'check_box_outline_blank' }}
+                            name={
+                              checked
+                                ? { ios: 'checkmark.square.fill', android: 'check_box' }
+                                : { ios: 'square', android: 'check_box_outline_blank' }
+                            }
                             size={22}
                             tintColor={checked ? theme.primary : theme.textSecondary}
                           />
@@ -367,7 +367,12 @@ function QuestionEditor({
           )}
 
           <Label text={fe.help} />
-          <Field value={question.help ?? ''} placeholder={fe.none} onCommit={(help) => update({ help })} accessibilityLabel={fe.help} />
+          <Field
+            value={question.help ?? ''}
+            placeholder={fe.none}
+            onCommit={(help) => update({ help })}
+            accessibilityLabel={fe.help}
+          />
 
           <Label text={fe.shows} />
           {question.conditions.length === 0 && (
@@ -376,7 +381,9 @@ function QuestionEditor({
             </ThemedText>
           )}
           {question.conditions.map((condition, position) => (
-            <View key={`${condition.question}-${condition.equals}`} style={[styles.chip, { backgroundColor: theme.primaryBackground }]}>
+            <View
+              key={`${condition.question}-${condition.equals}`}
+              style={[styles.chip, { backgroundColor: theme.primaryBackground }]}>
               <ThemedText type="small" style={[styles.flex, { color: theme.link }]}>
                 {fe.condition(labelOf(condition.question), condition.equals)}
               </ThemedText>
@@ -437,7 +444,13 @@ function QuestionEditor({
                 {complements.map((item) => (
                   <Action
                     key={item.type}
-                    label={item.type === 'attachment' ? fe.addAttachment : question.type === 'attachment' ? fe.addDescription : fe.addPrecision}
+                    label={
+                      item.type === 'attachment'
+                        ? fe.addAttachment
+                        : question.type === 'attachment'
+                          ? fe.addDescription
+                          : fe.addPrecision
+                    }
                     onPress={() => {
                       const option = choices.find((choice) => forOption === fe.ifChosen(choice));
                       onAddComplement(item.type, option);
@@ -467,7 +480,17 @@ function QuestionEditor({
 
 /** Un complément qui s'affiche toujours avec sa question. */
 
-function Action({ label, onPress, disabled, danger }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
+function Action({
+  label,
+  onPress,
+  disabled,
+  danger,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
   const theme = useTheme();
   const color = danger ? theme.danger : theme.link;
   return (
@@ -538,7 +561,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   empty: { justifyContent: 'center', padding: Spacing.four },
   content: { gap: Spacing.two, padding: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  card: { marginTop: Spacing.two, borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  card: { marginTop: Spacing.two, borderRadius: Radius.large, overflow: 'hidden' },
   row: {
     minHeight: 56,
     flexDirection: 'row',
@@ -551,7 +574,7 @@ const styles = StyleSheet.create({
   complement: { paddingLeft: Spacing.four },
   flex: { flex: 1 },
   form: { gap: Spacing.two, padding: Spacing.three, paddingTop: Spacing.one },
-  input: { minHeight: 44, borderRadius: Radius.small, borderWidth: 1, paddingHorizontal: Spacing.three, fontSize: 16 },
+  input: { minHeight: 50, borderRadius: Radius.medium, borderWidth: 1, paddingHorizontal: Spacing.three, fontSize: 16 },
   multiline: { minHeight: 88, paddingVertical: Spacing.two, textAlignVertical: 'top' },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   option: {

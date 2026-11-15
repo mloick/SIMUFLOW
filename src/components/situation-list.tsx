@@ -155,7 +155,7 @@ export function SituationList({
 
 const styles = StyleSheet.create({
   section: { gap: Spacing.two },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  card: { borderRadius: Radius.large, overflow: 'hidden' },
   family: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
   item: { borderTopWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, minHeight: 64, padding: Spacing.three },

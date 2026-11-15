@@ -19,11 +19,13 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 
 ### Depuis un fichier · Disponible
 
-Touchez **+** dans la liste, choisissez **draw.io**, **BPMN**, **Visio** ou **JSON**, puis le fichier. L'app montre ce qu'elle a lu (étapes, acteurs, problèmes, ce qu'elle a dû deviner) ; touchez **Importer**, ou **Importer et corriger** pour ouvrir l'éditeur tout de suite.
+Touchez **Nouveau** dans la liste, choisissez une des huit tuiles (**draw.io**, **BPMN**, **Visio**, **JSON**…) : un encadré explique ce qu'elle attend. Puis choisissez le fichier. L'app montre ce qu'elle a lu (étapes, acteurs, problèmes, ce qu'elle a dû deviner) ; touchez **Importer**, ou **Importer et corriger** pour ouvrir l'éditeur tout de suite.
 
 Le schéma n'a pas besoin d'un style particulier : l'app suit les flèches. Une étape d'où partent plusieurs flèches nommées est une décision, même dessinée en rectangle. Les acteurs viennent des couloirs, d'une légende de couleurs ou du texte des étapes (« Responsable : Comptabilité ») ; l'app garde le service plutôt que le nom des personnes. Un fichier BPMN (Camunda, bpmn.io, Bizagi, Signavio…) ou Visio (`.vsdx`) garde sa mise en page. Pour en savoir plus : [BPMN 2.0 en bref](bpmn.md).
 
-Vos process importés restent sur le téléphone, et sur votre compte si vous êtes connecté. Pour en retirer un : **Supprimer ce process**, en bas de sa fiche.
+Vos process importés restent sur le téléphone, et sur votre compte si vous êtes connecté. Pour en retirer un : bouton **…** en haut de sa fiche, puis **Supprimer**.
+
+![Nouveau process : les huit sources en tuiles, puis « Texte » choisi avec son aide](captures/etape-r12-import.png)
 
 ![Importer un fichier : aperçu, fichier refusé, process importé](captures/etape-5b-import.png)
 
@@ -106,9 +108,11 @@ Pour essayer : `demande-materiel.xlsx`, `tableau-a-completer.xlsx`, `workflow-sl
 
 ### En photographiant un tableau · Disponible
 
-L'onglet **Scanner** ouvre l'appareil photo. Cadrez un tableau (une ligne par étape, avec l'acteur et le délai) et prenez la photo. L'app recadre la feuille, lit le texte **sur le téléphone, sans Internet**, ne garde que le tableau et ignore le texte autour. Touchez **Créer le process** : chaque ligne devient une étape ; une colonne **Suite** (« oui → 3 ; non → 4 ») crée les décisions. **Créer et corriger** ouvre aussi l'éditeur.
+L'onglet **Scanner** ouvre l'appareil photo, avec une ligne qui balaie le viseur. Le bouton **?** donne les conseils pour bien cadrer. Cadrez un tableau (une ligne par étape, avec l'acteur et le délai) et prenez la photo. L'app recadre la feuille, lit le texte **sur le téléphone, sans Internet**, ne garde que le tableau et ignore le texte autour ; les colonnes reconnues s'affichent en pastilles. Touchez **Créer le process** : chaque ligne devient une étape ; une colonne **Suite** (« oui → 3 ; non → 4 ») crée les décisions. **Créer et corriger** ouvre aussi l'éditeur.
 
 Dans le navigateur, **Prendre ou choisir une photo** ouvre l'appareil photo ou une image (une capture d'écran marche aussi). La lecture se fait dans le navigateur, un peu moins finement. Pour essayer : `docs/exemples/tableaux-a-scanner.html`, six tableaux à afficher ou imprimer.
+
+![Scanner : le viseur, puis le tableau lu et ses colonnes](captures/etape-r13-scanner.png)
 
 ![Scanner : le tableau trouvé, puis le process créé](captures/etape-10d-process.png)
 
@@ -152,13 +156,13 @@ Pendant le chargement, des cartes grises traversées d'un reflet tiennent la pla
 
 ### Voir les problèmes · Disponible
 
-La fiche d'un process donne ses chiffres clés (étapes, décisions, chemins possibles), ses acteurs et son **diagnostic**, les plus graves en premier : départ ou fin manquant, impasse, chemin qui ne peut jamais finir, étape inatteignable, décision à une seule sortie, branche sans nom. **Voir** descend jusqu'à l'étape concernée et la surligne. Le bouton de partage envoie un résumé.
+La fiche d'un process donne ses chiffres clés (étapes, chemins possibles, points à corriger), un grand bouton **Lancer la simulation** et quatre raccourcis : **Modifier**, **Exporter**, **Partager**, **Suivre**. Dessous, des sections à déplier, chacune avec son **?** : acteurs, étapes, partage, suivi, et le **diagnostic**, les plus graves en premier : départ ou fin manquant, impasse, chemin qui ne peut jamais finir, étape inatteignable, décision à une seule sortie, branche sans nom. **Voir** descend jusqu'à l'étape concernée et la surligne. Le bouton **…** en haut regroupe le reste : tout exporter, envoyer un résumé, modifier, supprimer.
 
-![La fiche d'un process](captures/etape-4b-detail.png)
+![La fiche d'un process](captures/etape-r8-detail.png)
 
 ### Corriger un process · Disponible
 
-Touchez **Modifier le process**, puis une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur, son délai et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
+Touchez **Modifier** sur la fiche, puis une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur, son délai et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
 
 ![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
 
@@ -193,7 +197,11 @@ Sur la fiche, touchez **Lancer la simulation** :
 - **Pas à pas** : à chaque décision, l'app demande quelle branche suivre ; on peut revenir en arrière.
 - **Simple** : le chemin le plus court. **Complexe** : le plus long.
 
-Le déroulé montre chaque étape, son acteur et le délai cumulé en jours ouvrés. Au-dessus, le **schéma se construit** au fil du parcours et se recadre seul ; pincez pour zoomer, **Tout** montre le schéma entier.
+Le **schéma se construit** au fil du parcours : les étapes à venir sont en pointillés, et **Suivi auto** recadre sur l'étape en cours. Pincez ou glissez pour explorer ; le bouton cible y revient, et une petite carte montre où vous êtes dans un grand schéma. En bas, une carte donne l'étape, son acteur et le délai cumulé en jours ouvrés. Le bouton **plein écran** donne toute la place au schéma, et en tournant le téléphone le schéma passe à gauche et la carte à droite.
+
+![La simulation : pas à pas, puis en plein écran](captures/etape-r9-simulation.png)
+
+![La simulation en paysage](captures/etape-r11-paysage.png)
 
 ![Le schéma qui se construit pendant la simulation](captures/etape-6b-schema.png)
 
@@ -221,7 +229,7 @@ Le déroulé montre chaque étape, son acteur et le délai cumulé en jours ouvr
 
 ### Exporter le schéma · Disponible
 
-Dans la simulation, le bouton de partage propose :
+Sur la fiche (**Exporter**) ou dans la simulation (bouton en haut à droite), choisissez un format :
 
 - **PDF** : un résumé « En bref » en quelques phrases (par où le process commence, ses cas, le plus rapide et le plus long, les impasses), le schéma en couleur, les familles de chemins et le diagnostic, à envoyer ou imprimer ;
 - **draw.io** : à retoucher dans draw.io, un couloir par acteur ;
@@ -311,7 +319,11 @@ De votre côté, le lien compte comme un membre dans **Suivi de la validation** 
 
 ### Suivi en vrai · Disponible
 
-Sur la fiche, **Suivre une demande** démarre un suivi. Chaque étape reçoit son échéance en **jours ouvrés** (du lundi au vendredi, de 9 h à 17 h, sans les jours fériés). Touchez **Étape terminée**, ou choisissez la branche à une décision. Une pastille dit si l'étape est **à l'heure**, **proche de l'échéance** ou **en retard**.
+Sur la fiche, **Suivre** démarre un suivi. Chaque étape reçoit son échéance en **jours ouvrés** (du lundi au vendredi, de 9 h à 17 h, sans les jours fériés). Touchez **Étape terminée**, ou choisissez la branche à une décision. Une pastille dit si l'étape est **à l'heure**, **proche de l'échéance** ou **en retard**.
+
+L'étape en cours est en grand ; les étapes passées s'alignent en frise, cochées.
+
+![Le suivi d'une demande et l'export, avec le nouveau style](captures/etape-r14-ecrans.png)
 
 ![Suivi en vrai : les demandes d'un process, une demande en cours, puis l'étape suivante](captures/etape-11b-suivi.png)
 

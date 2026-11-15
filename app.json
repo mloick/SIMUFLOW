@@ -10,7 +10,7 @@
     "updates": {
       "url": "https://u.expo.dev/f6556dd2-a0ce-400c-9efa-56cab7b0df3a"
     },
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "simuflow",
     "userInterfaceStyle": "automatic",

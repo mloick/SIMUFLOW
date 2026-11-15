@@ -86,7 +86,7 @@ Trois règles tiennent l'ensemble :
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, accueil `home-header.tsx`, `filter-chips.tsx`, `resume-card.tsx`, dessin de la liste vide `empty-illustration.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, accueil `home-header.tsx`, `filter-chips.tsx`, `resume-card.tsx`, dessin de la liste vide `empty-illustration.tsx`, section repliable `accordion.tsx`, menu du bas `action-sheet.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), alertes du partage (share-alerts-store.ts), membres et avis d'un process pour son propriétaire (validation-data.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -390,6 +390,10 @@ Reprend l'écran 6 de la maquette : titre, consigne (« une colonne par informat
 
 ![Scanner : la demande d'autorisation, le viseur, puis la photo prise (navigateur, caméra de test)](captures/etape-10a-scanner.png)
 
+**Refonte R13.** Le viseur prend toute la hauteur, aux coins de 28 ; ses quatre coins arrondis sont dans la couleur d'accent, et une ligne de balayage lumineuse descend puis remonte (Reanimated `withRepeat`) tant que l'appareil est prêt ; avec « Réduire les animations », elle reste immobile au milieu. La consigne est une pastille posée sur l'image. Le déclencheur et la lampe sont dans une barre arrondie. Un bouton « ? » en haut à droite ouvre « Bien scanner un tableau » (`HelpSheet`). Après la lecture, les colonnes reconnues sont des pastilles au-dessus des lignes du tableau. Dans le navigateur, l'écran garde son bouton « Prendre ou choisir une photo ».
+
+![Scanner (refonte R13) : le viseur avec la ligne de balayage, puis le tableau lu (caméra de test, lecture simulée pour la capture)](captures/etape-r13-scanner.png)
+
 <details>
 <summary>Détail</summary>
 
@@ -618,6 +622,10 @@ En mode développement, la page Profil propose « Démo · état de la liste des
 
 ![Écran Importer : fichier draw.io de deux pages lu avec une remarque, fichier JSON en erreur, process importé ouvert, puis en tête de la liste](captures/etape-5b-import.png)
 
+**Refonte R12.** Les huit sources sont des tuiles sur deux colonnes (`SourceTile` : icône dans une pastille, nom, courte description ; la source choisie est entourée et son icône remplie). Sous les tuiles, un encadré explique la source choisie (`t.importer.explain`), ou invite à en choisir une ; pour « Texte », l'aide du champ suffit. Le nom du process vient après les sources et l'aperçu, plus avant. La case « Anonymiser les noms » a son bouton « ? » (`AnonymizeOption`).
+
+![Nouveau process (refonte R12) : les tuiles des sources, puis « Texte » choisi](captures/etape-r12-import.png)
+
 ![Source « Texte » : l'exemple dans la zone, l'aperçu après « Lire le texte », puis le process importé](captures/etape-36-import-texte.png)
 
 <details>
@@ -741,19 +749,27 @@ En mode développement, la page Profil propose « Démo · état de la liste des
 
 ### Détail d'un process (`src/app/process/[id].tsx`)
 
-`src/app/process/[id].tsx` reprend l'écran 3 de la maquette. Il lit le process avec `getProcess(id)` (`src/data/process-store.ts`) ; un identifiant inconnu affiche « Process introuvable » avec un bouton de retour.
+`src/app/process/[id].tsx` (refonte R8). Il lit le process avec `getProcess(id)` (`src/data/process-store.ts`) ; un identifiant inconnu affiche « Process introuvable » avec un bouton de retour. De haut en bas :
 
-- **En-tête** : retour « Process » et bouton de partage (`Share` de React Native, qui envoie un résumé en texte).
-- **Chiffres** : étapes, décisions, chemins possibles (`countPaths`, affiché « 2000+ » au-delà du plafond) et points à corriger (erreurs + avertissements). Cette dernière tuile est rouge s'il y a une erreur, orange s'il n'y a que des avertissements, verte sinon.
-- **Acteurs** : une pastille par acteur distinct.
-- **Diagnostic** : erreurs et avertissements, avec un titre court et une phrase qui nomme l'étape (`explainIssue`, `src/domain/diagnostic.ts`). Les informations sont repliées sous « N informations repliées ».
-- **Étapes** : la liste dans l'ordre du process, avec rôle, acteur et délai. « Voir » fait défiler jusqu'à l'étape concernée et la surligne : chaque ligne mémorise sa position (`onLayout`), puis `scrollTo` y descend.
-- **Bouton « Lancer la simulation »**, fixé en bas, qui ouvre `/simulation/[id]`.
-- **« Modifier le process »** (process importés seulement) ouvre l'éditeur. L'écran relit le process à chaque changement (`useImportedProcesses`).
+- **En-tête** : retour, et à droite un bouton rond « … » qui ouvre un menu du bas (`ActionSheet`, `src/components/action-sheet.tsx`) : exporter (PDF, draw.io, BPMN ou JSON), envoyer le résumé en texte (`Share` de React Native), et pour un process importé modifier ou supprimer (en rouge, après confirmation).
+- **Source et nom** : une pastille avec la source (draw.io, BPMN, Scan…) et « corrigé le … » s'il a été modifié, puis le nom en grand.
+- **Chiffres** : trois tuiles (étapes, chemins possibles avec `countPaths`, « 2000+ » au-delà du plafond, points à corriger). La dernière est teintée rouge s'il y a une erreur, orange s'il n'y a que des avertissements, verte sinon.
+- **« Lancer la simulation »** : grand bouton qui ouvre `/simulation/[id]`.
+- **Actions rapides** : quatre boutons ronds, Modifier (ou « Ma partie » pour un process partagé avec moi), Exporter (`/export/[id]`), Partager (`/partage/[id]` sur un compte, sinon le résumé en texte) et Suivre (commence un suivi en vrai).
+- **Sections repliables** (`Accordion`, `src/components/accordion.tsx` : tuile d'icône, titre, résumé à droite, chevron, bouton « ? » facultatif qui ouvre la feuille d'aide ; le contenu apparaît en fondu) : Diagnostic (ouverte s'il y a un point, avec `explainIssue`), Acteurs (une barre par acteur, longueur selon son nombre d'étapes), Étapes, Partage (carte de validation), Ma partie, Suivi en vrai. « Voir » sur une anomalie ouvre les étapes, puis y fait défiler et surligne l'étape (`onLayout`, `scrollTo`).
+
+L'écran relit le process à chaque changement (`useImportedProcesses`).
+
+![Détail d'un process (refonte R8) : source, chiffres, simulation, actions rapides et sections repliables](captures/etape-r8-detail.png)
+
+<details>
+<summary>Avant la refonte</summary>
 
 ![Écran Détail : process avec avertissements en clair et en sombre, process sans anomalie, process introuvable](captures/etape-4b-detail.png)
 
-**Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Le repli des informations annonce s'il est ouvert ou fermé.
+</details>
+
+**Accessibilité.** Chaque tuile, anomalie et étape est lue d'un bloc. « Voir » annonce l'anomalie qu'il montre (« Voir l'étape : Impasse »). Chaque section repliable est un bouton qui lit son titre et son résumé, et annonce si elle est ouverte. Le menu « … » est une fenêtre modale pour VoiceOver. Test d'écran : `detail-ecran.test.tsx` (chiffres, simulation, export, étapes dépliées, menu).
 
 ### Éditeur de process (`src/app/process/modifier/[id].tsx`)
 
@@ -795,6 +811,14 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 ### Simulation (`src/app/simulation/[id].tsx`)
 
 Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depuis le détail.
+
+**Refonte R9 à R11.** L'en-tête montre le nom et « Pas à pas · étape 2 », avec un bouton rond d'export. Sous les modes (contrôle segmenté), le schéma remplit toute la place mesurée, et la **carte de l'étape** est posée en bas : pastille du rôle, jours ouvrés cumulés, titre, acteur et délai ; « Étape suivante », ou un bouton par sortie côte à côte (« oui », « vers … ») ; les encadrés « Fin atteinte » et « Impasse » ; puis « Retour » (pas à pas seulement) et « Recommencer ». En mode « Tous », la liste des familles prend la place de la carte. Le **schéma** (`process-diagram.tsx`) a une barre d'outils verticale de boutons ronds (plein écran, suivre l'étape, voir tout, zoom + et −), une pastille « Suivi auto » (le cadrage suit l'étape en cours ; un glissement, un pincement ou un zoom l'arrête, le bouton cible la relance), une **minicarte** en bas à droite quand le schéma est bien plus large que le cadre (points des étapes, rectangle de la zone vue, toucher pour y aller), et les étapes à venir en fantôme (flèches en pointillés). **Plein écran** : l'en-tête disparaît, la carte flotte sur le schéma. **Paysage** (largeur plus grande que la hauteur et au moins 600 points) : le schéma à gauche, une colonne de 360 points à droite avec les modes et la carte. `app.json` passe donc `orientation` de `portrait` à `default` : après ce changement, `npx expo prebuild --clean --platform ios`, puis recompiler (`npm run ios:iphone`). Le « Déroulé » en liste n'est plus affiché : la carte et le schéma le remplacent. Test d'écran : `simulation-ecran.test.tsx` (étape suivante, retour, décision, fin).
+
+![Simulation (refonte R9 à R11) : pas à pas avec la minicarte, puis en plein écran](captures/etape-r9-simulation.png)
+
+![Simulation en paysage : le schéma à gauche, la carte de l'étape à droite](captures/etape-r11-paysage.png)
+
+L'ancienne description, avant la refonte :
 
 - **Quatre modes** en onglets : « Pas à pas » ; « Simple », qui rejoue le chemin le plus court (`shortestPath`) ; « Complexe », le plus long sans repasser par une étape (`longestPath`) ; « Tous », la vue de tous les cas (voir plus bas). « Simple » et « Complexe » rejouent le chemin étape par étape (une toutes les 450 ms) pour que le schéma se construise sous les yeux ; avec « Réduire les animations », le chemin s'affiche d'un coup.
 - **Schéma** en haut de l'écran (voir ci-dessous).
@@ -870,6 +894,10 @@ La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie 
 **Stockage** (`src/data/tracking-store.ts`). Les suivis sont gardés sur le téléphone (`localStorage`, clé `simuflow.suivis`), pas sur le serveur : ce sont les rappels de ce téléphone. `useTrackings(processId)` les donne en cours d'abord, puis du plus récent au plus ancien.
 
 **Écrans.** Sur la fiche d'un process, la section « Suivi en vrai » liste ses demandes (étape en cours, échéance, pastille) et propose « Suivre une demande », qui en commence une (nommée « Demande du 31 oct. à 15:42 ») et ouvre son écran. L'écran de suivi (`/suivi/[id]`) montre l'étape en cours (acteur, échéance, pastille) avec « Étape terminée », ou un bouton par branche à une décision (« oui → Faire viser »), puis les étapes passées, la plus récente en haut, chacune avec sa date de fin et sa pastille. Une demande close affiche sa durée totale en jours ouvrés. « Arrêter ce suivi » le retire, après confirmation. Les échéances sont relues chaque minute.
+
+**Refonte R14.** L'étape en cours est une grande carte sans bordure : pastille « Étape en cours » et « 3 étapes faites », titre en grand, acteur et échéance avec une icône, pastille de délai ; à une décision, un bouton secondaire par branche. Les étapes passées forment une frise : une pastille cochée par étape, reliées par un trait. Une demande close a une coche verte. Même refonte pour les autres écrans secondaires : alertes (icône dans une tuile teintée selon le type), partage, validation, lien acteur, formulaire et export (cartes sans bordure aux coins de 22, champs de 50 points, formats d'export en tuiles entourées une fois choisies). Le comportement ne change pas.
+
+![Écrans secondaires (refonte R14) : le suivi d'une demande et l'export](captures/etape-r14-ecrans.png)
 
 <details>
 <summary>Tests</summary>

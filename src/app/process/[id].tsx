@@ -4,10 +4,12 @@ import { Pressable, ScrollView, Share, StyleSheet, View, type ScrollViewInstance
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/backend/auth';
+import { Accordion } from '@/components/accordion';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { Badge } from '@/components/badge';
-import { PrimaryButton } from '@/components/primary-button';
+import { PressableScale } from '@/components/pressable-scale';
 import { StateMessage } from '@/components/state-message';
-import { SymbolView } from '@/components/symbol';
+import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ValidationCard } from '@/components/validation-card';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -30,8 +32,11 @@ import { confirmAction } from '@/utils/confirm';
 import { useT, type Messages } from '@/i18n';
 
 /**
- * Détail d'un process (maquette, écran 3) : chiffres clés, acteurs, diagnostic
- * et liste des étapes. « Voir » fait défiler jusqu'à l'étape concernée.
+ * Détail d'un process (refonte R8) : source, chiffres en tuiles, gros bouton
+ * « Lancer la simulation », 4 actions rondes, puis des sections qui se
+ * déplient (diagnostic, acteurs, étapes, partage, suivi), chacune avec son
+ * « ? ». Le menu « … » regroupe export, résumé, modification et suppression.
+ * « Voir » déplie les étapes et fait défiler jusqu'à celle concernée.
  */
 export default function ProcessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,32 +69,49 @@ function ProcessDetail({ process }: { process: Process }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const stepY = useRef(new Map<string, number>());
-  // Position de la carte « Étapes » dans la page : celle de sa section plus
-  // son décalage sous le titre de section.
+  // Position de la liste des étapes dans la page : celle de sa section plus son décalage dans la section.
   const sectionY = useRef(0);
-  const cardY = useRef(0);
+  const listY = useRef(0);
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const shared = useShared(process.id);
   const cloudId = useCloudId(process.id);
   const session = useSession();
+  const trackings = useTrackings(process.id);
+  const imported = isImported(process.id);
 
   const summary = useMemo(() => summarize(process), [process]);
   const paths = useMemo(() => countPaths(process), [process]);
   const toFix = summary.errorCount + summary.warningCount;
   const shown = summary.issues.filter((issue) => issue.severity !== 'info');
   const folded = summary.issues.filter((issue) => issue.severity === 'info');
+  const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';
+  const ongoing = trackings.filter((tracking) => !tracking.finishedAt).length;
 
+  // « Voir » : déplie les étapes, puis fait défiler jusqu'à celle concernée une fois la liste affichée.
   const showStep = (stepId: string) => {
-    const y = stepY.current.get(stepId);
-    if (y !== undefined)
-      scrollRef.current?.scrollTo({ y: sectionY.current + cardY.current + y - Spacing.four, animated: true });
+    setStepsOpen(true);
     setHighlighted(stepId);
+    setTimeout(() => {
+      const y = stepY.current.get(stepId);
+      if (y !== undefined)
+        scrollRef.current?.scrollTo({ y: sectionY.current + listY.current + y - Spacing.four, animated: true });
+    }, 120);
   };
 
   const share = () =>
     Share.share({
       message: t.detail.shareMessage(process.name, t.format.count(summary.stepCount, t.words.step), toFix),
     });
+  const openExport = () => router.push({ pathname: '/export/[id]', params: { id: process.id } });
+  const openEdit = () => router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } });
+  const openSharing = () => router.push({ pathname: '/partage/[id]', params: { id: process.id } });
+  const openMyPart = () => router.push({ pathname: '/ma-partie/[id]', params: { id: process.id } });
+  const track = () => {
+    const id = startNewTracking(t, process);
+    if (id) router.push({ pathname: '/suivi/[id]', params: { id } });
+  };
 
   const confirmDelete = () =>
     confirmAction(
@@ -103,7 +125,65 @@ function ProcessDetail({ process }: { process: Process }) {
       t.common.cancel,
     );
 
-  const fixTone = summary.errorCount > 0 ? 'danger' : summary.warningCount > 0 ? 'warning' : 'success';
+  // Les 4 actions rondes : Modifier (ou Ma partie pour un process partagé avec moi), Exporter, Partager, Suivre.
+  const quick = (
+    [
+      imported
+        ? {
+            label: t.detail.quick.edit,
+            icon: { ios: 'pencil', android: 'edit' },
+            onPress: openEdit,
+            hint: t.detail.editHint,
+          }
+        : shared
+          ? {
+              label: t.detail.quick.myPart,
+              icon: { ios: 'checkmark.circle', android: 'task_alt' },
+              onPress: openMyPart,
+            }
+          : null,
+      {
+        label: t.detail.quick.export,
+        icon: { ios: 'square.and.arrow.down', android: 'download' },
+        onPress: openExport,
+      },
+      imported
+        ? { label: t.detail.quick.share, icon: { ios: 'person.2', android: 'group' }, onPress: openSharing }
+        : { label: t.detail.quick.share, icon: { ios: 'square.and.arrow.up', android: 'share' }, onPress: share },
+      { label: t.detail.quick.track, icon: { ios: 'clock', android: 'schedule' }, onPress: track },
+    ] as (QuickActionProps | null)[]
+  ).filter((action): action is QuickActionProps => action !== null);
+
+  const menu: SheetAction[] = [
+    { label: t.detail.exportAll, icon: { ios: 'square.and.arrow.down', android: 'download' }, onPress: openExport },
+    { label: t.detail.sendSummary, icon: { ios: 'text.alignleft', android: 'notes' }, onPress: share },
+    ...(imported
+      ? [
+          { label: t.detail.edit, icon: { ios: 'pencil', android: 'edit' }, onPress: openEdit } as SheetAction,
+          {
+            label: t.detail.deleteProcess,
+            icon: { ios: 'trash', android: 'delete' },
+            onPress: confirmDelete,
+            destructive: true,
+          } as SheetAction,
+        ]
+      : []),
+  ];
+
+  const sourceLine = [
+    process.source ? t.sources[process.source] : null,
+    process.editedAt
+      ? t.detail.edited(
+          new Date(process.editedAt).toLocaleDateString(t.common.locale, { day: 'numeric', month: 'short' }),
+        )
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const maxActorSteps = Math.max(
+    1,
+    ...summary.actors.map((actor) => process.steps.filter((s) => s.actor === actor).length),
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -114,8 +194,13 @@ function ProcessDetail({ process }: { process: Process }) {
           headerShadowVisible: false,
           headerStyle: { backgroundColor: theme.background },
           headerRight: () => (
-            <Pressable onPress={share} accessibilityRole="button" accessibilityLabel={t.detail.share} hitSlop={12}>
-              <SymbolView name={{ ios: 'square.and.arrow.up', android: 'share' }} size={22} tintColor={theme.link} />
+            <Pressable
+              onPress={() => setMenuOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t.detail.more}
+              hitSlop={8}
+              style={[styles.more, { backgroundColor: theme.surface }]}>
+              <SymbolView name={{ ios: 'ellipsis', android: 'more_horiz' }} size={20} tintColor={theme.text} />
             </Pressable>
           ),
         }}
@@ -123,116 +208,91 @@ function ProcessDetail({ process }: { process: Process }) {
       <ScrollView
         ref={scrollRef}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 96 }]}>
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.five }]}>
         <View style={styles.titleBlock}>
-          <ThemedText type="title" accessibilityRole="header">
+          {sourceLine !== '' && (
+            <View style={styles.pill}>
+              <Badge label={sourceLine} tone="primary" />
+            </View>
+          )}
+          <ThemedText type="title" accessibilityRole="header" style={styles.title}>
             {process.name}
           </ThemedText>
-          {process.source && <ThemedText themeColor="textSecondary">{t.detail.sourceText[process.source]}</ThemedText>}
           {shared && (
             <ThemedText themeColor="textSecondary">{t.detail.sharedBy(shared.ownerName, shared.actor)}</ThemedText>
-          )}
-          {process.editedAt && (
-            <ThemedText themeColor="textSecondary">
-              {t.detail.editedOn(t.dates.full(new Date(process.editedAt)))}
-            </ThemedText>
-          )}
-          {isImported(process.id) && (
-            <Pressable
-              onPress={() => router.push({ pathname: '/process/modifier/[id]', params: { id: process.id } })}
-              accessibilityRole="button"
-              accessibilityHint={t.detail.editHint}
-              hitSlop={8}
-              style={styles.edit}>
-              <SymbolView name={{ ios: 'pencil', android: 'edit' }} size={18} tintColor={theme.link} />
-              <ThemedText type="link" style={{ color: theme.link }}>
-                {t.detail.edit}
-              </ThemedText>
-            </Pressable>
           )}
         </View>
 
         <View style={styles.stats}>
           <StatTile value={summary.stepCount} label={t.detail.stats.steps(summary.stepCount)} />
-          <StatTile value={summary.decisionCount} label={t.detail.stats.decisions(summary.decisionCount)} />
           <StatTile value={paths.capped ? `${paths.count}+` : paths.count} label={t.detail.stats.paths(paths.count)} />
           <StatTile value={toFix} label={t.detail.stats.toFix(toFix)} tone={fixTone} />
         </View>
 
-        {isImported(process.id) && (
-          <Section title={t.detail.sharing}>
-            <Pressable
-              onPress={() => router.push({ pathname: '/partage/[id]', params: { id: process.id } })}
-              accessibilityRole="button"
-              style={[styles.card, styles.shareRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <SymbolView name={{ ios: 'person.2', android: 'group' }} size={22} tintColor={theme.link} />
-              <View style={styles.issueText}>
-                <ThemedText type="link" style={{ color: theme.link }}>
-                  {t.detail.shareWithActors}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t.detail.shareWithActorsHint}
-                </ThemedText>
-              </View>
-              <SymbolView
-                name={{ ios: 'chevron.right', android: 'chevron_right' }}
-                size={16}
-                tintColor={theme.textSecondary}
-              />
-            </Pressable>
-            {session && cloudId && <ValidationCard process={process} cloudId={cloudId} />}
-          </Section>
-        )}
+        <PressableScale
+          onPress={() => router.push({ pathname: '/simulation/[id]', params: { id: process.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={t.detail.simulateLabel}
+          style={[styles.simulate, { backgroundColor: theme.primary }]}>
+          <SymbolView name={{ ios: 'play.fill', android: 'play_arrow' }} size={20} tintColor={theme.onPrimary} />
+          <ThemedText style={[styles.simulateText, { color: theme.onPrimary }]}>{t.detail.simulate}</ThemedText>
+        </PressableScale>
 
-        {shared && (
-          <Section title={t.detail.myPart}>
-            <Pressable
-              onPress={() => router.push({ pathname: '/ma-partie/[id]', params: { id: process.id } })}
-              accessibilityRole="button"
-              style={[styles.card, styles.shareRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <SymbolView name={{ ios: 'checkmark.circle', android: 'task_alt' }} size={22} tintColor={theme.link} />
-              <View style={styles.issueText}>
-                <ThemedText type="link" style={{ color: theme.link }}>
-                  {t.detail.reviewMyPart}
-                </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t.detail.reviewMyPartHint(shared.ownerName)}
-                </ThemedText>
-              </View>
-              <SymbolView
-                name={{ ios: 'chevron.right', android: 'chevron_right' }}
-                size={16}
-                tintColor={theme.textSecondary}
-              />
-            </Pressable>
-          </Section>
-        )}
+        <View style={styles.quick}>
+          {quick.map((action) => (
+            <QuickAction key={action.label} {...action} />
+          ))}
+        </View>
 
-        <Section title={t.detail.tracking}>
-          <TrackingCard process={process} />
-        </Section>
+        <Accordion
+          icon={
+            toFix > 0
+              ? { ios: 'exclamationmark.triangle', android: 'warning' }
+              : { ios: 'checkmark.seal', android: 'verified' }
+          }
+          title={t.detail.diagnostic}
+          summary={t.detail.points(toFix)}
+          tone={fixTone}
+          help={t.detail.help.diagnostic}
+          initiallyOpen={toFix > 0}>
+          <DiagnosticList process={process} shown={shown} folded={folded} onShow={showStep} />
+        </Accordion>
 
         {summary.actors.length > 0 && (
-          <Section title={t.detail.actors}>
-            <View style={styles.chips}>
-              {summary.actors.map((actor) => (
-                <View key={actor} style={[styles.chip, { backgroundColor: theme.primaryBackground }]}>
-                  <ThemedText>{actor}</ThemedText>
+          <Accordion
+            icon={{ ios: 'person.3', android: 'groups' }}
+            title={t.detail.actors}
+            summary={String(summary.actors.length)}
+            help={t.detail.help.actors}>
+            {summary.actors.map((actor, index) => {
+              const count = process.steps.filter((step) => step.actor === actor).length;
+              const color = [theme.primary, theme.accent, theme.warning, theme.textSecondary][index % 4];
+              return (
+                <View key={actor} style={[styles.line, { borderTopColor: theme.border }]} accessible>
+                  <View style={[styles.dot, { backgroundColor: color }]} />
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold">{t.detail.actorSteps(actor, count)}</ThemedText>
+                    <View style={[styles.bar, { backgroundColor: theme.surfaceMuted }]}>
+                      <View
+                        style={[styles.barFill, { backgroundColor: color, width: `${(count / maxActorSteps) * 100}%` }]}
+                      />
+                    </View>
+                  </View>
                 </View>
-              ))}
-            </View>
-          </Section>
+              );
+            })}
+          </Accordion>
         )}
 
-        <Section title={t.detail.diagnostic}>
-          <DiagnosticCard process={process} shown={shown} folded={folded} onShow={showStep} />
-        </Section>
-
         <View onLayout={(e) => (sectionY.current = e.nativeEvent.layout.y)}>
-          <Section title={t.detail.steps}>
-            <View
-              onLayout={(e) => (cardY.current = e.nativeEvent.layout.y)}
-              style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Accordion
+            icon={{ ios: 'list.bullet', android: 'format_list_bulleted' }}
+            title={t.detail.steps}
+            summary={String(process.steps.length)}
+            help={t.detail.help.steps}
+            open={stepsOpen}
+            onToggle={setStepsOpen}>
+            <View onLayout={(e) => (listY.current = e.nativeEvent.layout.y + 60)}>
               {process.steps.map((step, index) => (
                 <View
                   key={step.id}
@@ -240,56 +300,110 @@ function ProcessDetail({ process }: { process: Process }) {
                   accessible
                   style={[
                     styles.step,
-                    index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+                    { borderTopColor: theme.border },
                     highlighted === step.id && { backgroundColor: theme.primaryBackground },
                   ]}>
                   <ThemedText type="smallBold" themeColor="textSecondary" style={styles.stepNumber}>
                     {index + 1}
                   </ThemedText>
-                  <View style={styles.stepText}>
-                    <ThemedText>{step.title || t.untitled}</ThemedText>
+                  <View style={styles.flex}>
+                    <ThemedText type="smallBold">{step.title || t.untitled}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {[
-                        t.kinds[step.kind],
-                        step.actor,
-                        step.duration ? t.format.count(step.duration, t.words.workingDay) : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
+                      {[t.kinds[step.kind], step.actor].filter(Boolean).join(' · ')}
                     </ThemedText>
                   </View>
+                  {!!step.duration && (
+                    <ThemedText type="smallBold" style={{ color: theme.link }}>
+                      {t.format.count(step.duration, t.words.workingDay)}
+                    </ThemedText>
+                  )}
                 </View>
               ))}
             </View>
-          </Section>
+          </Accordion>
         </View>
 
-        {isImported(process.id) && (
-          <Pressable
-            onPress={confirmDelete}
-            accessibilityRole="button"
-            accessibilityHint={t.detail.deleteHint}
-            style={({ pressed }) => [
-              styles.delete,
-              { backgroundColor: pressed ? theme.dangerBackground : 'transparent' },
-            ]}>
-            <SymbolView name={{ ios: 'trash', android: 'delete' }} size={18} tintColor={theme.danger} />
-            <ThemedText type="smallBold" style={{ color: theme.danger }}>
-              {t.detail.deleteProcess}
-            </ThemedText>
-          </Pressable>
+        {imported && (
+          <Accordion
+            icon={{ ios: 'person.2', android: 'group' }}
+            title={t.detail.sharing}
+            tone="success"
+            help={t.detail.help.sharing}>
+            <View style={styles.inner}>
+              {session && cloudId && <ValidationCard process={process} cloudId={cloudId} />}
+              <SoftButton label={t.detail.shareWithActors} onPress={openSharing} />
+            </View>
+          </Accordion>
         )}
+
+        {shared && (
+          <Accordion
+            icon={{ ios: 'checkmark.circle', android: 'task_alt' }}
+            title={t.detail.myPart}
+            help={t.detail.help.myPart}
+            initiallyOpen>
+            <View style={styles.inner}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t.detail.reviewMyPartHint(shared.ownerName)}
+              </ThemedText>
+              <SoftButton label={t.detail.reviewMyPart} onPress={openMyPart} />
+            </View>
+          </Accordion>
+        )}
+
+        <Accordion
+          icon={{ ios: 'clock', android: 'schedule' }}
+          title={t.detail.tracking}
+          summary={t.detail.inProgress(ongoing)}
+          help={t.detail.help.tracking}>
+          <TrackingList process={process} onStart={track} />
+        </Accordion>
       </ScrollView>
 
-      <View
-        style={[styles.footer, { paddingBottom: insets.bottom + Spacing.three, backgroundColor: theme.background }]}>
-        <PrimaryButton
-          label={t.detail.simulate}
-          accessibilityLabel={t.detail.simulateLabel}
-          onPress={() => router.push({ pathname: '/simulation/[id]', params: { id: process.id } })}
-        />
-      </View>
+      <ActionSheet visible={menuOpen} title={t.detail.actionsTitle} actions={menu} onClose={() => setMenuOpen(false)} />
     </View>
+  );
+}
+
+type QuickActionProps = {
+  label: string;
+  icon: SymbolViewProps['name'];
+  onPress: () => void;
+  hint?: string;
+};
+
+/** Action ronde sous « Lancer la simulation » : une tuile d'icône et son nom. */
+function QuickAction({ label, icon, onPress, hint }: QuickActionProps) {
+  const theme = useTheme();
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      style={styles.quickItem}>
+      <View style={[styles.quickIcon, { backgroundColor: theme.surface }]}>
+        <SymbolView name={icon} size={22} tintColor={theme.link} />
+      </View>
+      <ThemedText type="smallBold" style={styles.quickLabel} numberOfLines={1}>
+        {label}
+      </ThemedText>
+    </PressableScale>
+  );
+}
+
+/** Bouton doux en bas d'une section (« Inviter un acteur », « Suivre une demande »). */
+function SoftButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      style={[styles.soft, { backgroundColor: theme.primaryBackground }]}>
+      <ThemedText type="link" style={[styles.softText, { color: theme.link }]}>
+        {label}
+      </ThemedText>
+    </PressableScale>
   );
 }
 
@@ -304,25 +418,21 @@ function startNewTracking(t: Messages, process: Process): string | null {
 }
 
 /** Les demandes réelles suivies pour ce process, et « Suivre une demande ». */
-function TrackingCard({ process }: { process: Process }) {
+function TrackingList({ process, onStart }: { process: Process; onStart: () => void }) {
   const theme = useTheme();
   const t = useT();
   const trackings = useTrackings(process.id);
   const [now] = useState(() => new Date());
   const open = (id: string) => router.push({ pathname: '/suivi/[id]', params: { id } });
-  const start = () => {
-    const id = startNewTracking(t, process);
-    if (id) open(id);
-  };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+    <View style={styles.inner}>
       {trackings.length === 0 && (
-        <ThemedText themeColor="textSecondary" style={styles.trackingIntro}>
+        <ThemedText type="small" themeColor="textSecondary">
           {t.detail.trackingIntro}
         </ThemedText>
       )}
-      {trackings.map((tracking, index) => {
+      {trackings.map((tracking) => {
         const current = currentStep(tracking);
         const title = current && process.steps.find((step) => step.id === current.stepId)?.title;
         return (
@@ -330,12 +440,9 @@ function TrackingCard({ process }: { process: Process }) {
             key={tracking.id}
             onPress={() => open(tracking.id)}
             accessibilityRole="button"
-            style={[
-              styles.trackingRow,
-              index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
-            ]}>
-            <View style={[styles.issueText, styles.trackingText]}>
-              <ThemedText>{tracking.label}</ThemedText>
+            style={[styles.trackingRow, { borderBottomColor: theme.border }]}>
+            <View style={[styles.flex, styles.trackingText]}>
+              <ThemedText type="smallBold">{tracking.label}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {current
                   ? t.detail.currentDue(title || t.untitled, current.dueAt ? formatMoment(current.dueAt, t) : null)
@@ -351,26 +458,7 @@ function TrackingCard({ process }: { process: Process }) {
           </Pressable>
         );
       })}
-      <Pressable
-        onPress={start}
-        accessibilityRole="button"
-        style={[styles.trackingRow, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-        <SymbolView name={{ ios: 'play.circle', android: 'play_circle' }} size={20} tintColor={theme.link} />
-        <ThemedText type="link" style={{ color: theme.link }}>
-          {t.detail.startTracking}
-        </ThemedText>
-      </Pressable>
-    </View>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header" style={styles.sectionTitle}>
-        {title}
-      </ThemedText>
-      {children}
+      <SoftButton label={t.detail.startTracking} onPress={onStart} />
     </View>
   );
 }
@@ -390,18 +478,16 @@ function StatTile({
   const background = tone ? theme[`${tone}Background`] : theme.surface;
 
   return (
-    <View
-      style={[styles.tile, largeText && styles.tileWide, { backgroundColor: background, borderColor: theme.border }]}
-      accessible>
-      <ThemedText type="title" style={{ color }}>
-        {value}
+    <View style={[styles.tile, largeText && styles.tileWide, { backgroundColor: background }]} accessible>
+      <ThemedText style={[styles.tileValue, { color }]}>{value}</ThemedText>
+      <ThemedText type="small" style={{ color: tone ? color : theme.textSecondary }}>
+        {label}
       </ThemedText>
-      <ThemedText style={{ color: tone ? color : theme.textSecondary }}>{label}</ThemedText>
     </View>
   );
 }
 
-function DiagnosticCard({
+function DiagnosticList({
   process,
   shown,
   folded,
@@ -418,7 +504,7 @@ function DiagnosticCard({
   const visible = open ? [...shown, ...folded] : shown;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+    <View>
       {shown.length === 0 && (
         <View style={styles.issue}>
           <SymbolView name={{ ios: 'checkmark.circle', android: 'check_circle' }} size={22} tintColor={theme.success} />
@@ -443,19 +529,13 @@ function DiagnosticCard({
         return (
           <View
             key={`${issue.code}-${issue.stepId ?? issue.linkId ?? index}`}
-            style={[
-              styles.issue,
-              (index > 0 || shown.length === 0) && {
-                borderTopColor: theme.border,
-                borderTopWidth: StyleSheet.hairlineWidth,
-              },
-            ]}>
+            style={[styles.issue, (index > 0 || shown.length === 0) && { borderTopColor: theme.border }]}>
             <SymbolView name={icon} size={22} tintColor={color} />
             <View style={styles.issueText} accessible>
-              <ThemedText type="link" style={{ color: theme.text }}>
-                {title}
+              <ThemedText type="smallBold">{title}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {detail}
               </ThemedText>
-              <ThemedText themeColor="textSecondary">{detail}</ThemedText>
             </View>
             {stepId && (
               <Pressable
@@ -493,56 +573,97 @@ function DiagnosticCard({
 }
 
 const styles = StyleSheet.create({
-  edit: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 44, alignSelf: 'flex-start' },
   screen: { flex: 1 },
-  delete: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    minHeight: 48,
-    borderRadius: Radius.small,
-  },
+  flex: { flex: 1, gap: Spacing.half },
   content: {
-    gap: Spacing.four,
+    gap: Spacing.three,
     padding: Spacing.three,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  titleBlock: { gap: Spacing.one },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three - Spacing.one },
+  more: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  titleBlock: { gap: Spacing.two },
+  pill: { flexDirection: 'row' },
+  title: { fontWeight: 800, letterSpacing: -0.8, fontSize: 30, lineHeight: 36 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three - Spacing.half * 3 },
   tile: {
     flexGrow: 1,
-    flexBasis: '45%',
-    gap: Spacing.one,
-    padding: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
+    flexBasis: '28%',
+    padding: Spacing.three - Spacing.half,
+    borderRadius: Radius.medium + 2,
   },
+  tileValue: { fontSize: 26, lineHeight: 32, fontWeight: 800 },
   // Grands textes : une case par ligne, pour ne pas couper les mots.
   tileWide: { flexBasis: '100%' },
-  section: { gap: Spacing.two },
-  trackingIntro: { padding: Spacing.three },
+  simulate: {
+    minHeight: 58,
+    borderRadius: Radius.medium + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three - Spacing.half * 3,
+    paddingHorizontal: Spacing.three,
+  },
+  simulateText: { fontSize: 17, fontWeight: 800 },
+  quick: { flexDirection: 'row', gap: Spacing.two },
+  quickItem: { flex: 1, alignItems: 'center', gap: Spacing.one + Spacing.half, paddingVertical: Spacing.one },
+  quickIcon: { width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  quickLabel: { fontSize: 12, lineHeight: 16, fontWeight: 700 },
+  inner: { gap: Spacing.three - Spacing.one, paddingTop: Spacing.three - Spacing.one },
+  soft: {
+    minHeight: 46,
+    borderRadius: Radius.small + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+  },
+  softText: { fontWeight: 800, textAlign: 'center' },
+  line: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three - Spacing.half * 3,
+    minHeight: 48,
+    paddingTop: Spacing.three - Spacing.half * 3,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: Spacing.three - Spacing.half * 3,
+  },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  bar: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  barFill: { height: 6, borderRadius: 3 },
   trackingText: { alignItems: 'flex-start' },
-  trackingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, minHeight: 48, padding: Spacing.three },
-  sectionTitle: { fontSize: 16 },
-  shareRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: { borderRadius: Radius.pill, paddingHorizontal: Spacing.three - Spacing.one, paddingVertical: Spacing.one },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  issue: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three - Spacing.one, padding: Spacing.three },
+  trackingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 48,
+    paddingBottom: Spacing.three - Spacing.one,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  issue: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three - Spacing.one,
+    paddingVertical: Spacing.three - Spacing.one,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'transparent',
+  },
   issueText: { flex: 1, gap: Spacing.half },
   see: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   fold: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 48,
-    paddingHorizontal: Spacing.three,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  step: { flexDirection: 'row', gap: Spacing.three - Spacing.one, padding: Spacing.three },
-  stepNumber: { width: 20, paddingTop: Spacing.half },
-  stepText: { flex: 1, gap: Spacing.half },
-  footer: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
+  step: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three - Spacing.one,
+    paddingVertical: Spacing.three - Spacing.one,
+    paddingHorizontal: Spacing.one,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.small,
+  },
+  stepNumber: { width: 22 },
 });

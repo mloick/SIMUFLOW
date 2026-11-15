@@ -36,6 +36,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Synchroniser** entre appareils avec un compte, en restant utilisable hors connexion ; tout est supprimé avec le compte.
 - **Vos couleurs** : quatre palettes (Océan, Aurore, Menthe, Corail), chacune en clair et en sombre, au choix dans les Réglages ; l'app utilise la police Plus Jakarta Sans. Un petit bouton « ? » à côté de chaque réglage ouvre une courte explication.
 - **Accueil** : recherche, filtres (Tous, À corriger, Partagés, Exemples) avec leur nombre, une carte « Reprendre » qui ramène à la demande suivie en cours, la cloche des alertes, un bouton « Nouveau », et des états clairs pour le chargement, la liste vide, l’erreur et le hors ligne.
+- **Écrans refaits** : le détail d'un process donne ses chiffres clés, un grand bouton « Lancer la simulation », quatre actions rapides et des sections à déplier ; la simulation pose une carte de l'étape sous un schéma vivant, avec suivi auto, minicarte, plein écran et mise en page paysage ; « Nouveau process » présente les huit sources en tuiles ; le scanner a un viseur animé ; suivi, alertes, partage, formulaires et export suivent le même style.
 - **Français ou anglais** : tous les écrans suivent la langue du téléphone, ou le choix fait dans les Réglages. Ce que vous importez reste tel quel, de même que les fichiers exportés et les quatre exemples, en français.
 
 La visite complète, avec captures, est dans le [guide des fonctionnalités](docs/fonctionnalites.md). Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
@@ -57,7 +58,7 @@ npm run ios:simulateur   # compile et ouvre dans le Simulateur iOS
 npm run ios:iphone       # compile et installe sur un iPhone branché en USB
 ```
 
-SimuFlow est un build de développement, pas Expo Go, car il contient un module natif local. Les dossiers `ios/` et `android/` sont générés (génération native continue) et jamais versionnés. Après un changement d'`app.json` ou un nouveau module natif, lancer `npx expo prebuild --clean --platform ios` puis recompiler. Sinon, une fois l'app installée, `npx expo start` suffit. `npm run nettoyer` efface les fichiers de compilation pour libérer de la place.
+SimuFlow est un build de développement, pas Expo Go, car il contient un module natif local. Les dossiers `ios/` et `android/` sont générés (génération native continue) et jamais versionnés. Après un changement d'`app.json` ou un nouveau module natif, lancer `npx expo prebuild --clean --platform ios` puis recompiler. L'app tourne désormais en paysage (`orientation: default` dans `app.json`) : un build iPhone fait avant ce changement doit être recompilé. Sinon, une fois l'app installée, `npx expo start` suffit. `npm run nettoyer` efface les fichiers de compilation pour libérer de la place.
 
 | Cible | Commande |
 | --- | --- |

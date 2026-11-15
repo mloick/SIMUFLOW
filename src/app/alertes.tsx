@@ -22,7 +22,8 @@ const ICONS = {
  * « Alertes » : ce que le partage a apporté depuis les dernières
  * synchronisations (nouveau partage, étape à revoir, process validé). Les
  * mêmes alertes arrivent en notification sur le téléphone. Ouvrir l'écran
- * les marque comme vues.
+ * les marque comme vues. Refonte R14 : cartes sans bordure, icône dans une
+ * tuile teintée selon le type d'alerte.
  */
 export default function AlertsScreen() {
   const theme = useTheme();
@@ -63,17 +64,27 @@ export default function AlertsScreen() {
             onPress={() => open(alert)}
             accessibilityRole="button"
             accessibilityLabel={`${alert.title}. ${alert.body}`}
-            style={({ pressed }) => [
-              styles.card,
-              { backgroundColor: pressed ? theme.surfaceMuted : theme.surface, borderColor: theme.border },
-            ]}>
-            <SymbolView
-              name={ICONS[alert.kind]}
-              size={22}
-              tintColor={
-                alert.kind === 'a_revoir' ? theme.warning : alert.kind === 'valide' ? theme.success : theme.link
-              }
-            />
+            style={({ pressed }) => [styles.card, { backgroundColor: pressed ? theme.surfaceMuted : theme.surface }]}>
+            <View
+              style={[
+                styles.icon,
+                {
+                  backgroundColor:
+                    alert.kind === 'a_revoir'
+                      ? theme.warningBackground
+                      : alert.kind === 'valide'
+                        ? theme.successBackground
+                        : theme.primaryBackground,
+                },
+              ]}>
+              <SymbolView
+                name={ICONS[alert.kind]}
+                size={22}
+                tintColor={
+                  alert.kind === 'a_revoir' ? theme.warning : alert.kind === 'valide' ? theme.success : theme.link
+                }
+              />
+            </View>
             <View style={styles.text}>
               <ThemedText type="smallBold">{alert.title}</ThemedText>
               <ThemedText type="small">{alert.body}</ThemedText>
@@ -107,8 +118,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
     padding: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.large,
   },
+  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: Spacing.half },
 });

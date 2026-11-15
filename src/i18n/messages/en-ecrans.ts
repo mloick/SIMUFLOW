@@ -142,7 +142,27 @@ export const enScreens: ScreenMessages = {
     steps: 'Steps',
     deleteHint: 'Asks for confirmation',
     deleteProcess: 'Delete this process',
-    simulate: '▶  Start the simulation',
+    simulate: 'Start the simulation',
+    more: 'More actions',
+    actionsTitle: 'Actions',
+    exportAll: 'Export as PDF, draw.io, BPMN or JSON',
+    sendSummary: 'Send the summary',
+    quick: { edit: 'Edit', export: 'Export', share: 'Share', track: 'Track', myPart: 'My part' },
+    edited: (date: string) => `fixed on ${date}`,
+    points: (n: number) => (n === 0 ? 'None' : n > 1 ? `${n} issues` : '1 issue'),
+    actorSteps: (actor: string, n: number) => `${actor} · ${n} step${n > 1 ? 's' : ''}`,
+    inProgress: (n: number) => (n > 0 ? `${n} ongoing` : 'None'),
+    help: {
+      diagnostic:
+        'SimuFlow reads the diagram again and flags what blocks: a step with no way out (dead end), a step nothing reaches, a decision with a single branch. Tap “See” to go to the step.',
+      actors: 'Who owns each step. The bar shows the load: an actor who owns many steps can become a bottleneck.',
+      steps: 'Every step of the process, in diagram order, with its actor and its time in working days.',
+      sharing:
+        'Invite each actor by username or e-mail. They review their part and validate it, or leave a comment. You see who validated.',
+      myPart: 'This process was shared with you. Review the steps of your part: validated, or to fix with a comment.',
+      tracking:
+        'A real request starts? Track it step by step: SimuFlow works out each deadline in working days and reminds you on the day.',
+    },
     simulateLabel: 'Start the simulation',
     trackingIntro:
       'A real request is starting? Track it step by step: SimuFlow works out the deadline of each step in working days.',
@@ -221,6 +241,7 @@ export const enScreens: ScreenMessages = {
     finished: 'Request finished',
     finishedIn: (date: string, days: string) => `On ${date}, in ${days}.`,
     answers: 'Form answers',
+    doneCount: (n: number): string => (n === 1 ? '1 step done' : `${n} steps done`),
     pastSteps: 'Past steps',
     doneOn: (date: string) => `Finished on ${date}`,
     stop: 'Stop this tracking',
@@ -307,6 +328,12 @@ export const enScreens: ScreenMessages = {
     criticalBadge: 'critical',
     uniquePath: 'Single path',
     decision: 'Decision',
+    modesLabel: 'Simulation mode',
+    subtitle: (mode: string, n: number) => `${mode} · step ${n}`,
+    allSubtitle: (days: string | null) => (days ? `Every case · critical path ${days} WD` : 'Every case'),
+    to: (title: string) => `to ${title}`,
+    undo: 'Back',
+    restartShort: 'Restart',
   },
 
   diagram: {
@@ -316,6 +343,11 @@ export const enScreens: ScreenMessages = {
     all: 'All',
     allHint: 'Show the whole diagram',
     noActor: 'No actor',
+    follow: 'Auto follow',
+    followHint: 'Follow the current step',
+    fullscreen: 'Full screen',
+    exitFullscreen: 'Exit full screen',
+    minimap: 'Mini-map: tap to go to this place of the diagram',
   },
 
   editor: {
@@ -383,6 +415,19 @@ export const enScreens: ScreenMessages = {
     name: 'Process name',
     namePlaceholder: 'Filled in from the file',
     nameRequired: 'The name is required.',
+    sourcesLabel: 'Choose a source',
+    pickHint: 'Tap a source: SimuFlow tells you what it will read, then you choose the file.',
+    explain: {
+      drawio: 'Each shape becomes a step, each arrow a link; lanes give the actors. Diamonds are decisions.',
+      bpmn: 'Tasks, gateways and events of the BPMN 2.0 file become steps; pools and lanes give the actors.',
+      visio: 'The shapes and connectors of the first pages are read; swimlanes give the actors.',
+      formulaire: 'The form template becomes a fillable form; add its workflow to simulate the request it starts.',
+      tableau:
+        'One row per step: SimuFlow finds the step, actor, time and next step columns, even if they are named differently.',
+      scan: 'Take a photo of a printed table: the text is read on the phone, then you check the columns.',
+      texte: 'One line per step, “Actor: step (2 WD)”. A question followed by “yes → 3” and “no → 5” makes a decision.',
+      json: 'A process exported by SimuFlow, read as it is.',
+    } as Record<string, string>,
     source: 'Source',
     sources: {
       drawio: ['draw.io file', 'From Files, an email or Drive'],
@@ -490,6 +535,7 @@ export const enScreens: ScreenMessages = {
     description: 'Actors → Service A, B…; emails, phone numbers and links hidden',
     otherWords: 'Other words to hide',
     placeholder: 'Company name, a client… separated by commas',
+    help: 'To show a process without revealing real names. Actors become Service A, Service B…; e-mails, phone numbers and links are hidden. Add other words to hide, such as the company name. Your original file does not change.',
   },
 
   situations: {
@@ -676,6 +722,9 @@ export const enScreens: ScreenMessages = {
   },
 
   scanner: {
+    helpTitle: 'Scanning a table well',
+    help: 'Lay the sheet flat, in good light, and hold the phone just above it. It needs a header row (Step, Actor, Delay…): each row below becomes a step. Tap the white circle to take the photo, and the torch if the room is dark. Everything is read on the phone.',
+    columns: 'Columns found',
     title: 'Scanner',
     intro: 'Frame a table with one column per piece of information: step, actor, duration.',
     shotError: 'The photo could not be taken. Try again.',

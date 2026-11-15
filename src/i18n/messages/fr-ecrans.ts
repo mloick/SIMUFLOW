@@ -150,7 +150,29 @@ export const frScreens = {
     steps: 'Étapes',
     deleteHint: 'Demande une confirmation',
     deleteProcess: 'Supprimer ce process',
-    simulate: '▶  Lancer la simulation',
+    simulate: 'Lancer la simulation',
+    more: 'Plus d’actions',
+    actionsTitle: 'Actions',
+    exportAll: 'Exporter en PDF, draw.io, BPMN ou JSON',
+    sendSummary: 'Envoyer le résumé',
+    quick: { edit: 'Modifier', export: 'Exporter', share: 'Partager', track: 'Suivre', myPart: 'Ma partie' },
+    edited: (date: string): string => `corrigé le ${date}`,
+    points: (n: number): string => (n === 0 ? 'Rien' : n > 1 ? `${n} points` : '1 point'),
+    actorSteps: (actor: string, n: number): string => `${actor} · ${n} étape${n > 1 ? 's' : ''}`,
+    inProgress: (n: number): string => (n > 1 ? `${n} en cours` : n === 1 ? '1 en cours' : 'Aucun'),
+    help: {
+      diagnostic:
+        'SimuFlow relit le schéma et signale ce qui bloque : une étape sans sortie (impasse), une étape que rien n’atteint, une décision avec une seule branche. Touchez « Voir » pour aller à l’étape.',
+      actors:
+        'Qui porte chaque étape. La barre montre la charge : un acteur qui porte beaucoup d’étapes peut devenir un goulot.',
+      steps: 'Toutes les étapes du process, dans l’ordre du schéma, avec leur acteur et leur délai en jours ouvrés.',
+      sharing:
+        'Invitez chaque acteur par son identifiant ou son e-mail. Il relit sa partie et la valide, ou laisse un commentaire. Vous voyez qui a validé.',
+      myPart:
+        'Ce process vous a été partagé. Relisez les étapes de votre partie : validée, ou à revoir avec un commentaire.',
+      tracking:
+        'Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule chaque échéance en jours ouvrés et vous le rappelle le jour même.',
+    },
     simulateLabel: 'Lancer la simulation',
     trackingIntro:
       'Une vraie demande commence ? Suivez-la étape par étape : SimuFlow calcule l’échéance de chaque étape en jours ouvrés.',
@@ -236,6 +258,7 @@ export const frScreens = {
     finished: 'Demande terminée',
     finishedIn: (date: string, days: string): string => `Le ${date}, en ${days}.`,
     answers: 'Réponses du formulaire',
+    doneCount: (n: number): string => (n === 1 ? '1 étape faite' : `${n} étapes faites`),
     pastSteps: 'Étapes passées',
     doneOn: (date: string): string => `Terminée le ${date}`,
     stop: 'Arrêter ce suivi',
@@ -325,6 +348,12 @@ export const frScreens = {
     criticalBadge: 'critique',
     uniquePath: 'Chemin unique',
     decision: 'Décision',
+    modesLabel: 'Mode de simulation',
+    subtitle: (mode: string, n: number): string => `${mode} · étape ${n}`,
+    allSubtitle: (days: string | null): string => (days ? `Tous les cas · chemin critique ${days} JO` : 'Tous les cas'),
+    to: (title: string): string => `vers ${title}`,
+    undo: 'Retour',
+    restartShort: 'Recommencer',
   },
 
   diagram: {
@@ -334,6 +363,11 @@ export const frScreens = {
     all: 'Tout',
     allHint: 'Afficher tout le schéma',
     noActor: 'Sans acteur',
+    follow: 'Suivi auto',
+    followHint: 'Suivre l’étape en cours',
+    fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
+    minimap: 'Mini-carte : touchez pour aller à cet endroit du schéma',
   },
 
   editor: {
@@ -402,6 +436,22 @@ export const frScreens = {
     name: 'Nom du process',
     namePlaceholder: 'Rempli à partir du fichier',
     nameRequired: 'Le nom est obligatoire.',
+    sourcesLabel: 'Choisir une source',
+    pickHint: 'Touchez une source : SimuFlow vous dit ce qu’il va lire, puis vous choisissez le fichier.',
+    explain: {
+      drawio:
+        'Chaque forme devient une étape, chaque flèche un lien ; les couloirs donnent les acteurs. Les losanges sont des décisions.',
+      bpmn: 'Les tâches, passerelles et événements du fichier BPMN 2.0 deviennent des étapes ; les pools et couloirs donnent les acteurs.',
+      visio: 'Les formes et connecteurs des premières pages sont lus ; les couloirs donnent les acteurs.',
+      formulaire:
+        'Le template devient un formulaire à remplir ; ajoutez son workflow pour simuler la demande qu’il lance.',
+      tableau:
+        'Une ligne par étape : SimuFlow trouve les colonnes étape, acteur, délai et étape suivante, même nommées autrement.',
+      scan: 'Photographiez un tableau imprimé : le texte est lu sur le téléphone, puis vous vérifiez les colonnes.',
+      texte:
+        'Une ligne par étape, « Acteur : étape (2 JO) ». Une question suivie de « oui → 3 » et « non → 5 » fait une décision.',
+      json: 'Un process exporté par SimuFlow, relu tel quel.',
+    } as Record<string, string>,
     source: 'Source',
     sources: {
       drawio: ['Fichier draw.io', 'Depuis Fichiers, un mail ou Drive'],
@@ -510,6 +560,7 @@ export const frScreens = {
     description: 'Acteurs → Service A, B… ; e-mails, téléphones et liens masqués',
     otherWords: 'Autres mots à masquer',
     placeholder: 'Nom de l’entreprise, d’un client… séparés par des virgules',
+    help: 'Pour montrer un process sans dévoiler de vrais noms. Les acteurs deviennent Service A, Service B… ; les e-mails, numéros de téléphone et liens sont masqués. Ajoutez d’autres mots à masquer, comme le nom de l’entreprise. Votre fichier d’origine ne change pas.',
   },
 
   situations: {
@@ -701,6 +752,9 @@ export const frScreens = {
   },
 
   scanner: {
+    helpTitle: 'Bien scanner un tableau',
+    help: 'Posez la feuille à plat, bien éclairée, et tenez le téléphone juste au-dessus. Il faut une ligne de titres (Étape, Acteur, Délai…) : chaque ligne en dessous devient une étape. Touchez le rond blanc pour prendre la photo, et la lampe si la pièce est sombre. Tout est lu sur le téléphone.',
+    columns: 'Colonnes reconnues',
     title: 'Scanner',
     intro: 'Cadrez un tableau avec une colonne par information : étape, acteur, délai.',
     shotError: 'La photo n’a pas pu être prise. Réessayez.',

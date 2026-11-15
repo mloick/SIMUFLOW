@@ -234,8 +234,8 @@ const styles = StyleSheet.create({
   },
   field: { gap: Spacing.two },
   input: {
-    minHeight: 48,
-    borderRadius: Radius.small,
+    minHeight: 50,
+    borderRadius: Radius.medium,
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     fontSize: 16,
@@ -248,8 +248,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
   },
-  notice: { padding: Spacing.three, borderRadius: Radius.medium },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: Spacing.three },
+  notice: { padding: Spacing.three, borderRadius: Radius.large },
+  card: { borderRadius: Radius.large, paddingHorizontal: Spacing.three },
   row: { minHeight: 48, paddingVertical: Spacing.three },
   member: {
     flexDirection: 'row',

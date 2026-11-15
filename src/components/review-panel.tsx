@@ -68,7 +68,9 @@ export function ReviewPanel({
     () =>
       api
         .load()
-        .then(setReviews, (cause: unknown) => setLoadError(cause instanceof Error ? cause.message : getT().review.loadError)),
+        .then(setReviews, (cause: unknown) =>
+          setLoadError(cause instanceof Error ? cause.message : getT().review.loadError),
+        ),
     [api],
   );
 
@@ -403,7 +405,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   field: { gap: Spacing.two },
-  notice: { padding: Spacing.three, borderRadius: Radius.medium, gap: Spacing.one },
+  notice: { padding: Spacing.three, borderRadius: Radius.large, gap: Spacing.one },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: {
     minHeight: 44,
@@ -412,7 +414,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
   },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: Spacing.three },
+  card: { borderRadius: Radius.large, paddingHorizontal: Spacing.three },
   row: { minHeight: 48, paddingVertical: Spacing.three },
   step: { gap: Spacing.two, paddingVertical: Spacing.three },
   stepHead: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },

@@ -127,8 +127,8 @@ function Exporter({ process }: { process: Process }) {
                   styles.format,
                   {
                     backgroundColor: pressed ? theme.surfaceMuted : theme.surface,
-                    borderColor: selected ? theme.primary : theme.fieldBorder,
-                    borderWidth: selected ? 2 : 1,
+                    borderColor: selected ? theme.primary : 'transparent',
+                    borderWidth: 2,
                   },
                 ]}>
                 <View style={[styles.badge, { backgroundColor: theme.primaryBackground }]}>
@@ -228,12 +228,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
     padding: Spacing.three,
-    borderRadius: Radius.medium,
+    borderRadius: Radius.large,
   },
   badge: {
     width: 52,
     height: 44,
-    borderRadius: Radius.small,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
     padding: Spacing.three,
-    borderRadius: Radius.medium,
+    borderRadius: Radius.large,
   },
   footer: {
     gap: Spacing.two,
