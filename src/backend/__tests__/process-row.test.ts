@@ -28,6 +28,13 @@ describe('process ↔ ligne de la table', () => {
     expect(Object.keys(toRow(demandeMateriel)).sort()).toEqual(['content', 'name', 'source']);
   });
 
+  it('envoie le projet seulement si le process a été rangé ou sorti, et le relit', () => {
+    expect(toRow({ ...demandeMateriel, projectId: 'p1' }).project_id).toBe('p1');
+    expect(toRow({ ...demandeMateriel, projectId: null })).toHaveProperty('project_id', null);
+    expect(fromRow(row({ project_id: 'p1' })).projectId).toBe('p1');
+    expect(fromRow(row({ project_id: null }))).not.toHaveProperty('projectId');
+  });
+
   it('nettoie le nom', () => {
     expect(toRow({ ...demandeMateriel, name: '  Achats  ' }).name).toBe('Achats');
   });

@@ -154,6 +154,34 @@ export function updateImportedProcess(process: Process) {
   );
 }
 
+/**
+ * Range un process importé dans un projet, ou l'en sort (`null`). Ce n'est pas
+ * une correction : la date de correction ne change pas. Un process encore
+ * absent du serveur perd simplement son projet.
+ */
+export function setProcessProject(id: string, projectId: string | null) {
+  setImportEntries(
+    entries.map((entry) => {
+      if (entry.process.id !== id) return entry;
+      const { projectId: _previous, ...rest } = entry.process;
+      const process: Process = projectId || entry.cloudId ? { ...rest, projectId } : rest;
+      return { ...entry, process, modified: true };
+    }),
+  );
+}
+
+/** Un projet supprimé : ses process en sortent. */
+export function clearProjectFromProcesses(projectId: string) {
+  if (!entries.some((entry) => entry.process.projectId === projectId)) return;
+  setImportEntries(
+    entries.map((entry) => {
+      if (entry.process.projectId !== projectId) return entry;
+      const { projectId: _previous, ...rest } = entry.process;
+      return { ...entry, process: entry.cloudId ? { ...rest, projectId: null } : rest, modified: true };
+    }),
+  );
+}
+
 export function isImported(id: string): boolean {
   return imported.some((process) => process.id === id);
 }

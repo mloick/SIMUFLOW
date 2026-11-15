@@ -104,6 +104,10 @@ export default function RootLayout() {
           <Stack.Screen name="ma-partie/[id]" options={{ title: t.titles.myPart }} />
           <Stack.Screen name="validation/[id]" options={{ title: t.titles.validation }} />
           <Stack.Screen name="alertes" options={{ title: t.titles.alerts }} />
+          <Stack.Screen name="projet/[id]" options={{ title: t.titles.project }} />
+          <Stack.Screen name="projet/nouveau" options={{ title: t.titles.newProject, presentation: 'modal' }} />
+          <Stack.Screen name="projet/ajouter/[id]" options={{ title: t.titles.addToProject, presentation: 'modal' }} />
+          <Stack.Screen name="projet/ranger/[id]" options={{ title: t.titles.pickProject, presentation: 'modal' }} />
           <Stack.Screen name="lien/[token]" options={{ title: t.titles.link }} />
         </Stack>
       </ThemeProvider>

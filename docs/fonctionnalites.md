@@ -7,7 +7,7 @@ Chaque fonctionnalité porte son état : **Disponible** ou **Prévue**. Sous cer
 **Sommaire**
 
 1. [Ajouter un process](#1-ajouter-un-process) : fichier, tableau Excel, photo
-2. [Voir et corriger](#2-voir-et-corriger) : liste, diagnostic, éditeur
+2. [Voir et corriger](#2-voir-et-corriger) : liste, projets, diagnostic, éditeur
 3. [Simuler et partager](#3-simuler-et-partager) : pas à pas, tous les cas, export, anonymisation, partage avec les acteurs, relecture de sa partie, suivi de la validation, alertes, lien pour les acteurs sans compte
 4. [Suivre une vraie demande](#4-suivre-une-vraie-demande) : échéances et rappels
 5. [Formulaires de demande](#5-formulaires-de-demande) : voir, remplir et relier un formulaire à son workflow
@@ -153,6 +153,18 @@ Pendant le chargement, des cartes grises traversées d'un reflet tiennent la pla
 ![La liste des process et ses différents états](captures/etape-4a-liste.png)
 
 </details>
+
+### Regrouper des process en projets · Disponible
+
+Un **projet** range ensemble les process d'un même chantier, par exemple « Migration du support » avec « Ouvrir un ticket », « Escalader un incident » et « Clôturer une demande ». Sur l'accueil, **Mes projets** liste vos projets avec leur nombre de process ; **+ Nouveau projet** en crée un (un nom, une description si vous voulez). Celui qui crée un projet en est le **chef de projet**.
+
+L'écran d'un projet montre sa description et ses process. **Ajouter des process** affiche vos process à cocher : touchez-en un pour le ranger dans le projet, ou l'en sortir. Depuis la fiche d'un process, **Ranger dans un projet** fait la même chose, et peut créer le projet au passage. Un process est dans un seul projet à la fois et reste aussi dans votre liste. Le bouton **…** du projet le renomme ou le supprime : ses process restent, hors projet.
+
+Les projets sont gardés sur le téléphone et, connecté, synchronisés avec votre compte. Pour l'instant, un projet n'est visible que par vous : l'équipe du projet arrive à l'étape suivante.
+
+![Mes projets sur l'accueil, puis l'écran d'un projet avec ses process](captures/etape-46-projets.png)
+
+![Ranger dans un projet depuis la fiche d'un process, puis Ajouter des process depuis le projet](captures/etape-46-ranger-process.png)
 
 ### Voir les problèmes · Disponible
 
@@ -539,5 +551,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
+- **Équipe d'un projet** · Prévue : inviter des collaborateurs dans un projet, qui verront tous ses process ; choisir les acteurs de chaque process parmi l'équipe ; passer le rôle de chef de projet à quelqu'un d'autre.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

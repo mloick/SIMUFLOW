@@ -5,7 +5,8 @@
  * Elle se lance quand on se connecte, quand l'app revient au premier plan,
  * quand le réseau revient, après un import ou une suppression, et à la demande
  * (« Synchroniser »).
- * Les règles de lecture apprises (rules-store.ts) et les formulaires gardés
+ * Les projets (project-store.ts) passent juste avant les process, qui peuvent
+ * y être rangés. Les règles de lecture apprises (rules-store.ts) et les formulaires gardés
  * (form-store.ts) suivent, après les process, puis la liste des process
  * partagés avec le compte (shared-store.ts) et les alertes du partage
  * (share-alerts-store.ts).
@@ -20,11 +21,14 @@ import { AppState } from 'react-native';
 
 import { useSession } from '@/backend/auth';
 import { createCloudProcess, deleteCloudProcess, listCloudProcesses, updateCloudProcess } from '@/backend/processes';
+import { createCloudProject, deleteCloudProject, listCloudProjects, updateCloudProject } from '@/backend/projects';
 import { getCloudRules, saveCloudRules } from '@/backend/reading-rules';
 import { getCloudForms, saveCloudForms } from '@/backend/saved-forms';
 
 import { forgetCloudForms, hasPendingForms, subscribeSavedForms, syncSavedForms, type FormsApi } from './form-store';
 import { getImportEntries, setImportEntries, subscribeImports } from './process-store';
+import { forgetCloudProjects, hasPendingProjects, subscribeProjects, syncProjectList } from './project-store';
+import type { ProjectApi } from './project-sync';
 import { checkShareAlerts, forgetShareAlerts } from './share-alerts-store';
 import { forgetShared, refreshShared } from './shared-store';
 import { forgetCloudRules, hasPendingRules, subscribeRules, syncReadingRules, type RulesApi } from './rules-store';
@@ -46,6 +50,13 @@ const api: CloudApi = {
   create: createCloudProcess,
   update: updateCloudProcess,
   remove: deleteCloudProcess,
+};
+
+const projectApi: ProjectApi = {
+  list: listCloudProjects,
+  create: createCloudProject,
+  update: updateCloudProject,
+  remove: deleteCloudProject,
 };
 
 const rulesApi: RulesApi = { get: getCloudRules, save: saveCloudRules };
@@ -70,6 +81,18 @@ async function syncFormsQuietly() {
     await syncSavedForms(formsApi);
   } catch (error) {
     if (__DEV__) console.warn('Synchronisation des formulaires :', error);
+  }
+}
+
+/**
+ * Les projets passent avant les process. Un échec (table pas encore créée,
+ * réseau) n'arrête pas tout : les projets restent marqués et repartiront.
+ */
+async function syncProjectsQuietly() {
+  try {
+    await syncProjectList(projectApi);
+  } catch (error) {
+    if (__DEV__) console.warn('Synchronisation des projets :', error);
   }
 }
 
@@ -98,6 +121,7 @@ export async function syncNow() {
   try {
     do {
       again = false;
+      await syncProjectsQuietly();
       const before = getImportEntries();
       const result = await syncEntries(before, api);
       if (!connected) break; // déconnecté pendant l'envoi : on ne réécrit rien
@@ -130,6 +154,7 @@ function forgetCloudCopies() {
   const entries = getImportEntries();
   const kept = entries.filter((entry) => !entry.cloudId);
   if (kept.length !== entries.length) setImportEntries(kept);
+  forgetCloudProjects();
   forgetCloudRules();
   forgetCloudForms();
   forgetShared();
@@ -177,6 +202,10 @@ export function useCloudSync() {
     const stopForms = subscribeSavedForms(() => {
       if (hasPendingForms()) syncNow();
     });
+    // Un projet créé, renommé ou supprimé : il part au compte.
+    const stopProjects = subscribeProjects(() => {
+      if (!writing && hasPendingProjects()) syncNow();
+    });
     const stopAppState = AppState.addEventListener('change', (state) => {
       if (state === 'active') syncNow();
     });
@@ -191,6 +220,7 @@ export function useCloudSync() {
       stopImports();
       stopRules();
       stopForms();
+      stopProjects();
       stopAppState.remove();
       stopNetwork.remove();
     };
