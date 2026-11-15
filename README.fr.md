@@ -14,13 +14,13 @@
 
 <p align="center"><img src="docs/captures/etape-6b-schema.png" width="840" alt="Simulation pas à pas : le schéma s'allume et chaque décision demande quelle branche suivre, en mode clair et sombre"></p>
 
-SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. Elle fonctionne sur iPhone, sur Android et [dans le navigateur](https://mloick.github.io/SIMUFLOW/app/). Version 1.0, réalisée seul dans le cadre d'un cours de développement mobile en Master. Tous les exemples de l'app et de la documentation sont fictifs.
+SimuFlow est une application mobile qui transforme un workflow métier en un parcours interactif et vérifié. Elle fonctionne sur iPhone, sur Android et [dans le navigateur](https://mloick.github.io/SIMUFLOW/app/). Version 1.0, un projet personnel de Loïck, conçu et développé seul. Tous les exemples de l'app et de la documentation sont fictifs.
 
 ## En cinq lignes
 
-- **Pour qui** : les chefs de projet et analystes qui conçoivent des workflows de gestion des services informatiques (ITSM) avec les métiers.
+- **Pour qui** : tout chef de projet et son équipe, quel que soit le secteur (informatique, logistique, RH, achats, finance, service client…), qui modélisent un process et doivent le faire valider par tous ceux qu'il concerne. Un workflow de support informatique n'est qu'un exemple parmi d'autres.
 - **Problème** : un schéma statique se valide mal. Impasses, décisions à sens unique et délais incohérents sont découverts trop tard, une fois le workflow en service.
-- **Promesse** : SimuFlow les rend visibles en moins d'une minute, et permet de rejouer le process branche par branche.
+- **Promesse** : SimuFlow les rend visibles en moins d'une minute, permet de rejouer le process branche par branche, et fait valider à chaque acteur sa partie, sur tous les process d'un projet d'équipe.
 - **Trois écrans clés** : Détail (diagnostic), Simulation (pas à pas), Scanner (d'une photo à un process).
 - **Deux fonctions du téléphone** : la caméra avec lecture du texte sur l'appareil (module natif en Swift et en Kotlin), et des rappels d'échéance locaux.
 
