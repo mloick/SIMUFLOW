@@ -494,7 +494,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `(tabs)/index.tsx` | `/` | Liste des process |
 | `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
 | `(tabs)/reglages.tsx` | `/reglages` | Réglages : carte du profil, apparence, langue, notifications, exemples, à propos |
-| `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : compte, synchronisation, formulaires gardés, règles apprises |
+| `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : bannière, chiffres, synchronisation, formulaires gardés, règles apprises, déconnexion, suppression du compte |
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
@@ -1430,7 +1430,7 @@ Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `
 npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
 ```
 
-Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » du Profil, `About` (`src/app/(tabs)/profil.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
+Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » des Réglages, `AboutGroup` (`src/app/(tabs)/reglages.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 
