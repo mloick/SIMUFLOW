@@ -14,12 +14,14 @@ export type ProcessRow = {
   name: string;
   source: ProcessSource | null;
   content: { steps: Step[]; links: Link[]; sla?: number; editedAt?: string };
+  /** Projet du process (colonne ajoutée par 20261120000000_projets.sql ; absente avant ce script). */
+  project_id?: string | null;
   created_at: string;
   updated_at: string;
 };
 
 /** Ce que l'app envoie pour créer ou modifier une ligne : la base remplit le reste (id, propriétaire, dates). */
-export type ProcessRowInput = Pick<ProcessRow, 'name' | 'source' | 'content'>;
+export type ProcessRowInput = Pick<ProcessRow, 'name' | 'source' | 'content' | 'project_id'>;
 
 const SOURCES: ProcessSource[] = ['drawio', 'scan', 'json', 'tableau', 'bpmn', 'visio', 'texte'];
 
@@ -33,6 +35,9 @@ export function toRow(process: Process): ProcessRowInput {
       ...(process.sla !== undefined ? { sla: process.sla } : {}),
       ...(process.editedAt ? { editedAt: process.editedAt } : {}),
     },
+    // Seulement si le process a été rangé dans un projet ou en est sorti : un
+    // compte qui n'a pas encore la colonne project_id continue de synchroniser.
+    ...(process.projectId !== undefined ? { project_id: process.projectId } : {}),
   };
 }
 
@@ -50,5 +55,6 @@ export function fromRow(row: ProcessRow): Process {
     links: content.links,
     ...(typeof content.sla === 'number' && content.sla > 0 ? { sla: content.sla } : {}),
     ...(typeof content.editedAt === 'string' ? { editedAt: content.editedAt } : {}),
+    ...(typeof row.project_id === 'string' ? { projectId: row.project_id } : {}),
   };
 }

@@ -47,6 +47,11 @@ export const fr = {
     validation: 'Suivi de la validation',
     alerts: 'Alertes',
     link: 'Relire ma partie',
+    project: 'Projet',
+    newProject: 'Nouveau projet',
+    editProject: 'Renommer le projet',
+    addToProject: 'Ajouter des process',
+    pickProject: 'Ranger dans un projet',
   },
 
   language: {

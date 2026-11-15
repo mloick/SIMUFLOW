@@ -43,4 +43,19 @@ export type Process = {
   sla?: number;
   /** Dernière correction dans l'éditeur de l'app (date ISO). */
   editedAt?: string;
+  /**
+   * Projet dans lequel le process est rangé (identifiant du projet). `null` :
+   * sorti d'un projet, en attente d'envoi au serveur.
+   */
+  projectId?: string | null;
+};
+
+/** Un projet : il regroupe plusieurs process. Son créateur en est le chef. */
+export type Project = {
+  /** UUID choisi par le téléphone, le même sur le serveur. */
+  id: string;
+  name: string;
+  description?: string;
+  /** Date de création (ISO). */
+  createdAt: string;
 };

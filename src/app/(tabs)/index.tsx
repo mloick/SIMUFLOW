@@ -19,10 +19,11 @@ import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme
 import { splitExamples } from '@/data/examples';
 import { setExamplesShown } from '@/data/examples-setting';
 import { useProcessList } from '@/data/process-list';
+import { useProjects } from '@/data/project-store';
 import { useSharedProcesses } from '@/data/shared-store';
 import { useTrackings } from '@/data/tracking-store';
 import { useWelcomeSeen } from '@/data/welcome-setting';
-import { summarize, type Process, type ProcessSummary } from '@/domain';
+import { summarize, type Process, type ProcessSummary, type Project } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeForSearch } from '@/utils/format';
 import type { Tracking } from '@/tracking/tracking';
@@ -61,6 +62,7 @@ export default function ProcessListScreen() {
   const welcomeSeen = useWelcomeSeen();
   const shared = useSharedProcesses();
   const trackings = useTrackings();
+  const projects = useProjects();
 
   // Premier lancement : l'écran de lancement s'ouvre par-dessus la liste.
   const pathname = usePathname();
@@ -163,6 +165,10 @@ export default function ProcessListScreen() {
       {resume && filter === 'all' && !query.trim() && (
         <ResumeCard tracking={resume.tracking} process={resume.process} />
       )}
+      {list.status === 'ready' &&
+        filter === 'all' &&
+        !query.trim() &&
+        (projects.length > 0 || groups.own.length > 0) && <ProjectsSection projects={projects} processes={processes} />}
     </View>
   );
 
@@ -256,10 +262,103 @@ export default function ProcessListScreen() {
   );
 }
 
+/**
+ * « Mes projets », au-dessus des process : une ligne par projet (nom, nombre de
+ * process), puis « Nouveau projet ». Sans projet, une seule ligne propose d'en
+ * créer un.
+ */
+function ProjectsSection({ projects, processes }: { projects: Project[]; processes: Process[] }) {
+  const theme = useTheme();
+  const t = useT();
+  const openNew = () => router.push('/projet/nouveau');
+
+  if (projects.length === 0) {
+    return (
+      <PressableScale
+        onPress={openNew}
+        accessibilityRole="button"
+        accessibilityHint={t.projects.discoverHint}
+        style={[styles.projectDiscover, { borderColor: theme.fieldBorder }]}>
+        <SymbolView
+          name={{ ios: 'folder.badge.plus', android: 'create_new_folder' }}
+          size={20}
+          tintColor={theme.link}
+        />
+        <ThemedText type="smallBold" style={[styles.projectName, { color: theme.link }]}>
+          {t.projects.discover}
+        </ThemedText>
+      </PressableScale>
+    );
+  }
+
+  return (
+    <View style={styles.projects}>
+      <View style={styles.projectsHeading}>
+        <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
+          {t.projects.section}
+        </ThemedText>
+        <PressableScale onPress={openNew} accessibilityRole="button" hitSlop={8}>
+          <ThemedText type="smallBold" style={{ color: theme.link }}>
+            {`+ ${t.projects.new}`}
+          </ThemedText>
+        </PressableScale>
+      </View>
+      {projects.map((project) => {
+        const count = processes.filter((process) => process.projectId === project.id).length;
+        return (
+          <PressableScale
+            key={project.id}
+            onPress={() => router.push({ pathname: '/projet/[id]', params: { id: project.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${project.name}, ${t.projects.count(count)}`}
+            accessibilityHint={t.projects.openHint}
+            style={[styles.projectRow, { backgroundColor: theme.surface }]}>
+            <View style={[styles.projectIcon, { backgroundColor: theme.primaryBackground }]}>
+              <SymbolView name={{ ios: 'folder.fill', android: 'folder' }} size={20} tintColor={theme.link} />
+            </View>
+            <View style={styles.projectName}>
+              <ThemedText type="smallBold" numberOfLines={1}>
+                {project.name}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t.projects.count(count)}
+              </ThemedText>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right' }}
+              size={16}
+              tintColor={theme.textSecondary}
+            />
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
+  projects: { gap: Spacing.two },
+  projectsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 },
+  projectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three - Spacing.half,
+    borderRadius: Radius.large,
   },
+  projectIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  projectName: { flex: 1, gap: Spacing.half },
+  projectDiscover: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    minHeight: 52,
+    paddingHorizontal: Spacing.three,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: Radius.large,
+  },
+  screen: { flex: 1 },
   content: {
     gap: Spacing.three - Spacing.one,
     paddingHorizontal: Spacing.three,

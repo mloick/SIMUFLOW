@@ -42,6 +42,11 @@ export const en: Messages = {
     validation: 'Validation follow-up',
     alerts: 'Alerts',
     link: 'Review my part',
+    project: 'Project',
+    newProject: 'New project',
+    editProject: 'Rename the project',
+    addToProject: 'Add processes',
+    pickProject: 'Add to a project',
   },
 
   language: {

@@ -21,6 +21,7 @@ import {
   useCloudId,
   useImportedProcesses,
 } from '@/data/process-store';
+import { useProjects } from '@/data/project-store';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, hasDelays, slaOf, summarize, type Issue, type Process } from '@/domain';
@@ -83,6 +84,7 @@ function ProcessDetail({ process }: { process: Process }) {
   const session = useSession();
   const trackings = useTrackings(process.id);
   const imported = isImported(process.id);
+  const project = useProjects().find((item) => item.id === process.projectId);
 
   const summary = useMemo(() => summarize(process), [process]);
   const paths = useMemo(() => countPaths(process), [process]);
@@ -223,6 +225,22 @@ function ProcessDetail({ process }: { process: Process }) {
           </ThemedText>
           {shared && (
             <ThemedText themeColor="textSecondary">{t.detail.sharedBy(shared.ownerName, shared.actor)}</ThemedText>
+          )}
+          {imported && (
+            <Pressable
+              onPress={() => router.push({ pathname: '/projet/ranger/[id]', params: { id: process.id } })}
+              accessibilityRole="button"
+              accessibilityHint={t.projects.detailHint}
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.project,
+                { backgroundColor: pressed ? theme.surfaceMuted : theme.surface },
+              ]}>
+              <SymbolView name={{ ios: 'folder', android: 'folder' }} size={16} tintColor={theme.link} />
+              <ThemedText type="smallBold" style={{ color: theme.link }}>
+                {project ? t.projects.detailIn(project.name) : t.projects.detailNone}
+              </ThemedText>
+            </Pressable>
           )}
         </View>
 
@@ -636,6 +654,15 @@ const styles = StyleSheet.create({
   more: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   titleBlock: { gap: Spacing.two },
   pill: { flexDirection: 'row' },
+  project: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: Spacing.two,
+    minHeight: 36,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.pill,
+  },
   title: { fontWeight: 800, letterSpacing: -0.8, fontSize: 30, lineHeight: 36 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three - Spacing.half * 3 },
   tile: {
