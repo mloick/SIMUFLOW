@@ -758,7 +758,7 @@ En mode développement, la page Profil propose « Démo · état de la liste des
 - **Actions rapides** : quatre boutons ronds, Modifier (ou « Ma partie » pour un process partagé avec moi), Exporter (`/export/[id]`), Partager (`/partage/[id]` sur un compte, sinon le résumé en texte) et Suivre (commence un suivi en vrai).
 - **Sections repliables** (`Accordion`, `src/components/accordion.tsx` : tuile d'icône, titre, résumé à droite, chevron, bouton « ? » facultatif qui ouvre la feuille d'aide ; le contenu apparaît en fondu) : Diagnostic (ouverte s'il y a un point, avec `explainIssue`), Délais (SLA / OLA) si le process a un SLA ou un OLA (voir « Mode Délais »), Acteurs (une barre par acteur, longueur selon son nombre d'étapes), Étapes, Partage (carte de validation), Ma partie, Suivi en vrai. « Voir » sur une anomalie ouvre les étapes, puis y fait défiler et surligne l'étape (`onLayout`, `scrollTo`).
 
-L'écran relit le process à chaque changement (`useImportedProcesses`).
+L'écran relit le process à chaque changement : il le cherche dans la liste renvoyée par `useImportedProcesses` (et non avec `getProcess` seul, que le React Compiler laisserait sur l'ancienne version).
 
 ![Détail d'un process (refonte R8) : source, chiffres, simulation, actions rapides et sections repliables](captures/etape-r8-detail.png)
 

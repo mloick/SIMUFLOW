@@ -11,7 +11,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess, useImportedProcesses } from '@/data/process-store';
-import { getTracking, removeTracking, saveTracking, useTrackings } from '@/data/tracking-store';
+import { removeTracking, saveTracking, useTrackings } from '@/data/tracking-store';
 import type { Process } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import { workingDaysBetween } from '@/tracking/calendar';
@@ -32,10 +32,9 @@ import { useT, type Messages } from '@/i18n';
  */
 export default function TrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  useTrackings(); // relit le suivi après chaque étape
-  useImportedProcesses();
-  const tracking = getTracking(id);
-  const process = tracking && getProcess(tracking.processId);
+  const tracking = useTrackings().find((item) => item.id === id);
+  const processes = useImportedProcesses();
+  const process = tracking && (processes.find((item) => item.id === tracking.processId) ?? getProcess(tracking.processId));
   const theme = useTheme();
   const t = useT();
 
