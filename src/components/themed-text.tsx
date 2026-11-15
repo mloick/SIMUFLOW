@@ -1,19 +1,48 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  type TextProps,
+  type TextStyle,
+} from "react-native";
 
-import { Fonts, ThemeColor } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { fontFaceFor, Fonts, ThemeColor } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'subtitle' | 'small' | 'smallBold' | 'link' | 'code';
+  type?:
+    | "default"
+    | "title"
+    | "subtitle"
+    | "small"
+    | "smallBold"
+    | "link"
+    | "code";
   themeColor?: ThemeColor;
 };
 
 /** Texte aux couleurs du thème. Les tailles reprennent celles de la maquette. */
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  style,
+  type = "default",
+  themeColor,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
-  const color = theme[themeColor ?? (type === 'link' ? 'link' : 'text')];
+  const color = theme[themeColor ?? (type === "link" ? "link" : "text")];
+  // Plus Jakarta Sans : le fichier de la bonne graisse, plutôt qu'un trait grossi par le système.
+  const font =
+    type === "code"
+      ? null
+      : {
+          fontFamily: fontFaceFor(
+            (StyleSheet.flatten([styles[type], style]) as TextStyle | undefined)
+              ?.fontWeight,
+          ),
+          fontWeight: "normal" as const,
+        };
 
-  return <Text style={[{ color }, styles[type], style]} {...rest} />;
+  return <Text style={[{ color }, styles[type], style, font]} {...rest} />;
 }
 
 const styles = StyleSheet.create({

@@ -34,6 +34,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Suivre une vraie demande**, avec des échéances en jours ouvrés français et un rappel le jour J.
 - **Partager** un process avec ses acteurs : inviter des collègues par identifiant ou e-mail, et relier chacun à un acteur du schéma ; ils le lisent sans pouvoir le modifier, et chacun relit sa partie : chaque étape est validée, ou signalée à revoir avec un commentaire. Le propriétaire suit qui a fini, ce qui est à corriger, et voit « entièrement validé » à la fin. Des alertes dans l'app (et en notification sur le téléphone) annoncent un nouveau partage, une étape à revoir et un process entièrement validé. Les acteurs sans compte reçoivent un lien web par acteur : ils confirment leur nom et relisent leur partie dans le navigateur.
 - **Synchroniser** entre appareils avec un compte, en restant utilisable hors connexion ; tout est supprimé avec le compte.
+- **Vos couleurs** : quatre palettes (Océan, Aurore, Menthe, Corail), chacune en clair et en sombre, au choix dans le Profil ; l'app utilise la police Plus Jakarta Sans.
 - **Français ou anglais** : tous les écrans suivent la langue du téléphone, ou le choix fait dans le Profil. Ce que vous importez reste tel quel, de même que les fichiers exportés et les quatre exemples, en français.
 
 La visite complète, avec captures, est dans le [guide des fonctionnalités](docs/fonctionnalites.md). Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
@@ -129,7 +130,7 @@ Le détail, fichier par fichier, est dans la [documentation technique](docs/tech
 
 ## Technologies
 
-Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), Supabase (`@supabase/supabase-js` 2), Reanimated 4, react-native-svg, expo-camera, expo-notifications, expo-secure-store, expo-sqlite. Tests : Jest 30 avec `jest-expo`, React Native Testing Library, Maestro. CI : GitHub Actions.
+Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), Supabase (`@supabase/supabase-js` 2), Reanimated 4, react-native-svg, Plus Jakarta Sans (`@expo-google-fonts`), expo-camera, expo-notifications, expo-secure-store, expo-sqlite. Tests : Jest 30 avec `jest-expo`, React Native Testing Library, Maestro. CI : GitHub Actions.
 
 ## Licence
 

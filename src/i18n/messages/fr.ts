@@ -61,6 +61,9 @@ export const fr = {
     options: { auto: 'Automatique', light: 'Clair', dark: 'Sombre' },
     autoHint: 'Suit le réglage du téléphone.',
     fixedHint: 'Garde ce mode, quel que soit le réglage du téléphone.',
+    colors: 'Couleurs',
+    palettes: { ocean: 'Océan', aurore: 'Aurore', menthe: 'Menthe', corail: 'Corail' },
+    paletteLabel: (name: string): string => `Palette ${name}`,
   },
 
   roles: { chef_de_projet: 'Chef de projet', collaborateur: 'Collaborateur' },
