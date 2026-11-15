@@ -249,6 +249,20 @@ export const en: Messages = {
     haveAccount: 'Already have an account?',
     noAccount: 'No account yet?',
     switchCreate: 'Create an account',
+    title: 'Sign in',
+    subtitle: 'Find your processes on all your devices.',
+    titleCreate: 'Create your account',
+    subtitleCreate: 'Free, in thirty seconds.',
+    passwordPlaceholder: 'At least 8 characters',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    or: 'or',
+    continueWithout: 'Continue without an account',
+    why: 'Why an account?',
+    whyText:
+      'With an account, your processes follow you on all your devices and you can share them with the people involved. Without one, everything stays on this phone.',
+    close: 'Close',
+    illustration: { start: 'Start', step: 'Qualify', wait: 'Approve · 2 days' },
   },
 
   reset: {

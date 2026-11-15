@@ -45,11 +45,13 @@ export default function ProcessListScreen() {
   const shared = useSharedProcesses();
   const { unread } = useShareAlerts();
 
-  // Premier lancement : la présentation s'ouvre par-dessus la liste.
+  // Premier lancement : l'écran de lancement s'ouvre par-dessus la liste.
   const pathname = usePathname();
   useEffect(() => {
-    // Pas par-dessus la page d'un lien d'acteur, ouverte par quelqu'un qui n'utilise pas l'app.
-    if (!welcomeSeen && !pathname.startsWith('/lien/')) router.push('/bienvenue');
+    // L'écran de lancement (connexion ou « Continuer sans compte »), puis la présentation.
+    // Seulement depuis la liste : pas par-dessus la page d'un lien d'acteur, ouverte par quelqu'un
+    // qui n'utilise pas l'app, ni de nouveau pendant que le lancement est affiché.
+    if (!welcomeSeen && pathname === '/') router.push({ pathname: '/connexion', params: { lancement: '1' } });
   }, [welcomeSeen, pathname]);
 
   const processes = list.status === 'ready' ? list.processes : NO_PROCESSES;
