@@ -5,6 +5,7 @@ import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SharedProcess } from '@/backend/shared';
+import { EmptyIllustration } from '@/components/empty-illustration';
 import { FilterChips, type FilterChip } from '@/components/filter-chips';
 import { HomeHeader } from '@/components/home-header';
 import { ListSkeleton } from '@/components/list-skeleton';
@@ -16,6 +17,7 @@ import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { fontFaceFor, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { splitExamples } from '@/data/examples';
+import { setExamplesShown } from '@/data/examples-setting';
 import { useProcessList } from '@/data/process-list';
 import { useSharedProcesses } from '@/data/shared-store';
 import { useTrackings } from '@/data/tracking-store';
@@ -151,9 +153,9 @@ export default function ProcessListScreen() {
         </>
       )}
       {list.status === 'ready' && list.offline && (
-        <View style={[styles.offline, { backgroundColor: theme.warningBackground }]} accessibilityRole="alert">
-          <SymbolView name={{ ios: 'wifi.slash', android: 'wifi_off' }} size={18} tintColor={theme.warning} />
-          <ThemedText type="small" style={[styles.offlineText, { color: theme.warning }]}>
+        <View style={[styles.offline, { backgroundColor: theme.text }]} accessibilityRole="alert">
+          <SymbolView name={{ ios: 'wifi.slash', android: 'wifi_off' }} size={20} tintColor={theme.background} />
+          <ThemedText type="smallBold" style={[styles.offlineText, { color: theme.background }]}>
             {t.list.offline}
           </ThemedText>
         </View>
@@ -170,7 +172,7 @@ export default function ProcessListScreen() {
   } else if (list.status === 'error') {
     empty = (
       <StateMessage
-        icon={{ ios: 'exclamationmark.circle', android: 'error' }}
+        icon={{ ios: 'exclamationmark.triangle', android: 'warning' }}
         tone="danger"
         title={t.list.errorTitle}
         message={t.list.errorText}
@@ -180,11 +182,12 @@ export default function ProcessListScreen() {
   } else if (!hasProcesses) {
     empty = (
       <StateMessage
-        icon={{ ios: 'list.bullet.rectangle', android: 'account_tree' }}
+        illustration={<EmptyIllustration />}
         tone="primary"
         title={t.list.emptyTitle}
         message={t.list.emptyText}
         action={{ label: t.list.add, onPress: openImport }}
+        secondary={{ label: t.list.showExamples, onPress: () => setExamplesShown(true) }}
       />
     );
   } else {
@@ -290,9 +293,10 @@ const styles = StyleSheet.create({
   offline: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three - Spacing.half * 3,
     borderRadius: Radius.medium,
-    padding: Spacing.three - Spacing.one,
+    paddingVertical: Spacing.three - Spacing.one,
+    paddingHorizontal: Spacing.three - Spacing.half,
   },
   offlineText: {
     flex: 1,

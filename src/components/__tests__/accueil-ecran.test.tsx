@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 
 import ProcessListScreen from '@/app/(tabs)/index';
 import { demoProcesses } from '@/data/demo-processes';
+import { setExamplesShown } from '@/data/examples-setting';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() }, usePathname: () => '/' }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -28,8 +29,17 @@ function mockProcesses() {
   aCorriger.steps = [...aCorriger.steps, { id: 'isolee', kind: 'task', title: 'Archiver la demande' }];
   return [demandeMateriel, aCorriger, demoProcesses[0]];
 }
+// L'état de la liste, changé par chaque test (par défaut : prête, en ligne).
+let mockList: Record<string, unknown> | null = null;
+const mockReload = jest.fn();
 jest.mock('@/data/process-list', () => ({
-  useProcessList: () => ({ status: 'ready', processes: mockProcesses(), offline: false }),
+  useProcessList: () => ({
+    status: 'ready',
+    processes: mockProcesses(),
+    offline: false,
+    ...mockList,
+    reload: mockReload,
+  }),
 }));
 // Une demande suivie en vrai, pas terminée, à la première étape de « Demande de matériel ».
 jest.mock('@/data/tracking-store', () => ({
@@ -48,6 +58,8 @@ const exemple = demoProcesses[0];
 describe('Accueil', () => {
   beforeEach(() => {
     jest.mocked(router.push).mockClear();
+    mockReload.mockClear();
+    mockList = null;
   });
 
   it('dit bonjour, montre le titre et les filtres avec leur nombre', async () => {
@@ -81,5 +93,35 @@ describe('Accueil', () => {
     expect(router.push).toHaveBeenCalledWith('/alertes');
     await fireEvent.press(screen.getByRole('button', { name: 'Ajouter un process' }));
     expect(router.push).toHaveBeenCalledWith('/import');
+  });
+
+  it('montre le squelette pendant le chargement', async () => {
+    mockList = { status: 'loading' };
+    await render(<ProcessListScreen />);
+    expect(screen.getByLabelText('Chargement des process')).toBeOnTheScreen();
+  });
+
+  it('propose « Réessayer » quand le chargement échoue', async () => {
+    mockList = { status: 'error' };
+    await render(<ProcessListScreen />);
+    expect(screen.getByRole('header', { name: 'Impossible de charger vos process' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(mockReload).toHaveBeenCalledTimes(1);
+  });
+
+  it('liste vide : ajoute un process ou réaffiche les exemples', async () => {
+    mockList = { processes: [] };
+    setExamplesShown(false);
+    await render(<ProcessListScreen />);
+    expect(screen.getByRole('header', { name: 'Aucun process pour l’instant' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Voir les exemples' }));
+    expect(globalThis.localStorage.getItem('simuflow.exemples')).toBe('on');
+  });
+
+  it('hors ligne : un bandeau, et les process restent là', async () => {
+    mockList = { offline: true };
+    await render(<ProcessListScreen />);
+    expect(screen.getByText('Hors ligne · vos process restent disponibles')).toBeOnTheScreen();
+    expect(screen.getByText('Commande de badges')).toBeOnTheScreen();
   });
 });

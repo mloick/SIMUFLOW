@@ -35,7 +35,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Share** a process with its actors: invite colleagues by username or e-mail and link each one to a step owner of the diagram; they can read it, not change it, and each member reviews their part: every step is validated, or flagged with a comment. The owner follows who has finished, what needs fixing, and sees « fully validated » at the end. In-app alerts (and phone notifications) announce a new share, a step to fix, and a fully validated process. Actors without an account get a web link per actor: they confirm their name and review their part in the browser.
 - **Sync** across devices with an account, offline first; everything is deleted with the account.
 - **Your colors**: four palettes (Ocean, Aurora, Mint, Coral), each in light and dark, chosen in Settings; the app uses the Plus Jakarta Sans font. A small « ? » button next to each setting opens a short explanation.
-- **Home screen**: search, filters (All, To fix, Shared, Examples) with their counts, a « Resume » card that takes you back to the request you are tracking, the alerts bell and a « New » button.
+- **Home screen**: search, filters (All, To fix, Shared, Examples) with their counts, a « Resume » card that takes you back to the request you are tracking, the alerts bell, a « New » button, and clear loading, empty, error and offline states.
 - **French or English**: every screen follows the phone's language, or the choice made in Settings. What you import stays as written, and so do the exported files and the four examples, in French.
 
 The full tour, with screenshots, is in the [features guide](docs/fonctionnalites.md) (French). The screen mockups are in [`docs/maquette/`](docs/maquette/).
