@@ -156,7 +156,7 @@ Pendant le chargement, des cartes grises traversées d'un reflet tiennent la pla
 
 ### Regrouper des process en projets · Disponible
 
-Un **projet** range ensemble les process d'un même chantier, par exemple « Migration du support » avec « Ouvrir un ticket », « Escalader un incident » et « Clôturer une demande ». Sur l'accueil, **Mes projets** liste vos projets avec leur nombre de process ; **+ Nouveau projet** en crée un (un nom, une description si vous voulez). Celui qui crée un projet en est le **chef de projet**.
+Un **projet** range ensemble les process d'un même chantier, par exemple « Migration du support » avec « Ouvrir un ticket », « Escalader un incident » et « Clôturer une demande ». L'onglet **Projets**, dans la barre du bas, liste vos projets avec leur nombre de process ; **Nouveau projet** en crée un (un nom, une description si vous voulez). Celui qui crée un projet en est le **chef de projet**.
 
 L'écran d'un projet montre sa description et ses process. **Ajouter des process** affiche vos process à cocher : touchez-en un pour le ranger dans le projet, ou l'en sortir. Depuis la fiche d'un process, **Ranger dans un projet** fait la même chose, et peut créer le projet au passage. Un process est dans un seul projet à la fois et reste aussi dans votre liste. Le bouton **…** du projet le renomme ou le supprime : ses process restent, hors projet.
 
@@ -168,7 +168,7 @@ Les projets sont gardés sur le téléphone et, connecté, synchronisés avec vo
 
 ### L'équipe d'un projet · Disponible
 
-Sur l'écran d'un projet, la section **Équipe** montre le chef (★) et les collaborateurs. Le chef invite des collègues avec leur **identifiant** ou leur **adresse e-mail** (il faut être connecté). Toute l'équipe voit le projet dans **Mes projets** (avec « Chef » ou « Collaborateur »), lit tous ses process et peut y ranger les siens. Les process des autres apparaissent avec « Partagé par … » ; on peut les ouvrir, les simuler et suivre une demande, sans les modifier.
+Sur l'écran d'un projet, la section **Équipe** montre le chef (★) et les collaborateurs. Le chef invite des collègues avec leur **identifiant** ou leur **adresse e-mail** (il faut être connecté). Toute l'équipe voit le projet dans l'onglet **Projets** (avec « Chef » ou « Collaborateur »), lit tous ses process et peut y ranger les siens. Les process des autres apparaissent avec « Partagé par … » ; on peut les ouvrir, les simuler et suivre une demande, sans les modifier.
 
 Le rôle dépend du projet, pas du compte : on peut être chef d'un projet et collaborateur d'un autre. Le chef touche un collaborateur pour **Nommer chef de projet** (il reste dans le projet comme collaborateur) ou **Retirer du projet**. Un collaborateur peut **Quitter le projet** depuis le bouton **…**. Quand quelqu'un quitte le projet ou en est retiré, ses process en sortent. Si un chef supprime son compte, le projet passe au collaborateur le plus ancien.
 
@@ -177,6 +177,12 @@ Les acteurs restent choisis process par process, dans **Partager** : si le proce
 ![L'équipe d'un projet vue par le chef, le menu d'un collaborateur, puis un projet vu par un collaborateur](captures/etape-47-equipe-projet.png)
 
 ![Mes projets avec le rôle dans chacun, puis Partager qui propose l'équipe du projet](captures/etape-47-partage-equipe.png)
+
+### L'onglet Projets · Disponible
+
+La barre du bas a quatre onglets : **Process**, **Scanner**, **Projets** et **Réglages**. L'onglet Projets range vos projets en deux parties : **Je pilote** (ceux dont vous êtes chef) et **Je suis collaborateur** (ceux d'une autre personne, avec le nom du chef). Chaque carte montre le nombre de process et votre rôle. Les filtres **Tous**, **Je pilote** et **Collaborateur** en haut n'en gardent qu'une partie. Le bouton **Nouveau projet** en bas à droite en crée un. Sans projet, l'écran explique à quoi sert un projet et propose d'en créer un. L'accueil, lui, ne montre plus que les process.
+
+![L'onglet Projets, le filtre Collaborateur, puis l'accueil avec ses quatre onglets](captures/etape-48-onglet-projets.png)
 
 ### Voir les problèmes · Disponible
 
@@ -563,6 +569,5 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Onglet Projets** · Prévue : les projets dans leur propre onglet de la barre du bas (Process, Scanner, Projets, Réglages).
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

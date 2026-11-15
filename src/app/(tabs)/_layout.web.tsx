@@ -26,6 +26,9 @@ export default function TabsLayout() {
         <TabTrigger name="scanner" href="/scanner" asChild>
           <TabButton icon="document_scanner" label={t.tabs.scanner} />
         </TabTrigger>
+        <TabTrigger name="projets" href="/projets" asChild>
+          <TabButton icon="folder" label={t.tabs.projects} />
+        </TabTrigger>
         <TabTrigger name="reglages" href="/reglages" asChild>
           <TabButton icon="tune" label={t.tabs.settings} />
         </TabTrigger>

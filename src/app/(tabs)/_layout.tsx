@@ -24,6 +24,11 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf="doc.viewfinder" md="document_scanner" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="projets">
+        <NativeTabs.Trigger.Label>{t.tabs.projects}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="folder" md="folder" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="reglages">
         <NativeTabs.Trigger.Label>{t.tabs.settings}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="slider.horizontal.3" md="tune" />
