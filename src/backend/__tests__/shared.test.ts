@@ -25,6 +25,13 @@ describe('process partagés avec moi', () => {
     expect(shared.ownerName).toBe('Julie Martin');
   });
 
+  it('lit le projet du process et dit si je peux donner mon avis', () => {
+    expect(toShared(row).member).toBe(true); // ancien serveur, sans is_member : membre
+    const fromTeam = toShared({ ...row, actor: null, project_id: 'p1', is_member: false });
+    expect(fromTeam.member).toBe(false);
+    expect(fromTeam.process.projectId).toBe('p1');
+  });
+
   it('nomme le propriétaire par son identifiant s’il n’a pas de nom', () => {
     expect(toShared({ ...row, owner_first_name: null, owner_last_name: null }).ownerName).toBe('@julie.martin');
     expect(toShared({ ...row, owner_first_name: null, owner_last_name: null, owner_username: null }).ownerName).toBe(

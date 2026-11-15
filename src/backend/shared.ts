@@ -19,6 +19,11 @@ export type SharedProcess = {
   actor: string | null;
   /** Qui l'a partagé : « Julie Martin », ou son identifiant. */
   ownerName: string;
+  /**
+   * Membre du process (il peut donner son avis). `false` : lu seulement parce
+   * qu'il est rangé dans un projet de mon équipe. Absent (anciennes données) : membre.
+   */
+  member?: boolean;
   updatedAt: string;
 };
 
@@ -32,6 +37,9 @@ type SharedRow = {
   owner_first_name: string | null;
   owner_last_name: string | null;
   owner_username: string | null;
+  /** Ajoutés par 20261121000000_equipe_projet.sql. */
+  project_id?: string | null;
+  is_member?: boolean;
 };
 
 type ReviewRow = { step_id: string; status: ReviewStatus; comment: string | null };
@@ -48,6 +56,7 @@ export function toShared(row: SharedRow): SharedProcess {
     name: row.name,
     source: row.source,
     content: row.content,
+    project_id: row.project_id ?? null,
     created_at: row.updated_at,
     updated_at: row.updated_at,
   });
@@ -57,6 +66,7 @@ export function toShared(row: SharedRow): SharedProcess {
     cloudId: row.process_id,
     actor: row.actor?.trim() || null,
     ownerName: name || (row.owner_username ? `@${row.owner_username}` : getT().errors.otherAccount),
+    member: row.is_member !== false,
     updatedAt: row.updated_at,
   };
 }

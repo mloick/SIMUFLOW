@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { useSession } from '@/backend/auth';
+import { listTeam, personName, type TeamMember } from '@/backend/project-team';
 import { inviteMember, listMembers, memberName, removeMember, type Member } from '@/backend/sharing';
 import { ActorLinks } from '@/components/actor-links';
 import { PrimaryButton } from '@/components/primary-button';
@@ -14,7 +16,9 @@ import { confirmAction } from '@/utils/confirm';
 /**
  * Partage d'un process déjà sur le compte (`cloudId`) : inviter un membre par
  * son identifiant ou son adresse e-mail, pour un acteur du schéma ou pour tout
- * le process ; voir et retirer les membres.
+ * le process ; voir et retirer les membres. Si le process est rangé dans un
+ * projet, l'équipe du projet est proposée en premier : toucher un nom remplit
+ * « Qui inviter ? ».
  */
 export function SharePanel({ process, cloudId }: { process: Process; cloudId: string }) {
   const theme = useTheme();
@@ -28,6 +32,20 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+
+  const session = useSession();
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  useEffect(() => {
+    if (!process.projectId) return;
+    // Sans équipe lisible (script pas encore appliqué, réseau), pas de suggestions.
+    listTeam(process.projectId).then(setTeam, () => setTeam([]));
+  }, [process.projectId]);
+
+  // L'équipe du projet, sans moi ni ceux déjà membres du process.
+  const suggestions = team.filter(
+    (person) =>
+      person.username && person.id !== session?.user.id && !members?.some((member) => member.id === person.id),
+  );
 
   const fetchMembers = useCallback(
     () =>
@@ -108,6 +126,27 @@ export function SharePanel({ process, cloudId }: { process: Process; cloudId: st
           style={input}
         />
       </View>
+
+      {suggestions.length > 0 && (
+        <View style={styles.field}>
+          <ThemedText type="smallBold">{t.projects.team.fromTeam}</ThemedText>
+          <View style={styles.chips}>
+            {suggestions.map((person) => (
+              <Pressable
+                key={person.id}
+                onPress={() => {
+                  setWho(person.username ?? '');
+                  setError(null);
+                }}
+                accessibilityRole="button"
+                accessibilityHint={t.projects.team.fromTeamHint(personName(person))}
+                style={[styles.chip, { backgroundColor: theme.surface, borderColor: theme.fieldBorder }]}>
+                <ThemedText type="smallBold">{personName(person)}</ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
 
       {actors.length > 0 && (
         <View style={styles.field}>

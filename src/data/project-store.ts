@@ -123,6 +123,11 @@ export function removeProject(id: string) {
   clearProjectFromProcesses(id);
 }
 
+/** Le projet est-il déjà sur le serveur ? (Il faut qu'il y soit pour inviter une équipe.) */
+export function isProjectSynced(id: string): boolean {
+  return entries.some((entry) => entry.project.id === id && entry.synced && !entry.deleted);
+}
+
 /** Des changements attendent d'être envoyés au serveur. */
 export function hasPendingProjects(): boolean {
   return entries.some((entry) => !entry.synced || entry.modified || entry.deleted);

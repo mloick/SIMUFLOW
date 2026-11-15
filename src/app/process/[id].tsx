@@ -21,7 +21,7 @@ import {
   useCloudId,
   useImportedProcesses,
 } from '@/data/process-store';
-import { useProjects } from '@/data/project-store';
+import { useAllProjects } from '@/data/project-view';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
 import { countPaths, explainIssue, hasDelays, slaOf, summarize, type Issue, type Process } from '@/domain';
@@ -84,7 +84,7 @@ function ProcessDetail({ process }: { process: Process }) {
   const session = useSession();
   const trackings = useTrackings(process.id);
   const imported = isImported(process.id);
-  const project = useProjects().find((item) => item.id === process.projectId);
+  const project = useAllProjects().find((item) => item.project.id === process.projectId)?.project;
 
   const summary = useMemo(() => summarize(process), [process]);
   const paths = useMemo(() => countPaths(process), [process]);
@@ -140,7 +140,7 @@ function ProcessDetail({ process }: { process: Process }) {
             onPress: openEdit,
             hint: t.detail.editHint,
           }
-        : shared
+        : shared && shared.member !== false
           ? {
               label: t.detail.quick.myPart,
               icon: { ios: 'checkmark.circle', android: 'task_alt' },
@@ -225,6 +225,21 @@ function ProcessDetail({ process }: { process: Process }) {
           </ThemedText>
           {shared && (
             <ThemedText themeColor="textSecondary">{t.detail.sharedBy(shared.ownerName, shared.actor)}</ThemedText>
+          )}
+          {!imported && project && (
+            <Pressable
+              onPress={() => router.push({ pathname: '/projet/[id]', params: { id: project.id } })}
+              accessibilityRole="link"
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.project,
+                { backgroundColor: pressed ? theme.surfaceMuted : theme.surface },
+              ]}>
+              <SymbolView name={{ ios: 'folder', android: 'folder' }} size={16} tintColor={theme.link} />
+              <ThemedText type="smallBold" style={{ color: theme.link }}>
+                {t.projects.detailIn(project.name)}
+              </ThemedText>
+            </Pressable>
           )}
           {imported && (
             <Pressable
@@ -359,7 +374,7 @@ function ProcessDetail({ process }: { process: Process }) {
           </Accordion>
         )}
 
-        {shared && (
+        {shared && shared.member !== false && (
           <Accordion
             icon={{ ios: 'checkmark.circle', android: 'task_alt' }}
             title={t.detail.myPart}
