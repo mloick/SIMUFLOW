@@ -721,6 +721,9 @@ export const enScreens: ScreenMessages = {
   },
 
   scanner: {
+    helpTitle: 'Scanning a table well',
+    help: 'Lay the sheet flat, in good light, and hold the phone just above it. It needs a header row (Step, Actor, Delay…): each row below becomes a step. Tap the white circle to take the photo, and the torch if the room is dark. Everything is read on the phone.',
+    columns: 'Columns found',
     title: 'Scanner',
     intro: 'Frame a table with one column per piece of information: step, actor, duration.',
     shotError: 'The photo could not be taken. Try again.',

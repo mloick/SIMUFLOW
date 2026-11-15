@@ -751,6 +751,9 @@ export const frScreens = {
   },
 
   scanner: {
+    helpTitle: 'Bien scanner un tableau',
+    help: 'Posez la feuille à plat, bien éclairée, et tenez le téléphone juste au-dessus. Il faut une ligne de titres (Étape, Acteur, Délai…) : chaque ligne en dessous devient une étape. Touchez le rond blanc pour prendre la photo, et la lampe si la pièce est sombre. Tout est lu sur le téléphone.',
+    columns: 'Colonnes reconnues',
     title: 'Scanner',
     intro: 'Cadrez un tableau avec une colonne par information : étape, acteur, délai.',
     shotError: 'La photo n’a pas pu être prise. Réessayez.',
