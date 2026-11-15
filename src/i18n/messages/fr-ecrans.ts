@@ -258,6 +258,7 @@ export const frScreens = {
     finished: 'Demande terminée',
     finishedIn: (date: string, days: string): string => `Le ${date}, en ${days}.`,
     answers: 'Réponses du formulaire',
+    doneCount: (n: number): string => (n === 1 ? '1 étape faite' : `${n} étapes faites`),
     pastSteps: 'Étapes passées',
     doneOn: (date: string): string => `Terminée le ${date}`,
     stop: 'Arrêter ce suivi',

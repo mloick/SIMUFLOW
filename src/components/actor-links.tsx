@@ -179,9 +179,9 @@ export function ActorLinks({
 const styles = StyleSheet.create({
   field: { gap: Spacing.two },
   flex: { flex: 1, gap: Spacing.half },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: Spacing.three },
+  card: { borderRadius: Radius.large, paddingHorizontal: Spacing.three },
   row: { minHeight: 48, paddingVertical: Spacing.three, alignItems: 'flex-start' },
-  notice: { padding: Spacing.three, borderRadius: Radius.medium },
+  notice: { padding: Spacing.three, borderRadius: Radius.large },
   actor: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -140,13 +140,12 @@ const styles = StyleSheet.create({
   },
   box: {
     gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Radius.medium,
-    borderWidth: StyleSheet.hairlineWidth,
+    padding: Spacing.three + Spacing.one,
+    borderRadius: Radius.large,
   },
   input: {
-    minHeight: 48,
-    borderRadius: Radius.small,
+    minHeight: 50,
+    borderRadius: Radius.medium,
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     fontSize: 16,

@@ -79,7 +79,10 @@ export default function FormScreen() {
     setSent(false);
   }
 
-  const visible = useMemo(() => new Set(form ? visibleQuestions(form.questions, answers).map((q) => q.n) : []), [form, answers]);
+  const visible = useMemo(
+    () => new Set(form ? visibleQuestions(form.questions, answers).map((q) => q.n) : []),
+    [form, answers],
+  );
   const problems = useMemo(
     () => (form && attempted ? checkAnswers(form.questions, answers, t) : new Map<number, string>()),
     [form, answers, attempted, t],
@@ -147,7 +150,10 @@ export default function FormScreen() {
     const found = checkAnswers(form.questions, answers);
     if (found.size > 0) {
       const first = Math.min(...found.keys());
-      scroll.current?.scrollTo({ y: Math.max(0, cardTop.current + (positions.current.get(first) ?? 0) - Spacing.three), animated: true });
+      scroll.current?.scrollTo({
+        y: Math.max(0, cardTop.current + (positions.current.get(first) ?? 0) - Spacing.three),
+        animated: true,
+      });
       return;
     }
     // Seules les réponses aux questions affichées partent avec la demande.
@@ -172,14 +178,16 @@ export default function FormScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.five }]}>
         <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.row}>
-            <SymbolView name={{ ios: 'checkmark.circle.fill', android: 'check_circle' }} size={28} tintColor={theme.success} />
+            <SymbolView
+              name={{ ios: 'checkmark.circle.fill', android: 'check_circle' }}
+              size={28}
+              tintColor={theme.success}
+            />
             <ThemedText type="subtitle" accessibilityRole="header" style={styles.flex}>
               {f.ready}
             </ThemedText>
           </View>
-          <ThemedText themeColor="textSecondary">
-            {f.filled(form.name ?? null)}
-          </ThemedText>
+          <ThemedText themeColor="textSecondary">{f.filled(form.name ?? null)}</ThemedText>
         </View>
 
         <View style={styles.section}>
@@ -195,7 +203,10 @@ export default function FormScreen() {
             {lines.map((line, index) => (
               <View
                 key={line.n}
-                style={[styles.line, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                style={[
+                  styles.line,
+                  index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+                ]}>
                 <ThemedText type="small" themeColor="textSecondary">
                   {line.label}
                 </ThemedText>
@@ -239,8 +250,7 @@ export default function FormScreen() {
         <SymbolView name={{ ios: 'square.and.pencil', android: 'edit_note' }} size={20} tintColor={theme.link} />
         <View style={[styles.flex, styles.noticeText]}>
           <ThemedText type="small">
-            {f.fillIntro}{' '}
-            {hidden > 0 && f.willAppear(hidden, count(hidden, t.words.question))}
+            {f.fillIntro} {hidden > 0 && f.willAppear(hidden, count(hidden, t.words.question))}
             {f.nothingSent}
           </ThemedText>
           {hidden > 0 && (
@@ -335,7 +345,10 @@ export default function FormScreen() {
         {form.questions.length > 0 && (
           <View style={[styles.question, styles.submitArea, { borderTopColor: theme.border }]}>
             {problems.size > 0 && (
-              <ThemedText type="smallBold" style={[styles.center, { color: theme.danger }]} accessibilityLiveRegion="polite">
+              <ThemedText
+                type="smallBold"
+                style={[styles.center, { color: theme.danger }]}
+                accessibilityLiveRegion="polite">
                 {f.toFix(count(problems.size, f.answer))}
               </ThemedText>
             )}
@@ -375,7 +388,10 @@ export default function FormScreen() {
             {form.warnings.map((warning, index) => (
               <View
                 key={`${warning.cell}-${index}`}
-                style={[styles.warning, index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+                style={[
+                  styles.warning,
+                  index > 0 && { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth },
+                ]}>
                 <View style={styles.row}>
                   <Badge label={f.levels[warning.level]} tone={TONES[warning.level]} />
                   <ThemedText type="small" themeColor="textSecondary">
@@ -536,7 +552,12 @@ function NextStep({
       <ThemedText type="smallBold" themeColor="textSecondary" accessibilityRole="header">
         {f.next}
       </ThemedText>
-      <View style={[styles.card, styles.padded, { backgroundColor: theme.surface, borderColor: ready ? theme.primary : theme.border }]}>
+      <View
+        style={[
+          styles.card,
+          styles.padded,
+          { backgroundColor: theme.surface, borderColor: ready ? theme.primary : theme.border },
+        ]}>
         {chosen?.kind === 'situation' && situation && (
           <>
             <ThemedText type="small" themeColor="textSecondary">
@@ -549,16 +570,10 @@ function NextStep({
           </>
         )}
         {chosen?.kind === 'unmatched' && (
-          <ThemedText style={{ color: theme.warning }}>
-            {f.unmatched(chosen.option)}
-          </ThemedText>
+          <ThemedText style={{ color: theme.warning }}>{f.unmatched(chosen.option)}</ThemedText>
         )}
-        {chosen?.kind === 'unanswered' && (
-          <ThemedText style={{ color: theme.warning }}>{f.unanswered}</ThemedText>
-        )}
-        {chosen?.kind === 'no-link' && (
-          <ThemedText style={{ color: theme.warning }}>{f.noMatch}</ThemedText>
-        )}
+        {chosen?.kind === 'unanswered' && <ThemedText style={{ color: theme.warning }}>{f.unanswered}</ThemedText>}
+        {chosen?.kind === 'no-link' && <ThemedText style={{ color: theme.warning }}>{f.noMatch}</ThemedText>}
         {workflow.kind === 'process' && (
           <>
             <ThemedText type="small" themeColor="textSecondary">
@@ -592,8 +607,8 @@ const styles = StyleSheet.create({
   },
   empty: { flex: 1, justifyContent: 'center', padding: Spacing.four },
   flex: { flex: 1 },
-  notice: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, borderRadius: Radius.medium },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  notice: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, borderRadius: Radius.large },
+  card: { borderRadius: Radius.large, overflow: 'hidden' },
   padded: { padding: Spacing.three, gap: Spacing.one },
   header: { gap: Spacing.two, padding: Spacing.three },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },

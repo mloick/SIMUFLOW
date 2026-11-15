@@ -241,6 +241,7 @@ export const enScreens: ScreenMessages = {
     finished: 'Request finished',
     finishedIn: (date: string, days: string) => `On ${date}, in ${days}.`,
     answers: 'Form answers',
+    doneCount: (n: number): string => (n === 1 ? '1 step done' : `${n} steps done`),
     pastSteps: 'Past steps',
     doneOn: (date: string) => `Finished on ${date}`,
     stop: 'Stop this tracking',

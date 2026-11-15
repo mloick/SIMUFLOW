@@ -219,10 +219,10 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  banner: { padding: Spacing.three, borderRadius: Radius.medium, gap: Spacing.one },
+  banner: { padding: Spacing.three, borderRadius: Radius.large, gap: Spacing.one },
   link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   field: { gap: Spacing.two },
-  card: { borderRadius: Radius.medium, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: Spacing.three },
+  card: { borderRadius: Radius.large, paddingHorizontal: Spacing.three },
   row: { minHeight: 48, paddingVertical: Spacing.three },
   member: {
     flexDirection: 'row',
