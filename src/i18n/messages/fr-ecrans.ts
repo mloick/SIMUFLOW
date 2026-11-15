@@ -85,11 +85,20 @@ export const frScreens = {
   },
 
   projects: {
+    tabTitle: 'Projets',
+    tabIntro: 'Les process regroupés par projet, avec leur équipe.',
+    filterAll: 'Tous',
+    filterChef: 'Je pilote',
+    filterCollaborator: 'Collaborateur',
+    sectionChef: 'Je pilote',
+    sectionCollaborator: 'Je suis collaborateur',
+    chefLine: (name: string): string => `chef : ${name}`,
+    emptyTitle: 'Aucun projet pour l’instant',
+    emptyText:
+      'Un projet regroupe les process d’un même chantier et une équipe. Créez-en un, ou demandez à un chef de projet de vous inviter.',
     section: 'Mes projets',
     sectionHint: 'Un projet regroupe plusieurs process et une équipe.',
     new: 'Nouveau projet',
-    discover: 'Regrouper des process dans un projet',
-    discoverHint: 'Crée un projet pour ranger ensemble les process d’un même chantier',
     count: (n: number): string => (n === 0 ? 'Aucun process' : n > 1 ? `${n} process` : '1 process'),
     openHint: 'Ouvre le projet',
     chef: 'Chef de projet : vous',

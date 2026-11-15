@@ -26,7 +26,7 @@ export const fr = {
     offline: 'Serveur injoignable : vérifiez la connexion Internet.',
   },
 
-  tabs: { process: 'Process', scanner: 'Scanner', settings: 'Réglages' },
+  tabs: { process: 'Process', scanner: 'Scanner', projects: 'Projets', settings: 'Réglages' },
 
   /** Titres des écrans, dans la barre du haut. */
   titles: {

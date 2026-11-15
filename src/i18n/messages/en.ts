@@ -22,7 +22,7 @@ export const en: Messages = {
     offline: 'Server unreachable: check your Internet connection.',
   },
 
-  tabs: { process: 'Processes', scanner: 'Scanner', settings: 'Settings' },
+  tabs: { process: 'Processes', scanner: 'Scanner', projects: 'Projects', settings: 'Settings' },
 
   titles: {
     signIn: 'Sign in',

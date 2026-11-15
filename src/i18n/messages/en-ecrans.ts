@@ -79,11 +79,20 @@ export const enScreens: ScreenMessages = {
   },
 
   projects: {
+    tabTitle: 'Projects',
+    tabIntro: 'Processes grouped by project, with their team.',
+    filterAll: 'All',
+    filterChef: 'I manage',
+    filterCollaborator: 'Collaborator',
+    sectionChef: 'I manage',
+    sectionCollaborator: 'I collaborate on',
+    chefLine: (name: string): string => `manager: ${name}`,
+    emptyTitle: 'No project yet',
+    emptyText:
+      'A project groups the processes of the same initiative and a team. Create one, or ask a project manager to invite you.',
     section: 'My projects',
     sectionHint: 'A project groups several processes and a team.',
     new: 'New project',
-    discover: 'Group processes in a project',
-    discoverHint: 'Creates a project to keep the processes of the same initiative together',
     count: (n: number): string => (n === 0 ? 'No process' : n > 1 ? `${n} processes` : '1 process'),
     openHint: 'Opens the project',
     chef: 'Project manager: you',
