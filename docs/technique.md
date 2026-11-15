@@ -494,7 +494,7 @@ Expo Router associe chaque fichier de `src/app/` à un écran.
 | `(tabs)/index.tsx` | `/` | Liste des process |
 | `(tabs)/scanner.tsx` | `/scanner` | Scanner de tableau |
 | `(tabs)/reglages.tsx` | `/reglages` | Réglages : carte du profil, apparence, langue, notifications, exemples, à propos |
-| `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : compte, synchronisation, formulaires gardés, règles apprises |
+| `profil.tsx` | `/profil` | Profil (ouvert depuis les Réglages) : bannière, chiffres, synchronisation, formulaires gardés, règles apprises, déconnexion, suppression du compte |
 | `process/[id].tsx` | `/process/:id` | Détail d'un process |
 | `simulation/[id].tsx` | `/simulation/:id` | Simulation pas à pas |
 | `suivi/[id].tsx` | `/suivi/:id` | Suivi d'une demande réelle |
@@ -525,7 +525,21 @@ Les longues phrases d'aide d'avant sont dans les « ? ». Test de composant : `s
 
 ![L'onglet Réglages : la carte du profil, l'apparence et la langue, les notifications et À propos, en Corail sombre, puis la page Profil](captures/etape-r3-reglages.png)
 
-**Profil** (`profil.tsx`, écran de la pile, titre « Profil »). Une phrase, puis **Compte** (connexion, profil, synchronisation, déconnexion, suppression), **Mes formulaires**, **Règles de lecture apprises**, et en développement seulement « Démo · état de la liste des process ». Il sera redessiné à l'étape R4. L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
+**Profil** (`profil.tsx`, refonte R4). Écran de la pile, sans barre du haut (`headerShown: false`) : il dessine sa propre bannière.
+
+- **Bannière** (`Banner`) couleur `primary` de la palette, avec le chemin en S du logo en filigrane (`react-native-svg`, 16 % d'opacité). En haut, « Revenir » (rond) et, connecté, « Modifier » (ouvre `/mon-profil`). Puis l'avatar blanc de 78 points (initiales, `src/utils/initials.ts`, testé ; silhouette sans compte), le nom et « @identifiant · rôle » (ou « Sans compte · Vos process restent sur ce téléphone », ou l'invitation à compléter le profil). L'ensemble est lu comme un titre. Entrée en fondu montant, coupée si les animations sont réduites.
+- **Chiffres** (`Stats`), carte qui chevauche la bannière : mes process importés (`useImportedProcesses`), ceux partagés avec moi (`useSharedProcesses`), mes formulaires gardés (`useSavedForms`), lus en une phrase par VoiceOver.
+- **Synchronisation** (`SyncCard`, connecté) : icône nuage (vert, ou orange en cas d'échec), l'état (« Process synchronisés à 18:29 »…), « Process, formulaires et règles », et un bouton rond qui relance (`syncNow`, indicateur pendant la synchronisation). Sans compte, `SignInCard` : une phrase et le bouton « Se connecter ».
+- **Mes formulaires** et **Règles de lecture apprises** : des `SettingsGroup` avec leur « ? » (qui dit aussi où ils sont gardés) ; chaque ligne (`ItemRow`) a son petit bouton « Retirer » ou « Oublier ».
+- **Se déconnecter** (connecté), bouton pleine largeur.
+- **Supprimer mon compte**, replié dans un cadre rouge : le premier toucher déplie ce qui sera effacé, seul « Supprimer définitivement » supprime (`deleteAccount`) : toujours deux demandes.
+- En développement seulement, « Démo · état de la liste des process ».
+
+Test de composant : `src/components/__tests__/profil-ecran.test.tsx` (sans compte, connecté, suppression en deux temps). Les Réglages montrent les mêmes initiales sur leur carte du profil.
+
+![La page Profil : connectée (la synchronisation a échoué, le serveur n'étant pas joignable), la suppression dépliée, la carte du profil dans les Réglages en Menthe, puis sans compte en Aurore sombre](captures/etape-r4-profil.png)
+
+L'ancien écran provisoire `PlaceholderScreen` n'est plus utilisé et a été retiré.
 
 ![Profil : le compte et les réglages, puis la section À propos](captures/etape-13d-profil.png)
 
@@ -1416,7 +1430,7 @@ Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `
 npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
 ```
 
-Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » des Réglages, `About` (`src/app/(tabs)/reglages.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
+Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arrière-plan et l'applique au lancement suivant (comportement par défaut). Les builds de développement (Xcode, Metro) ne l'utilisent pas. Dans la section « À propos » des Réglages, `AboutGroup` (`src/app/(tabs)/reglages.tsx`) affiche la version (`expo-constants`) et, si l'app tourne sur une mise à jour, sa date (`Updates.createdAt`, `Updates.isEmbeddedLaunch`).
 
 ![La version de l'app en bas du Profil](captures/etape-9-version.png)
 

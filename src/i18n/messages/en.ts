@@ -169,6 +169,23 @@ export const en: Messages = {
     updateOf: (date: string, time: string) => `update of ${date} at ${time}`,
     installedVersion: 'installed version',
     demo: 'Demo · process list state',
+    back: 'Back',
+    edit: 'Edit',
+    editLabel: 'Edit my profile',
+    noAccount: 'No account',
+    noAccountDetail: 'Your processes stay on this phone.',
+    stats: { processes: 'processes', shared: 'shared', forms: 'forms' },
+    statsLabel: (processes: number, shared: number, forms: number): string =>
+      `${processes} processes of yours, ${shared} shared with you, ${forms} kept forms`,
+    syncWhat: 'Processes, forms and rules',
+    syncLabel: 'Sync now',
+    formsHelp:
+      'The form templates you kept, with their workflow. Tap one to fill it in or link it to a workflow; “Remove” takes it off the list.',
+    rulesHelp:
+      'When you correct an imported process (an actor renamed everywhere, a shape that means “decision”), SimuFlow remembers the correction and applies it to the next files. “Forget” deletes a rule.',
+    noForms: 'No kept form yet.',
+    noRules: 'No rule yet.',
+    deleteForever: 'Delete for good',
   },
 
   welcome: {

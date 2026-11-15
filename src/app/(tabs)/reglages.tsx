@@ -21,6 +21,7 @@ import { useShareAlerts } from '@/data/share-alerts-store';
 import { setThemeMode, THEME_MODES, useThemeMode } from '@/data/theme-setting';
 import { displayName } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
+import { initials } from '@/utils/initials';
 import { LANGUAGE_SETTINGS, type Messages, setLanguageSetting, useLanguageSetting, useT } from '@/i18n';
 import {
   cancelAllNotifications,
@@ -63,15 +64,6 @@ export default function SettingsScreen() {
       <AboutGroup />
     </ScrollView>
   );
-}
-
-/** « Camille Martin » → « CM » ; « camille.martin@exemple.fr » → « CM ». */
-function initials(text = '') {
-  const parts = text
-    .split('@')[0]
-    .split(/[\s._-]+/)
-    .filter(Boolean);
-  return (parts.length > 1 ? parts[0][0] + parts[1][0] : text.slice(0, 2)).toUpperCase();
 }
 
 /** La carte du profil, en tête : ouvre la page Profil (compte, synchronisation, données). */

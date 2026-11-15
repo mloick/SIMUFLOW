@@ -178,6 +178,23 @@ export const fr = {
     updateOf: (date: string, time: string): string => `mise à jour du ${date} à ${time}`,
     installedVersion: 'version installée',
     demo: 'Démo · état de la liste des process',
+    back: 'Revenir',
+    edit: 'Modifier',
+    editLabel: 'Modifier mon profil',
+    noAccount: 'Sans compte',
+    noAccountDetail: 'Vos process restent sur ce téléphone.',
+    stats: { processes: 'process', shared: 'partagés', forms: 'formulaires' },
+    statsLabel: (processes: number, shared: number, forms: number): string =>
+      `${processes} process à vous, ${shared} partagés avec vous, ${forms} formulaires gardés`,
+    syncWhat: 'Process, formulaires et règles',
+    syncLabel: 'Synchroniser maintenant',
+    formsHelp:
+      'Les templates de formulaire que vous avez gardés, avec leur workflow. Touchez-en un pour le remplir ou le relier à un workflow ; « Retirer » le supprime de la liste.',
+    rulesHelp:
+      'Quand vous corrigez un process importé (un acteur renommé partout, une forme qui veut dire « décision »), SimuFlow retient la correction et l’applique aux fichiers suivants. « Oublier » efface une règle.',
+    noForms: 'Aucun formulaire gardé pour l’instant.',
+    noRules: 'Aucune règle pour l’instant.',
+    deleteForever: 'Supprimer définitivement',
   },
 
   welcome: {
