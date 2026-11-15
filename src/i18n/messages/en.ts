@@ -51,6 +51,12 @@ export const en: Messages = {
     names: { fr: 'French', en: 'English' },
   },
 
+  help: {
+    explain: (title: string): string => `Explain: ${title}`,
+    ok: 'Got it',
+    close: 'Close the explanation',
+  },
+
   theme: {
     heading: 'Appearance',
     options: { auto: 'Automatic', light: 'Light', dark: 'Dark' },
@@ -59,6 +65,8 @@ export const en: Messages = {
     colors: 'Colors',
     palettes: { ocean: 'Ocean', aurore: 'Aurora', menthe: 'Mint', corail: 'Coral' },
     paletteLabel: (name: string): string => `${name} palette`,
+    helpText:
+      'Four palettes, each in light and dark: Ocean (the SimuFlow blue), Aurora (violet and pink), Mint (green and amber) and Coral (terracotta and navy). The whole app changes right away. Automatic follows the phone’s light or dark setting. Both choices are kept on this phone.',
   },
 
   roles: { chef_de_projet: 'Project manager', collaborateur: 'Team member' },

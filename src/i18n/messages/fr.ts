@@ -56,6 +56,12 @@ export const fr = {
     names: { fr: 'français', en: 'anglais' },
   },
 
+  help: {
+    explain: (title: string): string => `Expliquer : ${title}`,
+    ok: 'Compris',
+    close: 'Fermer l’explication',
+  },
+
   theme: {
     heading: 'Apparence',
     options: { auto: 'Automatique', light: 'Clair', dark: 'Sombre' },
@@ -64,6 +70,8 @@ export const fr = {
     colors: 'Couleurs',
     palettes: { ocean: 'Océan', aurore: 'Aurore', menthe: 'Menthe', corail: 'Corail' },
     paletteLabel: (name: string): string => `Palette ${name}`,
+    helpText:
+      'Quatre palettes, chacune en clair et en sombre : Océan (le bleu SimuFlow), Aurore (violet et rose), Menthe (vert et ambre) et Corail (terre cuite et bleu marine). Toute l’app change tout de suite. Automatique suit le réglage clair ou sombre du téléphone. Les deux choix restent gardés sur ce téléphone.',
   },
 
   roles: { chef_de_projet: 'Chef de projet', collaborateur: 'Collaborateur' },

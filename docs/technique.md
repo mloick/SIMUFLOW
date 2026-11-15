@@ -86,7 +86,7 @@ Trois règles tiennent l'ensemble :
 ```text
 src/
   app/          Écrans et navigation (Expo Router : un fichier = une route)
-  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
+  components/   Composants réutilisables (texte et vue thémés, carte de process, schéma du process, question de formulaire `form-field.tsx`, situations d’un workflow à choisir `situation-list.tsx`, pastille, bouton, briques de la refonte `card.tsx`, `toggle.tsx`, `help-button.tsx`, `pressable-scale.tsx`, squelette de chargement, message d'état, logo, icône système `symbol.tsx`) ; tests de composants dans __tests__/
   constants/    Thème : couleurs, espacements, polices ; adresses du site (links.ts)
   data/         Accès aux process : présentation déjà vue (welcome-setting.ts), process fictifs, séparés des vôtres (examples.ts) et masquables (examples-setting.ts) et chargement simulé en attendant le backend, process importés enregistrés sur le téléphone (saved-file.ts) et synchronisés avec le serveur (sync.ts, cloud-sync.ts), règles de lecture apprises (rules-store.ts), demandes suivies en vrai (tracking-store.ts), formulaires gardés avec leur workflow lié, et formulaire affiché en mémoire (form-store.ts), process partagés avec moi (shared-store.ts), alertes du partage (share-alerts-store.ts), membres et avis d'un process pour son propriétaire (validation-data.ts), suite d'un formulaire rempli : process de la situation, suivi avec les réponses, lecture du workflow à lier (form-chain.ts)
   domain/       Cœur du simulateur en TypeScript pur : types, diagnostic, chemins, exemple fictif ; tests dans __tests__/
@@ -106,7 +106,7 @@ public/         Fichiers copiés tels quels dans la version web : page de base (
 docs/           Documentation (dont carte.md, la carte du code en une page, securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
 supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
-jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js)
+jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js), Reanimated immobile (reanimated.js)
 scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
@@ -1196,6 +1196,21 @@ Chaque couleur de texte respecte un contraste d'au moins 4,5:1 sur son fond (rè
 
 ![Les quatre palettes : Océan, Aurore dans le Profil, Menthe en sombre, Corail](captures/etape-r1-palettes.png)
 
+**Briques communes (refonte, étape R2).** Les pièces des écrans refaits ensuite, dans `src/components/` :
+
+| Brique | Rôle |
+| --- | --- |
+| `PressableScale` | Zone à toucher qui se tasse à 96 % sous le doigt (Reanimated, 120 ms). Avec « Réduire les animations » (`useReducedMotion`), elle s'éclaircit seulement. |
+| `PrimaryButton` | Bouton de 52 points de haut, coins de 16, texte en gras 800. `variant` : `primary` (plein, couleur de la palette) ou `secondary` (fond teinté, texte couleur lien). Passe par `PressableScale`. |
+| `Card` | Carte arrondie (`Radius.large`, 22 points) sur `surface`. Avec `onPress`, toute la carte est un bouton, avec son `accessibilityLabel`. |
+| `Badge` | Pastille ; nouveau ton `primary` (fond teinté, texte couleur lien) en plus des tons du diagnostic. |
+| `Toggle` | Interrupteur de 52 × 32 : la pastille glisse et le fond passe à `primary`. Rôle `switch` avec son état `checked`. Sans glissement si les animations sont réduites. |
+| `HelpButton`, `HelpSheet` | Bouton « ? » rond de 36 points (libellé « Expliquer : … ») qui ouvre une feuille en bas de l'écran (`Modal` transparent, coins `Radius.sheet` de 28) : titre, explication, bouton « Compris ». Elle se ferme aussi en touchant le fond ou par le geste retour ; fondu au lieu de glisser si les animations sont réduites. Remplacera les longues phrases d'aide sous les réglages. |
+
+Ces briques suivent la palette et le mode choisis. Le bouton « ? » est déjà à côté du titre Apparence du Profil. Test de composant : `src/components/__tests__/briques.test.tsx`.
+
+![Les briques : le bouton « Lancer la simulation », le bouton « ? » d'Apparence, sa feuille d'explication en Aurore, puis en Menthe sombre](captures/etape-r2-briques.png)
+
 **Police.** Plus Jakarta Sans (paquet `@expo-google-fonts/plus-jakarta-sans`, graisses 400 à 800) est chargée au démarrage par `useFonts` dans `src/app/_layout.tsx` ; l'écran de démarrage reste affiché le temps du chargement, et si elle échoue l'app s'affiche avec la police du système. Chaque graisse est un fichier à part : `ThemedText` lit la graisse demandée et prend le bon fichier (`fontFaceFor`), avec `fontWeight: 'normal'` pour que le système ne grossisse pas le trait une seconde fois. Les en-têtes de navigation l'utilisent aussi (`fonts` du thème de navigation). Sur le web, `--font-display` (`src/global.css`) la nomme en premier. Restent en police système : les champs de saisie et les libellés de la barre d'onglets (repris aux étapes suivantes de la refonte).
 
 ### Langue de l'app (`src/i18n/`)
@@ -1287,7 +1302,7 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 - **`form-field.test.tsx`**, **`formulaire-ecran.test.tsx`**, **`formulaire-modifier-ecran.test.tsx`** : une question de formulaire, l'écran du formulaire et son éditeur (voir [Formulaire](#formulaire-srcappformulairetsx-srcappformulaire-modifiertsx)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).
 
-`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). De même, `expo-sqlite/localStorage/install` (le `localStorage` du téléphone, en SQLite) est remplacé par `jest/stockage-memoire.js`, un `localStorage` en mémoire. Ces tests tournent avec les autres : `npm test`, et dans la CI.
+`theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). De même, `expo-sqlite/localStorage/install` (le `localStorage` du téléphone, en SQLite) est remplacé par `jest/stockage-memoire.js`, un `localStorage` en mémoire. Reanimated n'a pas de module natif dans Jest : `jest/reanimated.js` (`setupFiles`) le remplace par une version immobile, où les valeurs prennent tout de suite leur état final et les composants animés sont les composants ordinaires. Avec React Native Testing Library 14, `fireEvent` se termine de façon asynchrone : l'écrire `await fireEvent.press(…)`. Ces tests tournent avec les autres : `npm test`, et dans la CI.
 
 ### Test de bout en bout (`.maestro/`)
 

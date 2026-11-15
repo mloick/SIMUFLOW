@@ -451,6 +451,7 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 - **Langue** · Disponible : l'app suit la langue du téléphone (français s'il est en français, anglais sinon). Dans **Profil > Langue**, choisissez **Automatique**, **Français** ou **English** ; tout change tout de suite, sans relancer l'app. Tous les écrans passent en anglais : la liste, la fiche, la simulation, le suivi, l'import, le Scanner, l'export, les formulaires, le partage et les alertes. Ce que vous importez reste écrit tel quel. Les fichiers exportés, les quatre exemples, les remarques détaillées de lecture d'un tableau Excel et le format du texte à coller restent en français.
 - **Couleurs** · Disponible : quatre palettes, chacune en clair et en sombre : **Océan** (le bleu SimuFlow, par défaut), **Aurore** (violet et rose), **Menthe** (vert et ambre) et **Corail** (terre cuite et bleu marine). Touchez une pastille dans **Profil > Apparence** : toute l'app change tout de suite, et le choix est gardé sur le téléphone. Les textes utilisent une nouvelle police, Plus Jakarta Sans.
+- **Explications « ? »** · Disponible : à côté de certains réglages, un petit bouton **?** ouvre une explication en bas de l'écran ; **Compris** la referme. Le premier est à côté d'**Apparence**, dans le Profil. Les boutons, eux, s'enfoncent légèrement sous le doigt (rien ne bouge si « Réduire les animations » est activé).
 - **Mode sombre** · Disponible : par défaut, l'app suit le réglage du téléphone. Dans **Profil > Apparence**, choisissez **Automatique**, **Clair** ou **Sombre** ; le choix est gardé sur le téléphone.
 - **Grands textes** · Disponible : si vous agrandissez le texte du téléphone, l'app suit et réorganise ce qui ne tient plus côte à côte.
 - **Animations douces** · Disponible : la liste « respire » pendant le chargement ; rien ne bouge si « Réduire les animations » est activé.
@@ -463,6 +464,8 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 ![L'app en anglais : la liste, la fiche d'un process, la simulation et l'import](captures/etape-45-anglais.png)
 
 ![Les quatre palettes : Océan, Aurore (dans le Profil), Menthe en sombre, Corail](captures/etape-r1-palettes.png)
+
+![Le nouveau bouton, le « ? » d'Apparence et son explication, en Aurore et en Menthe sombre](captures/etape-r2-briques.png)
 
 ![Apparence : Automatique, puis Sombre choisi dans le Profil, et la liste en sombre](captures/etape-37-apparence.png)
 
