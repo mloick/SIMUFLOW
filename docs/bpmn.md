@@ -66,13 +66,13 @@ Le modèle de SimuFlow (des étapes reliées par des liens, voir [`technique.md`
 | `endEvent` | Étape de fin |
 | `task` et ses variantes (`userTask`, `serviceTask`…), `subProcess` | Étape (un sous-process devient une seule étape) |
 | `exclusiveGateway`, `inclusiveGateway` | Décision ; le nom de chaque flux sortant devient le libellé de la branche |
-| `parallelGateway` | Étape d'où partent plusieurs branches : la simulation les propose une à une, comme pour un schéma draw.io (suivre toutes les branches à la fois n'est pas encore fait) |
+| `parallelGateway` | Étape « En parallèle » : elle lance toutes les branches en même temps (partage) ou attend qu'elles soient toutes arrivées (jonction). La simulation suit les branches à la fois, et le délai est celui de la plus longue |
 | `intermediate…Event` | Étape (« Attendre la réponse ») |
 | `sequenceFlow` | Lien, avec son nom ou sa condition comme libellé |
 | `lane` | Acteur de chaque étape qu'elle contient |
 | `dc:Bounds` du dessin | Position de l'étape, pour garder la mise en page d'origine |
 
-Ce qui n'est pas encore lu : les flux de message entre pools, les événements attachés au bord d'une tâche (*boundary events*), les données (*data objects*) et les annotations. L'import le dit dans ses remarques, comme pour un schéma draw.io. Une passerelle qui ne fait que réunir des branches est retirée, et un événement ou une passerelle est agrandi pour que son nom tienne dans la forme. Le diagnostic, la simulation, le suivi et l'export marchent ensuite comme pour n'importe quel process.
+Ce qui n'est pas encore lu : les flux de message entre pools, les événements attachés au bord d'une tâche (*boundary events*), les données (*data objects*) et les annotations. L'import le dit dans ses remarques, comme pour un schéma draw.io. Une passerelle de choix qui ne fait que réunir des branches est retirée (une jonction parallèle reste, puisqu'elle attend toutes les branches), et un événement ou une passerelle est agrandi pour que son nom tienne dans la forme. Le diagnostic, la simulation, le suivi et l'export marchent ensuite comme pour n'importe quel process.
 
 ## Et Visio ?
 
@@ -88,6 +88,7 @@ L'**export BPMN** fait le chemin inverse : il renvoie un process vérifié dans 
 | Chaque acteur | Un couloir (*lane*) ; les étapes sans acteur vont dans un couloir sans nom |
 | Départ, fin | `startEvent`, `endEvent` |
 | Décision | `exclusiveGateway` (losange avec un « X ») |
+| Étape « En parallèle » | `parallelGateway` (losange avec un « + ») |
 | Étape | `task`, ou son genre d'origine si le process vient d'un fichier BPMN (`userTask`, `serviceTask`…) |
 | Lien | `sequenceFlow`, avec le libellé de la branche comme nom |
 | Délai | Dans le nom (« Diagnostiquer (2 JO) »), et exact dans l'attribut `simuflow:duree` |

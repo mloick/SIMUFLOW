@@ -73,6 +73,7 @@ function attr(text: string): string {
 function elementType(step: Step): string {
   if (step.kind === 'start') return 'startEvent';
   if (step.kind === 'end') return 'endEvent';
+  if (step.kind === 'parallel') return 'parallelGateway';
   if (step.kind === 'decision') {
     return step.shape && GATEWAY.test(step.shape) && step.shape !== 'parallelGateway' ? step.shape : 'exclusiveGateway';
   }

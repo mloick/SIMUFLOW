@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 import { countPaths, diagnose } from '@/domain';
 import { ImportError, importProcessFile, parseBpmn } from '@/import';
+import { createSimulation } from '@/simulation/engine';
 
 import { lireExemple } from '../../../jest/lire-exemple';
 
@@ -24,17 +25,18 @@ describe('parseBpmn', () => {
     expect(step('gw_ok')).toMatchObject({ kind: 'decision', title: 'Demande validée ?', actor: 'Responsable' });
     expect(step('valider')).toMatchObject({ kind: 'task', duration: 2, shape: 'userTask' });
     expect(step('attente')).toMatchObject({ kind: 'task', duration: 5, actor: 'Service Achats' });
-    expect(step('split')).toMatchObject({ kind: 'task', title: 'En parallèle' });
+    expect(step('split')).toMatchObject({ kind: 'parallel', title: 'En parallèle', shape: 'parallelGateway' });
+    expect(step('join')).toMatchObject({ kind: 'parallel', title: 'Attendre toutes les branches' });
     // Un événement de 36 × 36 est agrandi autour de son centre pour que son nom tienne.
     expect(step('debut')?.layout).toEqual({ x: 193, y: 127, width: 90, height: 56 });
     expect(step('valider')?.layout).toEqual({ x: 450, y: 265, width: 110, height: 80 });
   });
 
-  it('donne leur libellé aux branches et retire les passerelles qui réunissent', () => {
+  it('donne leur libellé aux branches, retire les choix qui réunissent et garde la jonction parallèle', () => {
     expect(process.links.filter((link) => link.from === 'gw_ok').map((link) => link.label).sort()).toEqual(['non', 'oui']);
-    expect(step('join')).toBeUndefined();
     expect(step('merge')).toBeUndefined();
-    expect(process.links.filter((link) => link.to === 'attente').map((link) => link.from).sort()).toEqual(['budget', 'commander']);
+    expect(process.links.filter((link) => link.to === 'join').map((link) => link.from).sort()).toEqual(['budget', 'commander']);
+    expect(process.links.filter((link) => link.to === 'attente').map((link) => link.from)).toEqual(['join']);
     expect(process.links.filter((link) => link.to === 'fin').map((link) => link.from).sort()).toEqual(['livrer', 'refus']);
   });
 
@@ -42,6 +44,34 @@ describe('parseBpmn', () => {
     expect(diagnose(process).filter((issue) => issue.severity === 'error')).toEqual([]);
     expect(countPaths(process).count).toBe(3);
     expect(warnings).toEqual(['Achats de fournitures : 1 annotation(s) non lu(s).']);
+  });
+
+  it('simule les branches parallèles en même temps, la jonction les attend toutes', () => {
+    const s = createSimulation(process);
+    let state = s.start();
+    for (const link of ['f1', 'f2', 'f3', 'f4']) state = s.step(state, link);
+    expect(state.branches.map((branch) => branch.stepId)).toEqual(['commander', 'budget']);
+    state = s.step(state, 'f9');
+    expect(s.waitingFor(state, 'join').map((link) => link.from)).toEqual(['commander']);
+    state = s.step(state, 'f8');
+    expect(state.branches.map((branch) => branch.stepId)).toEqual(['join']);
+  });
+
+  it('retire une passerelle parallèle qui ne fait rien, et lit une passerelle inclusive comme une décision', () => {
+    const { processes: [read] } = parseBpmn(
+      bpmn(`<bpmn:process id="p">
+        <bpmn:startEvent id="a"/><bpmn:parallelGateway id="rien"/><bpmn:inclusiveGateway id="ou"/>
+        <bpmn:task id="x" name="X"/><bpmn:task id="y" name="Y"/><bpmn:endEvent id="z"/>
+        <bpmn:sequenceFlow id="1" sourceRef="a" targetRef="rien"/><bpmn:sequenceFlow id="2" sourceRef="rien" targetRef="ou"/>
+        <bpmn:sequenceFlow id="3" name="x" sourceRef="ou" targetRef="x"/><bpmn:sequenceFlow id="4" name="y" sourceRef="ou" targetRef="y"/>
+        <bpmn:sequenceFlow id="5" sourceRef="x" targetRef="z"/><bpmn:sequenceFlow id="6" sourceRef="y" targetRef="z"/>
+      </bpmn:process>`),
+      'essai.bpmn',
+      'e',
+    );
+    expect(read.steps.find((one) => one.id === 'rien')).toBeUndefined();
+    expect(read.steps.find((one) => one.id === 'ou')?.kind).toBe('decision');
+    expect(read.steps.some((one) => one.kind === 'parallel')).toBe(false);
   });
 
   it('lit un fichier sans préfixe, avec conditions, sous-couloirs et plusieurs participants', () => {

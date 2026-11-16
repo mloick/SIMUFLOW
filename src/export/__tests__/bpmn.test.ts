@@ -87,6 +87,33 @@ describe('export BPMN', () => {
     expect(essentials(roundTrip(mixed))).toEqual(essentials(mixed));
   });
 
+  it('écrit une étape « En parallèle » faite dans l’app comme une passerelle parallèle, et la relit', () => {
+    const commande: Process = {
+      id: 'c',
+      name: 'Commande',
+      steps: [
+        { id: 'd', kind: 'start', title: 'Commande validée' },
+        { id: 'p', kind: 'parallel', title: 'En parallèle' },
+        { id: 'f', kind: 'task', title: 'Préparer la facture', actor: 'Compta', duration: 1 },
+        { id: 'c', kind: 'task', title: 'Préparer le colis', actor: 'Logistique', duration: 3 },
+        { id: 'j', kind: 'parallel', title: 'Tout est prêt' },
+        { id: 'e', kind: 'end', title: 'Expédiée' },
+      ],
+      links: [
+        { id: '1', from: 'd', to: 'p' },
+        { id: '2', from: 'p', to: 'f' },
+        { id: '3', from: 'p', to: 'c' },
+        { id: '4', from: 'f', to: 'j' },
+        { id: '5', from: 'c', to: 'j' },
+        { id: '6', from: 'j', to: 'e' },
+      ],
+    };
+    expect(processToBpmn(commande).match(/<bpmn:parallelGateway /g)).toHaveLength(2);
+    const back = roundTrip(commande);
+    expect(back.steps.filter((step) => step.kind === 'parallel').map((step) => step.title)).toEqual(['En parallèle', 'Tout est prêt']);
+    expect(essentials(back)).toEqual(essentials(commande));
+  });
+
   it('se nomme et se choisit comme les autres formats', () => {
     expect(exportFileName(demandeMateriel, 'bpmn')).toMatch(/\.bpmn$/);
     expect(exportText(demandeMateriel, 'bpmn', { colorFamilies: true, colors: [] })).toContain('<bpmn:definitions');

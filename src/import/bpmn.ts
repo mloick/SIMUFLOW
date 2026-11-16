@@ -11,9 +11,12 @@
  * - startEvent → départ, endEvent → fin, tâches et sous-process → étapes,
  *   événements intermédiaires → étapes (« Attendre la réponse ») ;
  * - une passerelle d'où partent plusieurs flux est une décision (exclusive,
- *   inclusive, complexe, sur événement) ou une étape « En parallèle » ; une
- *   passerelle qui ne fait que réunir des branches (un seul flux sortant) est
- *   retirée, ses flux arrivants vont directement à l'étape suivante ;
+ *   inclusive, complexe, sur événement) ; une passerelle de choix qui ne fait
+ *   que réunir des branches (un seul flux sortant) est retirée, ses flux
+ *   arrivants vont directement à l'étape suivante ;
+ * - une passerelle parallèle devient une étape « En parallèle » (`parallel`) :
+ *   elle lance les branches (partage) ou les attend toutes (jonction), et
+ *   reste donc dans le process ;
  * - le nom d'un flux, sinon sa condition, devient le libellé de la branche ;
  * - le couloir le plus précis donne l'acteur ; sans couloir, le nom du
  *   participant (pool) ;
@@ -172,12 +175,16 @@ function readProcess(
   let links = flows.filter((flow) => known.has(flow.from) && known.has(flow.to));
   if (links.length === 0) return null;
 
-  // Une passerelle qui ne fait que réunir des branches disparaît : ses flux
-  // arrivants vont directement à l'étape suivante.
+  // Une passerelle de choix qui ne fait que réunir des branches disparaît : ses
+  // flux arrivants vont directement à l'étape suivante. Une jonction parallèle
+  // reste : elle attend toutes les branches. Une passerelle parallèle à une
+  // seule entrée et une seule sortie, qui ne fait rien, disparaît aussi.
   const outgoing = (nodeId: string) => links.filter((link) => link.from === nodeId);
+  const incomingCount = (nodeId: string) => links.filter((link) => link.to === nodeId).length;
   const removed = new Set<string>();
   for (const node of nodes) {
     if (!GATEWAYS.has(node.type)) continue;
+    if (node.type === 'parallelGateway' && incomingCount(node.id) >= 2) continue;
     const out = outgoing(node.id);
     if (out.length !== 1 || out[0].to === node.id) continue;
     const next = out[0];
@@ -197,6 +204,7 @@ function readProcess(
       if (node.type === 'startEvent') kind = 'start';
       else if (node.type === 'endEvent') kind = 'end';
       else if (CHOICES.has(node.type) && outs >= 2) kind = 'decision';
+      else if (node.type === 'parallelGateway') kind = 'parallel';
       const title =
         node.name ||
         (node.type === 'startEvent'
@@ -204,7 +212,9 @@ function readProcess(
           : node.type === 'endEvent'
             ? 'Fin'
             : node.type === 'parallelGateway'
-              ? 'En parallèle'
+              ? outs >= 2
+                ? 'En parallèle'
+                : 'Attendre toutes les branches'
               : kind === 'decision'
                 ? 'Décision'
                 : 'Étape sans nom');
