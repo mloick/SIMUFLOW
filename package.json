@@ -67,7 +67,7 @@
     "lint": "expo lint",
     "test": "jest",
     "e2e": "maestro test .maestro",
-    "export:web": "node scripts/ocr-web.mjs && expo export -p web"
+    "export:web": "node scripts/ocr-web.mjs && SIMUFLOW_WEB=1 expo export -p web"
   },
   "private": true,
   "jest": {
