@@ -17,7 +17,16 @@ import { useTheme } from '@/hooks/use-theme';
 import { workingDaysBetween } from '@/tracking/calendar';
 import { delayReport, olaClock, slaClock, splitWorkingTime, type DelayClock } from '@/tracking/delays';
 import { formatMoment, timingBadge } from '@/tracking/format';
-import { completeStep, currentStep, nextChoices, stepOf, type Tracking } from '@/tracking/tracking';
+import {
+  completeStep,
+  currentStep,
+  currentSteps,
+  nextChoices,
+  stepOf,
+  waitingSteps,
+  type TrackedStep,
+  type Tracking,
+} from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
 import { useT, type Messages } from '@/i18n';
 
@@ -34,7 +43,8 @@ export default function TrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const tracking = useTrackings().find((item) => item.id === id);
   const processes = useImportedProcesses();
-  const process = tracking && (processes.find((item) => item.id === tracking.processId) ?? getProcess(tracking.processId));
+  const process =
+    tracking && (processes.find((item) => item.id === tracking.processId) ?? getProcess(tracking.processId));
   const theme = useTheme();
   const t = useT();
 
@@ -71,14 +81,76 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
   const insets = useSafeAreaInsets();
   const now = useNow();
   const current = currentStep(tracking);
-  const choices = nextChoices(process, tracking);
-  const done = tracking.steps.filter((step) => step.doneAt).reverse();
+  const currents = currentSteps(tracking);
+  const waiting = waitingSteps(tracking);
+  // Les étapes « En parallèle » (partage, jonction) ne sont que des passages : on ne les liste pas.
+  const done = tracking.steps.filter((step) => step.doneAt && stepOf(process, step)?.kind !== 'parallel').reverse();
   const titleOf = (stepId: string) => process.steps.find((step) => step.id === stepId)?.title || t.untitled;
   const sla = slaClock(tracking, now);
-  const ola = current ? olaClock(current, now) : null;
   const report = delayReport(tracking);
 
-  const complete = (linkId?: string) => saveTracking(completeStep(process, tracking, new Date(), linkId));
+  // Index dans tracking.steps : avec des tâches en parallèle, on dit quelle étape est terminée.
+  const complete = (linkId?: string, index?: number) =>
+    saveTracking(completeStep(process, tracking, new Date(), linkId, index));
+  const choicesOf = (tracked: TrackedStep) => nextChoices(process, tracking, tracked);
+  const olaOf = (tracked: TrackedStep) => olaClock(tracked, now);
+
+  // Une carte par étape en cours : une seule, sauf avec des tâches en parallèle (une par branche).
+  const stepCard = (tracked: TrackedStep, position: number) => (
+    <View
+      key={tracking.steps.indexOf(tracked)}
+      style={[styles.card, styles.current, { backgroundColor: theme.surface }]}>
+      <View style={styles.pillRow}>
+        <View style={[styles.pill, { backgroundColor: theme.primaryBackground }]}>
+          <ThemedText type="smallBold" style={{ color: theme.link }}>
+            {t.tracking.current}
+          </ThemedText>
+        </View>
+        {position === 0 && done.length > 0 && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t.tracking.doneCount(done.length)}
+          </ThemedText>
+        )}
+      </View>
+      <ThemedText style={styles.currentTitle} accessibilityRole="header">
+        {titleOf(tracked.stepId)}
+      </ThemedText>
+      {stepOf(process, tracked)?.actor && (
+        <View style={styles.metaRow}>
+          <SymbolView name={{ ios: 'person', android: 'person' }} size={16} tintColor={theme.textSecondary} />
+          <ThemedText themeColor="textSecondary">{stepOf(process, tracked)?.actor}</ThemedText>
+        </View>
+      )}
+      {!tracked.dueAt && (
+        <View style={styles.metaRow} accessible>
+          <SymbolView name={{ ios: 'clock', android: 'schedule' }} size={16} tintColor={theme.textSecondary} />
+          <ThemedText style={styles.flex}>{t.tracking.noDue}</ThemedText>
+        </View>
+      )}
+      {olaOf(tracked) && <Clock title={t.delays.ola} clock={olaOf(tracked)!} t={t} />}
+      {choicesOf(tracked).length > 1 ? (
+        <View style={styles.choices}>
+          <ThemedText type="smallBold">{t.tracking.whichNext}</ThemedText>
+          {choicesOf(tracked).map((link) => (
+            <PrimaryButton
+              key={link.id}
+              variant="secondary"
+              label={`${link.label ?? t.tracking.next} → ${titleOf(link.to)}`}
+              onPress={() => complete(link.id, tracking.steps.indexOf(tracked))}
+            />
+          ))}
+        </View>
+      ) : (
+        <PrimaryButton
+          label={choicesOf(tracked).length === 1 ? t.tracking.stepDone : t.tracking.finish}
+          accessibilityLabel={
+            choicesOf(tracked).length === 1 ? t.tracking.stepDoneGoTo(titleOf(choicesOf(tracked)[0].to)) : undefined
+          }
+          onPress={() => complete(undefined, tracking.steps.indexOf(tracked))}
+        />
+      )}
+    </View>
+  );
 
   const confirmStop = () =>
     confirmAction(
@@ -116,56 +188,27 @@ function TrackingDetail({ tracking, process }: { tracking: Tracking; process: Pr
 
         {sla && current && <Clock title={t.delays.sla} clock={sla} t={t} />}
 
-        {current ? (
-          <View style={[styles.card, styles.current, { backgroundColor: theme.surface }]}>
-            <View style={styles.pillRow}>
-              <View style={[styles.pill, { backgroundColor: theme.primaryBackground }]}>
-                <ThemedText type="smallBold" style={{ color: theme.link }}>
-                  {t.tracking.current}
+        {currents.length > 0 ? (
+          <>
+            {currents.length > 1 && (
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t.tracking.parallel(currents.length)}
+              </ThemedText>
+            )}
+            {currents.map(stepCard)}
+            {waiting.map((tracked) => (
+              <View key={tracking.steps.indexOf(tracked)} style={styles.metaRow}>
+                <SymbolView
+                  name={{ ios: 'hourglass', android: 'hourglass_empty' }}
+                  size={16}
+                  tintColor={theme.textSecondary}
+                />
+                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                  {t.tracking.waiting(titleOf(tracked.stepId))}
                 </ThemedText>
               </View>
-              {done.length > 0 && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t.tracking.doneCount(done.length)}
-                </ThemedText>
-              )}
-            </View>
-            <ThemedText style={styles.currentTitle} accessibilityRole="header">
-              {titleOf(current.stepId)}
-            </ThemedText>
-            {stepOf(process, current)?.actor && (
-              <View style={styles.metaRow}>
-                <SymbolView name={{ ios: 'person', android: 'person' }} size={16} tintColor={theme.textSecondary} />
-                <ThemedText themeColor="textSecondary">{stepOf(process, current)?.actor}</ThemedText>
-              </View>
-            )}
-            {!current.dueAt && (
-              <View style={styles.metaRow} accessible>
-                <SymbolView name={{ ios: 'clock', android: 'schedule' }} size={16} tintColor={theme.textSecondary} />
-                <ThemedText style={styles.flex}>{t.tracking.noDue}</ThemedText>
-              </View>
-            )}
-            {ola && <Clock title={t.delays.ola} clock={ola} t={t} />}
-            {choices.length > 1 ? (
-              <View style={styles.choices}>
-                <ThemedText type="smallBold">{t.tracking.whichNext}</ThemedText>
-                {choices.map((link) => (
-                  <PrimaryButton
-                    key={link.id}
-                    variant="secondary"
-                    label={`${link.label ?? t.tracking.next} → ${titleOf(link.to)}`}
-                    onPress={() => complete(link.id)}
-                  />
-                ))}
-              </View>
-            ) : (
-              <PrimaryButton
-                label={choices.length === 1 ? t.tracking.stepDone : t.tracking.finish}
-                accessibilityLabel={choices.length === 1 ? t.tracking.stepDoneGoTo(titleOf(choices[0].to)) : undefined}
-                onPress={() => complete()}
-              />
-            )}
-          </View>
+            ))}
+          </>
         ) : (
           <View style={[styles.card, styles.current, { backgroundColor: theme.successBackground }]}>
             <View style={[styles.doneIcon, { backgroundColor: theme.success }]}>

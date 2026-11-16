@@ -930,13 +930,18 @@ La simulation rejoue un process sur le papier ; le suivi accompagne une **vraie 
 
 ![Suivi en vrai : la section de la fiche, une demande en cours avec ses étapes passées, puis l'étape suivante](captures/etape-11b-suivi.png)
 
+![Suivi en vrai avec des tâches en parallèle : deux étapes en cours, chacune avec son chrono OLA](captures/etape-51-suivi-branches.png)
+
+![La facture est faite : « Tout est prêt » attend la branche du colis (mode sombre)](captures/etape-51-suivi-attente.png)
+
 <details>
 <summary>Détail</summary>
 
 **Suivi** (`tracking.ts`, TypeScript pur, testé). Un suivi (`Tracking`) garde la demande (nom, début, fin) et la liste des étapes passées (`TrackedStep` : étape, lien emprunté, début, échéance, fin), en dates ISO. Comme le moteur de simulation, chaque fonction prend un suivi et en renvoie un nouveau :
 
 - `startTracking` commence au premier départ du process ; l'échéance de l'étape vaut début + délai (`addWorkingDays`), absente si l'étape n'a pas de délai ;
-- `completeStep` termine l'étape en cours. S'il n'y a qu'une suite, la demande y passe ; à une décision, il faut choisir la branche (sans choix, rien ne bouge) ; sans suite, la demande est close (`finishedAt`) ;
+- `completeStep` termine l'étape en cours (ou, avec des tâches en parallèle, celle d'indice `index` dans `steps`). S'il n'y a qu'une suite, la branche y passe ; à une décision, il faut choisir la branche (sans choix, rien ne bouge) ; sans suite, la branche s'arrête. La demande est close (`finishedAt`) quand plus aucune étape n'est en cours ;
+- **tâches en parallèle** (`enterAll`) : entrer dans un partage « En parallèle » le passe aussitôt et commence toutes ses branches, chacune avec son échéance (OLA). `currentSteps` donne alors plusieurs étapes en cours. Une branche qui arrive à une jonction y est notée `waiting: true` (`waitingSteps`) ; quand la dernière arrive, les branches qui attendaient sont terminées et la suite commence. Les étapes « En parallèle » n'ont pas de délai et ne sont pas listées dans les étapes passées. Le SLA ne change pas : il court sur toute la demande. Sans étape « En parallèle », il n'y a jamais qu'une étape en cours, la dernière, comme avant (`currentStep` la donne toujours) ;
 - `timingOf` dit où en est une étape : `late` (échéance dépassée, ou terminée après), `soon` (échéance dans moins d'une demi-journée de travail), `on-time`, ou `none` (pas de délai). `timingBadge` (`format.ts`) en fait une pastille : « À l'heure », « Échéance proche », « En retard de 0,4 jour ouvré », « Terminée avec 0,5 jour ouvré de retard ».
 
 **Stockage** (`src/data/tracking-store.ts`). Les suivis sont gardés sur le téléphone (`localStorage`, clé `simuflow.suivis`), pas sur le serveur : ce sont les rappels de ce téléphone. `useTrackings(processId)` les donne en cours d'abord, puis du plus récent au plus ancien.
@@ -968,7 +973,7 @@ Deux délais, en jours ouvrés : l'**OLA** d'une étape (le délai de son équip
 
 **Écrans.**
 
-- **Suivi** (`src/app/suivi/[id].tsx`) : la carte du chrono SLA en haut, celle de l'OLA dans l'étape en cours (`DelayMeter`, `src/components/delay-meter.tsx` : titre, temps restant ou retard en grand, pastille « Dans les temps », « Bientôt dépassé » ou « Dépassé », barre de progression, échéance). L'icône clignote doucement une fois le délai dépassé, sauf avec « Réduire les animations ». L'heure est relue toutes les 15 secondes. Une demande close affiche le « Bilan des délais ».
+- **Suivi** (`src/app/suivi/[id].tsx`) : la carte du chrono SLA en haut, celle de l'OLA dans l'étape en cours (une carte et un chrono par branche avec des tâches en parallèle, sous « 2 étapes en cours en même temps », et « « Tout est prêt » attend les autres branches » sous les cartes) (`DelayMeter`, `src/components/delay-meter.tsx` : titre, temps restant ou retard en grand, pastille « Dans les temps », « Bientôt dépassé » ou « Dépassé », barre de progression, échéance). L'icône clignote doucement une fois le délai dépassé, sauf avec « Réduire les animations ». L'heure est relue toutes les 15 secondes. Une demande close affiche le « Bilan des délais ».
 - **Fiche** (`src/app/process/[id].tsx`) : la section « Délais (SLA / OLA) » donne le SLA, le chemin le plus long en additionnant les OLA (chemin critique de `overviewOf`), le nombre d'étapes avec un OLA, et dit si le chemin le plus long tient dans le SLA (la section est orange sinon).
 - **Éditeur** : le champ « SLA client » ; **simulation** : la barre du SLA (voir ces écrans).
 - **Rappels** : « SLA bientôt dépassé » puis « SLA dépassé » (voir « Notifications »).

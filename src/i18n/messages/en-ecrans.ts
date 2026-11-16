@@ -368,6 +368,8 @@ export const enScreens: ScreenMessages = {
     stopConfirm: 'Stop',
     startedOn: (name: string, date: string) => `${name} · started on ${date}`,
     current: 'Current step',
+    parallel: (count: number) => `${count} steps in progress at the same time`,
+    waiting: (title: string) => `“${title}” is waiting for the other branches`,
     due: (date: string) => `Due: ${date}`,
     noDue: 'No deadline for this step',
     whichNext: 'Step done: what comes next?',

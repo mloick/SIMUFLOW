@@ -6,6 +6,13 @@
  *
  * Chaque fonction prend un suivi et renvoie le nouveau, sans rien modifier.
  * Les dates sont des chaînes ISO, pour être enregistrées telles quelles.
+ *
+ * Tâches en parallèle : après une étape « En parallèle » qui partage, toutes
+ * ses branches commencent en même temps ; il y a alors plusieurs étapes en
+ * cours, chacune avec son échéance (OLA). Une branche qui arrive à une
+ * jonction y attend (`waiting`) ; quand la dernière arrive, la suite commence.
+ * Sans étape « En parallèle », il n'y a jamais qu'une étape en cours, la
+ * dernière, exactement comme avant.
  */
 
 import { slaOf, type Link, type Process, type Step } from '@/domain';
@@ -20,6 +27,8 @@ export type TrackedStep = {
   /** Échéance : absente si l'étape n'a pas de délai. */
   dueAt?: string;
   doneAt?: string;
+  /** Tâches en parallèle : branche arrivée à une jonction, qui attend les autres. */
+  waiting?: boolean;
 };
 
 export type Tracking = {
@@ -74,33 +83,89 @@ export function startTracking(process: Process, now: Date, id: string, label: st
   return tracking;
 }
 
-/** L'étape en cours (la dernière, tant que la demande n'est pas close). */
-export function currentStep(tracking: Tracking): TrackedStep | undefined {
-  return tracking.finishedAt ? undefined : tracking.steps.at(-1);
+/** Les étapes en cours : une seule sans tâches en parallèle, une par branche sinon. */
+export function currentSteps(tracking: Tracking): TrackedStep[] {
+  return tracking.finishedAt ? [] : tracking.steps.filter((step) => !step.doneAt && !step.waiting);
 }
 
-/** Les suites possibles de l'étape en cours. */
-export function nextChoices(process: Process, tracking: Tracking): Link[] {
-  const current = currentStep(tracking);
-  return current ? process.links.filter((link) => link.from === current.stepId) : [];
+/** L'étape en cours (la première des branches en cours ; sans parallèle, la dernière étape). */
+export function currentStep(tracking: Tracking): TrackedStep | undefined {
+  return currentSteps(tracking)[0];
+}
+
+/** Les suites possibles d'une étape en cours (par défaut, `currentStep`). */
+export function nextChoices(process: Process, tracking: Tracking, tracked = currentStep(tracking)): Link[] {
+  return tracked ? process.links.filter((link) => link.from === tracked.stepId) : [];
+}
+
+/** Branches arrivées à une jonction, qui attendent les autres. */
+export function waitingSteps(tracking: Tracking): TrackedStep[] {
+  return tracking.finishedAt ? [] : tracking.steps.filter((step) => step.waiting);
 }
 
 /**
- * Termine l'étape en cours. Avec `linkId`, la demande passe à l'étape suivante
- * par ce lien ; sans suite possible, la demande est close.
+ * Entre dans une étape par un lien et renvoie les étapes à ajouter au suivi.
+ * Une étape ordinaire commence. Une jonction (« En parallèle » à plusieurs
+ * entrées) note la branche qui attend, ou, si c'est la dernière, libère celles
+ * qui attendaient et continue. Un partage (« En parallèle » à plusieurs
+ * sorties) est passé aussitôt, et chaque branche commence.
  */
-export function completeStep(process: Process, tracking: Tracking, now: Date, linkId?: string): Tracking {
-  const current = currentStep(tracking);
-  if (!current) return tracking;
-  const done = { ...current, doneAt: now.toISOString() };
-  const steps = [...tracking.steps.slice(0, -1), done];
-  const choices = nextChoices(process, tracking);
-  const link = choices.find((item) => item.id === linkId) ?? (choices.length === 1 ? choices[0] : undefined);
-  if (!link) {
-    if (choices.length > 1) return tracking; // à une décision, il faut choisir la branche
-    return { ...tracking, steps, finishedAt: now.toISOString() };
+function enterAll(process: Process, steps: TrackedStep[], stepId: string, now: Date, linkId?: string): TrackedStep[] {
+  const step = process.steps.find((item) => item.id === stepId);
+  if (step?.kind !== 'parallel') return [...steps, enter(process, stepId, now, linkId)];
+  const at = now.toISOString();
+  const arrival: TrackedStep = {
+    stepId,
+    startedAt: at,
+    ...(linkId ? { linkId } : {}),
+  };
+  const expected = process.links.filter((link) => link.to === stepId).length;
+  if (expected >= 2) {
+    const waiting = steps.filter((item) => item.waiting && item.stepId === stepId).length;
+    if (waiting + 1 < expected) return [...steps, { ...arrival, waiting: true }];
+    // Dernière branche arrivée : celles qui attendaient sont libérées.
+    steps = steps.map((item) =>
+      item.waiting && item.stepId === stepId
+        ? {
+            stepId,
+            startedAt: item.startedAt,
+            ...(item.linkId ? { linkId: item.linkId } : {}),
+            doneAt: at,
+          }
+        : item,
+    );
   }
-  return { ...tracking, steps: [...steps, enter(process, link.to, now, link.id)] };
+  let next = [...steps, { ...arrival, doneAt: at }];
+  for (const exit of process.links.filter((link) => link.from === stepId)) {
+    next = enterAll(process, next, exit.to, now, exit.id);
+  }
+  return next;
+}
+
+/**
+ * Termine une étape en cours (par défaut `currentStep`, sinon celle d'indice
+ * `index` dans `tracking.steps`). Avec `linkId`, sa branche passe à l'étape
+ * suivante par ce lien ; sans suite possible, la branche s'arrête. La demande
+ * est close quand plus aucune étape n'est en cours.
+ */
+export function completeStep(
+  process: Process,
+  tracking: Tracking,
+  now: Date,
+  linkId?: string,
+  index?: number,
+): Tracking {
+  const at = index ?? tracking.steps.indexOf(currentStep(tracking)!);
+  const current = tracking.steps[at];
+  if (tracking.finishedAt || !current || current.doneAt || current.waiting) return tracking;
+  const done = { ...current, doneAt: now.toISOString() };
+  let steps = tracking.steps.map((step, position) => (position === at ? done : step));
+  const choices = nextChoices(process, tracking, current);
+  const link = choices.find((item) => item.id === linkId) ?? (choices.length === 1 ? choices[0] : undefined);
+  if (!link && choices.length > 1) return tracking; // à une décision, il faut choisir la branche
+  if (link) steps = enterAll(process, steps, link.to, now, link.id);
+  const next = { ...tracking, steps };
+  return currentSteps(next).length === 0 ? { ...next, finishedAt: now.toISOString() } : next;
 }
 
 /** Où en est une étape par rapport à son échéance. */
