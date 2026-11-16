@@ -17,6 +17,7 @@ Une page pour se repérer vite, avant de lire le code. Le détail est dans [tech
 | Les données gardées sur le téléphone, la synchronisation | `src/data/` (`process-store.ts`, `cloud-sync.ts`, `*-store.ts`) ; projets dans `project-store.ts` et `project-sync.ts`, projets d'équipe dans `team-projects-store.ts`, vue commune avec le rôle dans `project-view.ts` |
 | Le serveur Supabase (compte, process, projets, profil, partage, liens) | `src/backend/` ; tables et règles dans `supabase/migrations/`, leurs tests dans `supabase/tests/` |
 | Le suivi en vrai, les jours ouvrés, les rappels, le mode Délais (chronos SLA / OLA, bilan) | `src/tracking/` (`delays.ts`) et `src/notifications/` ; règles du SLA dans `src/domain/delays.ts` |
+| Les raccourcis Siri (App Intents, iOS) | `plugins/raccourcis-siri/Raccourcis.swift`, ajouté au projet iOS par `plugins/with-raccourcis-siri.js` |
 | Couleurs (4 palettes), police, espacements | `src/constants/theme.ts` ; palette choisie dans `src/data/palette-setting.ts` |
 | Petites fonctions (pluriel, fichiers, partage, confirmation) | `src/utils/` (`.web.ts` = version navigateur) |
 

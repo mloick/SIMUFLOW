@@ -49,6 +49,7 @@ The full tour, with screenshots, is in the [features guide](docs/fonctionnalites
 
 - **Camera with on-device text recognition.** A local Expo module written in Swift (Vision) and Kotlin (ML Kit) reads the photo on the phone; the rest of the scanner (rows, table, process) is TypeScript. On the web, the same screen uses Tesseract (WebAssembly). The photo never leaves the device.
 - **Local notifications, no server.** For a request you follow for real, a reminder arrives the morning of each step's deadline, then again once it is missed; if the process has an SLA, a reminder also arrives at three quarters of the SLA, then when it is breached. Tapping it opens the request. The switch and a test notification are in the Settings tab.
+- **Siri shortcuts (iOS 18+).** App Intents written in Swift let Siri, the Shortcuts app and Spotlight open SimuFlow on a tab ("Ouvrir Projets dans SimuFlow"). An Expo config plugin (`plugins/`) adds the Swift file to the iOS app target at prebuild; the intent simply opens a `simuflow://` link that Expo Router already handles.
 
 ## Getting started
 
