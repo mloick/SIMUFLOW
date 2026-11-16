@@ -49,6 +49,7 @@ La visite complète, avec captures, est dans le [guide des fonctionnalités](doc
 
 - **Caméra avec lecture du texte sur l'appareil.** Un module Expo local écrit en Swift (Vision) et en Kotlin (ML Kit) lit la photo sur le téléphone ; le reste du scanner (lignes, tableau, process) est en TypeScript. Sur le web, le même écran utilise Tesseract (WebAssembly). La photo ne quitte jamais l'appareil.
 - **Notifications locales, sans serveur.** Pour une demande suivie en vrai, un rappel arrive le matin de l'échéance de chaque étape, puis à nouveau si elle est dépassée ; si le process a un SLA, un rappel arrive aussi aux trois quarts du SLA, puis à son dépassement. Le toucher ouvre la demande. L'interrupteur et une notification d'essai sont dans l'onglet Réglages.
+- **Raccourcis Siri (iOS 18 et plus).** Des App Intents écrits en Swift permettent à Siri, à l'app Raccourcis et à Spotlight d'ouvrir SimuFlow sur un onglet (« Ouvrir Projets dans SimuFlow »). Un plugin de configuration Expo (`plugins/`) ajoute le fichier Swift à la cible de l'app iOS pendant le prebuild ; l'action ouvre simplement un lien `simuflow://` qu'Expo Router sait déjà lire.
 
 ## Démarrer
 

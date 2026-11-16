@@ -71,7 +71,8 @@
         {
           "faceIDPermission": false
         }
-      ]
+      ],
+      "./plugins/with-raccourcis-siri"
     ],
     "experiments": {
       "typedRoutes": true,

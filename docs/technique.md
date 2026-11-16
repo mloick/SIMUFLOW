@@ -7,7 +7,7 @@ Ce document décrit le code de SimuFlow tel qu'il est aujourd'hui, pour un déve
 - [En bref](#en-bref) · [Architecture](#architecture) · [Structure du dépôt](#structure-du-dépôt) · [Commandes](#commandes)
 1. [Cœur du simulateur](#1-cœur-du-simulateur) : modèle, diagnostic, chemins, moteur, schéma
 2. [Lire un process : import](#2-lire-un-process--import) : draw.io, BPMN, Visio, JSON, Excel et CSV, règles apprises
-3. [Scanner et module natif](#3-scanner-et-module-natif) : Swift avec Vision, Kotlin avec ML Kit, Tesseract sur le web
+3. [Scanner et module natif](#3-scanner-et-module-natif) : Swift avec Vision, Kotlin avec ML Kit, Tesseract sur le web ; raccourcis Siri (App Intents)
 4. [Écrans](#4-écrans) : navigation, liste, import, formulaire, détail, éditeur, simulation, export
 5. [Suivre une vraie demande](#5-suivre-une-vraie-demande) : jours ouvrés, mode Délais (SLA / OLA), rappels locaux
 6. [Données et backend](#6-données-et-backend) : stockage local, synchronisation, Supabase
@@ -79,6 +79,7 @@ Trois règles tiennent l'ensemble :
 | `src/backend/` | Client Supabase, compte et session, tables du compte |
 | `src/i18n/` | Langue de l'app : textes en français et en anglais, réglage « Langue » |
 | `modules/text-recognition/` | Module natif de lecture de texte (Swift avec Vision pour iOS, Kotlin avec ML Kit pour Android) |
+| `plugins/` | Raccourcis Siri (App Intents en Swift) ajoutés au projet iOS par un plugin de configuration |
 | `supabase/` | Schéma de la base (migrations SQL versionnées) et tests des règles d'accès |
 
 ## Structure du dépôt
@@ -101,6 +102,7 @@ src/
   notifications/ Notifications locales : autorisation, canal Android, notification d'essai et rappels programmés (notifications.ts, et notifications.web.ts pour le web), réglages « Rappels d'échéance » et « Alertes du partage » (settings.ts), mise à jour des rappels (use-deadline-reminders.ts), alerte du partage envoyée tout de suite (`notifyNow`) et ouverture de son écran (use-share-alert-taps.ts)
   utils/        Petites fonctions : texte (pluriel, nombres à la française, recherche sans accents), lecture d'un fichier choisi (read-file.ts, et read-file.web.ts pour le web), partage d'un fichier exporté (share-file.ts, et share-file.web.ts), guide d'installation de la web app (install-guide.ts, install-guide-platform.ts et .web.ts), identifiant unique UUID choisi par le téléphone (uuid.ts), confirmation avant de retirer quelque chose (confirm.ts : `Alert` sur téléphone ; confirm.web.ts : `window.confirm`, car `Alert.alert` ne fait rien dans le navigateur)
 modules/        Modules natifs locaux de l'app : text-recognition (lecture du texte d'une photo : Swift avec Vision sur iOS, Kotlin avec ML Kit sur Android)
+plugins/        Plugins de configuration Expo de l'app : raccourcis Siri (with-raccourcis-siri.js, qui ajoute raccourcis-siri/Raccourcis.swift au projet iOS)
 assets/         Icônes, images, écran de démarrage
 public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil, moteur de lecture du Scanner web (ocr/, copié par scripts/ocr-web.mjs, non versionné)
 docs/           Documentation (dont carte.md, la carte du code en une page, securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
@@ -482,6 +484,21 @@ Pas de recadrage sur Android : ML Kit n'a pas d'équivalent à la détection de 
 4. recolle une **cellule écrite sur deux lignes** : une ligne serrée contre la précédente (moins de 0,7 fois l'écart habituel) avec du texte dans une seule colonne complète la cellule du dessus.
 
 Il renvoie les colonnes (genre et titre lu), une ligne par étape avec une cellule par colonne (vide si rien n'est écrit), le nombre de lignes de texte ignorées, et le titre du tableau : un texte seul sur sa ligne, juste au-dessus des titres de colonnes (au plus 3 fois la hauteur du texte), qui n'est pas lui-même un titre de colonne. Les tests utilisent les six tableaux de `docs/exemples/tableaux-a-scanner.html` : la position de chaque texte a été relevée dans la page affichée par un navigateur (`__fixtures__/tableaux.json`), avec le texte autour de chaque tableau comme sur une vraie photo (fin du tableau précédent, titres, explications). Chaque tableau est retrouvé entier et seul : autres titres dans un autre ordre, numéros, cases vides, colonne « Suite », délais écrits de plusieurs façons, titre sur deux lignes.
+
+### Raccourcis Siri (App Intents, iOS)
+
+Sur iPhone (iOS 18 et plus), Siri, l'app Raccourcis et Spotlight peuvent ouvrir SimuFlow directement sur un onglet : « Ouvrir Projets dans SimuFlow », « Ouvre Scanner dans SimuFlow », « Ouvrir SimuFlow ». Rien côté Android ni web.
+
+| Fichier | Rôle |
+| --- | --- |
+| `plugins/raccourcis-siri/Raccourcis.swift` | Le code Swift : l'écran à choisir (`EcranSimuFlow`, un `AppEnum` : Process, Scanner, Projets), l'action (`OuvrirEcranIntent`, un `AppIntent`) et les phrases de Siri (`RaccourcisSimuFlow`, un `AppShortcutsProvider`) |
+| `plugins/with-raccourcis-siri.js` | Plugin de configuration Expo, déclaré dans `app.json` : pendant `npx expo prebuild`, il copie le fichier Swift dans `ios/SimuFlow/` et l'ajoute à la cible de l'app dans le projet Xcode |
+
+- **Pourquoi un plugin et pas un module comme `text-recognition`.** iOS ne cherche les raccourcis que dans l'app elle-même : un module Expo est compilé à part (bibliothèque CocoaPods), ses App Intents ne seraient pas trouvés. Le plugin met donc le fichier dans la cible de l'app, sans toucher `ios/` à la main.
+- **Comment l'action ouvre l'écran.** `perform()` renvoie un `OpenURLIntent` vers `simuflow://<écran>` (`simuflow://`, `simuflow://scanner`, `simuflow://projets`). Le système ouvre ce lien comme un lien tapé ailleurs : il lance l'app si elle était fermée, puis Expo Router affiche la route (`src/app/(tabs)/index.tsx`, `scanner.tsx`, `projets.tsx`). Aucun code TypeScript n'a changé.
+- **iOS 18 minimum** : `OpenURLIntent` n'existe qu'à partir d'iOS 18 ; sur un iPhone plus ancien, l'app marche normalement, sans raccourci.
+- **Compte Apple gratuit** : suffisant. Un raccourci d'app (App Shortcut) n'utilise ni l'option « Siri » ni aucun droit spécial (entitlement). Les phrases sont en français ; avec Siri dans une autre langue, l'action reste disponible dans l'app Raccourcis.
+- **Recompiler** : c'est du code natif. Après la fusion : `npx expo prebuild --clean --platform ios`, puis `npm run ios:iphone`. Une mise à jour OTA ne peut pas l'ajouter.
 
 ## 4. Écrans
 
