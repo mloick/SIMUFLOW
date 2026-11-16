@@ -228,7 +228,7 @@ Quinze tests vérifient les niveaux, les couloirs, les boucles, les étapes côt
 
 </details>
 
-**Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, pilule pour le départ et la fin. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
+**Dessin.** `ProcessDiagram` dessine en SVG (`react-native-svg`) uniquement ce qui a été parcouru : les étapes visitées, les flèches empruntées en bleu, et, en mode pas à pas, les sorties possibles en pointillés avec leur étape d'arrivée « en fantôme ». Les formes suivent le rôle : rectangle pour une tâche, losange pour une décision, losange vert pour une étape « En parallèle », pilule pour le départ et la fin. Avec des tâches en parallèle, chaque étape en cours a son halo. Le titre est coupé sur trois lignes au plus. L'étape en cours a un halo qui pulse (Reanimated, `useAnimatedProps` sur un `Rect` animé), coupé avec « Réduire les animations ».
 
 **Vue.** Le schéma n'est pas dans des défilements : il est posé dans un cadre et déplacé par une transformation (décalage `x`, `y` et échelle `scale`), trois valeurs partagées Reanimated qui bougent sur le fil d'interface, sans repasser par React.
 
@@ -854,6 +854,12 @@ Il reprend l'écran 4 de la maquette, ouvert par « Lancer la simulation » depu
 
 ![Simulation en paysage : le schéma à gauche, la carte de l'étape à droite](captures/etape-r11-paysage.png)
 
+**Tâches en parallèle.** Quand plusieurs branches sont ouvertes (`activeBranches` en renvoie plus d'une) ou qu'une jonction en attend (`waiting`), la carte d'étape devient « En parallèle » (pastille verte) : le titre dit combien de branches avancent en même temps, puis `ParallelBranches` (`src/components/parallel-branches.tsx`) affiche une ligne par branche (acteur, étape, jours cumulés sur la branche, bouton « Terminer cette étape » ou un bouton par sortie). On avance les branches dans l'ordre que l'on veut ; chaque bouton appelle `step(état, lien)`. Sous les branches, chaque jonction dit qui elle attend encore (`waitingFor`), et une branche arrivée sur sa fin est notée « Branche arrivée au bout ». Sur le schéma, toutes les étapes en cours ont leur halo (`otherCurrentIds` dans `DiagramProgress`), et une étape « En parallèle » est un losange vert (`isDiamond` dans `layout.ts`). Si une branche ne peut plus atteindre sa jonction, la carte affiche « Bloqué » et ce que la jonction attend encore. « Retour » annule le dernier choix, quelle que soit la branche. Sans tâches en parallèle, la carte est exactement celle d'avant.
+
+![Simulation de tâches en parallèle : deux branches en même temps](captures/etape-49-parallele-branches.png)
+
+![La jonction « Tout est prêt » attend encore la branche du colis (mode sombre)](captures/etape-49-parallele-attente.png)
+
 L'ancienne description, avant la refonte :
 
 - **Quatre modes** en onglets : « Pas à pas » ; « Simple », qui rejoue le chemin le plus court (`shortestPath`) ; « Complexe », le plus long sans repasser par une étape (`longestPath`) ; « Tous », la vue de tous les cas (voir plus bas). « Simple » et « Complexe » rejouent le chemin étape par étape (une toutes les 450 ms) pour que le schéma se construise sous les yeux ; avec « Réduire les animations », le chemin s'affiche d'un coup.
@@ -867,7 +873,7 @@ L'ancienne description, avant la refonte :
 <details>
 <summary>Détail</summary>
 
-Pas encore fait : « Suivre les deux branches » (maquette, écran 4).
+« Suivre les deux branches » (maquette, écran 4) : fait avec les tâches en parallèle (voir plus haut).
 
 Les délais s'écrivent à la française (« 0,5 JO ») grâce à `formatNumber` (`src/utils/format.ts`), aussi utilisé par `plural` : le détail d'un process en profite.
 
@@ -1478,6 +1484,7 @@ Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les doss
 Les tests unitaires vérifient des fonctions ; un test de composant affiche un vrai composant, comme sur le téléphone, puis le lit et le touche comme le ferait un utilisateur : par son texte et son rôle d'accessibilité (« bouton », « titre »), jamais par son code. Bibliothèque : React Native Testing Library (`@testing-library/react-native`, avec `test-renderer`), dans Jest avec `jest-expo`.
 
 - **`state-message.test.tsx`** : le message des états « vide » et « erreur » de la liste. Le titre est annoncé comme un titre, le message et le bouton sont affichés, et toucher le bouton lance l'action (deux tests).
+- **`parallel-branches.test.tsx`** : les tâches en parallèle dans la carte de la Simulation. Une ligne par branche avec son acteur, toucher « Étape suivante » avance la bonne branche, et la jonction dit ce qu'elle attend encore (deux tests).
 - **`process-card.test.tsx`** : la carte d'un process dans la liste, avec le process fictif de demande de matériel. Elle affiche le nom, « 6 étapes · 1 décision · 4 acteurs » et « Aucune anomalie » ; avec une étape isolée, « 1 avertissement » ; avec `sharedBy`, « Partagé par Hugo » ; et la toucher ouvre le détail du process (`router.push` vers `/process/[id]`, remplacé par une fonction espion) (quatre tests).
 - **`accueil-ecran.test.tsx`** : l'accueil, avec la liste, le suivi et la session remplacés par des valeurs fixes. Il dit « Bonjour Sans compte », montre « Vos process » et les filtres avec leur nombre (pas de « Partagés » sans partage) ; « À corriger » ne garde que le process qui a un avertissement ; « Reprendre » ouvre le suivi en cours ; la cloche ouvre les alertes et « Nouveau » l'import ; puis les états : squelette, « Réessayer » qui relance, liste vide dont « Voir les exemples » réactive le réglage, et bandeau hors ligne (huit tests).
 - **`situation-list.test.tsx`** : la liste des situations d'un workflow SLA / OLA (voir [Importer](#importer-srcappimporttsx)).

@@ -29,7 +29,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Import** a draw.io, BPMN 2.0, Visio (`.vsdx`), JSON, Excel or CSV file, paste a process **written as text** (one line per step), or **photograph** a process table.
 - **Diagnose**: dead ends, unreachable steps, paths that never finish, one-way decisions, unlabelled branches.
 - **Correct** the process in an editor; the app learns reading rules from your corrections.
-- **Simulate** step by step, or see every path at once with the critical path.
+- **Simulate** step by step, or see every path at once with the critical path. **Parallel tasks** (BPMN parallel gateways): several teams move forward at the same time, in any order; the step that joins them waits for all branches, and the time counted is the longest branch's.
 - **Export** as PDF (with a plain-language summary of each case), draw.io, BPMN 2.0 or JSON, anonymised if needed.
 - **Follow a real request** with deadlines in French working days and a reminder on the due date.
 - **Time limits mode (SLA / OLA)**: each step has its time for its team (OLA) and the process its time promised to the customer (SLA), read from the imported table or entered in the editor. While tracking, two timers go from green to orange then red, a notification warns before the SLA is breached, and a report says at the end whether the limits were met; the simulation compares the days used with the SLA.

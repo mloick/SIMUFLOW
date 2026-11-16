@@ -85,8 +85,8 @@ export function placeMissing(process: Process): Process {
   const left = () => Math.min(...[...boxes.values()].map((box) => box.x));
 
   const place = (step: Step, anchor: Box | undefined, below: boolean) => {
-    const width = step.kind === 'decision' ? 120 : NODE_WIDTH;
-    const height = step.kind === 'decision' ? 80 : NODE_HEIGHT;
+    const width = isDiamond(step.kind) ? 120 : NODE_WIDTH;
+    const height = isDiamond(step.kind) ? 80 : NODE_HEIGHT;
     const box: Box = anchor
       ? {
           x: anchor.x + (anchor.width - width) / 2,
@@ -251,7 +251,7 @@ export function borderPoint(node: DiagramNode, toward: Point): Point {
   const halfH = node.height / 2;
   // Losange : |dx|/halfW + |dy|/halfH = 1 ; rectangle : max(|dx|/halfW, |dy|/halfH) = 1.
   const scale =
-    node.kind === 'decision'
+    isDiamond(node.kind)
       ? 1 / (Math.abs(dx) / halfW + Math.abs(dy) / halfH)
       : 1 / Math.max(Math.abs(dx) / halfW, Math.abs(dy) / halfH);
   return { x: c.x + dx * scale, y: c.y + dy * scale };
@@ -517,4 +517,9 @@ export function wrap(text: string, perLine: number, maxLines: number): string[] 
     return kept;
   }
   return lines;
+}
+
+/** Une décision et une étape « En parallèle » sont dessinées en losange, comme en BPMN. */
+export function isDiamond(kind: StepKind): boolean {
+  return kind === 'decision' || kind === 'parallel';
 }

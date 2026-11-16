@@ -20,7 +20,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import type { FamilyPaint } from '@/simulation/families';
-import { midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import { isDiamond, midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
 import { useT } from '@/i18n';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -54,6 +54,8 @@ export type DiagramProgress = {
   visitedLinks: Set<string>;
   /** Étape en cours : entourée, avec un halo qui pulse. */
   currentId?: string;
+  /** Tâches en parallèle : les autres étapes en cours, entourées elles aussi. */
+  otherCurrentIds?: string[];
   /** Sorties possibles depuis l'étape en cours : en pointillés, avec leur étape d'arrivée en fantôme. */
   candidateLinks: string[];
 };
@@ -191,10 +193,12 @@ export function ProcessDiagram({
       .map((edge) => edge.to),
   );
   const choosing = candidates.size > 0;
+  const isCurrent = (nodeId: string) =>
+    nodeId === progress?.currentId || (progress?.otherCurrentIds?.includes(nodeId) ?? false);
   const focusIds = !progress
     ? []
     : choosing && progress.currentId
-      ? [progress.currentId, ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
+      ? [progress.currentId, ...(progress.otherCurrentIds ?? []), ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
       : [...progress.visitedSteps];
   const focusKey = overview ? 'tous' : `${progress?.currentId}|${focusIds.join('|')}`;
   const frameFocus = () => {
@@ -417,7 +421,7 @@ export function ProcessDiagram({
                     );
                   return (
                     <FadeIn key={node.id}>
-                      <NodeShape node={node} current={node.id === progress?.currentId} ghost={!visited} />
+                      <NodeShape node={node} current={isCurrent(node.id)} ghost={!visited} />
                     </FadeIn>
                   );
                 })}
@@ -488,7 +492,7 @@ export function ProcessDiagram({
             ]}>
             {[...layout.nodes.values()].map((node) => {
               const visited = progress?.visitedSteps.has(node.id);
-              const current = node.id === progress?.currentId;
+              const current = isCurrent(node.id);
               return (
                 <View
                   key={node.id}
@@ -573,6 +577,7 @@ function useNodeColors(kind: StepKind) {
       stroke: theme.warning,
       text: theme.warning,
     };
+  if (kind === 'parallel') return { fill: theme.successBackground, stroke: theme.success, text: theme.success };
   if (kind === 'start' || kind === 'end') return { fill: theme.text, stroke: theme.text, text: theme.background };
   return { fill: theme.primary, stroke: theme.primary, text: theme.onPrimary };
 }
@@ -597,7 +602,7 @@ function NodeShape({
   const fill = ghost ? theme.surface : colors.fill;
   const stroke = ghost ? theme.textSecondary : colors.stroke;
   const shape =
-    node.kind === 'decision' ? (
+    isDiamond(node.kind) ? (
       <Polygon
         points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`}
         fill={fill}
@@ -661,7 +666,7 @@ function Halo({ node }: { node: DiagramNode }) {
 function NodeText({ node, color }: { node: DiagramNode; color: string }) {
   const t = useT();
   const fontSize = 13;
-  const usable = node.kind === 'decision' ? node.width * 0.62 : node.width - 14;
+  const usable = isDiamond(node.kind) ? node.width * 0.62 : node.width - 14;
   const lines = wrap(node.title || t.untitled, Math.max(6, Math.floor(usable / (fontSize * 0.56))), 3);
   const lineHeight = fontSize * 1.2;
   const firstY = node.y + node.height / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.35;

@@ -476,6 +476,17 @@ export const frScreens = {
     endReached: 'Fin atteinte',
     deadEnd: 'Impasse',
     noExit: (title: string): string => `« ${title} » n’a aucune sortie.`,
+    parallelTitle: (count: number): string =>
+      count >= 2 ? `${count} branches en même temps` : 'Une branche reste à finir',
+    parallelHint: 'Avancez chaque branche dans l’ordre que vous voulez.',
+    branchLabel: (n: number, title: string, actor: string): string =>
+      `Branche ${n} : ${title}${actor ? `, ${actor}` : ''}`,
+    branchNext: 'Terminer cette étape',
+    branchDone: (title: string): string => `Branche arrivée au bout : ${title}`,
+    waitingFor: (join: string, list: string): string => `« ${join} » attend encore : ${list}`,
+    blocked: 'Bloqué',
+    blockedText: (join: string, list: string): string =>
+      `« ${join} » attend encore ${list}, qui ne peut plus y arriver.`,
     stepBack: 'Revenir en arrière',
     restart: 'Recommencer pas à pas',
     noPath: 'Aucun chemin ne va du départ jusqu’à une fin.',
