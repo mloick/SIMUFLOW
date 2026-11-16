@@ -811,9 +811,11 @@ L'écran relit le process à chaque changement : il le cherche dans la liste ren
 Pour corriger un process pendant sa validation, sans retoucher le fichier d'origine. Les modifications sont des fonctions pures (`src/domain/edit.ts`) qui renvoient un nouveau process : l'écran garde un brouillon, et « Annuler » l'abandonne (avec confirmation s'il a changé).
 
 - **Le SLA du process** (`setSla`, `src/domain/delays.ts`) : une carte en haut, « SLA client (jours ouvrés) », vide = aucun.
-- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai OLA en jours ouvrés (vide = aucun).
+- **Une étape** (`updateStep`) : titre (jamais vide), rôle (départ, tâche, décision, en parallèle, fin), acteur (tapé, ou choisi parmi ceux du process, `actorsOf`), délai OLA en jours ouvrés (vide = aucun).
 - **Les branches** (`renameLink`) : chaque sortie d'une étape qui en a plusieurs se nomme (« oui », « refus »…) ; un nom vide la laisse sans nom.
 - **« C'est un choix »** (`makeDecision`) : une tâche à plusieurs sorties devient une décision, et ses branches sans nom prennent le titre de l'étape où elles mènent.
+- **« Ça se fait en même temps »** (`makeParallel`) : l'autre bouton d'une tâche ou d'un départ à plusieurs sorties. Une étape « En parallèle » (le partage) est insérée juste après, et ses sorties deviennent les branches, sans nom. L'éditeur cherche ensuite la première étape où toutes les branches se retrouvent (`meetingPoint` : atteinte depuis chaque branche, avec la plus petite des plus longues distances, par parcours en largeur). Il insère juste avant elle une jonction « Attendre toutes les branches », vers laquelle il redirige les flèches qui arrivent des branches. Sans étape commune (chaque branche a sa fin), il n'y a pas de jonction.
+- **Ajouter une branche en parallèle** (`addParallelBranch`, sur une étape « En parallèle ») : remplace « Ajouter une étape après » et crée une nouvelle étape « Nouvelle branche » reliée au partage. Les branches d'une étape « En parallèle » n'ont pas de champ de nom : elles sont toutes suivies.
 - **Ajouter une étape après** (`addStepAfter`, pas sur une décision) : si l'étape n'a qu'une suite, la nouvelle s'insère entre les deux (le nom de branche reste au départ) ; sinon elle devient une suite de plus. Elle s'ouvre aussitôt pour être nommée.
 - **Ajouter un cas** (`addBranch`, sur une décision) : un nom et une cible, une nouvelle étape (qui porte le nom du cas) ou une étape existante.
 - **Relier à une autre étape** (`addBranch` sans nom, sur une tâche ou un départ) : une suite de plus vers une étape existante, par exemple un retour en arrière.
@@ -823,6 +825,10 @@ Pour corriger un process pendant sa validation, sans retoucher le fichier d'orig
 - Chaque champ met le brouillon à jour à chaque frappe ; les boutons de l'en-tête lisent la dernière version par une référence (`useRef`).
 
 ![Éditeur : une étape ouverte (acteur, délai), une décision et ses branches, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
+![Éditeur : une étape à deux sorties, « C'est un choix » ou « Ça se fait en même temps »](captures/etape-50-editeur-parallele.png)
+
+![Après « Ça se fait en même temps » : le partage « En parallèle » et la jonction « Attendre toutes les branches »](captures/etape-50-editeur-jonction.png)
 
 <details>
 <summary>Détail</summary>

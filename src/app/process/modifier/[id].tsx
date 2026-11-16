@@ -11,8 +11,10 @@ import { learnFromCorrection } from '@/data/rules-store';
 import {
   actorsOf,
   addBranch,
+  addParallelBranch,
   addStepAfter,
   makeDecision,
+  makeParallel,
   removeLink,
   removeStep,
   renameLink,
@@ -27,7 +29,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { confirmAction } from '@/utils/confirm';
 import { useT } from '@/i18n';
 
-const KINDS: StepKind[] = ['start', 'task', 'decision', 'end'];
+const KINDS: StepKind[] = ['start', 'task', 'decision', 'parallel', 'end'];
 
 /**
  * Éditeur d'un process importé : SLA du process (mode Délais), titre, rôle, acteur et délai (OLA) de chaque étape,
@@ -206,13 +208,17 @@ function StepEditor({
   const kindLabel = t.kinds[step.kind];
   const others = process.steps.filter((other) => other.id !== step.id);
   const isDecision = step.kind === 'decision';
+  const isParallel = step.kind === 'parallel';
   const targets: { id: string | undefined; title: string }[] = isDecision
     ? [{ id: undefined, title: e.newStep }, ...others]
     : others.filter((other) => !exits.some((link) => link.to === other.id));
   const canAdd = isDecision ? caseName.trim() !== '' : caseTarget !== undefined;
 
   const addAfter = () => {
-    const { process: next, stepId } = addStepAfter(process, step.id, '');
+    // Après une étape « En parallèle », on ajoute une branche de plus plutôt qu'une étape entre deux.
+    const { process: next, stepId } = isParallel
+      ? addParallelBranch(process, step.id)
+      : addStepAfter(process, step.id, '');
     onChange(next);
     onOpen(stepId);
   };
@@ -343,7 +349,7 @@ function StepEditor({
                   </ThemedText>
                 </Pressable>
               </View>
-              {exits.length > 1 && (
+              {exits.length > 1 && !isParallel && (
                 <Field
                   value={link.label ?? ''}
                   placeholder={e.branchPlaceholder}
@@ -353,15 +359,32 @@ function StepEditor({
               )}
             </View>
           ))}
-          {exits.length > 1 && step.kind !== 'decision' && (
-            <Pressable
-              onPress={() => onChange(makeDecision(process, step.id))}
-              accessibilityRole="button"
-              style={[styles.action, { borderColor: theme.link }]}>
-              <ThemedText type="smallBold" style={{ color: theme.link }}>
-                {e.makeDecision(unnamed > 0 ? t.format.count(unnamed, e.branch) : null)}
-              </ThemedText>
-            </Pressable>
+          {isParallel && exits.length > 1 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {e.parallelNote}
+            </ThemedText>
+          )}
+          {/* Plusieurs sorties : soit c'est un choix (une décision), soit tout se fait en même temps. */}
+          {exits.length > 1 && step.kind !== 'decision' && !isParallel && (
+            <>
+              <Pressable
+                onPress={() => onChange(makeDecision(process, step.id))}
+                accessibilityRole="button"
+                style={[styles.action, { borderColor: theme.link }]}>
+                <ThemedText type="smallBold" style={{ color: theme.link }}>
+                  {e.makeDecision(unnamed > 0 ? t.format.count(unnamed, e.branch) : null)}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => onChange(makeParallel(process, step.id))}
+                accessibilityRole="button"
+                accessibilityHint={e.makeParallelHint}
+                style={[styles.action, { borderColor: theme.success }]}>
+                <ThemedText type="smallBold" style={{ color: theme.success }}>
+                  {e.makeParallel}
+                </ThemedText>
+              </Pressable>
+            </>
           )}
 
           {/* Une décision gagne un cas nommé ; une tâche se relie à une étape existante (un retour, par exemple). */}
@@ -424,7 +447,7 @@ function StepEditor({
                 accessibilityHint={e.addAfterHint}
                 style={[styles.action, styles.flex, { borderColor: theme.link }]}>
                 <ThemedText type="smallBold" style={{ color: theme.link }}>
-                  {e.addAfter}
+                  {isParallel ? e.addParallelBranch : e.addAfter}
                 </ThemedText>
               </Pressable>
             )}

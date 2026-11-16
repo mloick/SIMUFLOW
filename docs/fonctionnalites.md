@@ -192,9 +192,15 @@ La fiche d'un process donne ses chiffres clés (étapes, chemins possibles, poin
 
 ### Corriger un process · Disponible
 
-Touchez **Modifier** sur la fiche. En haut, le **SLA client** du process (voir « Mode Délais »). Touchez une étape : changez son titre, son rôle (départ, tâche, décision, fin), son acteur, son délai (OLA) et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
+Touchez **Modifier** sur la fiche. En haut, le **SLA client** du process (voir « Mode Délais »). Touchez une étape : changez son titre, son rôle (départ, tâche, décision, en parallèle, fin), son acteur, son délai (OLA) et le nom de ses branches. Vous pouvez aussi **ajouter une étape après**, **ajouter un cas** à une décision, **relier à une autre étape** ou **supprimer l'étape**. Le nombre de points à corriger se met à jour en direct. La fiche garde la trace : « Corrigé dans l'app le … ».
 
 ![Corriger une étape, nommer une branche, puis la fiche mise à jour](captures/etape-L2a-editeur.png)
+
+**Des tâches en même temps.** Quand une étape a plusieurs suites, l'éditeur propose deux boutons. **C'est un choix** en fait une décision. **Ça se fait en même temps** en fait des branches en parallèle : l'app ajoute une étape « En parallèle », puis une étape « Attendre toutes les branches » là où les branches se retrouvent. Sur une étape « En parallèle », **Ajouter une branche en parallèle** crée une branche de plus.
+
+![Une étape à deux suites : un choix, ou en même temps ?](captures/etape-50-editeur-parallele.png)
+
+![Les branches en parallèle et l'étape qui les attend](captures/etape-50-editeur-jonction.png)
 
 <details>
 <summary>Plus de captures</summary>
@@ -576,6 +582,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Tâches en parallèle, suite** · Prévue : créer des branches en parallèle dans l'éditeur, les suivre dans une vraie demande (un chrono par branche), et les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io. Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris) et se simulent pas à pas.
+- **Tâches en parallèle, suite** · Prévue : les suivre dans une vraie demande (un chrono par branche), et les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io. Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris), se créent dans l'éditeur et se simulent pas à pas.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

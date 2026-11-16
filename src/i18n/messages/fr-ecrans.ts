@@ -581,6 +581,13 @@ export const frScreens = {
     otherCase: 'Autre cas',
     newStepTitle: 'Nouvelle étape',
     newCaseTitle: 'Nouveau cas',
+    newBranchTitle: 'Nouvelle branche',
+    parallelTitle: 'En parallèle',
+    joinTitle: 'Attendre toutes les branches',
+    makeParallel: 'Ça se fait en même temps : en faire des branches en parallèle',
+    makeParallelHint: 'Ajoute une étape « En parallèle », et une jonction là où les branches se retrouvent',
+    addParallelBranch: 'Ajouter une branche en parallèle',
+    parallelNote: 'Toutes les branches sont suivies en même temps : pas besoin de les nommer.',
   },
 
   importer: {
