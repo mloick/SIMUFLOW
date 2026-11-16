@@ -183,7 +183,7 @@ export const enScreens: ScreenMessages = {
   },
 
   untitled: 'Untitled',
-  kinds: { start: 'Start', task: 'Task', decision: 'Decision', end: 'End' },
+  kinds: { start: 'Start', task: 'Task', decision: 'Decision', parallel: 'In parallel', end: 'End' },
 
   detail: {
     notFound: 'Process not found',
@@ -278,6 +278,8 @@ export const enScreens: ScreenMessages = {
       'unlabeled-branch': 'Unlabelled branch',
       'duplicate-label': 'Duplicate labels',
       'ambiguous-exits': 'Exits to clarify',
+      'parallel-no-branch': 'Parallel without branches',
+      'join-without-split': 'Join without split',
       'dangling-link': 'Broken link',
     },
     messages: {
@@ -294,6 +296,9 @@ export const enScreens: ScreenMessages = {
       'duplicate-label': (_count?: number, label?: string) => `Two branches have the same label “${label}”.`,
       'ambiguous-exits': () => 'Several unlabelled exits: a choice or parallel steps? To clarify.',
       'dangling-link': () => 'Link to a step that does not exist.',
+      'parallel-no-branch': () => 'An “In parallel” step that neither opens nor joins several branches.',
+      'join-without-split': (count?: number) =>
+        `A join waiting for ${count} branches, but no “In parallel” step opens them: it would wait forever.`,
     },
     details: {
       name: (title: string) => `“${title}”`,
@@ -306,6 +311,10 @@ export const enScreens: ScreenMessages = {
       'duplicate-label': (name: string, label?: string) => `Decision ${name}: two exits are called “${label}”.`,
       'ambiguous-exits': (name: string) => `Several exits of ${name} have no label: a choice or parallel steps?`,
       'multiple-starts': (name: string, count?: number) => `${count} starting points, including ${name}.`,
+      'parallel-no-branch': (name: string) =>
+        `${name} is “In parallel” but has a single entry and a single exit: nothing happens at the same time.`,
+      'join-without-split': (name: string, count?: number) =>
+        `${name} waits for ${count} branches, but no “In parallel” step opens them before: only one will arrive.`,
     },
   },
 
@@ -417,7 +426,7 @@ export const enScreens: ScreenMessages = {
 
   simulation: {
     modes: { 'pas-a-pas': 'Step by step', simple: 'Simple', complexe: 'Complex', tous: 'All' },
-    kinds: { start: 'Start', task: 'Step', decision: 'Decision', end: 'End' },
+    kinds: { start: 'Start', task: 'Step', decision: 'Decision', parallel: 'In parallel', end: 'End' },
     notFoundText: 'This process no longer exists on this phone.',
     back: 'Back',
     backTitle: 'Details',
@@ -937,7 +946,7 @@ export const enScreens: ScreenMessages = {
       delay: 'the duration',
       next: 'the next step',
     },
-    roles: { start: 'a start', task: 'a task', decision: 'a decision', end: 'an end' },
+    roles: { start: 'a start', task: 'a task', decision: 'a decision', parallel: 'a parallel split or join', end: 'an end' },
     actor: (from: string, to: string) => `Actor “${from}” read as “${to}”`,
     column: (header: string, column: string) => `Column “${header}” read as ${column}`,
     shape: (shape: string, role: string) => `Shape ${shape} read as ${role}`,

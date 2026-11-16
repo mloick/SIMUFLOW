@@ -5,6 +5,7 @@
 
 import { getT, type Messages } from '@/i18n';
 import { buildGraph, canReachEnd, reachableFromStarts } from './graph';
+import { reachableFromSplits } from './parallel';
 import type { Process } from './types';
 
 export type Severity = 'error' | 'warning' | 'info';
@@ -22,6 +23,8 @@ export type IssueCode =
   | 'unlabeled-branch'
   | 'duplicate-label'
   | 'ambiguous-exits'
+  | 'parallel-no-branch'
+  | 'join-without-split'
   | 'dangling-link';
 
 export type Issue = {
@@ -41,6 +44,7 @@ export function diagnose(process: Process): Issue[] {
   const issues: Issue[] = [];
   const reachable = reachableFromStarts(graph);
   const finishes = canReachEnd(graph);
+  const afterSplit = reachableFromSplits(graph);
 
   if (graph.starts.length === 0) {
     issues.push({ severity: 'error', code: 'no-start' });
@@ -91,6 +95,14 @@ export function diagnose(process: Process): Issue[] {
           labels.add(label.toLowerCase());
         }
       }
+    } else if (step.kind === 'parallel') {
+      // Une étape « En parallèle » n'a pas besoin de libellés : toutes ses sorties sont prises.
+      if (outgoing.length < 2 && incoming.length < 2) {
+        issues.push({ severity: 'info', code: 'parallel-no-branch', stepId: step.id });
+      } else if (incoming.length >= 2 && !afterSplit.has(step.id)) {
+        // Jonction que rien ne lance en parallèle : une seule branche y arrive, elle attendrait sans fin.
+        issues.push({ severity: 'warning', code: 'join-without-split', stepId: step.id, params: { count: incoming.length } });
+      }
     } else if (outgoing.filter((link) => !link.label?.trim()).length > 1) {
       issues.push({ severity: 'info', code: 'ambiguous-exits', stepId: step.id });
     }
@@ -131,11 +143,12 @@ export function explainIssue(issue: Issue, process: Process, t: Messages = getT(
     code === 'isolated-step' ||
     code === 'decision-single-exit' ||
     code === 'unlabeled-branch' ||
-    code === 'ambiguous-exits'
+    code === 'ambiguous-exits' ||
+    code === 'parallel-no-branch'
       ? details[code](name)
       : code === 'duplicate-label'
         ? details[code](name, issue.params?.label)
-        : code === 'multiple-starts'
+        : code === 'multiple-starts' || code === 'join-without-split'
           ? details[code](name, issue.params?.count)
           : describeIssue(issue, t);
   return { title, detail };

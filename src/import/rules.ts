@@ -163,7 +163,7 @@ export function describeRule(rule: ReadingRule, t: Messages = getT()): string {
 /** Relit une liste de règles enregistrée ; ignore ce qui est mal formé. */
 export function parseRules(value: unknown): ReadingRule[] {
   if (!Array.isArray(value)) return [];
-  const kinds: StepKind[] = ['start', 'task', 'decision', 'end'];
+  const kinds: StepKind[] = ['start', 'task', 'decision', 'parallel', 'end'];
   const columns: ColumnKind[] = ['number', 'step', 'actor', 'delay', 'next'];
   return value.filter(
     (rule): rule is ReadingRule =>

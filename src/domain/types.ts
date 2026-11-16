@@ -5,7 +5,7 @@
  */
 
 /** Rôle d'une étape dans le process. */
-export type StepKind = 'start' | 'task' | 'decision' | 'end';
+export type StepKind = 'start' | 'task' | 'decision' | 'parallel' | 'end';
 
 export type Step = {
   id: string;

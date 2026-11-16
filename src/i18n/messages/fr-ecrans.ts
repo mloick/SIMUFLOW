@@ -190,7 +190,7 @@ export const frScreens = {
   },
 
   untitled: 'Sans titre',
-  kinds: { start: 'Départ', task: 'Tâche', decision: 'Décision', end: 'Fin' },
+  kinds: { start: 'Départ', task: 'Tâche', decision: 'Décision', parallel: 'En parallèle', end: 'Fin' },
 
   detail: {
     notFound: 'Process introuvable',
@@ -289,6 +289,8 @@ export const frScreens = {
       'unlabeled-branch': 'Branche sans étiquette',
       'duplicate-label': 'Libellés en double',
       'ambiguous-exits': 'Sorties à préciser',
+      'parallel-no-branch': 'Parallèle sans branches',
+      'join-without-split': 'Jonction sans partage',
       'dangling-link': 'Lien cassé',
     },
     messages: {
@@ -307,6 +309,10 @@ export const frScreens = {
         `Deux branches portent le même libellé « ${label} ».`,
       'ambiguous-exits': (): string => 'Plusieurs sorties sans libellé : choix ou étapes en parallèle ? À préciser.',
       'dangling-link': (): string => 'Lien relié à une étape qui n’existe pas.',
+      'parallel-no-branch': (): string =>
+        'Étape « En parallèle » qui ne lance ni ne réunit plusieurs branches.',
+      'join-without-split': (count?: number): string =>
+        `Jonction qui attend ${count} branches, mais aucune étape « En parallèle » ne les lance : elle attendrait sans fin.`,
     },
     /** Phrases qui nomment l'étape (`name` : « « Titre » »). */
     details: {
@@ -323,6 +329,10 @@ export const frScreens = {
       'ambiguous-exits': (name: string): string =>
         `Plusieurs sorties de ${name} sans libellé : choix ou étapes en parallèle ?`,
       'multiple-starts': (name: string, count?: number): string => `${count} points de départ, dont ${name}.`,
+      'parallel-no-branch': (name: string): string =>
+        `${name} est « En parallèle » mais n’a qu’une entrée et une sortie : rien ne se passe en même temps.`,
+      'join-without-split': (name: string, count?: number): string =>
+        `${name} attend ${count} branches, mais aucune étape « En parallèle » ne les lance avant : une seule arrivera.`,
     },
   },
 
@@ -440,7 +450,7 @@ export const frScreens = {
 
   simulation: {
     modes: { 'pas-a-pas': 'Pas à pas', simple: 'Simple', complexe: 'Complexe', tous: 'Tous' },
-    kinds: { start: 'Départ', task: 'Étape', decision: 'Décision', end: 'Fin' },
+    kinds: { start: 'Départ', task: 'Étape', decision: 'Décision', parallel: 'En parallèle', end: 'Fin' },
     notFoundText: 'Ce process n’existe plus sur ce téléphone.',
     back: 'Revenir',
     backTitle: 'Détail',
@@ -966,7 +976,7 @@ export const frScreens = {
       step: 'flèche',
     } as Record<string, string>,
     columns: { number: 'le numéro', step: 'l’étape', actor: 'l’acteur', delay: 'le délai', next: 'la suite' },
-    roles: { start: 'un départ', task: 'une tâche', decision: 'une décision', end: 'une fin' },
+    roles: { start: 'un départ', task: 'une tâche', decision: 'une décision', parallel: 'un passage en parallèle', end: 'une fin' },
     actor: (from: string, to: string): string => `Acteur « ${from} » lu comme « ${to} »`,
     column: (header: string, column: string): string => `Colonne « ${header} » lue comme ${column}`,
     shape: (shape: string, role: string): string => `Forme ${shape} lue comme ${role}`,
