@@ -6,7 +6,7 @@
  * sépare, ce que donne chaque cas et lequel est le plus rapide ou le plus long.
  */
 
-import { summarize, type Path, type Process } from '@/domain';
+import { hasParallel, summarize, type Path, type Process } from '@/domain';
 import type { ProcessOverview } from '@/simulation/families';
 import { formatNumber, plural } from '@/utils/format';
 
@@ -32,11 +32,11 @@ export function briefOf(process: Process, overview: ProcessOverview, options: Br
   const timed = process.steps.some((step) => (step.duration ?? 0) > 0);
   const summary = summarize(process);
   const title = (id: string) => `« ${steps.get(id)?.title || 'sans titre'} »`;
-  // Étapes de travail d'un chemin : sans le départ ni la fin.
+  // Étapes de travail d'un chemin : sans le départ, la fin ni les losanges « En parallèle ».
   const workCount = (path: Path) =>
     path.steps.filter(({ stepId }) => {
       const kind = steps.get(stepId)?.kind;
-      return kind !== 'start' && kind !== 'end';
+      return kind !== 'start' && kind !== 'end' && kind !== 'parallel';
     }).length;
   const days = (min: number, max: number) =>
     min === max ? `${formatNumber(min)} JO` : `de ${formatNumber(min)} à ${formatNumber(max)} JO`;
@@ -62,6 +62,11 @@ export function briefOf(process: Process, overview: ProcessOverview, options: Br
   intro.push(
     actors.length ? `${start} et fait intervenir ${plural(actors.length, 'acteur')} : ${listOf(actors)}.` : `${start}.`,
   );
+  if (hasParallel(process)) {
+    intro.push(
+      `Certaines étapes se font en même temps : chaque branche avance de son côté${timed ? ' et le délai compte la branche la plus longue' : ''}.`,
+    );
+  }
 
   const paths = overview.families.flatMap((family) => family.paths);
   if (paths.length === 0) {

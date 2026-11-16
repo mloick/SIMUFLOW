@@ -13,12 +13,13 @@ import { SymbolView, type SymbolViewProps } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { getProcess } from '@/data/process-store';
-import { delayLevel, delayRatio, longestPath, shortestPath, slaOf, type PathStep, type Process } from '@/domain';
+import { delayLevel, delayRatio, slaOf, type PathStep, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useFamilyColors, useTheme } from '@/hooks/use-theme';
 import { createSimulation, type SimulationState } from '@/simulation/engine';
 import { overviewOf, paintFamilies, type PathFamily, type ProcessOverview } from '@/simulation/families';
 import { layoutProcess } from '@/simulation/layout';
+import { complexCase, simpleCase } from '@/simulation/runs';
 import { useT } from '@/i18n';
 
 type Mode = 'pas-a-pas' | 'simple' | 'complexe' | 'tous';
@@ -119,7 +120,7 @@ function Simulator({ process }: { process: Process }) {
     setReplayTarget(null);
     setIsolated(null);
     if (next === 'pas-a-pas' || next === 'tous') return setState(sim.start());
-    const path = next === 'simple' ? shortestPath(process) : longestPath(process);
+    const path = next === 'simple' ? simpleCase(process) : complexCase(process);
     if (!path) return setState(sim.start());
     // Sans animation, le chemin s'affiche d'un coup.
     setState(sim.replay(reduceMotion ? path.steps : path.steps.slice(0, 1)));

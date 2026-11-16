@@ -24,10 +24,11 @@ import {
 import { useAllProjects } from '@/data/project-view';
 import { useShared } from '@/data/shared-store';
 import { saveTracking, useTrackings } from '@/data/tracking-store';
-import { countPaths, explainIssue, hasDelays, slaOf, summarize, type Issue, type Process } from '@/domain';
+import { explainIssue, hasDelays, slaOf, summarize, type Issue, type Process } from '@/domain';
 import { useLargeText } from '@/hooks/use-large-text';
 import { useTheme } from '@/hooks/use-theme';
 import { overviewOf } from '@/simulation/families';
+import { pathCount } from '@/simulation/runs';
 import { formatMoment, timingBadge } from '@/tracking/format';
 import { currentStep, startTracking } from '@/tracking/tracking';
 import { confirmAction } from '@/utils/confirm';
@@ -87,7 +88,7 @@ function ProcessDetail({ process }: { process: Process }) {
   const project = useAllProjects().find((item) => item.project.id === process.projectId)?.project;
 
   const summary = useMemo(() => summarize(process), [process]);
-  const paths = useMemo(() => countPaths(process), [process]);
+  const paths = useMemo(() => pathCount(process), [process]);
   const toFix = summary.errorCount + summary.warningCount;
   const shown = summary.issues.filter((issue) => issue.severity !== 'info');
   const folded = summary.issues.filter((issue) => issue.severity === 'info');

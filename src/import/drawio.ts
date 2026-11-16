@@ -47,6 +47,8 @@ type Cell = {
   h: number;
   /** Propriété « acteur » (fichier exporté par SimuFlow), utilisée sans couloir. */
   actor?: string;
+  /** Marqué « en parallèle » par SimuFlow à l'export (propriété parallele="1"). */
+  parallel: boolean;
   sourcePoint?: Point;
   targetPoint?: Point;
   points: Point[];
@@ -61,6 +63,13 @@ type Cell = {
 type Point = { x: number; y: number };
 
 const START_TEXT = /^(start|début|debut|démarrage|demarrage|begin|départ|depart)\b/i;
+/**
+ * Tâches en parallèle : seulement sur un marqueur explicite, jamais deviné.
+ * Un losange dont le texte est « + » ou « En parallèle », une passerelle BPMN
+ * parallèle de draw.io, ou la propriété parallele="1" de l'export SimuFlow.
+ */
+const PARALLEL_TEXT = /^\s*(\+|en\s+parall[eè]le|in\s+parallel|parallel)\s*$/i;
+const PARALLEL_STYLE = /gwType=parallel|symbol=parallelGw/;
 const END_TEXT = /cl[oô]tur|\bclos(e|es|ed|ure)?(?![A-Za-zÀ-ÿ])|termin[ée]|\bfin\b|\bend\b|\bdone\b/i;
 
 function parseStyle(style: string): Style {
@@ -170,6 +179,7 @@ function readCells(model: Element): Cell[] {
       h: 0,
       points: [],
       actor: wrapper?.getAttribute('acteur')?.trim() || undefined,
+      parallel: wrapper?.getAttribute('parallele') === '1',
       ax: 0,
       ay: 0,
       ox: 0,
@@ -348,7 +358,9 @@ function buildPage(model: Element, pageName: string, id: string, name: string, w
     const title = node.text.split('\n')[0] ?? '';
     const ellipse = node.st.ellipse !== undefined || /terminator|startState|endState|flowchart\.start/.test(node.style);
     let kind: StepKind = 'task';
-    if (node.st.rhombus !== undefined || /decision/.test(node.style)) kind = 'decision';
+    const diamond = node.st.rhombus !== undefined || /decision/.test(node.style);
+    if (node.parallel || PARALLEL_STYLE.test(node.style) || (diamond && PARALLEL_TEXT.test(title))) kind = 'parallel';
+    else if (diamond) kind = 'decision';
     else if (outs >= 2 && ((namedExits.get(node.id) ?? 0) >= 2 || /\?\s*$/.test(title))) kind = 'decision';
     else if (ellipse && ins === 0 && outs > 0) kind = 'start';
     else if (ellipse && outs === 0 && ins > 0) kind = 'end';
