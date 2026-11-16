@@ -51,3 +51,30 @@ describe('rappels d’échéance', () => {
     expect(allReminders([tracking], () => process, d(2, 15))).toHaveLength(2);
   });
 });
+
+describe('rappels avec des tâches en parallèle', () => {
+  it('prévient pour chaque branche en cours', () => {
+    const paralleles: Process = {
+      id: 'q',
+      name: 'Commande',
+      steps: [
+        { id: 'd', kind: 'start', title: 'Commande validée' },
+        { id: 'p', kind: 'parallel', title: 'En parallèle' },
+        { id: 'f', kind: 'task', title: 'Préparer la facture', duration: 1 },
+        { id: 'c', kind: 'task', title: 'Préparer le colis', duration: 3 },
+        { id: 'e', kind: 'end', title: 'Fin' },
+      ],
+      links: [
+        { id: '1', from: 'd', to: 'p' },
+        { id: '2', from: 'p', to: 'f' },
+        { id: '3', from: 'p', to: 'c' },
+        { id: '4', from: 'f', to: 'e' },
+        { id: '5', from: 'c', to: 'e' },
+      ],
+    };
+    const tracking = completeStep(paralleles, startTracking(paralleles, d(2, 9), 'u', 'Commande 7')!, d(2, 10));
+    const titles = remindersFor(paralleles, tracking, d(2, 11)).map((item) => item.title);
+    expect(titles.some((title) => title.includes('Préparer la facture'))).toBe(true);
+    expect(titles.some((title) => title.includes('Préparer le colis'))).toBe(true);
+  });
+});

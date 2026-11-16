@@ -390,6 +390,8 @@ export const frScreens = {
     stopConfirm: 'Arrêter',
     startedOn: (name: string, date: string): string => `${name} · commencée le ${date}`,
     current: 'Étape en cours',
+    parallel: (count: number): string => `${count} étapes en cours en même temps`,
+    waiting: (title: string): string => `« ${title} » attend les autres branches`,
     due: (date: string): string => `Échéance : ${date}`,
     noDue: 'Pas de délai pour cette étape',
     whichNext: 'Étape terminée : quelle suite ?',

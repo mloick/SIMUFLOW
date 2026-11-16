@@ -369,6 +369,12 @@ L'étape en cours est en grand ; les étapes passées s'alignent en frise, coch�
 
 ![Suivi en vrai : les demandes d'un process, une demande en cours, puis l'étape suivante](captures/etape-11b-suivi.png)
 
+**Avec des tâches en parallèle**, chaque branche a sa propre carte, avec son échéance et son chrono (OLA). Terminez-les dans l'ordre réel. L'étape qui les réunit attend la dernière, puis la suite commence. Le SLA client court toujours sur toute la demande, et les rappels arrivent pour chaque branche.
+
+![Deux étapes en cours en même temps, chacune avec son chrono](captures/etape-51-suivi-branches.png)
+
+![La facture est faite : l'étape « Tout est prêt » attend le colis](captures/etape-51-suivi-attente.png)
+
 ### Rappels d'échéance · Disponible
 
 Dans **Réglages**, activez **Rappels d'échéance**. Le téléphone vous prévient **le matin du jour de l'échéance**, puis **à l'échéance** si l'étape n'est pas finie ; toucher le rappel ouvre la demande. Tout est programmé sur le téléphone, sans serveur. **Envoyer une notification d'essai** en envoie une 5 secondes plus tard.
@@ -582,6 +588,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Tâches en parallèle, suite** · Prévue : les suivre dans une vraie demande (un chrono par branche), et les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io. Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris), se créent dans l'éditeur et se simulent pas à pas.
+- **Tâches en parallèle, suite** · Prévue : les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io (un losange marqué « + » ou « En parallèle »). Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris), se créent dans l'éditeur, se simulent pas à pas et se suivent en vrai.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

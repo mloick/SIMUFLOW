@@ -20,7 +20,7 @@ import { getT } from '@/i18n';
 
 import { WORKDAY_START_HOUR } from './calendar';
 import { warningMoment } from './delays';
-import { currentStep, stepOf, type Tracking } from './tracking';
+import { currentStep, currentSteps, stepOf, type Tracking } from './tracking';
 
 export type Reminder = {
   /** Identifiant stable : le même rappel reprogrammé remplace l'ancien. */
@@ -57,27 +57,30 @@ export function remindersFor(process: Process, tracking: Tracking, now: Date): R
       },
     );
   }
-  if (!current?.dueAt) return reminders.filter((reminder) => reminder.date.getTime() > now.getTime());
-  const due = new Date(current.dueAt);
-  const title = stepOf(process, current)?.title || text.untitled;
-  const index = tracking.steps.length - 1;
-  const morning = new Date(due.getFullYear(), due.getMonth(), due.getDate(), WORKDAY_START_HOUR);
-  if (morning < due) {
+  // Une étape en cours (plusieurs avec des tâches en parallèle) : rappel le matin de l'échéance, puis à l'échéance.
+  for (const step of currentSteps(tracking)) {
+    if (!step.dueAt) continue;
+    const due = new Date(step.dueAt);
+    const title = stepOf(process, step)?.title || text.untitled;
+    const index = tracking.steps.indexOf(step);
+    const morning = new Date(due.getFullYear(), due.getMonth(), due.getDate(), WORKDAY_START_HOUR);
+    if (morning < due) {
+      reminders.push({
+        id: `${tracking.id}-${index}-jour`,
+        date: morning,
+        title: text.todayTitle(title),
+        body: text.todayBody(tracking.label, time(due)),
+        trackingId: tracking.id,
+      });
+    }
     reminders.push({
-      id: `${tracking.id}-${index}-jour`,
-      date: morning,
-      title: text.todayTitle(title),
-      body: text.todayBody(tracking.label, time(due)),
+      id: `${tracking.id}-${index}-retard`,
+      date: due,
+      title: text.lateTitle(title),
+      body: text.lateBody(tracking.label, time(due)),
       trackingId: tracking.id,
     });
   }
-  reminders.push({
-    id: `${tracking.id}-${index}-retard`,
-    date: due,
-    title: text.lateTitle(title),
-    body: text.lateBody(tracking.label, time(due)),
-    trackingId: tracking.id,
-  });
   return reminders.filter((reminder) => reminder.date.getTime() > now.getTime());
 }
 
