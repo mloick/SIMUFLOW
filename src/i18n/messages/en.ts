@@ -43,6 +43,7 @@ export const en: Messages = {
     alerts: 'Alerts',
     link: 'Review my part',
     project: 'Project',
+    dashboard: 'Dashboard',
     newProject: 'New project',
     editProject: 'Rename the project',
     addToProject: 'Add processes',

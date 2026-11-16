@@ -865,6 +865,63 @@ export const enScreens: ScreenMessages = {
     notSharedText: 'This process is not on your account yet: share it with its actors first.',
   },
 
+  dashboard: {
+    title: 'Dashboard',
+    open: 'Dashboard',
+    openHint: 'How far the review of each process in the project has got',
+    subtitle: (project: string, n: number): string => `${project} · ${n} ${n === 1 ? 'process' : 'processes'}`,
+    reviewed: (done: number, total: number): string =>
+      total === 0 ? 'Nothing to review yet' : `${done} of ${total} ${total === 1 ? 'review' : 'reviews'} done`,
+    percentLabel: (percent: number): string => `${percent}% of reviews done`,
+    validatedOf: (validated: number, total: number): string =>
+      `${validated} of ${total} ${total === 1 ? 'process' : 'processes'} validated.`,
+    waiting: (n: number): string =>
+      n === 0 ? '' : n > 1 ? ` ${n} people have not finished.` : ' 1 person has not finished.',
+    counterValidated: (): string => 'Validated',
+    counterInProgress: 'In progress',
+    counterToRevise: 'To revise',
+    issues: 'To handle',
+    issueWhere: (process: string, step: number): string => `${process} · step ${step}`,
+    issueBy: (name: string, actor: string | null): string => (actor ? `${name} · ${actor}` : name),
+    quote: (text: string): string => `“${text}”`,
+    issueHint: 'Opens the process',
+    processes: 'Processes in the project',
+    filterAll: 'All',
+    filterToRevise: 'To revise',
+    filterInProgress: 'In progress',
+    filterValidated: 'Validated',
+    status: {
+      a_revoir: 'To revise',
+      en_relecture: 'In review',
+      pas_partage: 'Not shared',
+      valide: 'Validated',
+    },
+    mine: (steps: number): string => `Mine · ${steps} ${steps === 1 ? 'step' : 'steps'}`,
+    owner: (name: string, steps: number): string => `${name}’s · ${steps} ${steps === 1 ? 'step' : 'steps'}`,
+    allDone: 'Everyone has reviewed it',
+    done: (done: number, total: number): string =>
+      `${done} of ${total} ${total === 1 ? 'person has' : 'people have'} finished`,
+    toRevise: (n: number): string => (n === 1 ? '1 point to revise' : `${n} points to revise`),
+    notShared: 'Nobody has reviewed it yet.',
+    share: 'Share',
+    shareHint: 'Shares this process with its actors',
+    memberState: {
+      fini: 'reviewed everything',
+      signale: 'flagged a point',
+      en_cours: 'reviewing',
+      pas_commence: 'not started',
+    },
+    member: (name: string, state: string): string => `${name}, ${state}`,
+    legendDone: 'Reviewed everything',
+    legendInProgress: 'In progress',
+    legendIssue: 'Flagged a point',
+    legendNotStarted: 'Not started',
+    empty: 'No process in this project yet.',
+    emptyFilter: 'No process here.',
+    signInText: 'Your team’s reviews are on your account: sign in first.',
+    error: 'Could not read your team’s reviews.',
+  },
+
   alerts: {
     empty: 'No alerts',
     emptyText:
