@@ -229,6 +229,12 @@ Sur la fiche, touchez **Lancer la simulation** :
 
 Le **schéma se construit** au fil du parcours : les étapes à venir sont en pointillés, et **Suivi auto** recadre sur l'étape en cours. Pincez ou glissez pour explorer ; le bouton cible y revient, et une petite carte montre où vous êtes dans un grand schéma. En bas, une carte donne l'étape, son acteur et le délai cumulé en jours ouvrés. Le bouton **plein écran** donne toute la place au schéma, et en tournant le téléphone le schéma passe à gauche et la carte à droite.
 
+**Tâches en parallèle.** Quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la carte du bas montre une ligne par branche. Vous avancez chacune dans l'ordre que vous voulez. L'étape qui les réunit attend que toutes soient terminées et dit qui elle attend encore. Le délai affiché est celui de la branche la plus longue. Un process sans tâches en parallèle se simule comme avant.
+
+![Deux branches en même temps : la facture et le colis](captures/etape-49-parallele-branches.png)
+
+![L'étape « Tout est prêt » attend encore le colis](captures/etape-49-parallele-attente.png)
+
 ![La simulation : pas à pas, puis en plein écran](captures/etape-r9-simulation.png)
 
 ![La simulation en paysage](captures/etape-r11-paysage.png)
@@ -570,6 +576,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Tâches en parallèle** · Prévue : quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la simulation suivra les deux branches à la fois, dans l'ordre que vous voulez. L'étape suivante attendra que toutes soient terminées, et le délai sera celui de la branche la plus longue. Les process sans tâches en parallèle restent simulés comme aujourd'hui. Le calcul est prêt, et un fichier BPMN avec des branches parallèles est déjà lu comme tel (export BPMN compris). Les process importés avant restent comme ils étaient : réimportez le fichier pour profiter du parallèle. L'écran, l'éditeur et le suivi en vrai arrivent ensuite.
+- **Tâches en parallèle, suite** · Prévue : créer des branches en parallèle dans l'éditeur, les suivre dans une vraie demande (un chrono par branche), et les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io. Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris) et se simulent pas à pas.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.

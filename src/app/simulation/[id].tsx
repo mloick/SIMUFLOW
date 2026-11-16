@@ -4,6 +4,7 @@ import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, useWindowDimensio
 import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ParallelBranches } from '@/components/parallel-branches';
 import { PressableScale } from '@/components/pressable-scale';
 import { PrimaryButton } from '@/components/primary-button';
 import { ProcessDiagram } from '@/components/process-diagram';
@@ -88,6 +89,10 @@ function Simulator({ process }: { process: Process }) {
 
   const current = sim.current(state);
   const choices = sim.choices(state);
+  // Tâches en parallèle : plusieurs branches ouvertes, ou une jonction qui en attend.
+  // Sinon (process séquentiel), la carte d'étape reste celle d'avant.
+  const branches = sim.activeBranches(state);
+  const parallelNow = branches.length > 1 || state.waiting.length > 0;
   const replaying = replayTarget !== null && state.trail.length < replayTarget.length;
 
   useEffect(() => {
@@ -152,6 +157,9 @@ function Simulator({ process }: { process: Process }) {
     visitedSteps: new Set(state.trail.map((item) => item.stepId)),
     visitedLinks: new Set(state.trail.flatMap((item) => (item.linkId ? [item.linkId] : []))),
     currentId: current?.id,
+    otherCurrentIds: parallelNow
+      ? branches.map((active) => active.step.id).filter((stepId) => stepId !== current?.id)
+      : undefined,
     candidateLinks: mode === 'pas-a-pas' ? choices.map((link) => link.id) : [],
   };
 
@@ -184,10 +192,47 @@ function Simulator({ process }: { process: Process }) {
     </View>
   );
 
+  const slaBar = sla !== undefined && slaLevel && (
+    <SlaBar
+      label={`${t.delays.sla} · ${t.delays.simSla(t.format.num(state.days), days(sla))}`}
+      accessibilityLabel={t.delays.simLabel(days(state.days), days(sla), t.delays.levels[slaLevel])}
+      color={slaColor}
+      ratio={delayRatio(state.days, sla)}
+    />
+  );
+
   // La carte d'étape : genre et jours cumulés, titre, choix côte à côte, Retour et Recommencer.
   const stepCard = (
     <View style={styles.cardContent}>
-      {state.status === 'running' && current && (
+      {state.status === 'running' && parallelNow && (
+        <>
+          <View style={styles.cardTop}>
+            <View style={[styles.kindPill, { backgroundColor: theme.successBackground }]}>
+              <ThemedText type="smallBold" style={[styles.kindText, { color: theme.success }]}>
+                {replaying ? t.simulation.replaying(mode === 'simple') : t.simulation.kinds.parallel}
+              </ThemedText>
+            </View>
+            <View style={styles.flex} />
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {t.simulation.wd(t.format.num(state.days))}
+            </ThemedText>
+          </View>
+          <View style={styles.cardTitle}>
+            <ThemedText style={styles.stepTitle}>{t.simulation.parallelTitle(branches.length)}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.simulation.parallelHint}
+            </ThemedText>
+          </View>
+          {slaBar}
+          <ParallelBranches
+            sim={sim}
+            state={state}
+            disabled={replaying}
+            onStep={(linkId) => setState(sim.step(state, linkId))}
+          />
+        </>
+      )}
+      {state.status === 'running' && current && !parallelNow && (
         <>
           <View style={styles.cardTop}>
             <View
@@ -216,14 +261,7 @@ function Simulator({ process }: { process: Process }) {
               </ThemedText>
             )}
           </View>
-          {sla !== undefined && slaLevel && (
-            <SlaBar
-              label={`${t.delays.sla} · ${t.delays.simSla(t.format.num(state.days), days(sla))}`}
-              accessibilityLabel={t.delays.simLabel(days(state.days), days(sla), t.delays.levels[slaLevel])}
-              color={slaColor}
-              ratio={delayRatio(state.days, sla)}
-            />
-          )}
+          {slaBar}
           {!replaying &&
             (choices.length === 1 ? (
               <PrimaryButton
@@ -283,7 +321,29 @@ function Simulator({ process }: { process: Process }) {
         </View>
       )}
 
-      {state.status === 'stuck' && current && (
+      {state.status === 'stuck' && state.waiting.length > 0 && (
+        <View style={[styles.result, { backgroundColor: theme.dangerBackground }]}>
+          <SymbolView name={{ ios: 'xmark.octagon.fill', android: 'cancel' }} size={22} tintColor={theme.danger} />
+          <View style={styles.flex}>
+            <ThemedText type="smallBold" style={{ color: theme.danger }}>
+              {t.simulation.blocked}
+            </ThemedText>
+            {[...new Set(state.waiting.map((branch) => branch.stepId))].map((joinId) => (
+              <ThemedText key={joinId} style={styles.stepTitle}>
+                {t.simulation.blockedText(
+                  sim.graph.steps.get(joinId)?.title || t.untitled,
+                  sim
+                    .waitingFor(state, joinId)
+                    .map((link) => sim.graph.steps.get(link.from)?.title || t.untitled)
+                    .join(', '),
+                )}
+              </ThemedText>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {state.status === 'stuck' && state.waiting.length === 0 && current && (
         <View style={[styles.result, { backgroundColor: theme.dangerBackground }]}>
           <SymbolView name={{ ios: 'xmark.octagon.fill', android: 'cancel' }} size={22} tintColor={theme.danger} />
           <View style={styles.flex}>
@@ -300,7 +360,7 @@ function Simulator({ process }: { process: Process }) {
           icon={{ ios: 'arrow.uturn.backward', android: 'undo' }}
           label={t.simulation.undo}
           accessibilityLabel={t.simulation.stepBack}
-          disabled={mode !== 'pas-a-pas' || state.trail.length <= 1}
+          disabled={mode !== 'pas-a-pas' || state.moves.length === 0}
           onPress={() => setState(sim.back(state))}
         />
         <TextButton
