@@ -570,6 +570,6 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Tâches en parallèle** · Prévue : quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la simulation suivra les deux branches à la fois, dans l'ordre que vous voulez. L'étape suivante attendra que toutes soient terminées, et le délai sera celui de la branche la plus longue. Les process sans tâches en parallèle restent simulés comme aujourd'hui. Le calcul est prêt ; l'écran, l'éditeur, l'import et le suivi en vrai arrivent ensuite.
+- **Tâches en parallèle** · Prévue : quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la simulation suivra les deux branches à la fois, dans l'ordre que vous voulez. L'étape suivante attendra que toutes soient terminées, et le délai sera celui de la branche la plus longue. Les process sans tâches en parallèle restent simulés comme aujourd'hui. Le calcul est prêt, et un fichier BPMN avec des branches parallèles est déjà lu comme tel (export BPMN compris). Les process importés avant restent comme ils étaient : réimportez le fichier pour profiter du parallèle. L'écran, l'éditeur et le suivi en vrai arrivent ensuite.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
