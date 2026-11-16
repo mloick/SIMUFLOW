@@ -23,7 +23,7 @@ export type DashboardData =
 export async function loadDashboard(sources: DashboardSource[]): Promise<DashboardInput[]> {
   return Promise.all(
     sources.map(async ({ process, cloudId }) =>
-      cloudId ? { process, ...(await loadValidation(cloudId)) } : { process, members: [], reviews: [] },
+      cloudId ? { process, ...(await loadValidation(cloudId, { team: true })) } : { process, members: [], reviews: [] },
     ),
   );
 }

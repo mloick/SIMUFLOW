@@ -25,9 +25,12 @@ grant usage on schema auth, public to anon, authenticated;
 \ir ../migrations/20261118000000_avis.sql
 \ir ../migrations/20261120000000_projets.sql
 \ir ../migrations/20261121000000_equipe_projet.sql
+\ir ../migrations/20261119000000_liens_acteurs.sql
 \ir ../migrations/20261122000000_tableau_de_bord.sql
--- Relancer la migration ne doit rien casser.
+\ir ../migrations/20261123000000_liens_equipe.sql
+-- Relancer les migrations ne doit rien casser.
 \ir ../migrations/20261122000000_tableau_de_bord.sql
+\ir ../migrations/20261123000000_liens_equipe.sql
 
 insert into auth.users values
   ('11111111-1111-1111-1111-111111111111', 'a@exemple.fr'),
@@ -56,6 +59,17 @@ insert into public.processes (id, name, content, project_id) values
 select * from public.invite_member('bbbbbbbb-0000-4000-8000-000000000001', 'julie.martin', 'Achats');
 select * from public.invite_member('bbbbbbbb-0000-4000-8000-000000000002', 'julie.martin', 'Achats');
 
+-- B crée aussi un lien pour « Logistique » (sans compte), et un autre sans avis.
+update public.processes set content = '{"steps": [{"id": "livraison", "kind": "task", "title": "Livrer", "actor": "Logistique"}], "links": []}'
+  where id = 'bbbbbbbb-0000-4000-8000-000000000001';
+insert into public.actor_links (process_id, actor) values
+  ('bbbbbbbb-0000-4000-8000-000000000001', 'Logistique'),
+  ('bbbbbbbb-0000-4000-8000-000000000001', 'Accueil');
+reset role;
+select public.link_review((select token from public.actor_links where actor = 'Logistique'),
+  'Sami Aït', 'livraison', 'valide');
+set role authenticated;
+
 -- C donne son avis sur les deux.
 select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
 insert into public.step_reviews (process_id, step_id, status, comment) values
@@ -74,6 +88,20 @@ do $$ begin
     'ÉCHEC : rien sur le process hors projet';
 end $$;
 
+-- A voit les liens et leurs avis par la fonction, sans jeton ; pas les tables.
+do $$ begin
+  assert (select count(*) from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000001')) = 2,
+    'ÉCHEC : le chef voit les deux liens (un avec avis, un sans)';
+  assert (select reviewer_name from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000001')
+    where actor = 'Logistique') = 'Sami Aït', 'ÉCHEC : le chef voit l''avis donné par lien';
+  assert (select step_id from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000001')
+    where actor = 'Accueil') is null, 'ÉCHEC : un lien sans avis donne une ligne vide';
+  assert (select count(*) from public.actor_links) = 0, 'ÉCHEC : le chef lit les jetons';
+  assert (select count(*) from public.link_reviews) = 0, 'ÉCHEC : le chef lit la table des avis par lien';
+  assert (select count(*) from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000002')) = 0,
+    'ÉCHEC : rien sur le process hors projet';
+end $$;
+
 -- Le chef ne peut ni changer ni retirer l'avis de C (aucune ligne touchée).
 update public.step_reviews set status = 'valide', comment = null;
 delete from public.step_reviews;
@@ -89,6 +117,8 @@ do $$ begin
   assert (select count(*) from public.step_reviews) = 0, 'ÉCHEC : D lit des avis';
   assert (select count(*) from public.process_members) = 0, 'ÉCHEC : D voit des membres';
   assert (select count(*) from public.members_of('bbbbbbbb-0000-4000-8000-000000000001')) = 0, 'ÉCHEC : D a des noms';
+  assert (select count(*) from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000001')) = 0,
+    'ÉCHEC : D voit les liens';
 end $$;
 
 -- Le process quitte le projet : le chef n'y voit plus rien.
@@ -97,6 +127,8 @@ update public.processes set project_id = null where id = 'bbbbbbbb-0000-4000-800
 select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 do $$ begin
   assert (select count(*) from public.step_reviews) = 0, 'ÉCHEC : le chef lit encore les avis d''un process sorti du projet';
+  assert (select count(*) from public.link_activity_of('bbbbbbbb-0000-4000-8000-000000000001')) = 0,
+    'ÉCHEC : le chef voit encore les liens d''un process sorti du projet';
 end $$;
 
 \echo 'Tableau de bord : tout est conforme.'

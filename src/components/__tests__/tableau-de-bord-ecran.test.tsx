@@ -39,7 +39,25 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('@/backend/links', () => ({
+  // Le propriétaire seul lit les tables des liens : le tableau passe par la fonction sans jeton.
   listLinkActivity: jest.fn(async () => ({ links: [], reviews: [] })),
+  listTeamLinkActivity: jest.fn(async (cloudId: string) =>
+    cloudId === 'cloud-1'
+      ? {
+          links: [{ id: 'l1', actor: 'Logistique' }],
+          reviews: [
+            {
+              memberId: 'lien:l1',
+              stepId: 'livraison',
+              status: 'valide',
+              comment: null,
+              reviewerName: 'Sami Aït',
+              updatedAt: '2026-11-16T10:00:00Z',
+            },
+          ],
+        }
+      : { links: [], reviews: [] },
+  ),
 }));
 
 const commande = { ...demandeMateriel, id: 'p1', name: 'Commande de matériel' };
@@ -59,8 +77,8 @@ describe('ProjectDashboard', () => {
       />,
     );
 
-    expect(await screen.findByText('4 relectures faites sur 5')).toBeOnTheScreen();
-    expect(screen.getByLabelText('80 % des relectures faites')).toBeOnTheScreen();
+    expect(await screen.findByText('5 relectures faites sur 6')).toBeOnTheScreen();
+    expect(screen.getByLabelText('83 % des relectures faites')).toBeOnTheScreen();
     expect(screen.getByText('Migration du support · 3 process')).toBeOnTheScreen();
 
     // L'étape signalée, avec son commentaire et son auteur.
@@ -77,6 +95,8 @@ describe('ProjectDashboard', () => {
     expect(screen.getAllByText('Partager')).toHaveLength(1);
     expect(screen.getByLabelText('Karim Benali, relecture en cours')).toBeOnTheScreen();
     expect(screen.getByLabelText('Inès Moreau, a signalé un point')).toBeOnTheScreen();
+    // L'avis donné par le lien d'acteur compte aussi.
+    expect(screen.getByLabelText('Sami Aït (lien), a tout relu')).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole('button', { name: 'À revoir, 1' }));
     expect(screen.getByText('Commande de matériel')).toBeOnTheScreen();

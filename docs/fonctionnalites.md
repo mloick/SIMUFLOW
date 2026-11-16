@@ -191,7 +191,7 @@ Sur l'écran d'un projet, **Tableau de bord** montre en un seul écran où en es
 - **un cercle** avec le pourcentage des relectures faites (« 9 relectures faites sur 11 »), le nombre de process validés et le nombre de personnes qui n'ont pas fini ;
 - **trois compteurs** : process validés, en cours, à revoir ;
 - **À traiter** : chaque étape signalée par un acteur, avec son commentaire et son nom, pour savoir tout de suite quoi corriger ;
-- **Process du projet** : une carte par process, ceux à revoir d'abord, avec son état (**À revoir**, **En relecture**, **Pas partagé**, **Validé**), une barre (vert : relu, orange : signalé) et chaque acteur avec une pastille qui dit où il en est. Les filtres **Tous**, **À revoir**, **En cours** et **Validés** n'en gardent qu'une partie. Sur un de vos process pas encore partagé, **Partager** l'envoie à ses acteurs.
+- **Process du projet** : une carte par process, ceux à revoir d'abord, avec son état (**À revoir**, **En relecture**, **Pas partagé**, **Validé**), une barre (vert : relu, orange : signalé) et chaque acteur avec une pastille qui dit où il en est, y compris ceux qui relisent par un lien, sans compte. Les filtres **Tous**, **À revoir**, **En cours** et **Validés** n'en gardent qu'une partie. Sur un de vos process pas encore partagé, **Partager** l'envoie à ses acteurs.
 
 Tirer l'écran vers le bas relit les avis. Toucher une carte ouvre le process.
 

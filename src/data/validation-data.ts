@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { listLinkActivity, type ActorLink } from '@/backend/links';
+import { listLinkActivity, listTeamLinkActivity, type ActorLink } from '@/backend/links';
 import { listMembers, listProcessReviews, memberName } from '@/backend/sharing';
 import type { MemberReview, ValidationMember } from '@/domain';
 import { getT } from '@/i18n';
@@ -17,16 +17,21 @@ export type ValidationData =
 
 /**
  * Membres d'un process (comptes invités et liens d'acteur) et leurs avis, lus
- * sur le serveur. Sert au suivi d'un process et au tableau de bord du projet.
+ * sur le serveur. Sert au suivi d'un process et, avec `team`, au tableau de
+ * bord du projet (les liens y sont lus sans leur jeton).
  */
 export async function loadValidation(
   cloudId: string,
+  { team = false }: { team?: boolean } = {},
 ): Promise<{ members: ValidationMember[]; reviews: MemberReview[] }> {
   const [members, reviews, links] = await Promise.all([
     listMembers(cloudId),
     listProcessReviews(cloudId),
     // Les liens d'acteur sont un plus : sans leur script SQL, le suivi marche quand même.
-    listLinkActivity([cloudId]).catch(() => ({ links: [], reviews: [] })),
+    // Pour l'équipe (tableau de bord), la fonction sans jeton ; sans son script, la lecture du propriétaire.
+    (team ? listTeamLinkActivity(cloudId).catch(() => listLinkActivity([cloudId])) : listLinkActivity([cloudId])).catch(
+      () => ({ links: [], reviews: [] }),
+    ),
   ]);
   return {
     members: [
@@ -66,7 +71,10 @@ export function useValidationData(cloudId: string | undefined): ValidationData &
 }
 
 /** Un lien d'acteur compte comme un membre : il porte le nom confirmé sur la page du lien. */
-export function linkMember(link: ActorLink, reviews: { memberId: string; reviewerName: string }[]): ValidationMember {
+export function linkMember(
+  link: Pick<ActorLink, 'id' | 'actor'>,
+  reviews: { memberId: string; reviewerName: string }[],
+): ValidationMember {
   const id = `lien:${link.id}`;
   const name = reviews.find((review) => review.memberId === id)?.reviewerName;
   return {
