@@ -614,3 +614,4 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
+- **Tableau de bord du projet** · Prévue : sur un seul écran, où en est la relecture de tous les process d'un projet, les étapes signalées à corriger et qui n'a pas fini. Toute l'équipe du projet pourra le consulter.
