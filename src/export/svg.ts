@@ -5,7 +5,7 @@
 
 import type { StepKind } from '@/domain';
 import type { FamilyStroke } from '@/simulation/families';
-import { midpoint, offsetPolyline, wrap, type DiagramLayout, type Point } from '@/simulation/layout';
+import { isDiamond, midpoint, offsetPolyline, wrap, type DiagramLayout, type Point } from '@/simulation/layout';
 
 /** Couleurs claires de l'app (src/constants/theme.ts), pour une page blanche. */
 const INK = {
@@ -17,6 +17,8 @@ const INK = {
   primaryBackground: '#e1f0fa',
   warning: '#9a4510',
   warningBackground: '#fdeedf',
+  success: '#0b6b4b',
+  successBackground: '#e2f5ee',
 };
 
 const FAMILY_GAP = 4.5;
@@ -33,6 +35,8 @@ const arrowId = (color: string) => `a${color.replace(/[^a-zA-Z0-9]/g, '')}`;
 
 function nodeColors(kind: StepKind) {
   if (kind === 'decision') return { fill: INK.warningBackground, stroke: INK.warning, text: INK.warning };
+  // Tâches en parallèle : losange vert, comme dans l'app.
+  if (kind === 'parallel') return { fill: INK.successBackground, stroke: INK.success, text: INK.success };
   if (kind === 'start' || kind === 'end') return { fill: INK.text, stroke: INK.text, text: '#ffffff' };
   return { fill: '#ffffff', stroke: INK.border, text: INK.text };
 }
@@ -92,12 +96,12 @@ export function diagramSvg(layout: DiagramLayout, strokes?: Map<string, FamilySt
     const { fill, stroke, text } = nodeColors(node.kind);
     const { x, y, width: w, height: h } = node;
     parts.push(
-      node.kind === 'decision'
+      isDiamond(node.kind)
         ? `<polygon points="${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`
         : `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${node.kind === 'task' ? 10 : h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`,
     );
     const fontSize = 13;
-    const usable = node.kind === 'decision' ? w * 0.62 : w - 14;
+    const usable = isDiamond(node.kind) ? w * 0.62 : w - 14;
     const lines = wrap(node.title || 'Sans titre', Math.max(6, Math.floor(usable / (fontSize * 0.56))), 3);
     const lineHeight = fontSize * 1.2;
     const firstY = y + h / 2 - ((lines.length - 1) * lineHeight) / 2 + fontSize * 0.35;

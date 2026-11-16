@@ -8,8 +8,18 @@
  * - La charge dit quel acteur porte le plus d'étapes.
  */
 
-import { buildGraph, isTerminal, type Path, type PathStep, type Process, type ProcessGraph } from '@/domain';
+import {
+  buildGraph,
+  hasParallel,
+  isTerminal,
+  type Path,
+  type PathStep,
+  type Process,
+  type ProcessGraph,
+} from '@/domain';
 import { getT, type Messages } from '@/i18n';
+
+import { parallelRuns } from './runs';
 
 export type PathFamily = {
   /** Lien de sortie qui définit la famille, ou « unique » sans décision. */
@@ -91,7 +101,8 @@ export function allPaths(process: Process, max = MAX_LISTED_PATHS): { paths: Pat
 
 export function overviewOf(process: Process, t: Messages = getT()): ProcessOverview {
   const graph = buildGraph(process);
-  const { paths, capped } = allPaths(process);
+  // Avec des tâches en parallèle, un chemin est un parcours complet du moteur (toutes les branches).
+  const { paths, capped } = hasParallel(process) ? parallelRuns(process, MAX_LISTED_PATHS) : allPaths(process);
 
   const families = new Map<string, PathFamily>();
   for (const path of paths) {
@@ -147,13 +158,20 @@ export function overviewOf(process: Process, t: Messages = getT()): ProcessOverv
   return { families: sorted, pathCount: paths.length, capped, critical, load };
 }
 
-/** Famille d'un chemin : la sortie prise à la première étape qui en a plusieurs. */
+/**
+ * Famille d'un chemin : la sortie prise à la première étape qui en a plusieurs.
+ * Une étape « En parallèle » ne compte pas (on prend toutes ses sorties). Avec
+ * des branches en parallèle, la sortie prise n'est pas toujours l'étape
+ * suivante du parcours : on cherche plus loin le lien qui part de l'étape.
+ */
 function familyOf(graph: ProcessGraph, path: Path, t: Messages): { id: string; label: string } {
   for (let i = 0; i < path.steps.length - 1; i++) {
     const step = graph.steps.get(path.steps[i].stepId)!;
     const exits = graph.outgoing.get(step.id)!;
-    if (exits.length < 2) continue;
-    const link = exits.find((item) => item.id === path.steps[i + 1].linkId)!;
+    if (exits.length < 2 || step.kind === 'parallel') continue;
+    const taken = path.steps.slice(i + 1).find((item) => exits.some((exit) => exit.id === item.linkId));
+    const link = exits.find((item) => item.id === taken?.linkId);
+    if (!link) continue;
     const exit = link.label || graph.steps.get(link.to)?.title || t.simulation.exit;
     const question = step.title.replace(/\s*\?\s*$/, '') || t.simulation.decision;
     return { id: link.id, label: `${question} : ${exit}` };

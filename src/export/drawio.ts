@@ -78,7 +78,7 @@ export function processToDrawio(process: Process, layout: DiagramLayout, options
       `<mxCell style="${STYLES[step.kind]}" vertex="1" parent="${parent}">` +
       `<mxGeometry x="${round(x)}" y="${round(y)}" width="${round(node.width)}" height="${round(node.height)}" as="geometry" /></mxCell>`;
     cells.push(
-      `<object id="${attr(`etape-${step.id}`)}" label="${attr(text)}"${step.actor ? ` acteur="${attr(step.actor)}"` : ''}>${cell}</object>`,
+      `<object id="${attr(`etape-${step.id}`)}" label="${attr(text)}"${step.actor ? ` acteur="${attr(step.actor)}"` : ''}${step.kind === 'parallel' ? ' parallele="1"' : ''}>${cell}</object>`,
     );
   }
 

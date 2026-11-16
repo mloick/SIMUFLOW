@@ -235,7 +235,18 @@ Sur la fiche, touchez **Lancer la simulation** :
 
 Le **schéma se construit** au fil du parcours : les étapes à venir sont en pointillés, et **Suivi auto** recadre sur l'étape en cours. Pincez ou glissez pour explorer ; le bouton cible y revient, et une petite carte montre où vous êtes dans un grand schéma. En bas, une carte donne l'étape, son acteur et le délai cumulé en jours ouvrés. Le bouton **plein écran** donne toute la place au schéma, et en tournant le téléphone le schéma passe à gauche et la carte à droite.
 
-**Tâches en parallèle.** Quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la carte du bas montre une ligne par branche. Vous avancez chacune dans l'ordre que vous voulez. L'étape qui les réunit attend que toutes soient terminées et dit qui elle attend encore. Le délai affiché est celui de la branche la plus longue. Un process sans tâches en parallèle se simule comme avant.
+**Tâches en parallèle.** Quand deux équipes travaillent en même temps (préparer la facture et préparer le colis, par exemple), la carte du bas montre une ligne par branche. Vous avancez chacune dans l'ordre que vous voulez. L'étape qui les réunit attend que toutes soient terminées et dit qui elle attend encore. Le délai affiché est celui de la branche la plus longue. Les modes **Simple**, **Complexe** et **Tous** comptent aussi toutes les branches, de même que le nombre de chemins de la fiche, le schéma du PDF (losange vert) et son résumé. Un process sans tâches en parallèle se simule comme avant.
+
+Elles se lisent depuis un fichier BPMN, ou depuis draw.io quand un losange porte le texte « + » ou « En parallèle ». Rien n'est deviné : ailleurs (Excel, scan, autre schéma), touchez **Ça se fait en même temps** dans l'éditeur.
+
+![Tous les cas avec des tâches en parallèle : le délai compte la branche la plus longue](captures/etape-52-parallele-tous.png)
+
+<details>
+<summary>Plus de captures</summary>
+
+![La fiche compte les chemins en suivant toutes les branches (mode sombre)](captures/etape-52-parallele-fiche.png)
+
+</details>
 
 ![Deux branches en même temps : la facture et le colis](captures/etape-49-parallele-branches.png)
 
@@ -588,6 +599,5 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 ## 8. Prévu
 
-- **Tâches en parallèle, suite** · Prévue : les retrouver dans la fiche, le PDF, les cas simple et complexe et les fichiers draw.io (un losange marqué « + » ou « En parallèle »). Aujourd'hui, elles se lisent depuis un fichier BPMN (export compris), se créent dans l'éditeur, se simulent pas à pas et se suivent en vrai.
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
