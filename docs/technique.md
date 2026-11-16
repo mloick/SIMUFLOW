@@ -1351,6 +1351,18 @@ Un projet regroupe plusieurs process et une équipe. Le compte qui le crée en e
 
 ![L'onglet Projets, le filtre Collaborateur, puis l'accueil avec ses quatre onglets](captures/etape-48-onglet-projets.png)
 
+#### Tableau de bord d'un projet (`supabase/migrations/20261122000000_tableau_de_bord.sql`)
+
+Étape 1 du tableau de bord : les données et le calcul, sans écran pour l'instant. **À coller dans Supabase** après `20261121000000_equipe_projet.sql`.
+
+- **Pourquoi.** Avant, seuls le propriétaire d'un process et le membre lui-même lisaient `process_members` et `step_reviews`. Le chef ne voyait donc rien de la relecture des process rangés par ses collaborateurs.
+- **`in_my_project(process)`** (`security definer`) : vrai si le process est rangé dans un projet dont je suis chef ou collaborateur (`is_in_project`).
+- **Lecture seulement** : les règles « Voir les membres de ses process » (`process_members`) et « Lire ses avis, ou ceux sur ses process » (`step_reviews`) sont remplacées, avec `or in_my_project(process_id)` en plus. `members_of` (noms des membres) suit la même règle. Ajouter, changer ou retirer un avis ou un membre reste réservé comme avant.
+
+**Calcul** (pur, `src/domain/dashboard.ts`). `projectDashboard(entrées)` prend, pour chaque process du projet, ses membres et leurs avis, et appelle `validationOverview` process par process. Chaque process reçoit un état (`dashboardStatus`) : `pas_partage` sans membre, `a_revoir` si une étape est signalée, `valide` si tout le monde a tout relu, sinon `en_relecture`. Les process sont triés pour mettre d'abord ce qui demande une action (à revoir, en relecture, pas partagé, validé). Les totaux : `counts` par état, `reviewed` sur `expected` relectures (une étape relue par un membre = une relecture) et `percent` arrondi (0 s'il n'y a rien à relire), `issues` (chaque étape signalée avec le process, le membre et son commentaire) et `waitingOn` (les personnes qui n'ont pas fini au moins un process, une seule fois chacune).
+
+**Tests.** `supabase/tests/tableau_de_bord_rls.sql`, avec A (chef), B (collaborateur), C (relit le process de B, hors équipe) et D (hors de tout) : A lit l'avis et le nom de C sur le process de B rangé dans le projet, mais rien sur un autre process de B hors projet ; A ne peut ni changer ni retirer l'avis ou le membre ; D ne voit rien ; quand B sort le process du projet, A ne le voit plus. Lancé avec PostgreSQL 16 : tout passe, ainsi que les tests du partage, des avis et de l'équipe. Côté app : `src/domain/__tests__/dashboard.test.ts` (état et ordre des process, 4 relectures sur 6 = 67 %, étape signalée avec son commentaire, personnes en attente sans doublon, projet vide).
+
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
 La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).

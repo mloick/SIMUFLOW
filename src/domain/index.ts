@@ -9,5 +9,6 @@ export * from './types';
 export * from './profile';
 export * from './review';
 export * from './validation';
+export * from './dashboard';
 export * from './share-alerts';
 export * from './parallel';
