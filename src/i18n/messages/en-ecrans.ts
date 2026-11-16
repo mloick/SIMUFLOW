@@ -553,6 +553,13 @@ export const enScreens: ScreenMessages = {
     otherCase: 'Other case',
     newStepTitle: 'New step',
     newCaseTitle: 'New case',
+    newBranchTitle: 'New branch',
+    parallelTitle: 'In parallel',
+    joinTitle: 'Wait for every branch',
+    makeParallel: 'It happens at the same time: make them parallel branches',
+    makeParallelHint: 'Adds an “In parallel” step, and a join where the branches meet again',
+    addParallelBranch: 'Add a parallel branch',
+    parallelNote: 'Every branch is followed at the same time: no need to name them.',
   },
 
   importer: {

@@ -1,10 +1,15 @@
 import { describe, expect, it } from '@jest/globals';
 
+import { createSimulation } from '@/simulation/engine';
+
+import { diagnose } from '../diagnostic';
 import {
   actorsOf,
   addBranch,
+  addParallelBranch,
   addStepAfter,
   makeDecision,
+  makeParallel,
   removeLink,
   removeStep,
   renameLink,
@@ -97,5 +102,92 @@ describe('ajouter et retirer', () => {
     const next = removeStep(process, 'b');
     expect(next.links).toEqual([]);
     expect(removeLink(process, 'l3').links.map((link) => link.id)).toEqual(['l1', 'l2']);
+  });
+});
+
+describe('tâches en parallèle dans l’éditeur', () => {
+  // Commande validée a deux suites sans nom, qui se retrouvent sur « Expédier ».
+  const commande: Process = {
+    id: 'commande',
+    name: 'Commande',
+    steps: [
+      { id: 'debut', kind: 'start', title: 'Commande validée' },
+      { id: 'facture', kind: 'task', title: 'Préparer la facture', duration: 1 },
+      { id: 'colis', kind: 'task', title: 'Préparer le colis', duration: 2 },
+      { id: 'controle', kind: 'task', title: 'Contrôler le colis', duration: 1 },
+      { id: 'expedier', kind: 'task', title: 'Expédier' },
+      { id: 'fin', kind: 'end', title: 'Expédiée' },
+    ],
+    links: [
+      { id: 'l1', from: 'debut', to: 'facture' },
+      { id: 'l2', from: 'debut', to: 'colis' },
+      { id: 'l3', from: 'facture', to: 'expedier' },
+      { id: 'l4', from: 'colis', to: 'controle' },
+      { id: 'l5', from: 'controle', to: 'expedier' },
+      { id: 'l6', from: 'expedier', to: 'fin' },
+    ],
+  };
+
+  it('insère le partage, et la jonction là où les branches se retrouvent', () => {
+    const next = makeParallel(commande, 'debut');
+    expect(next.steps.map((step) => step.id)).toEqual([
+      'debut',
+      'parallele-1',
+      'facture',
+      'colis',
+      'controle',
+      'parallele-2',
+      'expedier',
+      'fin',
+    ]);
+    const kind = (id: string) => next.steps.find((step) => step.id === id)?.kind;
+    expect(kind('parallele-1')).toBe('parallel');
+    expect(kind('parallele-2')).toBe('parallel');
+    const to = (from: string) => next.links.filter((link) => link.from === from).map((link) => link.to);
+    expect(to('debut')).toEqual(['parallele-1']);
+    expect(to('parallele-1')).toEqual(['facture', 'colis']);
+    expect(to('facture')).toEqual(['parallele-2']);
+    expect(to('controle')).toEqual(['parallele-2']);
+    expect(to('parallele-2')).toEqual(['expedier']);
+    expect(diagnose(next)).toEqual([]);
+    expect(commande.steps).toHaveLength(6);
+  });
+
+  it('se simule en parallèle : le délai est celui de la plus longue branche', () => {
+    const s = createSimulation(makeParallel(commande, 'debut'));
+    let state = s.start();
+    while (state.status === 'running') state = s.step(state, s.choices(state)[0].id);
+    expect(state.status).toBe('finished');
+    expect(state.days).toBe(3); // max(1, 2 + 1)
+  });
+
+  it('sans étape commune, ne met pas de jonction ; avec une seule sortie, ne change rien', () => {
+    const deuxFins: Process = {
+      ...commande,
+      links: commande.links.filter((link) => link.id !== 'l3'),
+      steps: [...commande.steps],
+    };
+    deuxFins.links = [...deuxFins.links, { id: 'l7', from: 'facture', to: 'fin' }];
+    // facture → fin et colis → … → fin se retrouvent sur la fin : jonction avant la fin.
+    expect(makeParallel(deuxFins, 'debut').steps.filter((step) => step.kind === 'parallel')).toHaveLength(2);
+
+    const separees: Process = {
+      ...commande,
+      steps: [...commande.steps, { id: 'fin2', kind: 'end', title: 'Facturée' }],
+      links: [...commande.links.filter((link) => link.id !== 'l3'), { id: 'l7', from: 'facture', to: 'fin2' }],
+    };
+    expect(makeParallel(separees, 'debut').steps.filter((step) => step.kind === 'parallel')).toHaveLength(1);
+    expect(makeParallel(commande, 'facture')).toBe(commande);
+  });
+
+  it('ajoute une branche à une étape « En parallèle »', () => {
+    const parallel = makeParallel(commande, 'debut');
+    const { process: next, stepId } = addParallelBranch(parallel, 'parallele-1');
+    expect(next.links.filter((link) => link.from === 'parallele-1').map((link) => link.to)).toEqual([
+      'facture',
+      'colis',
+      stepId,
+    ]);
+    expect(next.steps.find((step) => step.id === stepId)).toMatchObject({ kind: 'task', title: 'Nouvelle branche' });
   });
 });

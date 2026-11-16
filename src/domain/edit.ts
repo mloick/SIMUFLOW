@@ -150,3 +150,105 @@ export function removeStep(process: Process, stepId: string): Process {
   }
   return { ...process, steps: process.steps.filter((step) => step.id !== stepId), links };
 }
+
+/**
+ * « Ça se fait en même temps » : les sorties d'une étape deviennent des
+ * branches en parallèle. Une étape « En parallèle » est insérée juste après
+ * (le partage), les noms de branche sont retirés (toutes les branches sont
+ * prises). Si les branches se retrouvent plus loin sur une même étape, une
+ * jonction « Attendre toutes les branches » est insérée juste avant elle :
+ * l'étape où elles se retrouvent attendra qu'elles soient toutes finies.
+ * Renvoie le process tel quel si l'étape a moins de deux sorties.
+ */
+export function makeParallel(process: Process, stepId: string): Process {
+  const exits = process.links.filter((link) => link.from === stepId);
+  if (exits.length < 2) return process;
+  const t = getT().editor;
+  const stepIds = new Set(process.steps.map((step) => step.id));
+  const linkIds = new Set(process.links.map((link) => link.id));
+  const newId = (taken: Set<string>, prefix: string) => {
+    const id = freeId(taken, prefix);
+    taken.add(id);
+    return id;
+  };
+
+  // Le partage : étape → « En parallèle » → chaque ancienne suite (sans nom de branche).
+  const splitId = newId(stepIds, 'parallele');
+  const steps = [...process.steps];
+  steps.splice(steps.findIndex((step) => step.id === stepId) + 1, 0, {
+    id: splitId,
+    kind: 'parallel',
+    title: t.parallelTitle,
+  });
+  let links = [
+    ...process.links.filter((link) => link.from !== stepId),
+    { id: newId(linkIds, 'lien'), from: stepId, to: splitId },
+    ...exits.map((exit) => ({ id: exit.id, from: splitId, to: exit.to })),
+  ];
+
+  // La jonction : avant la première étape où toutes les branches se retrouvent.
+  const starts = exits.map((exit) => exit.to);
+  const meeting = meetingPoint(process, starts, stepId);
+  if (meeting && !starts.includes(meeting)) {
+    const inside = new Set(starts.flatMap((start) => [...reachable(process, start, new Set([meeting, stepId])).keys()]));
+    const arriving = links.filter((link) => link.to === meeting && inside.has(link.from));
+    if (arriving.length >= 2) {
+      const joinId = newId(stepIds, 'parallele');
+      steps.splice(steps.findIndex((step) => step.id === meeting), 0, {
+        id: joinId,
+        kind: 'parallel',
+        title: t.joinTitle,
+      });
+      links = [
+        ...links.map((link) => (arriving.includes(link) ? { id: link.id, from: link.from, to: joinId } : link)),
+        { id: newId(linkIds, 'lien'), from: joinId, to: meeting },
+      ];
+    }
+  }
+  return { ...process, steps, links };
+}
+
+/** Ajoute une branche à une étape « En parallèle » : une nouvelle étape, sans nom de branche. */
+export function addParallelBranch(process: Process, splitId: string): { process: Process; stepId: string } {
+  const stepId = freeId(new Set(process.steps.map((step) => step.id)), 'etape');
+  const steps = [...process.steps];
+  steps.splice(steps.findIndex((step) => step.id === splitId) + 1, 0, {
+    id: stepId,
+    kind: 'task',
+    title: getT().editor.newBranchTitle,
+  });
+  const link = { id: freeId(new Set(process.links.map((one) => one.id)), 'lien'), from: splitId, to: stepId };
+  return { process: { ...process, steps, links: [...process.links, link] }, stepId };
+}
+
+/** Étapes atteignables depuis `start` (comprise), sans passer par celles de `stop`. */
+function reachable(process: Process, start: string, stop: Set<string>): Map<string, number> {
+  const distance = new Map([[start, 0]]);
+  const queue = [start];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (stop.has(id)) continue;
+    for (const link of process.links) {
+      if (link.from === id && !distance.has(link.to)) {
+        distance.set(link.to, distance.get(id)! + 1);
+        queue.push(link.to);
+      }
+    }
+  }
+  return distance;
+}
+
+/**
+ * Première étape atteinte par toutes les branches : celle dont la plus longue
+ * distance depuis un départ de branche est la plus courte (à égalité, l'ordre du process).
+ */
+function meetingPoint(process: Process, starts: string[], origin: string): string | undefined {
+  const maps = starts.map((start) => reachable(process, start, new Set([origin])));
+  let best: { id: string; far: number } | undefined;
+  for (const step of process.steps) {
+    if (step.id === origin || !maps.every((map) => map.has(step.id))) continue;
+    const far = Math.max(...maps.map((map) => map.get(step.id)!));
+    if (!best || far < best.far) best = { id: step.id, far };
+  }
+  return best?.id;
+}
