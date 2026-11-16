@@ -28,6 +28,8 @@ const STYLES: Record<StepKind, string> = {
   end: 'ellipse;whiteSpace=wrap;html=1;fillColor=#0b2540;strokeColor=#0b2540;fontColor=#ffffff;fontStyle=1;',
   task: 'rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f0fa;strokeColor=#0078bd;fontColor=#0b2540;',
   decision: 'rhombus;whiteSpace=wrap;html=1;fillColor=#fdeedf;strokeColor=#9a4510;fontColor=#9a4510;fontStyle=1;',
+  /** Losange vert, pour le distinguer d’une décision. */
+  parallel: 'rhombus;whiteSpace=wrap;html=1;fillColor=#e3f4ea;strokeColor=#1e7a46;fontColor=#1e7a46;fontStyle=1;',
 };
 
 const LANE_STYLE =

@@ -16,7 +16,7 @@ import type { Link, Process, Step, StepKind } from '@/domain';
 
 import { ImportError, type ImportResult } from './errors';
 
-const KINDS: StepKind[] = ['start', 'task', 'decision', 'end'];
+const KINDS: StepKind[] = ['start', 'task', 'decision', 'parallel', 'end'];
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -44,7 +44,7 @@ export function parseProcessJson(text: string, fileName: string, idPrefix = 'jso
     ids.add(id);
     const kind = raw.kind ?? 'task';
     if (!KINDS.includes(kind as StepKind)) {
-      throw new ImportError(`${where} : rôle « ${String(kind)} » inconnu (start, task, decision ou end).`);
+      throw new ImportError(`${where} : rôle « ${String(kind)} » inconnu (start, task, decision, parallel ou end).`);
     }
     const step: Step = { id, kind: kind as StepKind, title: typeof raw.title === 'string' ? raw.title : '' };
     if (typeof raw.actor === 'string' && raw.actor.trim()) step.actor = raw.actor.trim();

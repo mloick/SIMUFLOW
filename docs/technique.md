@@ -143,7 +143,9 @@ Tout ce qui décide se trouve ici, en TypeScript pur : le modèle d'un process, 
 
 `src/domain/` ne dépend ni de React Native ni du format d'import : ce sont des fonctions TypeScript qui prennent un process et renvoient un résultat. Les règles sont reprises du prototype web (dossier de référence).
 
-**Modèle** (`types.ts`). Un `Process` est un graphe : des `Step` (étapes) reliées par des `Link` (liens orientés). Une étape a un rôle (`start`, `task`, `decision`, `end`), un titre, un acteur et un délai en jours ouvrés, tous deux facultatifs. Un lien peut porter un libellé (« oui », « non »).
+**Modèle** (`types.ts`). Un `Process` est un graphe : des `Step` (étapes) reliées par des `Link` (liens orientés). Une étape a un rôle (`start`, `task`, `decision`, `parallel`, `end`), un titre, un acteur et un délai en jours ouvrés, tous deux facultatifs. Un lien peut porter un libellé (« oui », « non »).
+
+**Tâches en parallèle** (`parallel.ts`). Une étape `parallel` (« En parallèle ») joue le rôle de la porte parallèle du BPMN : avec plusieurs sorties, c'est un **partage** (toutes les branches démarrent en même temps, sans choix) ; avec plusieurs entrées, c'est une **jonction** (elle attend une branche par lien entrant). Une même étape peut faire les deux. `hasParallel`, `isSplit`, `isJoin` et `reachableFromSplits` servent au moteur et au diagnostic. Seul ce rôle déclenche le parallèle : une tâche à plusieurs sorties sans libellé reste signalée `ambiguous-exits`, rien n'est deviné. Un process sans étape `parallel` se lit et se simule exactement comme avant.
 
 **Index** (`graph.ts`). `buildGraph` range les liens sortants et entrants de chaque étape et repère les départs et les fins. Sans étape `start`, les départs sont les étapes où rien n'arrive mais d'où un lien part. Deux parcours en largeur servent au diagnostic : les étapes atteignables depuis un départ, et celles d'où l'on peut atteindre une fin (parcours à rebours).
 
@@ -164,6 +166,8 @@ Tout ce qui décide se trouve ici, en TypeScript pur : le modèle d'un process, 
 | `dangling-link` | avertissement | lien vers une étape qui n'existe pas |
 | `multiple-starts` | info | plusieurs départs : la simulation part du premier |
 | `ambiguous-exits` | info | plusieurs sorties sans libellé hors décision : choix ou parallèle ? |
+| `join-without-split` | avertissement | jonction « En parallèle » qu'aucun partage ne précède : une seule branche y arrive, elle attendrait sans fin |
+| `parallel-no-branch` | info | étape « En parallèle » avec une seule entrée et une seule sortie |
 
 **Chemins** (`paths.ts`). Un chemin va d'un départ à une étape terminale (une fin, ou une étape sans suite) ; son délai est la somme des délais de ses étapes.
 
@@ -187,10 +191,19 @@ Les parcours en profondeur s'arrêtent après 300 000 visites, pour qu'un gros s
 `createSimulation(process)` prépare le graphe une fois (`buildGraph`) et renvoie des fonctions qui prennent un état et renvoient le nouvel état, sans rien modifier. L'écran garde l'état avec `useState`, le moteur calcule. L'état contient :
 
 - `trail` : les étapes parcourues, dans l'ordre, chacune avec le lien emprunté pour y arriver (même forme que les chemins de `paths.ts`) ;
-- `days` : le délai cumulé, en jours ouvrés ;
-- `status` : `running` (il reste des sorties), `finished` (une fin est atteinte), `stuck` (impasse : une étape sans sortie qui n'est pas une fin) ou `no-start` (aucun départ).
+- `days` : le délai cumulé, en jours ouvrés (avec des tâches en parallèle, celui de la branche la plus longue) ;
+- `status` : `running` (il reste des sorties), `finished` (une fin est atteinte, par toutes les branches), `stuck` (impasse : une étape sans sortie qui n'est pas une fin, ou une jonction qui attend une branche bloquée) ou `no-start` (aucun départ) ;
+- `moves` : les liens choisis par l'utilisateur, dans l'ordre ;
+- `branches` : les branches en cours, chacune avec son étape et son propre délai cumulé (une seule sans tâches en parallèle) ;
+- `waiting` : les branches arrivées à une jonction, qui attendent les autres.
 
-Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorties de l'étape courante ; `step(état, lien)` avance par la sortie choisie (une sortie qui ne part pas de l'étape courante est ignorée) ; `back(état)` revient d'une étape ; `replay(chemin)` rejoue un chemin déjà calculé. Une boucle du schéma peut être parcourue plusieurs fois : c'est l'utilisateur qui choisit. Six tests couvrent le départ, l'avance, le retour, le rejeu, l'impasse et le process sans départ.
+**L'état se recalcule depuis le départ.** `run(départ, moves)` part du départ et rejoue les choix un par un. Revenir en arrière, c'est rejouer tous les choix sauf le dernier : pas d'historique à tenir à jour.
+
+**Entrer dans une étape** (`enter`). Une étape ordinaire ajoute son délai à la branche. Une étape `parallel` qui a plusieurs entrées range la branche qui arrive parmi celles qui attendent ; tant qu'il en manque, la branche s'arrête là. Quand la dernière arrive, elles se rejoignent en une seule, avec le délai de la plus longue (`Math.max`). Une étape `parallel` à plusieurs sorties lance ensuite une branche par sortie, sans choix à faire.
+
+Fonctions : `start()` part du premier départ ; `choices(état)` donne les sorties des étapes en cours, toutes branches confondues ; `step(état, lien)` avance par la sortie choisie, sur la branche d'où part ce lien (une sortie qui ne part d'aucune étape en cours est ignorée) ; `back(état)` annule le dernier choix ; `replay(chemin)` rejoue un chemin déjà calculé (les sorties d'un partage, prises toutes seules, sont ignorées) ; `activeBranches(état)` donne les branches qui peuvent avancer, chacune avec son étape et ses sorties ; `waitingFor(état, jonction)` donne les liens par lesquels aucune branche n'est encore arrivée (« En attente de… »). Une boucle du schéma peut être parcourue plusieurs fois : c'est l'utilisateur qui choisit.
+
+**Tests.** `engine.test.ts` couvre le départ, l'avance, le retour, le rejeu, l'impasse et le process sans départ. `parallel.test.ts` vérifie d'abord que rien ne change sans tâches en parallèle : l'ancien moteur y est recopié, et sur l'exemple et les quatre process de démonstration, six parcours différents donnent les mêmes sorties, étapes, délais et statuts. Il couvre ensuite le partage, la jonction dans les deux ordres, le délai de la branche la plus longue, le retour, deux branches qui finissent chacune sur leur fin, la branche bloquée avant la jonction, le rejeu, et le diagnostic (jonction sans partage, étape « En parallèle » sans branches).
 
 ### Schéma qui se construit (`src/simulation/layout.ts`, `src/components/process-diagram.tsx`)
 
