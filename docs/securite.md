@@ -90,14 +90,14 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | --- | --- | --- |
 | Aucun secret dans le dépôt public | ✅ | `.gitignore` exclut `.env`, clés, certificats, `.claude/` ; seul le secret `CLAUDE_CODE_OAUTH_TOKEN` existe, dans les réglages GitHub |
 | Droits des workflows GitHub limités | ✅ | `permissions` déclarées dans chaque workflow : vérifications en lecture seule, site avec `pages: write` et `id-token: write`, robot de documentation avec `contents: write` (pour committer la documentation) |
-| Mots de passe et clés du projet Supabase hors de l'app et du dépôt | ✅ | Mot de passe de la base et clé `service_role` restent dans le compte Supabase |
+| Mots de passe et clés du projet Supabase hors de l'app et du dépôt | ✅ | Mot de passe de la base et clé `service_role` restent dans le compte Supabase ; la CLI Supabase garde son lien au projet dans `supabase/.temp/`, exclu du dépôt, et `supabase/config.toml` ne contient aucun secret |
+| Scripts SQL de la base appliqués sans oubli | ✅ | CLI Supabase : `npm run db:etat` liste les scripts déjà passés (table tenue par Supabase), `npm run db:envoyer` passe les nouveaux dans l'ordre ; pas de GitHub Action, pour ne pas donner le mot de passe de la base à GitHub |
 
 ### Points à améliorer
 
 - **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app est publiée sur les stores.
 - **Tests SQL et Maestro dans la CI** : les treize scripts de `supabase/tests/` et le test de bout en bout se lancent à la main. Les ajouter aux vérifications de chaque pull request éviterait qu'une règle d'accès casse sans qu'on le voie.
 - **Jeton des liens d'acteur gardé en clair** dans `actor_links` : seul le propriétaire du process le lit, et le lien expire après 30 jours, mais garder seulement une empreinte du jeton (hachage) protégerait les liens si la base fuitait.
-- **Scripts SQL collés à la main** dans Supabase : un oubli laisse le serveur en retard sur l'app. La CLI Supabase (`supabase db push`) les appliquerait dans l'ordre.
 
 Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le trousseau chiffré, la sauvegarde Android est désactivée, et le mot de passe demande 8 caractères avec minuscule, majuscule, chiffre et symbole.
 

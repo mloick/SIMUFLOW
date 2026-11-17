@@ -54,3 +54,7 @@ example
 
 # Moteur de lecture du texte pour le web, copié depuis node_modules (scripts/ocr-web.mjs)
 public/ocr/
+
+# Supabase CLI : lien vers le projet et fichiers temporaires, propres à chaque ordinateur
+supabase/.temp/
+supabase/.branches/

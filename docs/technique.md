@@ -106,7 +106,7 @@ plugins/        Plugins de configuration Expo de l'app : raccourcis Siri (with-r
 assets/         Icônes, images, écran de démarrage
 public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil, moteur de lecture du Scanner web (ocr/, copié par scripts/ocr-web.mjs, non versionné)
 docs/           Documentation (dont carte.md, la carte du code en une page, securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
-supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
+supabase/       Base de données : migrations SQL (migrations/), leurs tests (tests/), réglages de la CLI (config.toml) et vérification (verifier-migrations.sql)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js), Reanimated immobile (reanimated.js)
 scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
@@ -133,6 +133,8 @@ app.config.js   Retire le baseUrl web d'app.json hors de l'export web (variable 
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
+| `npm run db:etat` | Lister les scripts SQL de `supabase/migrations/` et dire lesquels sont déjà passés sur la base (CLI Supabase, `supabase migration list`) |
+| `npm run db:envoyer` | Envoyer à la base, dans l'ordre, les scripts SQL pas encore passés, après confirmation (`supabase db push`) |
 
 Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
 
@@ -1410,7 +1412,17 @@ Les avis déjà donnés ne sont pas touchés. Dans l'app, `42501` donne le messa
 
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
-La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
+La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
+
+**Appliquer les scripts SQL (CLI Supabase).** Jusqu'au 17 novembre 2026, chaque script était collé à la main dans l'éditeur SQL de Supabase : un oubli laissait la base en retard sur l'app, et rien ne disait quels scripts étaient passés. Les scripts passent maintenant par la CLI Supabase, depuis le Mac :
+
+- `supabase/config.toml` (créé par `supabase init`, sans aucun secret) dit à la CLI où sont les scripts ;
+- une fois par ordinateur : `brew install supabase/tap/supabase`, `supabase login` (dans le navigateur), puis `supabase link --project-ref szcdixoqdlclhzxrrznr` (le mot de passe de la base est demandé et reste sur l'ordinateur ; le lien est gardé dans `supabase/.temp/`, exclu du dépôt) ;
+- ensuite, après la fusion d'une PR qui ajoute un script : `npm run db:etat` montre les scripts du dépôt et ceux déjà passés (table `supabase_migrations.schema_migrations`, tenue par Supabase), puis `npm run db:envoyer` passe les nouveaux, dans l'ordre, après confirmation.
+
+**Une seule fois, au passage à la CLI**, il faut lui dire que les 18 scripts collés à la main sont déjà passés, sans les relancer : relancer `20261110150000_source_tableau.sql` remettrait une liste d'origines plus courte, refusée par les process importés en texte. `supabase/verifier-migrations.sql`, collé dans l'éditeur SQL, ne change rien : il dit « oui » pour chaque script dont il trouve la trace (table, fonction ou origine acceptée). Si tout est « oui », `supabase migration repair --status applied <versions>` les marque comme passés. Testé sur un PostgreSQL vide : 18 « NON » avant les scripts, 18 « oui » après, et « NON » pour `source_texte` quand on retire l'origine « texte ».
+
+Pas de GitHub Action pour l'instant : il faudrait donner à GitHub un jeton d'accès Supabase et le mot de passe de la base.
 
 | Colonne | Type | Rôle |
 | --- | --- | --- |
