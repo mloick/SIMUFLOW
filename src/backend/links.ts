@@ -13,24 +13,40 @@ import { fromRow as processFromRow, type ProcessRow } from './process-row';
 import { sharingErrorMessage, SharingError } from './sharing';
 import { getT } from '@/i18n';
 
-export type ActorLink = { id: string; processId: string; actor: string; token: string };
+export type ActorLink = {
+  id: string;
+  processId: string;
+  actor: string;
+  token: string;
+  /** Après cette date, la page du lien ne s'ouvre plus (script 20261125000000_liens_expiration.sql). */
+  expiresAt?: string;
+};
 
 /** Adresse de la page du lien, dans la version web de l'app. */
 export const linkUrl = (token: string) => `${SITE_URL}app/lien/${token}`;
 
-type LinkRow = { id: string; process_id: string; actor: string; token: string };
+type LinkRow = { id: string; process_id: string; actor: string; token: string; expires_at?: string | null };
 const fromLinkRow = (row: LinkRow): ActorLink => ({
   id: row.id,
   processId: row.process_id,
   actor: row.actor,
   token: row.token,
+  ...(row.expires_at ? { expiresAt: row.expires_at } : {}),
 });
+
+/** Le lien a-t-il expiré ? Sans date (script pas encore collé), il n'expire pas. */
+export const isLinkExpired = (link: Pick<ActorLink, 'expiresAt'>, now = new Date()) =>
+  !!link.expiresAt && new Date(link.expiresAt).getTime() <= now.getTime();
+
+/** Le lien expire-t-il dans moins d'une semaine, ou a-t-il expiré ? « Prolonger » apparaît alors. */
+export const linkNeedsExtension = (link: Pick<ActorLink, 'expiresAt'>, now = new Date()) =>
+  !!link.expiresAt && new Date(link.expiresAt).getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000;
 
 /** Les liens d'un process (pour son propriétaire). */
 export async function listActorLinks(cloudId: string): Promise<ActorLink[]> {
   const { data, error } = await supabase
     .from('actor_links')
-    .select('id, process_id, actor, token')
+    .select('id, process_id, actor, token, expires_at')
     .eq('process_id', cloudId)
     .order('created_at');
   if (error) throw sharingErrorMessage(error);
@@ -41,10 +57,17 @@ export async function createActorLink(cloudId: string, actor: string): Promise<A
   const { data, error } = await supabase
     .from('actor_links')
     .insert({ process_id: cloudId, actor })
-    .select('id, process_id, actor, token')
+    .select('id, process_id, actor, token, expires_at')
     .single();
   if (error) throw sharingErrorMessage(error);
   return fromLinkRow(data as LinkRow);
+}
+
+/** Prolonge un lien de 30 jours à partir d'aujourd'hui. Renvoie la nouvelle date de fin. */
+export async function extendActorLink(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('link_extend', { p_link: id });
+  if (error) throw sharingErrorMessage(error);
+  return data as string;
 }
 
 /** Retire un lien : il ne s'ouvre plus, et ses avis partent avec lui. */
@@ -197,6 +220,8 @@ export function linkErrorMessage(error: { code?: string; message?: string }): Sh
   switch (error.code) {
     case 'P0002':
       return new SharingError(getT().errors.linkGone);
+    case 'SF410':
+      return new SharingError(getT().errors.linkExpired);
     case '22023':
       return new SharingError(getT().errors.stepGone);
     case '42501':

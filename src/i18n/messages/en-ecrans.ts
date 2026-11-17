@@ -804,6 +804,11 @@ export const enScreens: ScreenMessages = {
       removeLabel: (actor: string) => `Remove the link for ${actor}`,
       createLabel: (actor: string) => `Create a link for ${actor}`,
       create: 'Create a link',
+      expiresOn: (date: Date) => `Valid until ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+      expiredOn: (date: Date) => `Expired on ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
+      extend: 'Extend',
+      extendLabel: (actor: string) => `Extend the link for ${actor} by 30 days`,
+      extended: (actor: string) => `Link for “${actor}” extended by 30 days.`,
     },
   },
 
@@ -847,6 +852,7 @@ export const enScreens: ScreenMessages = {
     link: {
       openError: 'The link could not be opened.',
       notFound: 'Link not found',
+      expired: 'Link expired',
       openApp: 'Open SimuFlow',
       intro: (owner: string, actor: string) =>
         `${owner} asks you to review the “${actor}” part of this process: for each step, say whether it is right or needs reviewing. No account needed.`,
@@ -857,7 +863,7 @@ export const enScreens: ScreenMessages = {
       nameNote: (owner: string) =>
         `Your name goes with each of your reviews: ${owner} will know who reviewed. If this link is not for you, just close the page.`,
       ownerSees: (owner: string, name: string) =>
-        `${owner} sees your reviews, signed “${name}”. You can change them as long as the link exists.`,
+        `${owner} sees your reviews, signed “${name}”. You can change them as long as the link is valid.`,
     },
   },
 
@@ -1228,6 +1234,7 @@ export const enScreens: ScreenMessages = {
     sharingRetry: 'Sharing failed. Try again.',
     memberNoProfile: 'Member without a profile',
     linkGone: 'This link does not exist or was removed. Ask whoever sent it to you for a new link.',
+    linkExpired: 'This link has expired. Ask whoever sent it to you to extend it.',
     stepGone: 'This step is no longer in the process: reload the page.',
     notYourPart: 'This step is not part of your part: explain an issue with another actor’s step in the comment on your own step.',
     processOwner: 'The process owner',

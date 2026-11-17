@@ -2,7 +2,14 @@ import { describe, expect, it, jest } from '@jest/globals';
 
 import { linkMember } from '@/data/validation-data';
 
-import { linkErrorMessage, linkMemberId, linkUrl, listTeamLinkActivity } from '../links';
+import {
+  isLinkExpired,
+  linkErrorMessage,
+  linkMemberId,
+  linkNeedsExtension,
+  linkUrl,
+  listTeamLinkActivity,
+} from '../links';
 
 const mockRpc = jest.fn(async (_name: string, _args: object) => ({
   data: [
@@ -37,7 +44,22 @@ describe('liens d’acteur', () => {
   it('traduit les erreurs de la page du lien', () => {
     expect(linkErrorMessage({ code: 'P0002' }).message).toMatch(/n’existe pas ou a été retiré/);
     expect(linkErrorMessage({ code: '22023' }).message).toMatch(/plus dans le process/);
+    expect(linkErrorMessage({ code: 'SF410' }).message).toMatch(/a expiré/);
     expect(linkErrorMessage({ code: 'PGRST202' }).message).toMatch(/script SQL/);
+  });
+
+  it('sait si un lien a expiré, et s’il faut proposer de le prolonger', () => {
+    const now = new Date('2026-11-17T10:00:00Z');
+    const link = (expiresAt?: string) => ({ expiresAt });
+    expect(isLinkExpired(link('2026-11-17T09:59:00Z'), now)).toBe(true);
+    expect(isLinkExpired(link('2026-12-17T10:00:00Z'), now)).toBe(false);
+    // Avant le script SQL, un lien n'a pas de date : il n'expire pas.
+    expect(isLinkExpired(link(), now)).toBe(false);
+    expect(linkNeedsExtension(link(), now)).toBe(false);
+    // « Prolonger » apparaît moins d'une semaine avant la fin, et après.
+    expect(linkNeedsExtension(link('2026-12-17T10:00:00Z'), now)).toBe(false);
+    expect(linkNeedsExtension(link('2026-11-20T10:00:00Z'), now)).toBe(true);
+    expect(linkNeedsExtension(link('2026-11-01T10:00:00Z'), now)).toBe(true);
   });
 
   it('compte un lien comme un membre, nommé par le nom confirmé', () => {

@@ -1393,6 +1393,21 @@ Les avis déjà donnés ne sont pas touchés. Dans l'app, `42501` donne le messa
 
 **Tests.** `supabase/tests/avis_sa_partie_rls.sql`, avec A (propriétaire), B (membre « Achats »), D (membre sans acteur), E (membre « Logistique », acteur sans étape) et un visiteur sans compte : B donne un avis sur l'étape « achats » (écrite en minuscules), change son avis et le retire, mais ne peut ni valider l'étape de Finance ou le départ, ni déplacer son avis sur Finance ; D et E relisent tout le process ; le lien « Achats » donne un avis sur son étape, pas sur celle de Finance ni sur la fin ; sans compte, la vérification n'est pas appelable directement. Lancé avec PostgreSQL 16 : tout passe, ainsi que les 11 autres scripts de test, et en remplaçant la vérification de l'acteur par « toujours vrai », le test échoue bien.
 
+#### Expiration des liens d'acteur (`supabase/migrations/20261125000000_liens_expiration.sql`)
+
+**À coller dans Supabase** après le script « Avis sur sa partie seulement ». Avant, un lien d'acteur restait valable tant que le propriétaire ne le retirait pas : un lien oublié dans une boîte mail ouvrait encore le process des mois plus tard.
+
+- `actor_links.expires_at` : un nouveau lien vaut 30 jours. Les liens déjà créés reçoivent 30 jours à partir du script.
+- `valid_link(jeton)` (`security definer`, appelable seulement par les fonctions du lien) lit le lien et refuse un jeton inconnu (`P0002`) ou un lien expiré (`SF410`, un code propre à SimuFlow).
+- `link_open`, `link_review` et `link_unreview` sont redéfinies avec `valid_link`. Elles gardent les règles d'avant, dont la partie de l'acteur (`42501`). Un lien expiré ne s'ouvre plus et ne prend plus d'avis ; les avis déjà donnés restent visibles pour le propriétaire et l'équipe.
+- `link_extend(lien)` (`authenticated`) : le propriétaire du process seul repousse la fin à 30 jours à partir d'aujourd'hui. Personne ne peut écrire la date à la main (pas de droit `update` sur la table), donc pas de lien valable dix ans.
+
+**Dans l'app.** `ActorLink.expiresAt`, `isLinkExpired`, `linkNeedsExtension` et `extendActorLink` (`src/backend/links.ts`) ; `linkErrorMessage` traduit `SF410` par « Ce lien a expiré. Demandez à qui vous l'a envoyé de le prolonger. ». Dans **Partager**, chaque lien affiche « Valable jusqu’au 17 déc. » ou, en rouge, « Expiré le … ». **Prolonger** apparaît moins d'une semaine avant la fin et après ; un lien expiré n'a plus **Envoyer**. La page du lien titre « Lien expiré » au lieu de « Lien introuvable » (`src/app/lien/[token].tsx`). Tant que le script n'est pas collé, les liens n'ont pas de date et rien ne change à l'écran, mais la lecture des liens dans **Partager** échoue (colonne inconnue) : coller le script avant de publier l'app.
+
+![Expiration des liens : les dates de fin et un lien expiré dans Partager, le lien prolongé de 30 jours, puis la page d'un lien expiré](captures/etape-55-lien-expire.png)
+
+**Tests.** `supabase/tests/liens_expiration_rls.sql`, avec A (propriétaire), B (membre « Achats ») et un visiteur sans compte : un lien créé avant le script reçoit 30 jours ; valable, il s'ouvre et prend un avis ; sans compte, ni `valid_link` ni `link_extend` ne sont appelables ; expiré, `link_open`, `link_review` et `link_unreview` répondent `SF410`, et un jeton inconnu toujours `P0002` ; B ne peut ni prolonger ni écrire la date ; A prolonge de 30 jours, pas plus, et le lien se rouvre avec son avis. Lancé avec PostgreSQL 16 : tout passe, ainsi que les 12 autres scripts de test, et sans la vérification de la date, le test échoue bien. Côté app : `src/backend/__tests__/links.test.ts` (dates, code `SF410`), `src/components/__tests__/liens-acteurs.test.tsx` (date affichée, un lien expiré se prolonge puis s'envoie de nouveau) et `lien-ecran.test.tsx` (« Lien expiré »).
+
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
 La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
