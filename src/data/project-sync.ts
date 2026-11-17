@@ -10,13 +10,16 @@
  * 2. supprime sur le serveur ceux retirés sur le téléphone ;
  * 3. envoie ceux qui n'y sont pas encore, puis les modifications ;
  * 4. reprend la version du serveur des autres, oublie ceux supprimés ailleurs ;
+ *    un projet modifié ici et ailleurs entre-temps est fusionné champ par champ
+ *    (nom, description) à partir de la dernière version connue du serveur
+ *    (`base`, src/domain/merge.ts) ;
  * 5. ajoute ceux créés depuis un autre appareil.
  *
  * Écrit sans dépendre de Supabase : `api` est passé en paramètre, et les tests
  * lui donnent un faux serveur.
  */
 
-import type { Project } from '@/domain';
+import { mergeProject, sameProject, type Project } from '@/domain';
 
 export type ProjectEntry = {
   project: Project;
@@ -26,6 +29,8 @@ export type ProjectEntry = {
   modified?: true;
   /** Retiré sur le téléphone, à supprimer sur le serveur. */
   deleted?: true;
+  /** Dernière version connue du serveur (envoyée ou reçue) : la base de la fusion. */
+  base?: Project;
 };
 
 export type ProjectApi = {
@@ -51,23 +56,26 @@ export async function syncProjects(local: ProjectEntry[], api: ProjectApi): Prom
       // Jamais envoyé (ou envoyé sans que le téléphone l'ait su) : on le crée ou on le met à jour.
       if (onServer) await api.update(entry.project);
       else await api.create(entry.project);
-      next.push({ project: entry.project, synced: true });
+      next.push({ project: entry.project, synced: true, base: entry.project });
       continue;
     }
     // Envoyé autrefois, absent aujourd'hui : supprimé depuis un autre appareil.
     if (!onServer) continue;
-    if (entry.modified) {
-      await api.update(entry.project);
-      next.push({ project: entry.project, synced: true });
-    } else {
-      next.push({ project: onServer, synced: true });
+    if (!entry.modified) {
+      next.push({ project: onServer, synced: true, base: onServer });
+      continue;
     }
+    // Modifié ailleurs depuis la base : on fusionne nom et description.
+    const project =
+      entry.base && !sameProject(entry.base, onServer) ? mergeProject(entry.base, entry.project, onServer) : entry.project;
+    if (!sameProject(project, onServer)) await api.update(project);
+    next.push({ project, synced: true, base: project });
   }
 
   const known = new Set(local.map((entry) => entry.project.id));
   const added = remote
     .filter((project) => !known.has(project.id))
-    .map((project): ProjectEntry => ({ project, synced: true }));
+    .map((project): ProjectEntry => ({ project, synced: true, base: project }));
   return [...added, ...next];
 }
 
@@ -90,7 +98,7 @@ export function mergeProjectsAfterSync(
     if (!previous) return [entry]; // venu du serveur
     const current = nowById.get(id);
     if (!current || current.deleted) return [{ ...entry, deleted: true }];
-    if (current !== previous) return [{ project: current.project, synced: true, modified: true }];
+    if (current !== previous) return [{ ...entry, project: current.project, modified: true }];
     return [entry];
   });
   return [...addedMeanwhile, ...merged];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { demandeMateriel } from '../exemples';
-import { mergeProcess, sameProcess, sameValue } from '../merge';
+import { mergeProcess, mergeProject, sameProcess, sameProject, sameValue } from '../merge';
 import type { Process } from '../types';
 
 const base: Process = demandeMateriel;
@@ -105,5 +105,26 @@ describe('comparaison', () => {
     );
     expect(sameProcess(base, { ...base, projectId: null })).toBe(true);
     expect(sameProcess(base, rename(base, 'refus', 'Refuser'))).toBe(false);
+  });
+});
+
+describe('fusion d’un projet', () => {
+  const base = { id: 'p1', name: 'Migration', description: 'Changer d’outil', createdAt: '2026-11-15T10:00:00.000Z' };
+
+  it('prend chaque champ changé d’un seul côté', () => {
+    const merged = mergeProject(base, { ...base, name: 'Migration 2027' }, { ...base, description: 'Nouvel outil' });
+    expect(merged).toEqual({ ...base, name: 'Migration 2027', description: 'Nouvel outil' });
+  });
+
+  it('garde ma version d’un champ changé différemment des deux côtés, et une description retirée', () => {
+    expect(mergeProject(base, { ...base, name: 'A' }, { ...base, name: 'B' }).name).toBe('A');
+    const { description, ...withoutDescription } = base;
+    expect(description).toBeTruthy();
+    expect(mergeProject(base, withoutDescription, { ...base, name: 'B' })).toEqual({ ...withoutDescription, name: 'B' });
+  });
+
+  it('compare nom et description sans les espaces autour', () => {
+    expect(sameProject(base, { ...base, name: ' Migration ' })).toBe(true);
+    expect(sameProject(base, { ...base, description: undefined })).toBe(false);
   });
 });

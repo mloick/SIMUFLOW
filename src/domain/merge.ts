@@ -19,7 +19,7 @@
  * Fonctions pures, testées dans __tests__/merge.test.ts.
  */
 
-import type { Link, Process, Step } from './types';
+import type { Link, Process, Project, Step } from './types';
 
 export type MergeResult = {
   process: Process;
@@ -126,4 +126,31 @@ export function mergeProcess(base: Process, mine: Process, theirs: Process): Mer
     ...(project.value !== null ? { projectId: project.value } : mine.projectId === null ? { projectId: null } : {}),
   };
   return { process, conflicts };
+}
+
+/**
+ * Fusion à trois versions d'un projet : le nom et la description, champ par
+ * champ. Un champ changé des deux côtés différemment garde ma version (celle
+ * du téléphone qui se synchronise), comme avant cette fusion : un projet n'a
+ * pas d'étapes, et le dupliquer pour un nom n'aurait pas de sens.
+ */
+export function mergeProject(base: Project, mine: Project, theirs: Project): Project {
+  const field = (key: 'name' | 'description') => {
+    const b = base[key]?.trim() || undefined;
+    const m = mine[key]?.trim() || undefined;
+    const t = theirs[key]?.trim() || undefined;
+    return m === t || b !== m ? m : t;
+  };
+  const description = field('description');
+  return {
+    id: mine.id,
+    createdAt: mine.createdAt,
+    name: field('name') ?? mine.name,
+    ...(description ? { description } : {}),
+  };
+}
+
+/** Le projet a-t-il le même nom et la même description ? */
+export function sameProject(a: Project, b: Project): boolean {
+  return a.name.trim() === b.name.trim() && (a.description?.trim() || '') === (b.description?.trim() || '');
 }
