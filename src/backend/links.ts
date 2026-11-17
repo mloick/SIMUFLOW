@@ -199,6 +199,8 @@ export function linkErrorMessage(error: { code?: string; message?: string }): Sh
       return new SharingError(getT().errors.linkGone);
     case '22023':
       return new SharingError(getT().errors.stepGone);
+    case '42501':
+      return new SharingError(getT().errors.notYourPart);
     default:
       return sharingErrorMessage(error);
   }

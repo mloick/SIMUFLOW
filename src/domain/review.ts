@@ -37,6 +37,18 @@ export function myPartSteps(process: Process, actor: string | null | undefined):
   return steps.filter((step) => step.actor && normalize(step.actor) === wanted);
 }
 
+/**
+ * Puis-je donner mon avis sur cette étape ? Seulement sur ma partie ; sans
+ * acteur confié, ou si l'acteur n'a plus d'étape, sur tout le process. Les
+ * étapes des autres restent lisibles. Même règle sur le serveur
+ * (supabase/migrations/20261124000000_avis_sa_partie.sql).
+ */
+export function canReviewStep(process: Process, actor: string | null | undefined, stepId: string): boolean {
+  if (!reviewableSteps(process).some((step) => step.id === stepId)) return false;
+  const mine = myPartSteps(process, actor);
+  return !actor?.trim() || mine.length === 0 || mine.some((step) => step.id === stepId);
+}
+
 /** Où en est la relecture d'une liste d'étapes. */
 export function reviewProgress(steps: Step[], reviews: StepReview[]) {
   const byStep = new Map(reviews.map((review) => [review.stepId, review]));

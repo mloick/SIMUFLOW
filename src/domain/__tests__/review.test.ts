@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { myPartSteps, reviewableSteps, reviewProblem, reviewProgress } from '../review';
+import { canReviewStep, myPartSteps, reviewableSteps, reviewProblem, reviewProgress } from '../review';
 import { demandeMateriel } from '../exemples';
 
 const ids = (steps: { id: string }[]) => steps.map((step) => step.id);
@@ -18,6 +18,22 @@ describe('relecture par un membre', () => {
   it('donne tout le process sans acteur confié', () => {
     expect(myPartSteps(demandeMateriel, null)).toHaveLength(4);
     expect(myPartSteps(demandeMateriel, 'Direction')).toHaveLength(0);
+  });
+
+  it('ne laisse donner un avis que sur sa partie, les autres étapes restant lisibles', () => {
+    expect(canReviewStep(demandeMateriel, 'Achats', 'commande')).toBe(true);
+    expect(canReviewStep(demandeMateriel, 'achats', 'validation')).toBe(false);
+    expect(canReviewStep(demandeMateriel, 'Achats', 'inconnue')).toBe(false);
+  });
+
+  it('laisse relire tout le process sans acteur, ou si l’acteur n’a plus d’étape', () => {
+    expect(canReviewStep(demandeMateriel, null, 'validation')).toBe(true);
+    expect(canReviewStep(demandeMateriel, 'Direction', 'commande')).toBe(true);
+  });
+
+  it('ne laisse donner un avis ni sur le départ ni sur la fin', () => {
+    const start = demandeMateriel.steps.find((step) => step.kind === 'start')!;
+    expect(canReviewStep(demandeMateriel, null, start.id)).toBe(false);
   });
 
   it('compte où en est la relecture', () => {

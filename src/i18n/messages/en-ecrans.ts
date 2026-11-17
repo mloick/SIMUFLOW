@@ -824,6 +824,9 @@ export const enScreens: ScreenMessages = {
     ownerSees: (owner: string) => `${owner} sees your reviews. You can change them as long as you are a member.`,
     myPart: (n: number) => `My part · ${n}`,
     wholeProcess: (n: number) => `Whole process · ${n}`,
+    othersReadOnly:
+      'Other actors’ steps are read-only. Does an issue come from an earlier step? Explain it in the comment on your part.',
+    readOnly: 'Read-only',
     noSteps: 'This process has no step to review.',
     saveError: 'Your review could not be saved.',
     quote: (text: string) => `“${text}”`,
@@ -1226,6 +1229,7 @@ export const enScreens: ScreenMessages = {
     memberNoProfile: 'Member without a profile',
     linkGone: 'This link does not exist or was removed. Ask whoever sent it to you for a new link.',
     stepGone: 'This step is no longer in the process: reload the page.',
+    notYourPart: 'This step is not part of your part: explain an issue with another actor’s step in the comment on your own step.',
     processOwner: 'The process owner',
     otherAccount: 'another account',
     usernameTaken: 'This username is already taken: choose another one.',

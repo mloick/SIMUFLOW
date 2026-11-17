@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import {
   MAX_COMMENT,
+  canReviewStep,
   myPartSteps,
   reviewableSteps,
   reviewProblem,
@@ -161,6 +162,12 @@ export function ReviewPanel({
         </View>
       )}
 
+      {hasPart && scope === 'all' && (
+        <ThemedText type="small" themeColor="textSecondary">
+          {r.othersReadOnly}
+        </ThemedText>
+      )}
+
       {loadError ? (
         <View style={card}>
           <ThemedText style={[styles.row, { color: theme.danger }]}>{loadError}</ThemedText>
@@ -185,6 +192,7 @@ export function ReviewPanel({
             step={step}
             number={numbers.get(step.id) ?? 0}
             review={byStep.get(step.id)}
+            readOnly={!canReviewStep(process, actor, step.id)}
             editing={editing === step.id}
             onEdit={() => setEditing(step.id)}
             onCancel={() => setEditing(null)}
@@ -202,6 +210,7 @@ function StepCard({
   step,
   number,
   review,
+  readOnly,
   editing,
   onEdit,
   onCancel,
@@ -211,6 +220,8 @@ function StepCard({
   step: Step;
   number: number;
   review: StepReview | undefined;
+  /** Étape d'un autre acteur : lisible, sans avis à donner (on peut retirer un ancien avis). */
+  readOnly: boolean;
   editing: boolean;
   onEdit: () => void;
   onCancel: () => void;
@@ -293,7 +304,24 @@ function StepCard({
         </ThemedText>
       )}
 
-      {editing ? (
+      {readOnly ? (
+        review ? (
+          <Pressable
+            onPress={() => run(() => onClear(step.id))}
+            disabled={busy}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={styles.link}>
+            <ThemedText type="smallBold" style={{ color: theme.danger }}>
+              {r.removeMine}
+            </ThemedText>
+          </Pressable>
+        ) : (
+          <ThemedText type="small" themeColor="textSecondary">
+            {r.readOnly}
+          </ThemedText>
+        )
+      ) : editing ? (
         <View style={styles.field}>
           <View style={styles.chips} accessibilityRole="radiogroup">
             {(['valide', 'a_revoir'] as const).map((option) => {
