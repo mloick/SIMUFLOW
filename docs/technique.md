@@ -1550,7 +1550,7 @@ Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > 
 
 ## 8. Tests et CI
 
-Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les dossiers `__tests__/` à côté du code, décrits dans chaque partie), tests de composants qui lisent l'écran comme un utilisateur, et un test de bout en bout sur la vraie app. Les règles d'accès de la base ont leurs propres tests SQL (`supabase/tests/`, voir [Backend Supabase](#backend-supabase-srcbackend-supabase)). Tout ce qui tourne sans téléphone est lancé à chaque pull request.
+Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les dossiers `__tests__/` à côté du code, décrits dans chaque partie), tests de composants qui lisent l'écran comme un utilisateur, et un test de bout en bout sur la vraie app. Les règles d'accès de la base ont leurs propres tests SQL (`supabase/tests/`, voir [Backend Supabase](#backend-supabase-srcbackend-supabase)). Les tests Jest (unitaires et composants) sont lancés à chaque pull request ; les tests SQL et le test de bout en bout se lancent à la main (PostgreSQL local, Simulateur iOS).
 
 ### Tests de composants (`src/components/__tests__/`)
 
@@ -1566,6 +1566,10 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 - **`equipe-projet-ecran.test.tsx`** : l'équipe d'un projet, vue par le chef puis par un collaborateur (voir [Projets](#projets-srcdataproject-storets-srcappprojet)).
 - **`projet-ecran.test.tsx`** : créer un projet (nom obligatoire), y ranger un process, le voir dans le projet, puis supprimer le projet sans perdre le process (voir [Projets](#projets-srcdataproject-storets-srcappprojet)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).
+- **`connexion-ecran.test.tsx`** : l'écran Connexion. Au premier lancement, « Continuer sans compte » et une connexion réussie mènent à la présentation ; ouvert depuis l'app, une croix le ferme ; le mot de passe s'affiche à la demande.
+- **`liens-acteurs.test.tsx`** : les liens d'acteur dans Partager. Chaque lien montre sa date de fin ; un lien expiré n'a plus « Envoyer », se prolonge, puis s'envoie de nouveau (voir [Expiration des liens d'acteur](#expiration-des-liens-dacteur-supabasemigrations20261125000000_liens_expirationsql)).
+
+Les autres tests de composants sont décrits avec leur écran : `briques.test.tsx` (boutons, cartes, interrupteur, « ? »), `reglages-ecran.test.tsx`, `profil-ecran.test.tsx`, `langue-ecran.test.tsx`, `partage-ecran.test.tsx`, `ma-partie-ecran.test.tsx`, `lien-ecran.test.tsx`, `tableau-de-bord-ecran.test.tsx`… En tout, au 17 novembre 2026 : 101 fichiers de tests Jest (unitaires et composants) et 584 tests, plus 13 scripts de tests SQL et un test Maestro.
 
 `theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). De même, `expo-sqlite/localStorage/install` (le `localStorage` du téléphone, en SQLite) est remplacé par `jest/stockage-memoire.js`, un `localStorage` en mémoire. Reanimated n'a pas de module natif dans Jest : `jest/reanimated.js` (`setupFiles`) le remplace par une version immobile, où les valeurs prennent tout de suite leur état final et les composants animés sont les composants ordinaires. Avec React Native Testing Library 14, `fireEvent` se termine de façon asynchrone : l'écrire `await fireEvent.press(…)`. Ces tests tournent avec les autres : `npm test`, et dans la CI.
 

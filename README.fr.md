@@ -22,7 +22,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Problème** : un schéma statique se valide mal. Impasses, décisions à sens unique et délais incohérents sont découverts trop tard, une fois le workflow en service.
 - **Promesse** : SimuFlow les rend visibles en moins d'une minute, permet de rejouer le process branche par branche, et fait valider à chaque acteur sa partie, sur tous les process d'un projet d'équipe.
 - **Trois écrans clés** : Détail (diagnostic), Simulation (pas à pas), Scanner (d'une photo à un process).
-- **Deux fonctions du téléphone** : la caméra avec lecture du texte sur l'appareil (module natif en Swift et en Kotlin), et des rappels d'échéance locaux.
+- **Trois fonctions du téléphone** : la caméra avec lecture du texte sur l'appareil (module natif en Swift et en Kotlin), des rappels d'échéance locaux, et les raccourcis Siri (App Intents en Swift).
 
 ## Fonctionnalités
 
@@ -103,7 +103,7 @@ flowchart TB
 
 - Les **écrans** affichent et réagissent, sans plus. Chaque règle (diagnostic, chemins, simulation, lecture des fichiers, échéances) est en **TypeScript pur**, sans React ni Expo, et donc testée à part.
 - L'**état de l'app** est d'abord local : process, réglages et demandes suivies restent sur le téléphone, puis se synchronisent avec Supabase quand on est connecté et en ligne.
-- **Supabase** ne garde que ce dont un compte a besoin. La Row Level Security fait que chaque compte ne voit que ses propres lignes.
+- **Supabase** ne garde que ce dont un compte a besoin. La Row Level Security fait que chaque compte voit ses propres lignes, plus ce qu'on a partagé avec lui (un process, un projet), sans pouvoir modifier les process des autres.
 - Le **module natif** ne fait que lire le texte d'une photo ; tout ce qui suit est du TypeScript partagé.
 
 Le détail, fichier par fichier, est dans la [documentation technique](docs/technique.md).

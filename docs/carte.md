@@ -42,5 +42,5 @@ npx jest           # tests (l'app y est lue en français)
 
 - Après chaque push, une GitHub Action peut ajouter un commit « Mettre à jour la documentation » sur la branche : récupérer la branche avant de pousser à nouveau.
 - Dans le conteneur cloud, `npx expo start --web` ne recharge pas les fichiers modifiés : relancer le serveur avant une capture.
-- Un script SQL dans `supabase/migrations/` est à coller par Loïc dans l'éditeur SQL de Supabase : le dire dans la PR.
+- Un script SQL dans `supabase/migrations/` est à coller par Loïck dans l'éditeur SQL de Supabase : le dire dans la PR. Ses tests (`supabase/tests/*.sql`) se lancent à la main sur un PostgreSQL local vide (`psql -v ON_ERROR_STOP=1 -f …`), ils ne sont pas dans la CI.
 - La version web (`site.yml`) se publie à chaque fusion sur `main`, en environ 2 minutes.
