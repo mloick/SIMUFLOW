@@ -81,7 +81,7 @@ npm test           # tests unitaires et de composants (Jest)
 npm run e2e        # test de bout en bout (Maestro, Simulateur iOS)
 ```
 
-**Backend.** Un projet Supabase. Son adresse et sa clé publishable sont dans `src/backend/config.ts` (publiques par conception : les accès sont décidés par le serveur). Le schéma et ses règles d'accès sont versionnés dans `supabase/migrations/`, avec leurs tests dans `supabase/tests/`. Ils arrivent sur la base par la CLI Supabase, lancée depuis le Mac après une fusion : `npm run db:etat` liste les scripts déjà passés, `npm run db:envoyer` passe les nouveaux dans l'ordre (à installer une fois : `brew install supabase/tap/supabase`, `supabase login`, `supabase link`).
+**Backend.** Un projet Supabase. Son adresse et sa clé publishable sont dans `src/backend/config.ts` (publiques par conception : les accès sont décidés par le serveur). Le schéma et ses règles d'accès sont versionnés dans `supabase/migrations/`, avec leurs tests dans `supabase/tests/`. Ils arrivent sur la base par la CLI Supabase, lancée depuis le Mac après une fusion : `npm run db:etat` liste les scripts déjà passés, `npm run db:envoyer` passe les nouveaux dans l'ordre (la CLI passe par `npx`, version 3.2.0 ; une fois : `npx supabase@3.2.0 login`, puis `link`).
 
 ## Architecture
 

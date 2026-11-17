@@ -133,8 +133,8 @@ app.config.js   Retire le baseUrl web d'app.json hors de l'export web (variable 
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
-| `npm run db:etat` | Lister les scripts SQL de `supabase/migrations/` et dire lesquels sont déjà passés sur la base (CLI Supabase, `supabase migration list`) |
-| `npm run db:envoyer` | Envoyer à la base, dans l'ordre, les scripts SQL pas encore passés, après confirmation (`supabase db push`) |
+| `npm run db:etat` | Lister les scripts SQL de `supabase/migrations/` et dire lesquels sont déjà passés sur la base (CLI Supabase 3.2.0 par `npx`, `supabase migration list --remote`) |
+| `npm run db:envoyer` | Envoyer à la base, dans l'ordre, les scripts SQL pas encore passés, après confirmation (`supabase db push --remote`) |
 
 Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
 
@@ -1417,10 +1417,11 @@ La base est décrite par des fichiers SQL versionnés dans le dépôt (des « mi
 **Appliquer les scripts SQL (CLI Supabase).** Jusqu'au 17 novembre 2026, chaque script était collé à la main dans l'éditeur SQL de Supabase : un oubli laissait la base en retard sur l'app, et rien ne disait quels scripts étaient passés. Les scripts passent maintenant par la CLI Supabase, depuis le Mac :
 
 - `supabase/config.toml` (créé par `supabase init`, sans aucun secret) dit à la CLI où sont les scripts ;
-- une fois par ordinateur : `brew install supabase/tap/supabase`, `supabase login` (dans le navigateur), puis `supabase link --project-ref szcdixoqdlclhzxrrznr` (le mot de passe de la base est demandé et reste sur l'ordinateur ; le lien est gardé dans `supabase/.temp/`, exclu du dépôt) ;
+- la CLI n'est pas installée : `npx --yes supabase@3.2.0` la télécharge (version fixée, la même pour tous). L'installer par Homebrew demande des Command Line Tools à jour, ce qui a échoué sur le Mac de Loïck. Depuis la version 3, chaque commande vise par défaut une base locale (Docker) : `--remote` vise le projet relié ;
+- une fois par ordinateur : `npx supabase@3.2.0 login` (dans le navigateur), puis `npx supabase@3.2.0 link --project-ref szcdixoqdlclhzxrrznr` (le mot de passe de la base est demandé et reste sur l'ordinateur ; le lien est gardé dans `supabase/.temp/`, exclu du dépôt) ;
 - ensuite, après la fusion d'une PR qui ajoute un script : `npm run db:etat` montre les scripts du dépôt et ceux déjà passés (table `supabase_migrations.schema_migrations`, tenue par Supabase), puis `npm run db:envoyer` passe les nouveaux, dans l'ordre, après confirmation.
 
-**Une seule fois, au passage à la CLI**, il faut lui dire que les 18 scripts collés à la main sont déjà passés, sans les relancer : relancer `20261110150000_source_tableau.sql` remettrait une liste d'origines plus courte, refusée par les process importés en texte. `supabase/verifier-migrations.sql`, collé dans l'éditeur SQL, ne change rien : il dit « oui » pour chaque script dont il trouve la trace (table, fonction ou origine acceptée). Si tout est « oui », `supabase migration repair --status applied <versions>` les marque comme passés. Testé sur un PostgreSQL vide : 18 « NON » avant les scripts, 18 « oui » après, et « NON » pour `source_texte` quand on retire l'origine « texte ».
+**Une seule fois, au passage à la CLI**, il faut lui dire que les 18 scripts collés à la main sont déjà passés, sans les relancer : relancer `20261110150000_source_tableau.sql` remettrait une liste d'origines plus courte, refusée par les process importés en texte. `supabase/verifier-migrations.sql`, collé dans l'éditeur SQL, ne change rien : il dit « oui » pour chaque script dont il trouve la trace (table, fonction ou origine acceptée). Si tout est « oui », `npx supabase@3.2.0 migration repair --status applied <versions> --remote` les marque comme passés. Testé sur un PostgreSQL vide : 18 « NON » avant les scripts, 18 « oui » après, et « NON » pour `source_texte` quand on retire l'origine « texte ».
 
 Pas de GitHub Action pour l'instant : il faudrait donner à GitHub un jeton d'accès Supabase et le mot de passe de la base.
 
