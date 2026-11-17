@@ -684,7 +684,7 @@ function NodeShape({
 }
 
 /**
- * Halo de l'étape en cours, qui pulse sauf avec « Réduire les animations ».
+ * Halo de l'étape en cours. Il pulse sur le web, sauf avec « Réduire les animations » ; il reste fixe sur iPhone et Android.
  * C'est une vue posée sur le schéma, pas une forme du SVG : son opacité change
  * sans redessiner tout le schéma. Positions en points du schéma × `renderScale`.
  */
@@ -694,7 +694,10 @@ function Halo({ node, renderScale }: { node: DiagramNode; renderScale: number })
   const opacity = useSharedValue(0.55);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    // Sur iPhone et Android, une animation sans fin oblige Reanimated à repasser
+    // par l'arbre des vues à chaque image, ce qui retarde l'affichage des étapes :
+    // le halo y reste fixe.
+    if (reduceMotion || Platform.OS !== 'web') return;
     opacity.set(withRepeat(withTiming(0.15, { duration: 900 }), -1, true));
     return () => cancelAnimation(opacity);
   }, [opacity, reduceMotion]);
