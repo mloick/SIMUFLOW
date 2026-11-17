@@ -12,3 +12,4 @@ export * from './validation';
 export * from './dashboard';
 export * from './share-alerts';
 export * from './parallel';
+export * from './merge';

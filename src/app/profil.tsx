@@ -171,8 +171,10 @@ function syncText(t: Messages, status: SyncStatus): string {
   switch (status.state) {
     case 'syncing':
       return t.profil.syncing;
-    case 'done':
-      return t.profil.syncedAt(status.at.toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' }));
+    case 'done': {
+      const at = t.profil.syncedAt(status.at.toLocaleTimeString(t.common.locale, { hour: '2-digit', minute: '2-digit' }));
+      return status.copies ? `${at}. ${t.profil.conflictCopies(status.copies)}` : at;
+    }
     case 'error':
       return status.message;
     default:
@@ -207,7 +209,7 @@ function SyncCard() {
         <ThemedText
           style={[styles.strong, failed && { color: theme.warning }]}
           accessibilityLiveRegion="polite"
-          numberOfLines={3}>
+          numberOfLines={status.state === 'done' && status.copies ? undefined : 3}>
           {syncText(t, status)}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">

@@ -518,7 +518,7 @@ Connecté, **Compléter mon profil** (dans la section Compte) demande votre pré
 
 ![Mon profil : l'identifiant proposé d'après le nom, puis un identifiant déjà pris et la variante proposée](captures/etape-38-mon-profil.png)
 
-Connecté, vos process, règles de lecture et formulaires gardés vous suivent sur tous vos appareils. Sans réseau, rien n'est perdu : la liste affiche « Hors connexion » et l'app envoie les changements dès le retour du réseau. **Supprimer mon compte** efface le compte et ses données, sur le serveur et sur le téléphone. Le serveur est hébergé à Paris ; **À propos** dit s'il est joignable.
+Connecté, vos process, règles de lecture et formulaires gardés vous suivent sur tous vos appareils. Sans réseau, rien n'est perdu : la liste affiche « Hors connexion » et l'app envoie les changements dès le retour du réseau. Si vous avez modifié le même process ailleurs entre-temps (par exemple sur la version web), les deux modifications sont réunies, étape par étape. Seule exception : la même étape changée de deux façons différentes. L'app garde alors la version déjà enregistrée, ajoute la vôtre à part sous le nom « … (version de cet appareil) », et le Profil vous le dit. **Supprimer mon compte** efface le compte et ses données, sur le serveur et sur le téléphone. Le serveur est hébergé à Paris ; **À propos** dit s'il est joignable.
 
 ![Lancement et connexion : clair, sombre, et « Pourquoi un compte ? »](captures/etape-r5-connexion.png)
 

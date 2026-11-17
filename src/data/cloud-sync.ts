@@ -40,7 +40,7 @@ import { getT } from '@/i18n';
 export type SyncStatus = (
   | { state: 'idle' }
   | { state: 'syncing' }
-  | { state: 'done'; at: Date }
+  | { state: 'done'; at: Date; copies?: string[] }
   | { state: 'error'; message: string; offline: boolean }
 ) & {
   /** Une synchronisation a réussi depuis la connexion : la liste du compte est arrivée. */
@@ -119,13 +119,18 @@ export async function syncNow() {
     return;
   }
   running = true;
+  // Copies gardées après un conflit (modifié à deux endroits), pour le dire à l'utilisateur.
+  const copies: string[] = [];
   setStatus({ state: 'syncing', synced: status.synced });
   try {
     do {
       again = false;
       await syncProjectsQuietly();
       const before = getImportEntries();
-      const result = await syncEntries(before, api);
+      const result = await syncEntries(before, api, {
+        copyName: (name) => getT().profil.copyName(name),
+        onConflict: (name) => copies.push(name),
+      });
       if (!connected) break; // déconnecté pendant l'envoi : on ne réécrit rien
       writing = true;
       setImportEntries(mergeAfterSync(before, result, getImportEntries()));
@@ -136,7 +141,7 @@ export async function syncNow() {
     if (connected) await refreshTeamProjects();
     if (connected) await refreshShared();
     if (connected) await checkShareAlerts();
-    if (connected) setStatus({ state: 'done', at: new Date(), synced: true });
+    if (connected) setStatus({ state: 'done', at: new Date(), synced: true, ...(copies.length ? { copies } : {}) });
   } catch (error) {
     // Hors connexion ou serveur injoignable : les changements attendent la prochaine fois.
     const offline = /fetch|network/i.test(String(error));

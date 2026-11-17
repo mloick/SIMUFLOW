@@ -122,6 +122,11 @@ export const fr = {
     editProfile: 'Modifier →',
     syncing: 'Synchronisation…',
     syncedAt: (time: string): string => `Process synchronisés à ${time}`,
+    conflictCopies: (names: string[]): string =>
+      names.length === 1
+        ? `Modifié à deux endroits : votre version est gardée à part, « ${names[0]} ».`
+        : `${names.length} process modifiés à deux endroits : vos versions sont gardées à part (${names.map((name) => `« ${name} »`).join(', ')}).`,
+    copyName: (name: string): string => `${name} (version de cet appareil)`,
     syncIdle: 'Vos process importés sont gardés sur votre compte.',
     syncNow: 'Synchroniser',
     deleteAccount: 'Supprimer mon compte',

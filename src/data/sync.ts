@@ -12,14 +12,20 @@
  * 6. retire du téléphone ceux supprimés depuis un autre appareil ;
  * 7. ajoute ceux créés depuis un autre appareil.
  *
- * Un process modifié des deux côtés entre deux synchronisations : la dernière
- * version envoyée l'emporte.
+ * Un process modifié des deux côtés entre deux synchronisations (le téléphone
+ * hors connexion, la version web) : les deux versions sont fusionnées à partir
+ * de la dernière version connue du serveur (`base`), étape par étape et lien
+ * par lien (src/domain/merge.ts). Si une même étape a changé différemment des
+ * deux côtés, la version du serveur est gardée et celle du téléphone part comme
+ * une copie, sans rien perdre. Une entrée sans `base` (enregistrée par une
+ * ancienne version de l'app) garde l'ancienne règle : la version du téléphone
+ * remplace celle du serveur.
  *
  * Écrit sans dépendre de Supabase : `api` est passé en paramètre, et les tests
  * lui donnent un faux serveur.
  */
 
-import type { Process } from '@/domain';
+import { mergeProcess, sameProcess, type Process } from '@/domain';
 
 export type SyncEntry = {
   process: Process;
@@ -29,6 +35,8 @@ export type SyncEntry = {
   deleted?: true;
   /** Modifié sur le téléphone depuis le dernier envoi. */
   modified?: true;
+  /** Dernière version connue du serveur (envoyée ou reçue) : la base de la fusion. */
+  base?: Process;
 };
 
 export type CloudApi = {
@@ -38,7 +46,18 @@ export type CloudApi = {
   remove(cloudId: string): Promise<void>;
 };
 
-export async function syncEntries(local: SyncEntry[], api: CloudApi): Promise<SyncEntry[]> {
+export type SyncOptions = {
+  /** Nom de la copie gardée après un conflit (par défaut : « <nom> (copie) »). */
+  copyName?: (name: string) => string;
+  /** Identifiant sur le téléphone de cette copie. */
+  newId?: () => string;
+  /** Prévenu pour chaque process en conflit, avec le nom de la copie. */
+  onConflict?: (copyName: string) => void;
+};
+
+export async function syncEntries(local: SyncEntry[], api: CloudApi, options: SyncOptions = {}): Promise<SyncEntry[]> {
+  const copyName = options.copyName ?? ((name: string) => `${name} (copie)`);
+  const newId = options.newId ?? (() => `copie-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
   const remote = await api.list();
   const remoteById = new Map(remote.map((process) => [process.id, process]));
   const remoteIds = new Set(remoteById.keys());
@@ -55,26 +74,44 @@ export async function syncEntries(local: SyncEntry[], api: CloudApi): Promise<Sy
     }
     if (!entry.cloudId) {
       const created = await api.create(entry.process);
-      next.push({ process: entry.process, cloudId: created.id });
+      next.push({ process: entry.process, cloudId: created.id, base: entry.process });
       continue;
     }
     // Envoyé autrefois, absent aujourd'hui : supprimé depuis un autre appareil.
     const onServer = remoteById.get(entry.cloudId);
     if (!onServer) continue;
-    if (entry.modified) {
-      await api.update(entry.cloudId, entry.process);
-      next.push({ process: entry.process, cloudId: entry.cloudId });
-    } else {
-      // Version du serveur, sous l'identifiant du téléphone (un écran ouvert le garde).
-      next.push({ process: { ...onServer, id: entry.process.id }, cloudId: entry.cloudId });
+    // Version du serveur, sous l'identifiant du téléphone (un écran ouvert le garde).
+    const theirs: Process = { ...onServer, id: entry.process.id };
+    if (!entry.modified) {
+      next.push({ process: theirs, cloudId: entry.cloudId, base: theirs });
+      continue;
     }
+    // Personne d'autre n'a touché au process (ou pas de base connue) : ma version part telle quelle.
+    if (!entry.base || sameProcess(entry.base, theirs)) {
+      await api.update(entry.cloudId, entry.process);
+      next.push({ process: entry.process, cloudId: entry.cloudId, base: entry.process });
+      continue;
+    }
+    // Modifié des deux côtés : on fusionne.
+    const { process: merged, conflicts } = mergeProcess(entry.base, entry.process, theirs);
+    if (conflicts.length === 0) {
+      if (!sameProcess(merged, theirs)) await api.update(entry.cloudId, merged);
+      next.push({ process: merged, cloudId: entry.cloudId, base: merged });
+      continue;
+    }
+    // Conflit : la version du serveur reste, la mienne part comme une copie.
+    const copy: Process = { ...entry.process, id: newId(), name: copyName(entry.process.name.trim()) };
+    const created = await api.create(copy);
+    options.onConflict?.(copy.name);
+    next.push({ process: theirs, cloudId: entry.cloudId, base: theirs });
+    next.push({ process: copy, cloudId: created.id, base: copy });
   }
 
   // Créés ailleurs : leur identifiant sur le téléphone est celui du serveur.
   const known = new Set(local.map((entry) => entry.cloudId));
   const added = remote
     .filter((process) => !known.has(process.id))
-    .map((process): SyncEntry => ({ process, cloudId: process.id }));
+    .map((process): SyncEntry => ({ process, cloudId: process.id, base: process }));
 
   return [...added, ...next];
 }

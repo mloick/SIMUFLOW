@@ -9,7 +9,7 @@ Une page pour se repérer vite, avant de lire le code. Le détail est dans [tech
 | Un écran | `src/app/` (un fichier = une route Expo Router ; onglets dans `(tabs)/`) |
 | Un morceau d'écran réutilisé | `src/components/` |
 | Un texte affiché (français / anglais) | `src/i18n/messages/` : `fr.ts` et `en.ts` (base, Profil, connexion), `fr-ecrans.ts` et `en-ecrans.ts` (tous les autres écrans, un bloc par écran) |
-| Les règles d'un process (types, diagnostic, chemins, avis, alertes) | `src/domain/` (TypeScript pur, sans React) |
+| Les règles d'un process (types, diagnostic, chemins, avis, alertes, fusion de deux versions) | `src/domain/` (TypeScript pur, sans React) |
 | Le moteur de simulation, le schéma, les familles de chemins | `src/simulation/` |
 | La lecture d'un fichier (draw.io, BPMN, Visio, JSON, texte) | `src/import/` ; tableaux Excel et CSV dans `src/import/tableau/` |
 | L'export (PDF, draw.io, BPMN, JSON) | `src/export/` |
