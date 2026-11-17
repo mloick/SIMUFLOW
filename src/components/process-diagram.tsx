@@ -20,7 +20,15 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import type { FamilyPaint } from '@/simulation/families';
-import { isDiamond, midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import {
+  isDiamond,
+  midpoint,
+  offsetPolyline,
+  wrap,
+  type DiagramLayout,
+  type DiagramNode,
+  type Point,
+} from '@/simulation/layout';
 import { useT } from '@/i18n';
 
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -197,7 +205,11 @@ export function ProcessDiagram({
   const focusIds = !progress
     ? []
     : choosing && progress.currentId
-      ? [progress.currentId, ...(progress.otherCurrentIds ?? []), ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
+      ? [
+          progress.currentId,
+          ...(progress.otherCurrentIds ?? []),
+          ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to),
+        ]
       : [...progress.visitedSteps];
   const focusKey = overview ? 'tous' : `${progress?.currentId}|${focusIds.join('|')}`;
   const frameFocus = () => {
@@ -263,6 +275,25 @@ export function ProcessDiagram({
     width: (frameWidth / scale.get()) * miniK,
     height: (viewHeight / scale.get()) * miniK,
   }));
+  // Sur iPhone, react-native-svg ne redessine pas toujours le schéma quand une
+  // forme change : la flèche restait éteinte jusqu'au prochain zoom. Changer la
+  // couleur du SVG (inutilisée par le dessin) à chaque changement force un redessin.
+  const redrawColor =
+    Platform.OS === 'web'
+      ? undefined
+      : colorOf(
+          [
+            theme.background,
+            progress ? [...progress.visitedSteps].join(',') : '',
+            progress ? [...progress.visitedLinks].join(',') : '',
+            progress?.currentId,
+            progress?.otherCurrentIds?.join(','),
+            progress?.candidateLinks.join(','),
+            overview
+              ? `${[...overview.strokes.keys()].join(',')}|${[...(overview.dimmedLinks ?? [])].join(',')}|${[...(overview.dimmedSteps ?? [])].join(',')}`
+              : '',
+          ].join('|'),
+        );
   const showMinimap = !overview && frameWidth > 0 && layout.width * FRAME_MIN_SCALE > frameWidth * 0.9;
 
   // Une pointe de flèche par couleur utilisée.
@@ -289,6 +320,7 @@ export function ProcessDiagram({
               accessibilityRole="image"
               accessibilityLabel={accessibilityLabel}>
               <Svg
+                color={redrawColor}
                 width={layout.width * renderScale}
                 height={layout.height * renderScale}
                 viewBox={`0 0 ${layout.width} ${layout.height}`}>
@@ -429,9 +461,7 @@ export function ProcessDiagram({
               {progress &&
                 !overview &&
                 [...layout.nodes.values()]
-                  .filter(
-                    (node) => isCurrent(node.id) && (progress.visitedSteps.has(node.id) || ghosts.has(node.id)),
-                  )
+                  .filter((node) => isCurrent(node.id) && (progress.visitedSteps.has(node.id) || ghosts.has(node.id)))
                   .map((node) => <Halo key={`halo-${node.id}`} node={node} renderScale={renderScale} />)}
             </Animated.View>
           </View>
@@ -576,6 +606,13 @@ function clamp(scale: number) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
 }
 
+/** Couleur tirée d'un texte : deux textes différents donnent (presque toujours) deux couleurs différentes. */
+function colorOf(text: string) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  return `#${((hash >>> 0) % 0x1000000).toString(16).padStart(6, '0')}`;
+}
+
 /** Identifiant de la pointe de flèche d'une couleur, par exemple « arrow-0078bd ». */
 function arrowId(color: string) {
   return `arrow-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -616,28 +653,27 @@ function NodeShape({
   const { x, y, width: w, height: h } = node;
   const fill = ghost ? theme.surface : colors.fill;
   const stroke = ghost ? theme.textSecondary : colors.stroke;
-  const shape =
-    isDiamond(node.kind) ? (
-      <Polygon
-        points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={ghost ? 1.5 : 2}
-        strokeDasharray={ghost ? '5 4' : undefined}
-      />
-    ) : (
-      <Rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        rx={node.kind === 'task' ? 10 : h / 2}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={ghost ? 1.5 : 2}
-        strokeDasharray={ghost ? '5 4' : undefined}
-      />
-    );
+  const shape = isDiamond(node.kind) ? (
+    <Polygon
+      points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={ghost ? 1.5 : 2}
+      strokeDasharray={ghost ? '5 4' : undefined}
+    />
+  ) : (
+    <Rect
+      x={x}
+      y={y}
+      width={w}
+      height={h}
+      rx={node.kind === 'task' ? 10 : h / 2}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={ghost ? 1.5 : 2}
+      strokeDasharray={ghost ? '5 4' : undefined}
+    />
+  );
 
   return (
     <G opacity={ghost ? 0.75 : 1}>
