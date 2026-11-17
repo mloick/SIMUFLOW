@@ -107,7 +107,7 @@ export function updateProject(id: string, name: string, description?: string) {
         name: name.trim(),
         ...(description?.trim() ? { description: description.trim() } : {}),
       };
-      return entry.synced ? { project, synced: true, modified: true } : { project };
+      return entry.synced ? { ...entry, project, modified: true } : { project };
     }),
   );
 }

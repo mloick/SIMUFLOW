@@ -34,14 +34,14 @@ describe('syncProjects', () => {
     const result = await syncProjects([{ project: proj('p1', 'Migration') }], api);
     expect(calls).toEqual(['create p1']);
     expect(rows.get('p1')?.name).toBe('Migration');
-    expect(result).toEqual([{ project: proj('p1', 'Migration'), synced: true }]);
+    expect(result).toEqual([{ project: proj('p1', 'Migration'), synced: true, base: proj('p1', 'Migration') }]);
   });
 
   it('envoie un renommage, puis le marque à jour', async () => {
     const { api, calls } = fakeServer([proj('p1', 'Avant')]);
     const result = await syncProjects([{ project: proj('p1', 'Après'), synced: true, modified: true }], api);
     expect(calls).toEqual(['update p1 Après']);
-    expect(result).toEqual([{ project: proj('p1', 'Après'), synced: true }]);
+    expect(result).toEqual([{ project: proj('p1', 'Après'), synced: true, base: proj('p1', 'Après') }]);
   });
 
   it('supprime sur le serveur un projet retiré du téléphone', async () => {
@@ -61,8 +61,8 @@ describe('syncProjects', () => {
     const result = await syncProjects(local, api);
     expect(calls).toEqual([]);
     expect(result).toEqual([
-      { project: proj('p3', 'Nouveau ailleurs'), synced: true },
-      { project: proj('p1', 'Renommé ailleurs'), synced: true },
+      { project: proj('p3', 'Nouveau ailleurs'), synced: true, base: proj('p3', 'Nouveau ailleurs') },
+      { project: proj('p1', 'Renommé ailleurs'), synced: true, base: proj('p1', 'Renommé ailleurs') },
     ]);
   });
 
@@ -70,6 +70,30 @@ describe('syncProjects', () => {
     const { api, calls } = fakeServer([proj('p1', 'Serveur')]);
     await syncProjects([{ project: proj('p1', 'Téléphone') }], api);
     expect(calls).toEqual(['update p1 Téléphone']);
+  });
+});
+
+describe('syncProjects : modifié des deux côtés', () => {
+  const base: Project = { ...proj('p1', 'Migration'), description: 'Changer d’outil' };
+
+  it('garde le nouveau nom du téléphone et la description changée sur le web', async () => {
+    const { api, rows, calls } = fakeServer([{ ...base, description: 'Changer d’outil de suivi' }]);
+    const result = await syncProjects([{ project: { ...base, name: 'Migration 2027' }, synced: true, modified: true, base }], api);
+    expect(calls).toEqual(['update p1 Migration 2027']);
+    expect(rows.get('p1')).toEqual({ ...base, name: 'Migration 2027', description: 'Changer d’outil de suivi' });
+    expect(result[0].base).toEqual(result[0].project);
+  });
+
+  it('garde ma version d’un champ changé différemment des deux côtés', async () => {
+    const { api, rows } = fakeServer([{ ...base, name: 'Migration (web)' }]);
+    await syncProjects([{ project: { ...base, name: 'Migration (téléphone)' }, synced: true, modified: true, base }], api);
+    expect(rows.get('p1')?.name).toBe('Migration (téléphone)');
+  });
+
+  it('n’envoie rien si le serveur a déjà la même version', async () => {
+    const { api, calls } = fakeServer([{ ...base, name: 'Migration 2027' }]);
+    await syncProjects([{ project: { ...base, name: 'Migration 2027' }, synced: true, modified: true, base }], api);
+    expect(calls).toEqual([]);
   });
 });
 
