@@ -839,6 +839,12 @@ export const frScreens = {
       removeLabel: (actor: string): string => `Retirer le lien de ${actor}`,
       createLabel: (actor: string): string => `Créer un lien pour ${actor}`,
       create: 'Créer un lien',
+      expiresOn: (date: Date): string =>
+        `Valable jusqu’au ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`,
+      expiredOn: (date: Date): string => `Expiré le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`,
+      extend: 'Prolonger',
+      extendLabel: (actor: string): string => `Prolonger de 30 jours le lien de ${actor}`,
+      extended: (actor: string): string => `Lien de « ${actor} » prolongé de 30 jours.`,
     },
   },
 
@@ -882,6 +888,7 @@ export const frScreens = {
     link: {
       openError: 'Le lien n’a pas pu s’ouvrir.',
       notFound: 'Lien introuvable',
+      expired: 'Lien expiré',
       openApp: 'Ouvrir SimuFlow',
       intro: (owner: string, actor: string): string =>
         `${owner} vous demande de relire la partie « ${actor} » de ce process : pour chaque étape, dites si elle est juste ou à revoir. Pas besoin de compte.`,
@@ -892,7 +899,7 @@ export const frScreens = {
       nameNote: (owner: string): string =>
         `Votre nom accompagne chacun de vos avis : ${owner} saura qui a relu. Si ce lien n’est pas pour vous, fermez simplement la page.`,
       ownerSees: (owner: string, name: string): string =>
-        `${owner} voit vos avis, signés « ${name} ». Vous pouvez les changer tant que le lien existe.`,
+        `${owner} voit vos avis, signés « ${name} ». Vous pouvez les changer tant que le lien est valable.`,
     },
   },
 
@@ -1264,6 +1271,7 @@ export const frScreens = {
     sharingRetry: 'Le partage n’a pas pu se faire. Réessayez.',
     memberNoProfile: 'Membre sans profil',
     linkGone: 'Ce lien n’existe pas ou a été retiré. Demandez un nouveau lien à qui vous l’a envoyé.',
+    linkExpired: 'Ce lien a expiré. Demandez à qui vous l’a envoyé de le prolonger.',
     stepGone: 'Cette étape n’est plus dans le process : rechargez la page.',
     notYourPart: 'Cette étape ne fait pas partie de votre partie : un souci sur une étape d’un autre acteur s’explique dans le commentaire de votre propre étape.',
     processOwner: 'Le responsable du process',

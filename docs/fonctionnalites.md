@@ -377,11 +377,15 @@ Un acteur n'a pas SimuFlow ? Dans **Partager**, la section **Liens pour les acte
 - **Créer un lien**, puis **Envoyer** : la feuille de partage du téléphone (Messages, Mail…), ou dans le navigateur une copie du lien ;
 - **Retirer** : le lien ne s'ouvre plus, et les avis donnés par ce lien sont retirés.
 
+Un lien est **valable 30 jours**. Sous chaque lien, la date de fin s'affiche (« Valable jusqu’au 17 déc. »). Une semaine avant, et une fois le lien expiré, **Prolonger** le rend valable 30 jours de plus. Un lien expiré ne s'ouvre plus : la personne voit « Lien expiré » et vous demande de le prolonger. Ses avis déjà donnés restent dans le suivi.
+
 La personne ouvre le lien dans son navigateur, sans compte ni installation. La page lui dit qui demande la relecture et de quelle partie il s'agit, puis demande : **« Vous êtes « Achats » ? Écrivez votre nom pour le confirmer. »** Après **C'est moi, je relis ma partie**, elle relit ses étapes comme un membre : **✓ Valider**, ou **À revoir…** avec un commentaire. Elle peut lire tout le process, mais ne donne son avis que sur les étapes de « Achats ». Chaque avis porte son nom.
 
 De votre côté, le lien compte comme un membre dans **Suivi de la validation** (« Inès Moreau (lien) »), et ses avis déclenchent les mêmes alertes. Le nom écrit est une confirmation, pas une preuve d'identité : envoyez chaque lien à la bonne personne, et retirez-le s'il circule trop.
 
 ![Lien pour les acteurs sans compte : les liens dans Partager, la page du lien qui demande le nom, la relecture, puis l'avis dans le suivi de la validation](captures/etape-43-lien-acteur.png)
+
+![Expiration des liens : les dates de fin et un lien expiré dans Partager, le lien prolongé de 30 jours, puis la page d'un lien expiré](captures/etape-55-lien-expire.png)
 
 ## 4. Suivre une vraie demande
 

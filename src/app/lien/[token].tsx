@@ -60,7 +60,8 @@ export default function LinkScreen() {
       <StateMessage
         icon={{ ios: 'link', android: 'link_off' }}
         tone="danger"
-        title={l.notFound}
+        // Un lien expiré se prolonge : on le dit, au lieu de « introuvable ».
+        title={error === t.errors.linkExpired ? l.expired : l.notFound}
         message={error}
         action={{ label: l.openApp, onPress: () => router.replace('/') }}
       />

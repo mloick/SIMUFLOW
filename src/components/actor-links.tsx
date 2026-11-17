@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { createActorLink, linkUrl, listActorLinks, removeActorLink, type ActorLink } from '@/backend/links';
+import {
+  createActorLink,
+  extendActorLink,
+  isLinkExpired,
+  linkNeedsExtension,
+  linkUrl,
+  listActorLinks,
+  removeActorLink,
+  type ActorLink,
+} from '@/backend/links';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -12,7 +21,7 @@ import { getT, useT } from '@/i18n';
 /**
  * « Liens pour les acteurs sans compte » : un lien web par acteur du schéma.
  * La personne l'ouvre dans son navigateur, confirme son nom et relit sa
- * partie. Créer, envoyer, retirer.
+ * partie. Créer, envoyer, prolonger (un lien vaut 30 jours), retirer.
  */
 export function ActorLinks({
   cloudId,
@@ -69,6 +78,13 @@ export function ActorLinks({
       setLinks((list) => [...(list ?? []), link]);
     });
 
+  const extend = (link: ActorLink) =>
+    run(link.actor, async () => {
+      const expiresAt = await extendActorLink(link.id);
+      setLinks((list) => (list ?? []).map((item) => (item.id === link.id ? { ...item, expiresAt } : item)));
+      setNotice(l.extended(link.actor));
+    });
+
   const remove = (link: ActorLink) =>
     confirmAction(
       l.removeTitle,
@@ -120,6 +136,7 @@ export function ActorLinks({
         <View style={card}>
           {actors.map((actor, index) => {
             const link = links.find((item) => item.actor === actor);
+            const expired = link ? isLinkExpired(link) : false;
             return (
               <View
                 key={actor}
@@ -132,20 +149,42 @@ export function ActorLinks({
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                     {link ? linkUrl(link.token).replace('https://', '') : l.none}
                   </ThemedText>
+                  {link?.expiresAt && (
+                    <ThemedText
+                      type="small"
+                      themeColor="textSecondary"
+                      style={expired ? { color: theme.danger } : undefined}>
+                      {expired ? l.expiredOn(new Date(link.expiresAt)) : l.expiresOn(new Date(link.expiresAt))}
+                    </ThemedText>
+                  )}
                 </View>
                 {busy === actor ? (
                   <ActivityIndicator color={theme.textSecondary} />
                 ) : link ? (
                   <View style={styles.actions}>
-                    <Pressable
-                      onPress={() => send(link)}
-                      accessibilityRole="button"
-                      accessibilityLabel={l.sendLabel(actor)}
-                      hitSlop={8}>
-                      <ThemedText type="smallBold" style={{ color: theme.link }}>
-                        {l.send}
-                      </ThemedText>
-                    </Pressable>
+                    {linkNeedsExtension(link) && (
+                      <Pressable
+                        onPress={() => extend(link)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l.extendLabel(actor)}
+                        hitSlop={8}>
+                        <ThemedText type="smallBold" style={{ color: theme.link }}>
+                          {l.extend}
+                        </ThemedText>
+                      </Pressable>
+                    )}
+                    {/* Un lien expiré ne s'envoie plus : il faut d'abord le prolonger. */}
+                    {!expired && (
+                      <Pressable
+                        onPress={() => send(link)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l.sendLabel(actor)}
+                        hitSlop={8}>
+                        <ThemedText type="smallBold" style={{ color: theme.link }}>
+                          {l.send}
+                        </ThemedText>
+                      </Pressable>
+                    )}
                     <Pressable
                       onPress={() => remove(link)}
                       accessibilityRole="button"

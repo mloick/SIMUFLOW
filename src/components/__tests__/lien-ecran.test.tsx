@@ -8,14 +8,17 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import LinkScreen from '@/app/lien/[token]';
 
+let mockToken = 'jeton-1';
+
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn(), push: jest.fn() },
   Stack: { Screen: () => null },
-  useLocalSearchParams: () => ({ token: 'jeton-1' }),
+  useLocalSearchParams: () => ({ token: mockToken }),
 }));
 
 jest.mock('@/backend/links', () => ({
   openLink: jest.fn(async (token: string) => {
+    if (token === 'jeton-expire') throw new Error('Ce lien a expiré. Demandez à qui vous l’a envoyé de le prolonger.');
     if (token !== 'jeton-1') throw new Error('Ce lien n’existe pas ou a été retiré.');
     return {
       process: jest.requireActual<typeof import('@/domain/exemples')>('@/domain/exemples').demandeMateriel,
@@ -41,7 +44,7 @@ describe('page d’un lien d’acteur', () => {
     expect(await screen.findByText('Julie Martin vous confie « Achats » : 1 étape à relire.')).toBeOnTheScreen();
     expect(
       screen.getByText(
-        'Julie Martin voit vos avis, signés « Karim Benali ». Vous pouvez les changer tant que le lien existe.',
+        'Julie Martin voit vos avis, signés « Karim Benali ». Vous pouvez les changer tant que le lien est valable.',
       ),
     ).toBeOnTheScreen();
     await fireEvent.press(screen.getByLabelText('Valider l’étape 3'));
@@ -51,5 +54,13 @@ describe('page d’un lien d’acteur', () => {
       comment: null,
     });
     expect(await screen.findByText('Merci : votre partie est relue et validée.')).toBeOnTheScreen();
+  });
+
+  it('dit qu’un lien a expiré, au lieu de « introuvable »', async () => {
+    mockToken = 'jeton-expire';
+    await render(<LinkScreen />);
+    expect(await screen.findByText('Lien expiré')).toBeOnTheScreen();
+    expect(screen.getByText('Ce lien a expiré. Demandez à qui vous l’a envoyé de le prolonger.')).toBeOnTheScreen();
+    mockToken = 'jeton-1';
   });
 });
