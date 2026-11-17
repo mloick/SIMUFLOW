@@ -23,7 +23,6 @@ import type { FamilyPaint } from '@/simulation/families';
 import { isDiamond, midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
 import { useT } from '@/i18n';
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 const MIN_SCALE = 0.3;
@@ -421,11 +420,19 @@ export function ProcessDiagram({
                     );
                   return (
                     <FadeIn key={node.id}>
-                      <NodeShape node={node} current={isCurrent(node.id)} ghost={!visited} />
+                      <NodeShape node={node} ghost={!visited} />
                     </FadeIn>
                   );
                 })}
               </Svg>
+              {/* Halo hors du SVG : sur iPhone, l'animer dans le SVG redessinait tout le schéma à chaque image. */}
+              {progress &&
+                !overview &&
+                [...layout.nodes.values()]
+                  .filter(
+                    (node) => isCurrent(node.id) && (progress.visitedSteps.has(node.id) || ghosts.has(node.id)),
+                  )
+                  .map((node) => <Halo key={`halo-${node.id}`} node={node} renderScale={renderScale} />)}
             </Animated.View>
           </View>
         </GestureDetector>
@@ -543,8 +550,18 @@ function boxOf(nodes: DiagramNode[]): Box | undefined {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-/** Fait apparaître son contenu en fondu, sauf avec « Réduire les animations ». */
+/**
+ * Fait apparaître son contenu en fondu, sur le web seulement, et sauf avec
+ * « Réduire les animations ». Sur iPhone et Android, un fondu animé dans le SVG
+ * n'était souvent pas redessiné : la flèche restait invisible plusieurs
+ * secondes, jusqu'à un zoom. Le contenu y apparaît donc tout de suite.
+ */
 function FadeIn({ children }: { children: ReactNode }) {
+  if (Platform.OS !== 'web') return <G>{children}</G>;
+  return <FadeInWeb>{children}</FadeInWeb>;
+}
+
+function FadeInWeb({ children }: { children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
@@ -584,12 +601,10 @@ function useNodeColors(kind: StepKind) {
 
 function NodeShape({
   node,
-  current = false,
   ghost = false,
   neutral = false,
 }: {
   node: DiagramNode;
-  current?: boolean;
   ghost?: boolean;
   /** Vue « Tous » : les tâches restent claires pour laisser la couleur aux chemins. */
   neutral?: boolean;
@@ -626,38 +641,47 @@ function NodeShape({
 
   return (
     <G opacity={ghost ? 0.75 : 1}>
-      {current && <Halo node={node} />}
       {shape}
       <NodeText node={node} color={ghost ? theme.textSecondary : colors.text} />
     </G>
   );
 }
 
-/** Halo de l'étape en cours, qui pulse sauf avec « Réduire les animations ». */
-function Halo({ node }: { node: DiagramNode }) {
+/**
+ * Halo de l'étape en cours, qui pulse sauf avec « Réduire les animations ».
+ * C'est une vue posée sur le schéma, pas une forme du SVG : son opacité change
+ * sans redessiner tout le schéma. Positions en points du schéma × `renderScale`.
+ */
+function Halo({ node, renderScale }: { node: DiagramNode; renderScale: number }) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(0.55);
 
   useEffect(() => {
     if (reduceMotion) return;
-    opacity.value = withRepeat(withTiming(0.15, { duration: 900 }), -1, true);
+    opacity.set(withRepeat(withTiming(0.15, { duration: 900 }), -1, true));
     return () => cancelAnimation(opacity);
   }, [opacity, reduceMotion]);
 
-  const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }));
-  const pad = 7;
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  // Le trait de 5 du SVG était centré sur le bord : la vue commence 2,5 plus loin.
+  const pad = 7 + 2.5;
   return (
-    <AnimatedRect
-      animatedProps={animatedProps}
-      x={node.x - pad}
-      y={node.y - pad}
-      width={node.width + pad * 2}
-      height={node.height + pad * 2}
-      rx={14}
-      fill="none"
-      stroke={theme.link}
-      strokeWidth={5}
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.halo,
+        {
+          left: (node.x - pad) * renderScale,
+          top: (node.y - pad) * renderScale,
+          width: (node.width + pad * 2) * renderScale,
+          height: (node.height + pad * 2) * renderScale,
+          borderRadius: (14 + 2.5) * renderScale,
+          borderWidth: 5 * renderScale,
+          borderColor: theme.link,
+        },
+        animatedStyle,
+      ]}
     />
   );
 }
@@ -782,4 +806,5 @@ const styles = StyleSheet.create({
     boxShadow: '0 4px 12px rgba(14, 27, 44, 0.16)',
   },
   miniFrame: { position: 'absolute', borderWidth: 2, borderRadius: 3 },
+  halo: { position: 'absolute' },
 });
