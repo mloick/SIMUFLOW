@@ -1,6 +1,7 @@
 /**
  * Test d'écran : un membre relit sa partie d'un process partagé. Il voit ses
- * étapes, en valide une, et « à revoir » demande un commentaire.
+ * étapes, en valide une, et « à revoir » demande un commentaire. Les étapes
+ * des autres acteurs se lisent, sans avis à donner.
  */
 
 import { describe, expect, it, jest } from '@jest/globals';
@@ -39,17 +40,24 @@ describe('ReviewPanel', () => {
     expect(saveReview).toHaveBeenLastCalledWith('cloud-1', { stepId: 'validation', status: 'valide', comment: null });
     expect(await screen.findByText('Merci : votre partie est relue, avec 1 étape à revoir.')).toBeOnTheScreen();
 
-    await fireEvent.press(screen.getByRole('radio', { name: 'Tout le process · 4' }));
-    expect(screen.getByText('Passer la commande')).toBeOnTheScreen();
-    await fireEvent.press(screen.getByLabelText('Signaler l’étape 3 à revoir'));
+    await fireEvent.press(screen.getByLabelText('Changer mon avis sur l’étape 2'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'À revoir' }));
     await fireEvent.press(screen.getByText('Enregistrer mon avis'));
     expect(screen.getByText('Dites ce qui est à revoir dans cette étape.')).toBeOnTheScreen();
-    await fireEvent.changeText(screen.getByLabelText('Commentaire sur l’étape 3'), 'Il faut deux devis.');
+    await fireEvent.changeText(screen.getByLabelText('Commentaire sur l’étape 2'), 'Le devis d’avant n’a pas le montant.');
     await fireEvent.press(screen.getByText('Enregistrer mon avis'));
     expect(saveReview).toHaveBeenLastCalledWith('cloud-1', {
-      stepId: 'commande',
+      stepId: 'validation',
       status: 'a_revoir',
-      comment: 'Il faut deux devis.',
+      comment: 'Le devis d’avant n’a pas le montant.',
     });
+
+    // Tout le process : les étapes des autres acteurs se lisent, sans avis à donner.
+    await fireEvent.press(screen.getByRole('radio', { name: 'Tout le process · 4' }));
+    expect(screen.getByText('Passer la commande')).toBeOnTheScreen();
+    expect(screen.getByText(/Les étapes des autres acteurs sont en lecture seule/)).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Valider l’étape 3')).toBeNull();
+    expect(screen.queryByLabelText('Signaler l’étape 3 à revoir')).toBeNull();
+    expect(screen.getAllByText('Lecture seule')).toHaveLength(2);
   });
 });

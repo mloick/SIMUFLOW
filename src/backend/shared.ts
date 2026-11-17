@@ -7,7 +7,7 @@ import type { Process, ReviewStatus, StepReview } from '@/domain';
 
 import { supabase } from './client';
 import { fromRow as processFromRow, type ProcessRow } from './process-row';
-import { sharingErrorMessage } from './sharing';
+import { SharingError, sharingErrorMessage } from './sharing';
 import { getT } from '@/i18n';
 
 /** Un process partagé avec le compte connecté. */
@@ -113,6 +113,8 @@ export async function saveReview(cloudId: string, review: StepReview): Promise<v
       { process_id: cloudId, step_id: review.stepId, status: review.status, comment },
       { onConflict: 'process_id,member_id,step_id' },
     );
+  // Refusé par la règle du serveur : l'étape n'est pas dans ma partie.
+  if (error?.code === '42501') throw new SharingError(getT().errors.notYourPart);
   if (error) throw sharingErrorMessage(error);
 }
 

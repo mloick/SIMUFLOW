@@ -333,14 +333,16 @@ Les membres voient et jouent le process depuis leur compte, sans pouvoir le modi
 
 Quand quelqu'un partage un process avec vous, il apparaît dans votre liste, sous **Partagés avec moi**, avec le nom de la personne qui le partage. Vous pouvez l'ouvrir, le simuler et suivre une demande, mais pas le modifier.
 
-Sur sa fiche, **Relire et valider ma partie** ouvre **Ma partie** : les étapes de l'acteur qui vous est confié (par exemple « Achats »), ou tout le process si aucun acteur ne vous est confié. **Tout le process** montre aussi les autres étapes. Pour chaque étape :
+Sur sa fiche, **Relire et valider ma partie** ouvre **Ma partie** : les étapes de l'acteur qui vous est confié (par exemple « Achats »), ou tout le process si aucun acteur ne vous est confié. **Tout le process** montre aussi les étapes des autres acteurs, en lecture seule : vous ne donnez votre avis que sur votre partie. Si un souci vient d'une étape d'avant, expliquez-le dans le commentaire de votre propre étape ; le chef de projet tranche. Pour chaque étape de votre partie :
 
 - **✓ Valider** : l'étape est juste ;
 - **À revoir…** : dites ce qui ne va pas (délai, acteur, étape manquante…), puis **Enregistrer mon avis**.
 
-Chaque avis part tout de suite sur votre compte, et vous pouvez le changer ou le retirer. En haut, un encadré compte les étapes validées, à revoir et à relire, puis vous remercie quand votre partie est relue. Seuls vous et le propriétaire du process voyez vos avis : les autres membres ne les voient pas. Il n'y a pas de messagerie, seulement un commentaire par étape.
+Chaque avis part tout de suite sur votre compte, et vous pouvez le changer ou le retirer. En haut, un encadré compte les étapes validées, à revoir et à relire, puis vous remercie quand votre partie est relue. Seuls vous, le propriétaire du process et, si le process est rangé dans un projet, l'équipe du projet voyez vos avis. Il n'y a pas de messagerie, seulement un commentaire par étape.
 
 ![Ma partie : le process partagé dans la liste, sa fiche, puis une étape validée et une étape à revoir avec son commentaire](captures/etape-40-ma-partie.png)
+
+![Tout le process : l'étape d'Achats avec son avis, les étapes des autres acteurs en lecture seule](captures/etape-54-avis-sa-partie.png)
 
 ### Suivre la validation · Disponible
 
@@ -375,7 +377,7 @@ Un acteur n'a pas SimuFlow ? Dans **Partager**, la section **Liens pour les acte
 - **Créer un lien**, puis **Envoyer** : la feuille de partage du téléphone (Messages, Mail…), ou dans le navigateur une copie du lien ;
 - **Retirer** : le lien ne s'ouvre plus, et les avis donnés par ce lien sont retirés.
 
-La personne ouvre le lien dans son navigateur, sans compte ni installation. La page lui dit qui demande la relecture et de quelle partie il s'agit, puis demande : **« Vous êtes « Achats » ? Écrivez votre nom pour le confirmer. »** Après **C'est moi, je relis ma partie**, elle relit ses étapes comme un membre : **✓ Valider**, ou **À revoir…** avec un commentaire. Chaque avis porte son nom.
+La personne ouvre le lien dans son navigateur, sans compte ni installation. La page lui dit qui demande la relecture et de quelle partie il s'agit, puis demande : **« Vous êtes « Achats » ? Écrivez votre nom pour le confirmer. »** Après **C'est moi, je relis ma partie**, elle relit ses étapes comme un membre : **✓ Valider**, ou **À revoir…** avec un commentaire. Elle peut lire tout le process, mais ne donne son avis que sur les étapes de « Achats ». Chaque avis porte son nom.
 
 De votre côté, le lien compte comme un membre dans **Suivi de la validation** (« Inès Moreau (lien) »), et ses avis déclenchent les mêmes alertes. Le nom écrit est une confirmation, pas une preuve d'identité : envoyez chaque lien à la bonne personne, et retirez-le s'il circule trop.
 

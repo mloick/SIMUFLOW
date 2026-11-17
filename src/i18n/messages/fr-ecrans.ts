@@ -859,6 +859,9 @@ export const frScreens = {
     ownerSees: (owner: string): string => `${owner} voit vos avis. Vous pouvez les changer tant que vous êtes membre.`,
     myPart: (n: number): string => `Ma partie · ${n}`,
     wholeProcess: (n: number): string => `Tout le process · ${n}`,
+    othersReadOnly:
+      'Les étapes des autres acteurs sont en lecture seule. Un souci vient d’une étape d’avant ? Expliquez-le dans le commentaire de votre partie.',
+    readOnly: 'Lecture seule',
     noSteps: 'Ce process n’a pas d’étape à relire.',
     saveError: 'Votre avis n’a pas pu être enregistré.',
     quote: (text: string): string => `« ${text} »`,
@@ -1262,6 +1265,7 @@ export const frScreens = {
     memberNoProfile: 'Membre sans profil',
     linkGone: 'Ce lien n’existe pas ou a été retiré. Demandez un nouveau lien à qui vous l’a envoyé.',
     stepGone: 'Cette étape n’est plus dans le process : rechargez la page.',
+    notYourPart: 'Cette étape ne fait pas partie de votre partie : un souci sur une étape d’un autre acteur s’explique dans le commentaire de votre propre étape.',
     processOwner: 'Le responsable du process',
     otherAccount: 'un autre compte',
     usernameTaken: 'Cet identifiant est déjà pris : choisissez-en un autre.',

@@ -1197,21 +1197,21 @@ Côté membre : voir les process partagés avec soi et donner son avis sur chaqu
 
 - **`shared_with_me()`** (`security definer`) : les process dont le compte est membre (contenu, date, acteur confié) avec le nom et l'identifiant du propriétaire, dont le profil n'est pas lisible directement. Seulement pour `authenticated`.
 - **Table `step_reviews`** : `process_id`, `member_id` (par défaut `auth.uid()`), `step_id` (l'identifiant de l'étape dans `content.steps`), `status` (`valide` ou `a_revoir`), `comment` (1 000 caractères au plus, obligatoire pour `a_revoir` : contrainte `check`), `updated_at` (trigger `set_updated_at`). Clé : `(process_id, member_id, step_id)`, un avis par étape et par membre. La clé étrangère `(process_id, member_id)` vers `process_members` (`on delete cascade`) fait qu'on ne peut donner un avis que sur un process dont on est membre, et que retirer un membre ou supprimer le process retire ses avis.
-- **Règles** : lire ses avis, ou tous ceux d'un process dont on est propriétaire ; donner, changer et retirer seulement les siens, et seulement en restant membre. Les autres membres ne voient pas vos avis.
+- **Règles** : lire ses avis, ou tous ceux d'un process dont on est propriétaire ; donner, changer et retirer seulement les siens, et seulement en restant membre. Les autres membres ne voient pas vos avis. Depuis `20261124000000_avis_sa_partie.sql`, on ne donne ou ne change un avis que sur une étape de sa partie (voir « Avis sur sa partie seulement »).
 
 **Dans l'app.** `src/backend/shared.ts` : `listSharedWithMe` (process lu par `fromRow`, avec l'identifiant `partage-<id serveur>` sur le téléphone, pour ne jamais le confondre avec un process importé), `listMyReviews`, `saveReview` (`upsert` sur la clé), `removeReview`. `src/data/shared-store.ts` garde la liste dans `localStorage` (`simuflow.partages`) pour l'ouvrir sans réseau. Elle est relue à chaque synchronisation (`refreshShared`, à la fin de `syncNow` dans `cloud-sync.ts`) et oubliée à la déconnexion. `getProcess` (`process-store.ts`) cherche aussi dans cette liste, si bien que la fiche, la simulation et le suivi marchent tels quels. Ils ne sont pas `isImported` : ni Modifier, ni Supprimer, ni Partager.
 
 - **Liste** (`src/app/(tabs)/index.tsx`) : section « Partagés avec moi · N » entre vos process et les exemples ; `ProcessCard` affiche « Partagé par Julie Martin » (prop `sharedBy`).
 - **Fiche** (`src/app/process/[id].tsx`) : « Partagé par … · votre partie : Achats » sous le titre, et une section **Ma partie** qui ouvre `src/app/ma-partie/[id].tsx`.
-- **Ma partie** : `ReviewPanel` (`src/components/review-panel.tsx`) charge vos avis, affiche le compte (« 1 validée · 0 à revoir · 1 à relire », puis « Merci : votre partie est relue »), le choix « Ma partie · N / Tout le process · N » (boutons radio), puis une carte par étape : numéro, titre, acteur et délai, pastille Validée ou À revoir, commentaire. « ✓ Valider » enregistre tout de suite ; « À revoir… » ouvre le choix du statut, le commentaire et « Enregistrer mon avis » ; « Changer mon avis » et « Retirer mon avis » ensuite. Un message d'erreur s'affiche dans la carte (`alert`).
-- **Règles pures** (`src/domain/review.ts`) : `reviewableSteps` (sans départ ni fin), `myPartSteps` (étapes de l'acteur confié, sans tenir compte des majuscules ni des accents ; tout le process sans acteur), `reviewProgress`, `reviewProblem` (commentaire obligatoire pour « à revoir », 1 000 caractères au plus).
+- **Ma partie** : `ReviewPanel` (`src/components/review-panel.tsx`) charge vos avis, affiche le compte (« 1 validée · 0 à revoir · 1 à relire », puis « Merci : votre partie est relue »), le choix « Ma partie · N / Tout le process · N » (boutons radio), puis une carte par étape : numéro, titre, acteur et délai, pastille Validée ou À revoir, commentaire. « ✓ Valider » enregistre tout de suite ; « À revoir… » ouvre le choix du statut, le commentaire et « Enregistrer mon avis » ; « Changer mon avis » et « Retirer mon avis » ensuite. Un message d'erreur s'affiche dans la carte (`alert`). Dans « Tout le process », les étapes des autres acteurs sont en lecture seule (prop `readOnly` de `StepCard`, d'après `canReviewStep`) : la carte dit « Lecture seule », ou propose seulement « Retirer mon avis » pour un avis donné avant la règle ; une phrase au-dessus invite à expliquer un souci venu d'une étape d'avant dans le commentaire de sa propre étape.
+- **Règles pures** (`src/domain/review.ts`) : `reviewableSteps` (sans départ ni fin), `myPartSteps` (étapes de l'acteur confié, sans tenir compte des majuscules ni des accents ; tout le process sans acteur), `reviewProgress`, `reviewProblem` (commentaire obligatoire pour « à revoir », 1 000 caractères au plus), `canReviewStep` (peut-on donner un avis sur cette étape : seulement sur sa partie ; sans acteur, ou si l'acteur n'a plus d'étape, sur tout le process ; jamais sur le départ ni la fin).
 
 ![Ma partie : le process partagé dans la liste, sa fiche, puis une étape validée et une étape à revoir avec son commentaire](captures/etape-40-ma-partie.png)
 
 **Tests.** `supabase/tests/avis_rls.sql`, avec quatre comptes (A propriétaire, B et D membres, C ni l'un ni l'autre). B voit le process partagé, son acteur et le nom de A. Il donne puis change son avis. Il ne peut pas mettre « à revoir » sans commentaire, ni écrire au nom de D. D ne voit pas les avis de B et ne peut ni les changer ni les retirer. C ne voit rien et ne peut rien écrire. A lit tous les avis sans pouvoir les changer, et ses propres process ne sont pas « partagés avec lui ». Sans connexion, tout est refusé. Retirer B retire ses avis, et supprimer le process retire le reste. Lancé avec PostgreSQL 16 : tout passe, ainsi que les tests des autres tables. Côté app, trois fichiers de tests :
-- `src/domain/__tests__/review.test.ts` : partie d'un acteur, avancement, commentaire obligatoire ;
+- `src/domain/__tests__/review.test.ts` : partie d'un acteur, avancement, commentaire obligatoire, avis seulement sur sa partie (`canReviewStep`) ;
 - `src/backend/__tests__/shared.test.ts` : identifiant sur le téléphone, nom du propriétaire, process mal enregistré ;
-- le test d'écran `ma-partie-ecran.test.tsx` : avis chargé, une étape validée, « à revoir » refusé sans commentaire puis enregistré.
+- le test d'écran `ma-partie-ecran.test.tsx` : avis chargé, une étape validée, « à revoir » refusé sans commentaire puis enregistré, et dans « Tout le process » les étapes des autres en lecture seule, sans bouton.
 
 #### Suivi de la validation (côté propriétaire)
 
@@ -1268,7 +1268,7 @@ Pour relire sa partie sans compte. **À coller dans Supabase** après les script
   - règles : lecture seule pour le propriétaire (`is_link_owner`, `security definer`) ; aucune écriture directe, même pour un compte.
 - **Sans compte (`anon`)** : rien sur les tables. Trois fonctions `security definer`, qui demandent le jeton :
   - `link_open(jeton)` renvoie le nom et le contenu du process, l'acteur, le nom du propriétaire et les avis déjà donnés (sinon `P0002`) ;
-  - `link_review(jeton, nom, étape, statut, commentaire)` vérifie que l'étape est dans le process (sinon `22023`) et enregistre ou remplace l'avis avec le nom ;
+  - `link_review(jeton, nom, étape, statut, commentaire)` vérifie que l'étape est dans le process (sinon `22023`), puis, depuis `20261124000000_avis_sa_partie.sql`, qu'elle fait partie de l'acteur du lien (sinon `42501`), et enregistre ou remplace l'avis avec le nom ;
   - `link_unreview(jeton, étape)` retire un avis.
 
 **Dans l'app.** `src/backend/links.ts` contient :
@@ -1369,6 +1369,27 @@ Un projet regroupe plusieurs process et une équipe. Le compte qui le crée en e
 ![Le tableau de bord d'un projet : l'avancement, l'étape à traiter et l'état de chaque process, le filtre « À revoir », puis en mode sombre](captures/etape-53-tableau-de-bord.png)
 
 **Tests.** `supabase/tests/tableau_de_bord_rls.sql`, avec A (chef), B (collaborateur), C (relit le process de B, hors équipe) et D (hors de tout) : A lit l'avis et le nom de C sur le process de B rangé dans le projet, mais rien sur un autre process de B hors projet ; par `link_activity_of`, A voit les deux liens du process (l'avis de « Sami Aït » par lien, et un lien sans avis), mais ni la table des liens (les jetons) ni celle de leurs avis ; A ne peut ni changer ni retirer l'avis ou le membre ; D ne voit rien, liens compris ; quand B sort le process du projet, A ne voit plus ni ses avis ni ses liens. Lancé avec PostgreSQL 16 : tout passe, ainsi que les tests du partage, des avis, des liens et de l'équipe. Côté app : `src/domain/__tests__/dashboard.test.ts` (état et ordre des process, 4 relectures sur 6 = 67 %, étape signalée avec son commentaire, personnes en attente sans doublon, projet vide), et le test d'écran `src/components/__tests__/tableau-de-bord-ecran.test.tsx` (pourcentage, étape à traiter avec son commentaire, état de chaque process, « Partager » seulement sur mon process, pastilles des membres, avis donné par un lien d'acteur, filtre « À revoir », puis « Réessayer » après une erreur), et `src/backend/__tests__/links.test.ts` (`listTeamLinkActivity` : liens sans jeton, lien sans avis).
+
+#### Avis sur sa partie seulement (`supabase/migrations/20261124000000_avis_sa_partie.sql`)
+
+**À coller dans Supabase** après les scripts des avis et des liens d'acteur. Avant, l'écran ouvrait « Ma partie », mais le serveur acceptait un avis sur n'importe quelle étape du process : l'onglet « Tout le process » laissait valider l'étape d'un autre acteur, et un appel direct au serveur aussi. La règle est maintenant la même dans l'app (`canReviewStep`, `src/domain/review.ts`) et sur le serveur :
+
+- un avis ne porte que sur une étape à relire (ni départ, ni fin) ;
+- avec un acteur confié, seulement sur les étapes de cet acteur, comparé sans majuscules, sans accents et avec des espaces simples (`actor_key`, l'équivalent SQL de `normalize`) ;
+- sans acteur confié, ou si l'acteur n'a plus d'étape dans le schéma, sur tout le process, comme avant.
+
+Les étapes des autres restent lisibles : un souci venu d'une étape d'avant s'explique dans le commentaire de sa propre étape, et le chef tranche.
+
+- `is_step_of_actor(process, étape, acteur)` (`security definer`, réservée à `authenticated`) applique la règle en lisant `content.steps` ;
+- `is_my_step(process, étape)` la fait avec l'acteur confié au membre connecté (`process_members.actor`) ;
+- les règles « Donner son avis » et « Changer son avis » de `step_reviews` ajoutent `is_my_step(process_id, step_id)` ; retirer son avis reste toujours possible ;
+- `link_review` refuse une étape hors de la partie du lien avec le code `42501`.
+
+Les avis déjà donnés ne sont pas touchés. Dans l'app, `42501` donne le message « Cette étape ne fait pas partie de votre partie… » (`saveReview` dans `src/backend/shared.ts`, `linkErrorMessage` dans `src/backend/links.ts`).
+
+![Relire par un lien d'acteur : dans « Tout le process », l'étape d'Achats garde son avis, les étapes des autres acteurs sont en lecture seule](captures/etape-54-avis-sa-partie.png)
+
+**Tests.** `supabase/tests/avis_sa_partie_rls.sql`, avec A (propriétaire), B (membre « Achats »), D (membre sans acteur), E (membre « Logistique », acteur sans étape) et un visiteur sans compte : B donne un avis sur l'étape « achats » (écrite en minuscules), change son avis et le retire, mais ne peut ni valider l'étape de Finance ou le départ, ni déplacer son avis sur Finance ; D et E relisent tout le process ; le lien « Achats » donne un avis sur son étape, pas sur celle de Finance ni sur la fin ; sans compte, la vérification n'est pas appelable directement. Lancé avec PostgreSQL 16 : tout passe, ainsi que les 11 autres scripts de test, et en remplaçant la vérification de l'acteur par « toujours vrai », le test échoue bien.
 
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
