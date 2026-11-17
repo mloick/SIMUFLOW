@@ -20,10 +20,17 @@ import { Radius, Spacing } from '@/constants/theme';
 import type { StepKind } from '@/domain';
 import { useTheme } from '@/hooks/use-theme';
 import type { FamilyPaint } from '@/simulation/families';
-import { isDiamond, midpoint, offsetPolyline, wrap, type DiagramLayout, type DiagramNode, type Point } from '@/simulation/layout';
+import {
+  isDiamond,
+  midpoint,
+  offsetPolyline,
+  wrap,
+  type DiagramLayout,
+  type DiagramNode,
+  type Point,
+} from '@/simulation/layout';
 import { useT } from '@/i18n';
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 const MIN_SCALE = 0.3;
@@ -198,7 +205,11 @@ export function ProcessDiagram({
   const focusIds = !progress
     ? []
     : choosing && progress.currentId
-      ? [progress.currentId, ...(progress.otherCurrentIds ?? []), ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to)]
+      ? [
+          progress.currentId,
+          ...(progress.otherCurrentIds ?? []),
+          ...layout.edges.filter((edge) => candidates.has(edge.id)).map((edge) => edge.to),
+        ]
       : [...progress.visitedSteps];
   const focusKey = overview ? 'tous' : `${progress?.currentId}|${focusIds.join('|')}`;
   const frameFocus = () => {
@@ -264,6 +275,25 @@ export function ProcessDiagram({
     width: (frameWidth / scale.get()) * miniK,
     height: (viewHeight / scale.get()) * miniK,
   }));
+  // Sur iPhone, react-native-svg ne redessine pas toujours le schéma quand une
+  // forme change : la flèche restait éteinte jusqu'au prochain zoom. Changer la
+  // couleur du SVG (inutilisée par le dessin) à chaque changement force un redessin.
+  const redrawColor =
+    Platform.OS === 'web'
+      ? undefined
+      : colorOf(
+          [
+            theme.background,
+            progress ? [...progress.visitedSteps].join(',') : '',
+            progress ? [...progress.visitedLinks].join(',') : '',
+            progress?.currentId,
+            progress?.otherCurrentIds?.join(','),
+            progress?.candidateLinks.join(','),
+            overview
+              ? `${[...overview.strokes.keys()].join(',')}|${[...(overview.dimmedLinks ?? [])].join(',')}|${[...(overview.dimmedSteps ?? [])].join(',')}`
+              : '',
+          ].join('|'),
+        );
   const showMinimap = !overview && frameWidth > 0 && layout.width * FRAME_MIN_SCALE > frameWidth * 0.9;
 
   // Une pointe de flèche par couleur utilisée.
@@ -290,6 +320,7 @@ export function ProcessDiagram({
               accessibilityRole="image"
               accessibilityLabel={accessibilityLabel}>
               <Svg
+                color={redrawColor}
                 width={layout.width * renderScale}
                 height={layout.height * renderScale}
                 viewBox={`0 0 ${layout.width} ${layout.height}`}>
@@ -421,11 +452,17 @@ export function ProcessDiagram({
                     );
                   return (
                     <FadeIn key={node.id}>
-                      <NodeShape node={node} current={isCurrent(node.id)} ghost={!visited} />
+                      <NodeShape node={node} ghost={!visited} />
                     </FadeIn>
                   );
                 })}
               </Svg>
+              {/* Halo hors du SVG : sur iPhone, l'animer dans le SVG redessinait tout le schéma à chaque image. */}
+              {progress &&
+                !overview &&
+                [...layout.nodes.values()]
+                  .filter((node) => isCurrent(node.id) && (progress.visitedSteps.has(node.id) || ghosts.has(node.id)))
+                  .map((node) => <Halo key={`halo-${node.id}`} node={node} renderScale={renderScale} />)}
             </Animated.View>
           </View>
         </GestureDetector>
@@ -543,8 +580,18 @@ function boxOf(nodes: DiagramNode[]): Box | undefined {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-/** Fait apparaître son contenu en fondu, sauf avec « Réduire les animations ». */
+/**
+ * Fait apparaître son contenu en fondu, sur le web seulement, et sauf avec
+ * « Réduire les animations ». Sur iPhone et Android, un fondu animé dans le SVG
+ * n'était souvent pas redessiné : la flèche restait invisible plusieurs
+ * secondes, jusqu'à un zoom. Le contenu y apparaît donc tout de suite.
+ */
 function FadeIn({ children }: { children: ReactNode }) {
+  if (Platform.OS !== 'web') return <G>{children}</G>;
+  return <FadeInWeb>{children}</FadeInWeb>;
+}
+
+function FadeInWeb({ children }: { children: ReactNode }) {
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
@@ -557,6 +604,13 @@ function FadeIn({ children }: { children: ReactNode }) {
 function clamp(scale: number) {
   'worklet';
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
+}
+
+/** Couleur tirée d'un texte : deux textes différents donnent (presque toujours) deux couleurs différentes. */
+function colorOf(text: string) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  return `#${((hash >>> 0) % 0x1000000).toString(16).padStart(6, '0')}`;
 }
 
 /** Identifiant de la pointe de flèche d'une couleur, par exemple « arrow-0078bd ». */
@@ -584,12 +638,10 @@ function useNodeColors(kind: StepKind) {
 
 function NodeShape({
   node,
-  current = false,
   ghost = false,
   neutral = false,
 }: {
   node: DiagramNode;
-  current?: boolean;
   ghost?: boolean;
   /** Vue « Tous » : les tâches restent claires pour laisser la couleur aux chemins. */
   neutral?: boolean;
@@ -601,63 +653,74 @@ function NodeShape({
   const { x, y, width: w, height: h } = node;
   const fill = ghost ? theme.surface : colors.fill;
   const stroke = ghost ? theme.textSecondary : colors.stroke;
-  const shape =
-    isDiamond(node.kind) ? (
-      <Polygon
-        points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={ghost ? 1.5 : 2}
-        strokeDasharray={ghost ? '5 4' : undefined}
-      />
-    ) : (
-      <Rect
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        rx={node.kind === 'task' ? 10 : h / 2}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={ghost ? 1.5 : 2}
-        strokeDasharray={ghost ? '5 4' : undefined}
-      />
-    );
+  const shape = isDiamond(node.kind) ? (
+    <Polygon
+      points={`${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}`}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={ghost ? 1.5 : 2}
+      strokeDasharray={ghost ? '5 4' : undefined}
+    />
+  ) : (
+    <Rect
+      x={x}
+      y={y}
+      width={w}
+      height={h}
+      rx={node.kind === 'task' ? 10 : h / 2}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={ghost ? 1.5 : 2}
+      strokeDasharray={ghost ? '5 4' : undefined}
+    />
+  );
 
   return (
     <G opacity={ghost ? 0.75 : 1}>
-      {current && <Halo node={node} />}
       {shape}
       <NodeText node={node} color={ghost ? theme.textSecondary : colors.text} />
     </G>
   );
 }
 
-/** Halo de l'étape en cours, qui pulse sauf avec « Réduire les animations ». */
-function Halo({ node }: { node: DiagramNode }) {
+/**
+ * Halo de l'étape en cours. Il pulse sur le web, sauf avec « Réduire les animations » ; il reste fixe sur iPhone et Android.
+ * C'est une vue posée sur le schéma, pas une forme du SVG : son opacité change
+ * sans redessiner tout le schéma. Positions en points du schéma × `renderScale`.
+ */
+function Halo({ node, renderScale }: { node: DiagramNode; renderScale: number }) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(0.55);
 
   useEffect(() => {
-    if (reduceMotion) return;
-    opacity.value = withRepeat(withTiming(0.15, { duration: 900 }), -1, true);
+    // Sur iPhone et Android, une animation sans fin oblige Reanimated à repasser
+    // par l'arbre des vues à chaque image, ce qui retarde l'affichage des étapes :
+    // le halo y reste fixe.
+    if (reduceMotion || Platform.OS !== 'web') return;
+    opacity.set(withRepeat(withTiming(0.15, { duration: 900 }), -1, true));
     return () => cancelAnimation(opacity);
   }, [opacity, reduceMotion]);
 
-  const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }));
-  const pad = 7;
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  // Le trait de 5 du SVG était centré sur le bord : la vue commence 2,5 plus loin.
+  const pad = 7 + 2.5;
   return (
-    <AnimatedRect
-      animatedProps={animatedProps}
-      x={node.x - pad}
-      y={node.y - pad}
-      width={node.width + pad * 2}
-      height={node.height + pad * 2}
-      rx={14}
-      fill="none"
-      stroke={theme.link}
-      strokeWidth={5}
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.halo,
+        {
+          left: (node.x - pad) * renderScale,
+          top: (node.y - pad) * renderScale,
+          width: (node.width + pad * 2) * renderScale,
+          height: (node.height + pad * 2) * renderScale,
+          borderRadius: (14 + 2.5) * renderScale,
+          borderWidth: 5 * renderScale,
+          borderColor: theme.link,
+        },
+        animatedStyle,
+      ]}
     />
   );
 }
@@ -782,4 +845,5 @@ const styles = StyleSheet.create({
     boxShadow: '0 4px 12px rgba(14, 27, 44, 0.16)',
   },
   miniFrame: { position: 'absolute', borderWidth: 2, borderRadius: 3 },
+  halo: { position: 'absolute' },
 });
