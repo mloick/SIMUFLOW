@@ -22,7 +22,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Problem**: a static diagram is hard to validate. Dead ends, one-way decisions and inconsistent delays show up too late, once the workflow is live.
 - **Promise**: SimuFlow makes them visible in under a minute, lets you replay the process branch by branch, and has each actor validate their part, across all the processes of a team project.
 - **Three key screens**: Detail (diagnostic), Simulation (step by step), Scanner (from a photo to a process).
-- **Two phone features**: the camera with on-device text recognition (a native module in Swift and Kotlin), and local deadline reminders.
+- **Three phone features**: the camera with on-device text recognition (a native module in Swift and Kotlin), local deadline reminders, and Siri shortcuts (App Intents in Swift).
 
 ## Features
 
@@ -81,7 +81,7 @@ npm test           # unit and component tests (Jest)
 npm run e2e        # end-to-end test (Maestro, iOS Simulator)
 ```
 
-**Backend.** A Supabase project. Its address and publishable key are in `src/backend/config.ts` (public by design: access is decided by the server). The schema and its access rules are versioned in `supabase/migrations/`, with tests in `supabase/tests/`.
+**Backend.** A Supabase project. Its address and publishable key are in `src/backend/config.ts` (public by design: access is decided by the server). The schema and its access rules are versioned in `supabase/migrations/`, with tests in `supabase/tests/`. They reach the database through the Supabase CLI, run from the Mac after a merge: `npm run db:etat` lists which scripts are already applied, `npm run db:envoyer` applies the new ones in order (one-time setup: `brew install supabase/tap/supabase`, `supabase login`, `supabase link`).
 
 ## Architecture
 
@@ -103,7 +103,7 @@ flowchart TB
 
 - **Screens** only display and react. Every rule (diagnostic, paths, simulation, file reading, deadlines) lives in **pure TypeScript** with no React or Expo import, so it is unit-tested in isolation.
 - **App state** is local first: processes, settings and followed requests stay on the phone, then sync with Supabase when signed in and online.
-- **Supabase** stores only what an account needs. Row Level Security lets each account see only its own rows.
+- **Supabase** stores only what an account needs. Row Level Security lets each account see its own rows, plus what was shared with it (a process, a project), without being able to change other people's processes.
 - The **native module** only reads text from a photo; everything after that is shared TypeScript.
 
 File-by-file detail is in the [technical documentation](docs/technique.md) (French).

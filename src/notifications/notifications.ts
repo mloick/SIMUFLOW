@@ -1,7 +1,8 @@
 /**
  * Notifications locales de SimuFlow : programmées par le téléphone lui-même,
- * sans serveur (expo-notifications). Elles serviront aux rappels d'échéance
- * des process suivis.
+ * sans serveur (expo-notifications). Elles servent aux rappels d'échéance
+ * des demandes suivies (étapes et SLA, use-deadline-reminders.ts) et aux
+ * alertes du partage (share-alerts-store.ts).
  *
  * Pas de notification « push » venue d'un serveur : sur iPhone, il faudrait un
  * compte Apple Developer payant (le plugin est configuré avec

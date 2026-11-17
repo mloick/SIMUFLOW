@@ -63,6 +63,8 @@
     "ios:simulateur": "bash scripts/ios.sh",
     "ios:iphone": "bash scripts/ios.sh --device",
     "nettoyer": "bash scripts/nettoyer-ios.sh",
+    "db:etat": "supabase migration list",
+    "db:envoyer": "supabase db push",
     "web": "node scripts/ocr-web.mjs && expo start --web",
     "lint": "expo lint",
     "test": "jest",

@@ -106,7 +106,7 @@ plugins/        Plugins de configuration Expo de l'app : raccourcis Siri (with-r
 assets/         Icônes, images, écran de démarrage
 public/         Fichiers copiés tels quels dans la version web : page de base (index.html), manifeste de la web app, icônes de l'écran d'accueil, moteur de lecture du Scanner web (ocr/, copié par scripts/ocr-web.mjs, non versionné)
 docs/           Documentation (dont carte.md, la carte du code en une page, securite.md et ia.md), site public : accueil et politique de confidentialité (site/), maquette des écrans (maquette/), logo (logo/), captures de chaque étape (captures/) et fichiers d'exemple à importer (exemples/)
-supabase/       Base de données : migrations SQL (migrations/) et leurs tests (tests/)
+supabase/       Base de données : migrations SQL (migrations/), leurs tests (tests/), réglages de la CLI (config.toml) et vérification (verifier-migrations.sql)
 .maestro/       Test de bout en bout (Maestro) : simuler un process pas à pas dans la vraie app
 jest/           Réglages des tests : module vide qui remplace les feuilles de style .css (style-vide.js), `localStorage` en mémoire à la place de celui du téléphone (stockage-memoire.js), lecture d'un fichier de docs/exemples/ en octets (lire-exemple.js), Reanimated immobile (reanimated.js)
 scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
@@ -133,6 +133,8 @@ app.config.js   Retire le baseUrl web d'app.json hors de l'export web (variable 
 | `npx tsc --noEmit` | Vérifier les types |
 | `npx expo lint` | Analyser le code (ESLint) |
 | `npx expo install <paquet>` | Ajouter une dépendance compatible avec le SDK |
+| `npm run db:etat` | Lister les scripts SQL de `supabase/migrations/` et dire lesquels sont déjà passés sur la base (CLI Supabase, `supabase migration list`) |
+| `npm run db:envoyer` | Envoyer à la base, dans l'ordre, les scripts SQL pas encore passés, après confirmation (`supabase db push`) |
 
 Avant le premier `npx tsc --noEmit`, lancer une fois `npx expo start` : il génère `expo-env.d.ts` et les types des routes (`.expo/types/`), qui ne sont pas versionnés.
 
@@ -1410,7 +1412,17 @@ Les avis déjà donnés ne sont pas touchés. Dans l'app, `42501` donne le messa
 
 #### Table des process (`supabase/migrations/20261030150000_processes.sql`)
 
-La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Pour l'appliquer : Supabase, **SQL Editor**, **New query**, coller le fichier, **Run**. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
+La base est décrite par des fichiers SQL versionnés dans le dépôt (des « migrations »), et non par des clics dans l'interface de Supabase : on sait exactement ce qui a été créé, et on peut le recréer. Le script peut être relancé sans risque (`if not exists`, `create or replace`, `drop … if exists`).
+
+**Appliquer les scripts SQL (CLI Supabase).** Jusqu'au 17 novembre 2026, chaque script était collé à la main dans l'éditeur SQL de Supabase : un oubli laissait la base en retard sur l'app, et rien ne disait quels scripts étaient passés. Les scripts passent maintenant par la CLI Supabase, depuis le Mac :
+
+- `supabase/config.toml` (créé par `supabase init`, sans aucun secret) dit à la CLI où sont les scripts ;
+- une fois par ordinateur : `brew install supabase/tap/supabase`, `supabase login` (dans le navigateur), puis `supabase link --project-ref szcdixoqdlclhzxrrznr` (le mot de passe de la base est demandé et reste sur l'ordinateur ; le lien est gardé dans `supabase/.temp/`, exclu du dépôt) ;
+- ensuite, après la fusion d'une PR qui ajoute un script : `npm run db:etat` montre les scripts du dépôt et ceux déjà passés (table `supabase_migrations.schema_migrations`, tenue par Supabase), puis `npm run db:envoyer` passe les nouveaux, dans l'ordre, après confirmation.
+
+**Une seule fois, au passage à la CLI**, il faut lui dire que les 18 scripts collés à la main sont déjà passés, sans les relancer : relancer `20261110150000_source_tableau.sql` remettrait une liste d'origines plus courte, refusée par les process importés en texte. `supabase/verifier-migrations.sql`, collé dans l'éditeur SQL, ne change rien : il dit « oui » pour chaque script dont il trouve la trace (table, fonction ou origine acceptée). Si tout est « oui », `supabase migration repair --status applied <versions>` les marque comme passés. Testé sur un PostgreSQL vide : 18 « NON » avant les scripts, 18 « oui » après, et « NON » pour `source_texte` quand on retire l'origine « texte ».
+
+Pas de GitHub Action pour l'instant : il faudrait donner à GitHub un jeton d'accès Supabase et le mot de passe de la base.
 
 | Colonne | Type | Rôle |
 | --- | --- | --- |
@@ -1550,7 +1562,7 @@ Pour tester sur l'iPhone : Réglages > Accessibilité > VoiceOver ; Réglages > 
 
 ## 8. Tests et CI
 
-Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les dossiers `__tests__/` à côté du code, décrits dans chaque partie), tests de composants qui lisent l'écran comme un utilisateur, et un test de bout en bout sur la vraie app. Les règles d'accès de la base ont leurs propres tests SQL (`supabase/tests/`, voir [Backend Supabase](#backend-supabase-srcbackend-supabase)). Tout ce qui tourne sans téléphone est lancé à chaque pull request.
+Trois niveaux de tests : unitaires sur le cœur en TypeScript pur (dans les dossiers `__tests__/` à côté du code, décrits dans chaque partie), tests de composants qui lisent l'écran comme un utilisateur, et un test de bout en bout sur la vraie app. Les règles d'accès de la base ont leurs propres tests SQL (`supabase/tests/`, voir [Backend Supabase](#backend-supabase-srcbackend-supabase)). Les tests Jest (unitaires et composants) sont lancés à chaque pull request ; les tests SQL et le test de bout en bout se lancent à la main (PostgreSQL local, Simulateur iOS).
 
 ### Tests de composants (`src/components/__tests__/`)
 
@@ -1566,6 +1578,10 @@ Les tests unitaires vérifient des fonctions ; un test de composant affiche un v
 - **`equipe-projet-ecran.test.tsx`** : l'équipe d'un projet, vue par le chef puis par un collaborateur (voir [Projets](#projets-srcdataproject-storets-srcappprojet)).
 - **`projet-ecran.test.tsx`** : créer un projet (nom obligatoire), y ranger un process, le voir dans le projet, puis supprimer le projet sans perdre le process (voir [Projets](#projets-srcdataproject-storets-srcappprojet)).
 - **`export-anonyme-ecran.test.tsx`** : l'export d'un JSON anonymisé (voir [Export](#export-srcexport-srcappexportidtsx-maquette-écran-12)).
+- **`connexion-ecran.test.tsx`** : l'écran Connexion. Au premier lancement, « Continuer sans compte » et une connexion réussie mènent à la présentation ; ouvert depuis l'app, une croix le ferme ; le mot de passe s'affiche à la demande.
+- **`liens-acteurs.test.tsx`** : les liens d'acteur dans Partager. Chaque lien montre sa date de fin ; un lien expiré n'a plus « Envoyer », se prolonge, puis s'envoie de nouveau (voir [Expiration des liens d'acteur](#expiration-des-liens-dacteur-supabasemigrations20261125000000_liens_expirationsql)).
+
+Les autres tests de composants sont décrits avec leur écran : `briques.test.tsx` (boutons, cartes, interrupteur, « ? »), `reglages-ecran.test.tsx`, `profil-ecran.test.tsx`, `langue-ecran.test.tsx`, `partage-ecran.test.tsx`, `ma-partie-ecran.test.tsx`, `lien-ecran.test.tsx`, `tableau-de-bord-ecran.test.tsx`… En tout, au 17 novembre 2026 : 101 fichiers de tests Jest (unitaires et composants) et 584 tests, plus 13 scripts de tests SQL et un test Maestro.
 
 `theme.ts` importe `global.css` (pour le web) ; Jest ne sait pas lire le CSS, donc `package.json` le remplace par un module vide (`moduleNameMapper` vers `jest/style-vide.js`). De même, `expo-sqlite/localStorage/install` (le `localStorage` du téléphone, en SQLite) est remplacé par `jest/stockage-memoire.js`, un `localStorage` en mémoire. Reanimated n'a pas de module natif dans Jest : `jest/reanimated.js` (`setupFiles`) le remplace par une version immobile, où les valeurs prennent tout de suite leur état final et les composants animés sont les composants ordinaires. Avec React Native Testing Library 14, `fireEvent` se termine de façon asynchrone : l'écrire `await fireEvent.press(…)`. Ces tests tournent avec les autres : `npm test`, et dans la CI.
 

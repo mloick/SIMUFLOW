@@ -4,7 +4,7 @@ Ce document rassemble les mesures de sécurité de SimuFlow : d'abord la checkli
 
 ## Checklist sécurité
 
-La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité des apps mobiles), complétées par le backend et le dépôt. Établie le 31 octobre 2026, mise à jour le 13 novembre 2026 (formats d'import, formulaires gardés, version web).
+La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité des apps mobiles), complétées par le backend et le dépôt. Établie le 31 octobre 2026, mise à jour le 13 novembre 2026 (formats d'import, formulaires gardés, version web) et le 17 novembre 2026 (partage, avis sur sa partie, liens d'acteur qui expirent, projets et tableau de bord).
 
 ✅ fait et vérifié · ⚠️ à améliorer (voir plus bas) · ➖ sans objet pour SimuFlow
 
@@ -33,8 +33,8 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Point | État | Preuve |
 | --- | --- | --- |
 | Authentification par un service éprouvé, pas maison | ✅ | Supabase Auth (e-mail et mot de passe), mots de passe hachés côté serveur |
-| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur `processes`, `reading_rules`, `saved_forms` (`(select auth.uid()) = owner_id`) `profiles` (`(select auth.uid()) = id`) et `process_members` (propriétaire du process ou membre lui-même) |
-| Règles d'accès testées avec deux comptes | ✅ | `supabase/tests/processes_rls.sql`, `regles_lecture_rls.sql`, `formulaires_rls.sql`, `profils_rls.sql`, `partage_rls.sql`, `avis_rls.sql`, `liens_acteurs_rls.sql`, `suppression_compte.sql`, dont un test cassé exprès |
+| Toutes les règles d'accès appliquées par le serveur, pas par l'app | ✅ | Row Level Security sur les dix tables : `processes`, `reading_rules`, `saved_forms` (`(select auth.uid()) = owner_id`), `profiles` (`(select auth.uid()) = id`), `process_members`, `step_reviews` (propriétaire du process, membre, équipe du projet), `actor_links`, `link_reviews` (propriétaire du process), `projects` et `project_members` (chef et équipe du projet) |
+| Règles d'accès testées avec deux comptes | ✅ | Treize scripts dans `supabase/tests/` (process, règles de lecture, formulaires, profils, partage, avis, avis sur sa partie, liens d'acteur, expiration des liens, projets, équipe, tableau de bord, suppression du compte), avec deux à cinq comptes et un visiteur sans compte ; la plupart ont été vérifiés en cassant exprès la règle testée. Lancés à la main sur un PostgreSQL local, pas encore dans la CI (voir plus bas) |
 | Aucun droit sans connexion | ✅ | Rôle `anon` sans aucun droit sur les tables ; seules les trois fonctions d'un lien d'acteur lui sont ouvertes, et elles demandent le jeton du lien |
 | Jeton de courte durée, renouvelé seulement app ouverte | ✅ | Expiration une heure ; `startAutoRefresh` / `stopAutoRefresh` selon `AppState` (`client.ts`) |
 | Suppression du compte depuis l'app | ✅ | `delete_my_account()` (`security definer`, `search_path` vide), données supprimées en cascade |
@@ -66,7 +66,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Contenu vérifié aussi par la base | ✅ | Contraintes : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, `texte`, listes d'étapes et de liens, au plus 500 règles, au plus 200 formulaires et 5 Mo |
 | Dépendances à jour, installées depuis le fichier verrou | ✅ | `npx expo install --check` avant chaque build iOS ; `npm ci` en CI |
 | Failles connues dans les dépendances | ✅ | `npm audit --omit=dev` (13 nov.) : 0 critique, 0 haute ; 26 modérées et 1 faible, toutes dans des outils Node de build et de test (Expo CLI, Jest, `glob`, `minimatch`, `node-forge` pour les certificats de signature d'EAS Update), qui ne sont pas embarqués dans l'app |
-| Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 386 tests |
+| Vérifications automatiques à chaque pull request | ✅ | `.github/workflows/verifications.yml` : types, lint, 584 tests Jest (17 nov.) ; les tests SQL et le test Maestro se lancent à la main |
 
 ### Résistance (MASVS-RESILIENCE)
 
@@ -80,7 +80,7 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | Point | État | Preuve |
 | --- | --- | --- |
 | Politique de confidentialité publiée et accessible depuis l'app | ✅ | [Site](https://mloick.github.io/SIMUFLOW/confidentialite.html), lien dans Profil et à la création du compte |
-| Données réduites au nécessaire | ✅ | Compte : e-mail et mot de passe ; aucune donnée sur le serveur sans compte |
+| Données réduites au nécessaire | ✅ | Compte : e-mail et mot de passe ; profil : prénom, nom, identifiant et rôle déclaré, lisibles seulement par le compte (les autres ne voient que le nom, par des fonctions dédiées) ; aucune donnée sur le serveur sans compte |
 | Hébergement en Union européenne | ✅ | Supabase, région Paris |
 | Exemples uniquement fictifs | ✅ | Règle de `CLAUDE.md`, appliquée au code et à la documentation |
 
@@ -90,11 +90,14 @@ La checklist suit les catégories de l'OWASP MASVS (référentiel de sécurité 
 | --- | --- | --- |
 | Aucun secret dans le dépôt public | ✅ | `.gitignore` exclut `.env`, clés, certificats, `.claude/` ; seul le secret `CLAUDE_CODE_OAUTH_TOKEN` existe, dans les réglages GitHub |
 | Droits des workflows GitHub limités | ✅ | `permissions` déclarées dans chaque workflow : vérifications en lecture seule, site avec `pages: write` et `id-token: write`, robot de documentation avec `contents: write` (pour committer la documentation) |
-| Mots de passe et clés du projet Supabase hors de l'app et du dépôt | ✅ | Mot de passe de la base et clé `service_role` restent dans le compte Supabase |
+| Mots de passe et clés du projet Supabase hors de l'app et du dépôt | ✅ | Mot de passe de la base et clé `service_role` restent dans le compte Supabase ; la CLI Supabase garde son lien au projet dans `supabase/.temp/`, exclu du dépôt, et `supabase/config.toml` ne contient aucun secret |
+| Scripts SQL de la base appliqués sans oubli | ✅ | CLI Supabase : `npm run db:etat` liste les scripts déjà passés (table tenue par Supabase), `npm run db:envoyer` passe les nouveaux dans l'ordre ; pas de GitHub Action, pour ne pas donner le mot de passe de la base à GitHub |
 
 ### Points à améliorer
 
 - **Liens universels** pour la récupération du mot de passe, avec un domaine vérifié (Apple App Site Association, Android App Links) : à envisager si l'app est publiée sur les stores.
+- **Tests SQL et Maestro dans la CI** : les treize scripts de `supabase/tests/` et le test de bout en bout se lancent à la main. Les ajouter aux vérifications de chaque pull request éviterait qu'une règle d'accès casse sans qu'on le voie.
+- **Jeton des liens d'acteur gardé en clair** dans `actor_links` : seul le propriétaire du process le lit, et le lien expire après 30 jours, mais garder seulement une empreinte du jeton (hachage) protégerait les liens si la base fuitait.
 
 Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le trousseau chiffré, la sauvegarde Android est désactivée, et le mot de passe demande 8 caractères avec minuscule, majuscule, chiffre et symbole.
 
@@ -111,7 +114,7 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 
 - Projet hébergé en Union européenne (région Paris).
 - Nouvelles tables non exposées automatiquement : chaque accès est donné explicitement (`grant`).
-- Row Level Security activée sur `processes` : chaque compte ne lit, ne crée, ne modifie et ne supprime que ses propres process (`(select auth.uid()) = owner_id`). Le rôle `anon` (sans connexion) n'a aucun droit.
+- Row Level Security activée sur `processes` : chaque compte ne crée, ne modifie et ne supprime que ses propres process (`(select auth.uid()) = owner_id`). Il lit en plus les process partagés avec lui et ceux des projets dont il fait partie, sans pouvoir les modifier. Le rôle `anon` (sans connexion) n'a aucun droit.
 - La base vérifie le contenu : nom de 1 à 200 caractères, origine parmi `drawio`, `scan`, `json`, `tableau`, `bpmn`, `visio`, `texte`, étapes et liens sous forme de listes.
 - Règles testées avec deux comptes sur un PostgreSQL local (`supabase/tests/processes_rls.sql`), y compris un test cassé exprès pour vérifier qu'il détecte une faille.
 - Règles de lecture apprises : table `reading_rules`, une ligne par compte, mêmes protections (RLS par propriétaire, rien sans connexion, au plus 500 règles en liste, supprimées avec le compte). Testée de la même façon (`supabase/tests/regles_lecture_rls.sql`).
@@ -120,6 +123,8 @@ Corrigés le 31 octobre (étape 14c) : le jeton de session est passé dans le tr
 - Partage d'un process : table `process_members`. Un membre invité lit le process, sans pouvoir le modifier ni le supprimer ; seul le propriétaire invite, change l'acteur d'un membre ou le retire (un membre peut se retirer). L'invitation et la liste des membres passent par des fonctions `security definer` (`invite_member`, `members_of`) qui vérifient le propriétaire ou le membre, et ne renvoient que le nom et l'identifiant : l'app ne lit jamais la liste des comptes ni leurs adresses. Limite connue : inviter par adresse e-mail dit au propriétaire si cette adresse a un compte. Testé avec trois comptes (`supabase/tests/partage_rls.sql`).
 - Avis des membres : table `step_reviews`. Un membre ne donne, change ou retire que ses propres avis, et seulement sur un process dont il est membre (clé étrangère vers `process_members` et règles RLS). Il ne donne un avis que sur les étapes de l'acteur qui lui est confié (tout le process s'il n'en a pas, ou si l'acteur n'a plus d'étape), et jamais sur le départ ni la fin : la base le vérifie (`is_my_step`), pas seulement l'écran. Ses avis ne sont lisibles que par lui, par le propriétaire du process et par l'équipe du projet où le process est rangé. « À revoir » demande un commentaire (1 000 caractères au plus). La liste des process partagés passe par `shared_with_me()` (`security definer`), qui ne renvoie que les process du compte et le nom du propriétaire. Testé avec quatre comptes (`supabase/tests/avis_rls.sql`), et la règle de la partie dans `supabase/tests/avis_sa_partie_rls.sql`.
 - Liens d'acteur (relire sans compte) : un jeton aléatoire de 64 caractères hexadécimaux par acteur. Sans compte, on ne passe que par `link_open`, `link_review` et `link_unreview` (`security definer`), qui demandent ce jeton et ne donnent que le process du lien et ses avis ; `link_review` n'accepte qu'une étape de l'acteur du lien (code `42501` sinon) ; les tables `actor_links` et `link_reviews` ne sont lisibles que par le propriétaire. Un lien expire 30 jours après sa création (`valid_link`, code `SF410`) ; seul le propriétaire le prolonge, de 30 jours à partir d'aujourd'hui (`link_extend`), et personne n'écrit la date à la main. Retirer le lien le rend inutilisable et efface ses avis. Limites connues : qui a le lien peut relire et donner des avis sous n'importe quel nom (le nom est une confirmation, pas une identité vérifiée), et il n'y a pas de limite du nombre d'appels propre à ces fonctions au-delà de celles de Supabase. Testé avec un visiteur sans compte (`supabase/tests/liens_acteurs_rls.sql`, et l'expiration dans `supabase/tests/liens_expiration_rls.sql`).
+
+- Projets : tables `projects` et `project_members`. Le créateur est le chef ; lui seul invite, retire ou passe la main. L'équipe lit les process du projet, les avis donnés dessus et l'activité des liens d'acteur (sans leur jeton, fonction `link_activity_of`), pour le tableau de bord ; elle ne modifie pas les process des autres. Testé avec `supabase/tests/projets_rls.sql`, `equipe_projet_rls.sql` et `tableau_de_bord_rls.sql`.
 
 ## Comptes
 
