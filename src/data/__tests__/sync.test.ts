@@ -37,28 +37,32 @@ describe('syncEntries', () => {
     const result = await syncEntries([{ process: proc('a', 'Après'), cloudId: 's1', modified: true }], api);
     expect(calls).toEqual(['update s1 Après']);
     expect(rows.get('s1')?.name).toBe('Après');
-    expect(result).toEqual([{ process: proc('a', 'Après'), cloudId: 's1' }]);
+    expect(result).toEqual([{ process: proc('a', 'Après'), cloudId: 's1', base: proc('a', 'Après') }]);
   });
 
   it('reprend la version du serveur d’un process modifié ailleurs, sous l’identifiant du téléphone', async () => {
     const { api, calls } = fakeServer([proc('s1', 'Modifié ailleurs')]);
     const result = await syncEntries([{ process: proc('a', 'Ancien'), cloudId: 's1' }], api);
     expect(calls).toEqual([]);
-    expect(result).toEqual([{ process: proc('a', 'Modifié ailleurs'), cloudId: 's1' }]);
+    expect(result).toEqual([
+      { process: proc('a', 'Modifié ailleurs'), cloudId: 's1', base: proc('a', 'Modifié ailleurs') },
+    ]);
   });
 
   it('envoie les process qui ne sont que sur le téléphone et garde leur identifiant local', async () => {
     const { api, rows, calls } = fakeServer();
     const result = await syncEntries([{ process: proc('import-1', 'Accueil') }], api);
     expect(calls).toEqual(['create Accueil']);
-    expect(result).toEqual([{ process: proc('import-1', 'Accueil'), cloudId: 'serveur-1' }]);
+    expect(result).toEqual([
+      { process: proc('import-1', 'Accueil'), cloudId: 'serveur-1', base: proc('import-1', 'Accueil') },
+    ]);
     expect(rows.size).toBe(1);
   });
 
   it('ne renvoie pas un process déjà sur le serveur', async () => {
     const { api, calls } = fakeServer([proc('s1', 'Accueil')]);
     const local: SyncEntry[] = [{ process: proc('import-1', 'Accueil'), cloudId: 's1' }];
-    expect(await syncEntries(local, api)).toEqual(local);
+    expect(await syncEntries(local, api)).toEqual([{ ...local[0], base: proc('import-1', 'Accueil') }]);
     expect(calls).toEqual([]);
   });
 
@@ -79,7 +83,7 @@ describe('syncEntries', () => {
   it('récupère les process créés depuis un autre appareil', async () => {
     const { api } = fakeServer([proc('s9', 'Venu d’ailleurs')]);
     const result = await syncEntries([], api);
-    expect(result).toEqual([{ process: proc('s9', 'Venu d’ailleurs'), cloudId: 's9' }]);
+    expect(result).toEqual([{ process: proc('s9', 'Venu d’ailleurs'), cloudId: 's9', base: proc('s9', 'Venu d’ailleurs') }]);
   });
 
   it('retire du téléphone un process supprimé depuis un autre appareil', async () => {
@@ -103,6 +107,69 @@ describe('syncEntries', () => {
       remove: async () => {},
     };
     await expect(syncEntries([{ process: proc('a') }], api)).rejects.toThrow('Network');
+  });
+});
+
+describe('syncEntries : modifié des deux côtés', () => {
+  // La base : la version que le téléphone et le serveur connaissaient tous les deux.
+  const base: Process = {
+    id: 'a',
+    name: 'Demande de matériel',
+    steps: [
+      { id: 'v', kind: 'task', title: 'Valider' },
+      { id: 'c', kind: 'task', title: 'Commander' },
+    ],
+    links: [{ id: 'l1', from: 'v', to: 'c' }],
+  };
+  const rename = (process: Process, id: string, title: string): Process => ({
+    ...process,
+    steps: process.steps.map((step) => (step.id === id ? { ...step, title } : step)),
+  });
+
+  it('fusionne une modification du téléphone et une autre faite sur le web', async () => {
+    // Sur le web : une étape « Archiver » ajoutée. Dans le train : « Valider » renommée.
+    const web: Process = { ...base, id: 's1', steps: [...base.steps, { id: 'ar', kind: 'task', title: 'Archiver' }] };
+    const { api, rows, calls } = fakeServer([web]);
+    const mine = rename(base, 'v', 'Valider la demande');
+    const result = await syncEntries([{ process: mine, cloudId: 's1', modified: true, base }], api);
+    expect(calls).toEqual(['update s1 Demande de matériel']);
+    expect(rows.get('s1')?.steps.map((step) => step.title)).toEqual(['Valider la demande', 'Commander', 'Archiver']);
+    expect(result).toHaveLength(1);
+    expect(result[0].process.id).toBe('a');
+    expect(result[0].base).toEqual(result[0].process);
+    expect(result[0].modified).toBeUndefined();
+  });
+
+  it('en cas de conflit, garde la version du serveur et envoie la mienne comme copie', async () => {
+    const web = { ...rename(base, 'c', 'Commander en ligne'), id: 's1' };
+    const { api, rows, calls } = fakeServer([web]);
+    const conflicts: string[] = [];
+    const result = await syncEntries(
+      [{ process: rename(base, 'c', 'Commander par téléphone'), cloudId: 's1', modified: true, base }],
+      api,
+      { newId: () => 'copie-1', copyName: (name) => `${name} (copie du téléphone)`, onConflict: (name) => conflicts.push(name) },
+    );
+    expect(calls).toEqual(['create Demande de matériel (copie du téléphone)']);
+    expect(rows.get('s1')?.steps[1].title).toBe('Commander en ligne');
+    expect(conflicts).toEqual(['Demande de matériel (copie du téléphone)']);
+    expect(result.map((entry) => [entry.process.id, entry.cloudId, entry.process.steps[1].title])).toEqual([
+      ['a', 's1', 'Commander en ligne'],
+      ['copie-1', 'serveur-1', 'Commander par téléphone'],
+    ]);
+  });
+
+  it('sans base connue (ancienne version de l’app), ma version remplace celle du serveur', async () => {
+    const { api, calls } = fakeServer([{ ...rename(base, 'c', 'Sur le web'), id: 's1' }]);
+    await syncEntries([{ process: rename(base, 'c', 'Sur le téléphone'), cloudId: 's1', modified: true }], api);
+    expect(calls).toEqual(['update s1 Demande de matériel']);
+  });
+
+  it('n’envoie rien si le serveur a déjà tout ce que contient la fusion', async () => {
+    const web = { ...rename(base, 'c', 'Commander'), id: 's1', sla: 4 };
+    const { api, calls } = fakeServer([web]);
+    // Même changement des deux côtés : la fusion est la version du serveur.
+    await syncEntries([{ process: { ...base, sla: 4 }, cloudId: 's1', modified: true, base }], api);
+    expect(calls).toEqual([]);
   });
 });
 

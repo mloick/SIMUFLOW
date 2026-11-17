@@ -117,6 +117,11 @@ export const en: Messages = {
     editProfile: 'Edit →',
     syncing: 'Syncing…',
     syncedAt: (time: string) => `Processes synced at ${time}`,
+    conflictCopies: (names: string[]) =>
+      names.length === 1
+        ? `Changed in two places: your version is kept apart, “${names[0]}”.`
+        : `${names.length} processes changed in two places: your versions are kept apart (${names.map((name) => `“${name}”`).join(', ')}).`,
+    copyName: (name: string) => `${name} (version from this device)`,
     syncIdle: 'Your imported processes are kept on your account.',
     syncNow: 'Sync',
     deleteAccount: 'Delete my account',

@@ -1057,7 +1057,9 @@ Connecté, les process importés sont aussi enregistrés sur le compte (table `p
 <details>
 <summary>Détail</summary>
 
-Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas. Modifié sur deux téléphones entre deux synchronisations, la dernière version envoyée l'emporte.
+Un process envoyé garde son identifiant local : un écran ouvert pendant l'envoi ne le perd pas.
+
+**Modifié à deux endroits** (le téléphone hors connexion, puis la version web avant qu'il se synchronise). Chaque entrée garde `base`, la dernière version connue du serveur (envoyée ou reçue). À la synchronisation suivante, si le process est marqué `modified` et que la version du serveur n'est plus la base (`sameProcess` : nom, source, étapes, liens, SLA, projet), `syncEntries` fait une fusion à trois versions (`mergeProcess`, `src/domain/merge.ts`), comme Git : étapes et liens comparés un par un par leur identifiant, ainsi que le nom, la source, le SLA et le projet. Un élément changé d'un seul côté (ajouté, modifié ou supprimé) prend ce changement ; changé de la même façon des deux côtés, il est gardé. Le résultat est envoyé, et l'ordre est celui du serveur, suivi des étapes ajoutées sur le téléphone. Si un même élément a changé différemment des deux côtés (deux titres pour la même étape, ou une étape modifiée d'un côté et supprimée de l'autre), l'app ne devine pas : la version du serveur reste, et celle du téléphone est envoyée comme un nouveau process, « <nom> (version de cet appareil) ». Le Profil le dit après « Process synchronisés à … ». Une entrée sans `base` (enregistrée avant cette version de l'app) garde l'ancienne règle une fois : la version du téléphone remplace celle du serveur. Limites : un process modifié d'un côté et supprimé de l'autre suit toujours la suppression ; les projets (nom, description) gardent la dernière version envoyée. Tests : `src/domain/__tests__/merge.test.ts` (modifications sur des étapes différentes, suppression d'un seul côté, ajout, conflit, même changement des deux côtés, projet, date) et `src/data/__tests__/sync.test.ts` (fusion envoyée, copie en cas de conflit, entrée sans base, rien d'envoyé si le serveur a déjà tout).
 
 **Changements pendant l'envoi.** Si l'on importe, modifie ou supprime pendant une synchronisation, `mergeAfterSync` garde ces changements par-dessus le résultat (un process supprimé pendant son envoi est marqué `deleted`), et une nouvelle synchronisation suit.
 
@@ -1065,7 +1067,7 @@ Un process envoyé garde son identifiant local : un écran ouvert pendant l'envo
 
 **Sans compte** (déconnexion, compte supprimé), les copies déjà envoyées sont retirées du téléphone : elles restent sur le serveur, et un autre compte connecté sur ce téléphone ne les voit pas. Les process jamais envoyés restent, et partiront sur le prochain compte connecté.
 
-**Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ».
+**Profil.** Sous l'adresse : « Process synchronisés à 18:29 », « Synchronisation… » ou « Hors connexion : vos process seront envoyés plus tard », avec le bouton « Synchroniser ». Après un conflit, la phrase ajoute « Modifié à deux endroits : votre version est gardée à part, « <nom> (version de cet appareil) » » (`copies` dans l'état `done` de `SyncStatus`).
 
 <details>
 <summary>Tests</summary>

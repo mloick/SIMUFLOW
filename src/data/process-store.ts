@@ -67,7 +67,11 @@ function isProcess(value: unknown): value is Process {
 
 function isEntry(value: unknown): value is SyncEntry {
   const entry = value as SyncEntry;
-  return isProcess(entry?.process) && (entry.cloudId === undefined || typeof entry.cloudId === 'string');
+  return (
+    isProcess(entry?.process) &&
+    (entry.cloudId === undefined || typeof entry.cloudId === 'string') &&
+    (entry.base === undefined || isProcess(entry.base))
+  );
 }
 
 /**
