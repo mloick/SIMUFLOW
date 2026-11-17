@@ -72,7 +72,8 @@
           "faceIDPermission": false
         }
       ],
-      "./plugins/with-raccourcis-siri"
+      "./plugins/with-raccourcis-siri",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

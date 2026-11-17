@@ -112,6 +112,7 @@ jest/           Réglages des tests : module vide qui remplace les feuilles de s
 scripts/        Lancement iOS (ios.sh), nettoyage (nettoyer-ios.sh), copie du moteur de lecture du Scanner web (ocr-web.mjs), fabrication des classeurs d'exemple (exemples-tableaux.py, avec openpyxl) et du schéma Visio d'exemple (exemple-visio.py)
 eas.json        Profils de compilation EAS (preview : APK Android et build iOS interne ; production)
 app.json        Configuration Expo (nom, icônes, écran de démarrage, identifiant fr.simuflow.app sur iOS et Android, sauvegarde Android désactivée, plugins)
+app.config.js   Retire le baseUrl web d'app.json hors de l'export web (variable SIMUFLOW_WEB)
 ```
 
 ## Commandes
@@ -1640,7 +1641,7 @@ Au lancement, l'app vérifie s'il y a une mise à jour, la télécharge en arri�
 Pas de code à part : c'est l'app elle-même, exportée pour le navigateur par `npx expo export -p web` (React Native Web). Ce qui la règle, dans `app.json` :
 
 - `web.output: "single"` : une seule page `index.html` et ses scripts, sans serveur. L'app n'a pas de route d'API, un hébergement de fichiers suffit.
-- `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. Il ne change rien sur téléphone.
+- `experiments.baseUrl: "/SIMUFLOW/app"` : les adresses des scripts et des écrans commencent par ce chemin, celui de l'app sur GitHub Pages. `app.config.js` ne le garde que si la variable `SIMUFLOW_WEB` est définie, ce que fait `npm run export:web` : dans une version Release native (`npx expo run:ios --configuration Release`), Metro mettrait ce chemin devant celui des images intégrées à l'app, et la compilation échouerait (« ENOTDIR … SimuFlow.app/SIMUFLOW/app/assets »).
 
 ![Le guide d'installation dans la présentation : iPhone (clair) et Android (sombre)](captures/etape-18-installer-web.png)
 
