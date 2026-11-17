@@ -92,6 +92,43 @@ export async function listLinkActivity(cloudIds: string[]): Promise<{
   };
 }
 
+/**
+ * Liens d'un process et leurs avis, SANS le jeton, pour le propriétaire et
+ * l'équipe du projet (tableau de bord). Fonction `link_activity_of` du script
+ * 20261123000000_liens_equipe.sql.
+ */
+export async function listTeamLinkActivity(cloudId: string): Promise<{
+  links: Pick<ActorLink, 'id' | 'actor'>[];
+  reviews: (MemberReview & { reviewerName: string; updatedAt: string })[];
+}> {
+  const { data, error } = await supabase.rpc('link_activity_of', { p_process: cloudId });
+  if (error) throw sharingErrorMessage(error);
+  type Row = {
+    link_id: string;
+    actor: string;
+    step_id: string | null;
+    status: StepReview['status'] | null;
+    comment: string | null;
+    reviewer_name: string | null;
+    updated_at: string | null;
+  };
+  const rows = (data ?? []) as Row[];
+  const links = new Map(rows.map((row) => [row.link_id, { id: row.link_id, actor: row.actor }]));
+  return {
+    links: [...links.values()],
+    reviews: rows
+      .filter((row) => row.step_id && row.status)
+      .map((row) => ({
+        memberId: linkMemberId(row.link_id),
+        stepId: row.step_id!,
+        status: row.status!,
+        comment: row.comment,
+        reviewerName: row.reviewer_name ?? '',
+        updatedAt: row.updated_at ?? '',
+      })),
+  };
+}
+
 /** Un lien compte comme un membre dans le suivi de la validation. */
 export const linkMemberId = (linkId: string) => `lien:${linkId}`;
 

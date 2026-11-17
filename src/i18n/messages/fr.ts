@@ -48,6 +48,7 @@ export const fr = {
     alerts: 'Alertes',
     link: 'Relire ma partie',
     project: 'Projet',
+    dashboard: 'Tableau de bord',
     newProject: 'Nouveau projet',
     editProject: 'Renommer le projet',
     addToProject: 'Ajouter des process',

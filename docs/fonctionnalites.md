@@ -184,6 +184,19 @@ La barre du bas a quatre onglets : **Process**, **Scanner**, **Projets** et **R�
 
 ![L'onglet Projets, le filtre Collaborateur, puis l'accueil avec ses quatre onglets](captures/etape-48-onglet-projets.png)
 
+### Le tableau de bord du projet · Disponible
+
+Sur l'écran d'un projet, **Tableau de bord** montre en un seul écran où en est la relecture de tous ses process. Toute l'équipe du projet peut l'ouvrir (il faut être connecté) :
+
+- **un cercle** avec le pourcentage des relectures faites (« 9 relectures faites sur 11 »), le nombre de process validés et le nombre de personnes qui n'ont pas fini ;
+- **trois compteurs** : process validés, en cours, à revoir ;
+- **À traiter** : chaque étape signalée par un acteur, avec son commentaire et son nom, pour savoir tout de suite quoi corriger ;
+- **Process du projet** : une carte par process, ceux à revoir d'abord, avec son état (**À revoir**, **En relecture**, **Pas partagé**, **Validé**), une barre (vert : relu, orange : signalé) et chaque acteur avec une pastille qui dit où il en est, y compris ceux qui relisent par un lien, sans compte. Les filtres **Tous**, **À revoir**, **En cours** et **Validés** n'en gardent qu'une partie. Sur un de vos process pas encore partagé, **Partager** l'envoie à ses acteurs.
+
+Tirer l'écran vers le bas relit les avis. Toucher une carte ouvre le process.
+
+![Le tableau de bord d'un projet : l'avancement, l'étape à traiter et l'état de chaque process, le filtre « À revoir », puis en mode sombre](captures/etape-53-tableau-de-bord.png)
+
 ### Voir les problèmes · Disponible
 
 La fiche d'un process donne ses chiffres clés (étapes, chemins possibles, points à corriger), un grand bouton **Lancer la simulation** et quatre raccourcis : **Modifier**, **Exporter**, **Partager**, **Suivre**. Dessous, des sections à déplier, chacune avec son **?** : acteurs, étapes, partage, suivi, et le **diagnostic**, les plus graves en premier : départ ou fin manquant, impasse, chemin qui ne peut jamais finir, étape inatteignable, décision à une seule sortie, branche sans nom. **Voir** descend jusqu'à l'étape concernée et la surligne. Le bouton **…** en haut regroupe le reste : tout exporter, envoyer un résumé, modifier, supprimer.
@@ -601,4 +614,3 @@ Les corrections qui ne touchent pas aux fonctions du téléphone arrivent toutes
 
 - **Voir sur le schéma** · Prévue : le bouton « Voir » d'une anomalie montrera aussi l'endroit exact sur le schéma.
 - **VoiceOver et TalkBack** · Prévue : une lecture complète par les lecteurs d'écran.
-- **Tableau de bord du projet** · Prévue : sur un seul écran, où en est la relecture de tous les process d'un projet, les étapes signalées à corriger et qui n'a pas fini. Toute l'équipe du projet pourra le consulter.

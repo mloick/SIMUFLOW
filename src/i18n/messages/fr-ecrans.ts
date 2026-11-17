@@ -900,6 +900,65 @@ export const frScreens = {
     notSharedText: 'Ce process n’est pas encore sur votre compte : partagez-le d’abord avec ses acteurs.',
   },
 
+  dashboard: {
+    title: 'Tableau de bord',
+    open: 'Tableau de bord',
+    openHint: 'Où en est la relecture de chaque process du projet',
+    subtitle: (project: string, n: number): string => `${project} · ${n} process`,
+    reviewed: (done: number, total: number): string =>
+      total === 0
+        ? 'Rien à relire pour l’instant'
+        : `${done} ${done > 1 ? 'relectures faites' : 'relecture faite'} sur ${total}`,
+    percentLabel: (percent: number): string => `${percent} % des relectures faites`,
+    validatedOf: (validated: number, total: number): string =>
+      `${validated} process ${validated > 1 ? 'validés' : 'validé'} sur ${total}.`,
+    waiting: (n: number): string =>
+      n === 0 ? '' : n > 1 ? ` ${n} personnes n’ont pas fini.` : ' 1 personne n’a pas fini.',
+    counterValidated: (n: number): string => (n > 1 ? 'Validés' : 'Validé'),
+    counterInProgress: 'En cours',
+    counterToRevise: 'À revoir',
+    issues: 'À traiter',
+    issueWhere: (process: string, step: number): string => `${process} · étape ${step}`,
+    issueBy: (name: string, actor: string | null): string => (actor ? `${name} · ${actor}` : name),
+    quote: (text: string): string => `« ${text} »`,
+    issueHint: 'Ouvre le process',
+    processes: 'Process du projet',
+    filterAll: 'Tous',
+    filterToRevise: 'À revoir',
+    filterInProgress: 'En cours',
+    filterValidated: 'Validés',
+    status: {
+      a_revoir: 'À revoir',
+      en_relecture: 'En relecture',
+      pas_partage: 'Pas partagé',
+      valide: 'Validé',
+    },
+    mine: (steps: number): string => `À moi · ${steps} ${steps > 1 ? 'étapes' : 'étape'}`,
+    owner: (name: string, steps: number): string => `À ${name} · ${steps} ${steps > 1 ? 'étapes' : 'étape'}`,
+    allDone: 'Tout le monde a relu',
+    done: (done: number, total: number): string =>
+      `${done} ${done > 1 ? 'personnes' : 'personne'} sur ${total} ${done > 1 ? 'ont' : 'a'} fini`,
+    toRevise: (n: number): string => (n > 1 ? `${n} points à revoir` : '1 point à revoir'),
+    notShared: 'Personne ne l’a encore relu.',
+    share: 'Partager',
+    shareHint: 'Partage ce process avec ses acteurs',
+    memberState: {
+      fini: 'a tout relu',
+      signale: 'a signalé un point',
+      en_cours: 'relecture en cours',
+      pas_commence: 'pas commencé',
+    },
+    member: (name: string, state: string): string => `${name}, ${state}`,
+    legendDone: 'A tout relu',
+    legendInProgress: 'En cours',
+    legendIssue: 'A signalé un point',
+    legendNotStarted: 'Pas commencé',
+    empty: 'Aucun process dans ce projet pour l’instant.',
+    emptyFilter: 'Aucun process ici.',
+    signInText: 'Les avis de l’équipe sont sur votre compte : connectez-vous d’abord.',
+    error: 'Impossible de lire les avis de l’équipe.',
+  },
+
   alerts: {
     empty: 'Aucune alerte',
     emptyText:

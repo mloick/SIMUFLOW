@@ -159,6 +159,27 @@ function ProjectDetail({ view }: { view: ProjectView }) {
           {project.description && <ThemedText themeColor="textSecondary">{project.description}</ThemedText>}
         </View>
 
+        <Pressable
+          onPress={() => router.push({ pathname: '/projet/tableau/[id]', params: { id: project.id } })}
+          accessibilityRole="button"
+          accessibilityHint={t.dashboard.openHint}
+          style={[styles.dashboard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.dashboardIcon, { backgroundColor: theme.primaryBackground }]}>
+            <SymbolView name={{ ios: 'chart.bar.xaxis', android: 'bar_chart' }} size={20} tintColor={theme.link} />
+          </View>
+          <View style={styles.dashboardText}>
+            <ThemedText type="smallBold">{t.dashboard.open}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.dashboard.openHint}
+            </ThemedText>
+          </View>
+          <SymbolView
+            name={{ ios: 'chevron.right', android: 'chevron_right' }}
+            size={16}
+            tintColor={theme.textSecondary}
+          />
+        </Pressable>
+
         {leaveError && (
           <View style={[styles.notice, { backgroundColor: theme.dangerBackground }]} accessibilityRole="alert">
             <ThemedText type="small" style={{ color: theme.danger }}>
@@ -203,4 +224,13 @@ const styles = StyleSheet.create({
   section: { marginTop: Spacing.two },
   empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: Radius.large, padding: Spacing.three },
   notice: { padding: Spacing.three, borderRadius: Radius.medium },
+  dashboard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three - Spacing.one,
+    padding: Spacing.three,
+    borderRadius: Radius.large,
+  },
+  dashboardIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  dashboardText: { flex: 1, gap: 2 },
 });

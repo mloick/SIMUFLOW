@@ -1,8 +1,33 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import { linkMember } from '@/data/validation-data';
 
-import { linkErrorMessage, linkMemberId, linkUrl } from '../links';
+import { linkErrorMessage, linkMemberId, linkUrl, listTeamLinkActivity } from '../links';
+
+const mockRpc = jest.fn(async (_name: string, _args: object) => ({
+  data: [
+    {
+      link_id: 'l1',
+      actor: 'Logistique',
+      step_id: 'livraison',
+      status: 'valide',
+      comment: null,
+      reviewer_name: 'Sami Aït',
+      updated_at: '2026-11-16T10:00:00Z',
+    },
+    {
+      link_id: 'l2',
+      actor: 'Accueil',
+      step_id: null,
+      status: null,
+      comment: null,
+      reviewer_name: null,
+      updated_at: null,
+    },
+  ],
+  error: null,
+}));
+jest.mock('../client', () => ({ supabase: { rpc: (name: string, args: object) => mockRpc(name, args) } }));
 
 describe('liens d’acteur', () => {
   it('donne l’adresse de la page du lien dans la version web', () => {
@@ -24,5 +49,25 @@ describe('liens d’acteur', () => {
       actor: 'Achats',
     });
     expect(linkMember(link, [{ memberId: 'lien:l1', reviewerName: 'Karim Benali' }]).name).toBe('Karim Benali (lien)');
+  });
+
+  it('lit les liens et leurs avis pour l’équipe, sans jeton', async () => {
+    const activity = await listTeamLinkActivity('cloud-1');
+    expect(mockRpc).toHaveBeenCalledWith('link_activity_of', { p_process: 'cloud-1' });
+    // Un lien sans avis compte quand même ; aucun jeton n'est lu.
+    expect(activity.links).toEqual([
+      { id: 'l1', actor: 'Logistique' },
+      { id: 'l2', actor: 'Accueil' },
+    ]);
+    expect(activity.reviews).toEqual([
+      {
+        memberId: 'lien:l1',
+        stepId: 'livraison',
+        status: 'valide',
+        comment: null,
+        reviewerName: 'Sami Aït',
+        updatedAt: '2026-11-16T10:00:00Z',
+      },
+    ]);
   });
 });
