@@ -1679,7 +1679,7 @@ npx eas-cli@latest build --platform android --profile preview
 - `updates.url` : l'adresse du service de mises à jour du projet EAS (`https://u.expo.dev/<projectId>`) ;
 - `runtimeVersion` avec la règle `appVersion` : une mise à jour n'est proposée qu'aux builds de la même `version` (1.0.0). Après l'ajout d'un module natif, il faut changer `version` et refaire un build : une mise à jour JavaScript ne peut pas ajouter de code natif.
 
-Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `production`. Un build écoute son canal.
+Dans `eas.json`, chaque profil de build a son canal (`channel`) : `preview` ou `production`. Un build écoute son canal. Un build compilé sur le Mac (`npx expo run:ios --configuration Release`) ne passe pas par `eas.json` : il prend le canal de `updates.requestHeaders` dans `app.json` (`expo-channel-name` : `preview`). Sans ce réglage, il ne reçoit aucune mise à jour. Un build EAS remplace ce canal par celui de son profil.
 
 ```bash
 npx eas-cli@latest update --channel preview --message "Correction du texte de l'import"
