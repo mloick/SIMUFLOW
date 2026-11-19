@@ -140,4 +140,6 @@ Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), 
 
 ## Licence
 
-Voir [LICENSE](LICENSE).
+Tous droits réservés. Le code est public pour pouvoir être lu, mais il ne peut être ni copié, ni modifié, ni redistribué, ni utilisé à des fins commerciales sans l'accord écrit de l'auteur. Voir [LICENSE](LICENSE).
+
+Les versions publiées avant ce changement étaient sous licence MIT et le restent.
