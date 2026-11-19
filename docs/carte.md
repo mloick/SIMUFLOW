@@ -27,7 +27,7 @@ Une page pour se repérer vite, avant de lire le code. Le détail est dans [tech
 - **React Compiler** est activé : un `getT()` pendant l'affichage garde l'ancienne langue, et un `useMemo` qui produit du texte a `t` dans ses dépendances.
 - **Confirmation** : `confirmAction(titre, message, bouton, action, t.common.cancel)`.
 - **Natif** : pas de `ios/` ni `android/` à la main ; tout passe par `app.json`. Une dépendance s'ajoute avec `npx expo install`.
-- **Documentation** : toute modification du code met à jour, dans la même PR, `README.md`, `README.fr.md`, `docs/technique.md` et `docs/fonctionnalites.md`, plus une capture `docs/captures/etape-<n>-<sujet>.png` si un écran change (voir `CLAUDE.md`).
+- **Documentation** : toute modification du code met à jour, dans la même PR, `README.md`, `README.fr.md`, `docs/technique.md`, `docs/fonctionnalites.md` (l'état en une ligne) et le manuel `docs/site/manuel/index.html` (les guides pour l'utilisateur), plus une capture `docs/captures/etape-<n>-<sujet>.png` si un écran change (voir `CLAUDE.md`).
 - **Exemples fictifs** uniquement.
 
 ## Avant une pull request

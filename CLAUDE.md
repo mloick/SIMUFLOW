@@ -14,11 +14,12 @@ Toute modification du code (`src/`, `app.json`, `package.json`, `modules/`) met 
 
 - `README.md` (anglais) et `README.fr.md` (français) : mêmes sections, même contenu, chacun dans sa langue.
 - `docs/technique.md` : état actuel, structure, commandes, architecture. Décrire le code tel qu'il est, pas tel qu'on l'espère.
-- `docs/fonctionnalites.md` : court et simple, pour un utilisateur non technique. Passer une fonctionnalité de « Prévue » à « Disponible » quand elle fonctionne.
+- `docs/site/manuel/index.html` : le manuel d'utilisation, publié sur https://mloick.github.io/SIMUFLOW/manuel/. C'est la seule description des fonctionnalités pour l'utilisateur non technique : des guides « Je veux… » courts, en « vous », avec l'écran de l'app. Une fonctionnalité nouvelle ou changée y ajoute ou corrige son guide (tableau `G` du script), et le lexique ou la FAQ si besoin.
+- `docs/fonctionnalites.md` : une page courte qui renvoie vers le manuel et donne l'état de chaque fonctionnalité en une ligne. Passer une fonctionnalité de « Prévue » à « Disponible » quand elle fonctionne. Ne pas y redécrire les écrans.
 
 Si une modification ne change rien pour un document, ne pas le toucher.
 
-Chaque étape qui change un écran ajoute ses captures dans `docs/captures/` (nommées `etape-<numéro>-<sujet>.png`, compressées), dans la même pull request, et les affiche dans `docs/technique.md` et `docs/fonctionnalites.md` à l'endroit qui décrit l'écran.
+Chaque étape qui change un écran ajoute ses captures dans `docs/captures/` (nommées `etape-<numéro>-<sujet>.png`, compressées), dans la même pull request, et les affiche dans `docs/technique.md` à l'endroit qui décrit l'écran. Si l'écran apparaît dans le manuel, sa capture y est aussi remplacée : un seul écran par image, en WebP de 600 px de large, dans `docs/site/manuel/img/`.
 
 ## Présentation du projet
 

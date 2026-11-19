@@ -1,7 +1,8 @@
 name: Documentation
 
 # À chaque push qui touche le code, Claude relit les changements et met à jour
-# README.md, README.fr.md, docs/technique.md et docs/fonctionnalites.md.
+# README.md, README.fr.md, docs/technique.md, docs/fonctionnalites.md et le
+# manuel d'utilisation (docs/site/manuel/index.html).
 # Les pushes qui ne changent que la documentation sont ignorés, ce qui évite
 # que le robot se relance sur ses propres commits.
 #
@@ -75,8 +76,8 @@ jobs:
 
             Mets à jour la documentation selon la règle « Documentation à tenir à jour »
             de CLAUDE.md : README.md, README.fr.md, docs/technique.md,
-            docs/fonctionnalites.md. Ne touche qu'à ces quatre fichiers, et seulement
-            si les changements les concernent.
+            docs/fonctionnalites.md, docs/site/manuel/index.html. Ne touche qu'à ces
+            cinq fichiers, et seulement si les changements les concernent.
 
             S'il y a quelque chose à changer, fais un seul commit intitulé
             « Mettre à jour la documentation » et pousse-le sur la branche BRANCHE.
