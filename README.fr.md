@@ -41,7 +41,7 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Écrans refaits** : le détail d'un process donne ses chiffres clés, un grand bouton « Lancer la simulation », quatre actions rapides et des sections à déplier ; la simulation pose une carte de l'étape sous un schéma vivant, avec suivi auto, minicarte, plein écran et mise en page paysage ; « Nouveau process » présente les huit sources en tuiles ; le scanner a un viseur animé ; suivi, alertes, partage, formulaires et export suivent le même style.
 - **Français ou anglais** : tous les écrans suivent la langue du téléphone, ou le choix fait dans les Réglages. Ce que vous importez reste tel quel, de même que les fichiers exportés et les quatre exemples, en français.
 
-La visite complète, avec captures, est dans le [guide des fonctionnalités](docs/fonctionnalites.md). Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
+La visite complète est dans le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/), interactif : un parcours par rôle, des guides courts pas à pas avec les vrais écrans, une démo jouable, un lexique et une FAQ. La [liste des fonctionnalités](docs/fonctionnalites.md) donne l'état de chacune en une ligne. Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
 
 <p align="center"><img src="docs/captures/etape-10d-process.png" width="640" alt="Scanner : un tableau photographié devient un process, avec ses chiffres clés et son diagnostic"></p>
 
@@ -125,7 +125,8 @@ Le détail, fichier par fichier, est dans la [documentation technique](docs/tech
 
 ## Documentation
 
-- [Guide des fonctionnalités](docs/fonctionnalites.md) : ce que fait l'application, en termes simples, avec captures.
+- [Manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/) ([source](docs/site/manuel/index.html)) : comment se servir de l'app, en termes simples, guide par guide, avec les vrais écrans.
+- [Liste des fonctionnalités](docs/fonctionnalites.md) : chaque fonctionnalité et son état, en une ligne.
 - [Documentation technique](docs/technique.md) : structure, commandes, architecture, fichier par fichier.
 - [Sécurité](docs/securite.md) : la checklist sécurité remplie (OWASP MASVS), clés, règles d'accès, données sur le téléphone.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, skills, MCP) et comment nous travaillons avec.

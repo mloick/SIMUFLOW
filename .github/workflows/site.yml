@@ -1,7 +1,7 @@
 name: Site
 
-# Publie sur GitHub Pages le site de SimuFlow (accueil et politique de
-# confidentialité) et la version web de l'app, sous /app/. Le site reprend le
+# Publie sur GitHub Pages le site de SimuFlow (accueil, politique de
+# confidentialité et manuel d'utilisation, sous /manuel/) et la version web de l'app, sous /app/. Le site reprend le
 # logo (docs/logo) et quelques captures (docs/captures). L'app est l'export web
 # d'Expo (`npx expo export -p web`), une page unique : 404.html en est une
 # copie, pour qu'une adresse comme /app/process/… rouvre l'app au bon écran.
@@ -49,7 +49,7 @@ jobs:
       - name: Assembler le site
         run: |
           mkdir -p _site/captures
-          cp docs/site/* _site/
+          cp -r docs/site/. _site/
           cp -r docs/logo _site/logo
           cp docs/captures/etape-6-simulation.png _site/captures/
           cp -r dist _site/app

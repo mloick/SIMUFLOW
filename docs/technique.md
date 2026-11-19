@@ -1729,11 +1729,13 @@ Les adresses y sont écrites en entier (`/SIMUFLOW/app/…`) : la même page ser
 
 </details>
 
-### Site et politique de confidentialité (`docs/site/`)
+### Site, politique de confidentialité et manuel (`docs/site/`)
 
 Deux pages HTML statiques, sans script, en clair et en sombre (`prefers-color-scheme`) et lisibles sur téléphone : l'accueil (`index.html` : ce que fait l'app, pour qui, ses données) et la politique de confidentialité (`confidentialite.html` : chaque donnée, pourquoi, où elle est gardée ; autorisations ; services utilisés, Supabase et Expo ; durée ; droits et suppression du compte). Contact : les tickets GitHub du projet, pour ne pas publier d'adresse e-mail.
 
-**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/`, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
+**Manuel d'utilisation** (`docs/site/manuel/`). Une page unique, `index.html`, publiée sur https://mloick.github.io/SIMUFLOW/manuel/ et liée depuis l'accueil du site. Elle ne charge que la police Plus Jakarta Sans (Google Fonts) ; le reste (styles, script, logo) est dans la page. Ses images sont dans `img/` : un écran par fichier, en WebP de 600 px de large, tirés des captures de `docs/captures/` et du kit de présentation. Le contenu est écrit dans le script, en tableaux : `CHAPTERS` (7 chapitres), `G` (20 guides, chacun avec ses étapes et l'image de chaque étape), `ROLES` (3 parcours : « Je pilote un projet », « On m'a demandé de valider », « Je veux juste essayer »), `LEX` (lexique) et `FAQ`. La page les affiche : recherche sans accents sur les guides, le lexique et la FAQ ; un guide s'ouvre dans une fenêtre (`<dialog>`) en pas à pas ; une adresse comme `manuel/#partager` ouvre directement le guide « partager ». En haut, une mini-simulation jouable d'un process fictif (« Demande de matériel », SLA 10 JO) dessinée en SVG. Les guides cochés « C'est fait », le parcours choisi et le thème forcé sont gardés dans le navigateur (`localStorage`, clés `sf-done`, `sf-role`, `sf-theme`). Clair et sombre suivent le système ; le bouton lune force l'un ou l'autre.
+
+**Publication.** `.github/workflows/site.yml` assemble le site (`docs/site/` avec ses sous-dossiers, donc le manuel, le logo `docs/logo/` et la capture de la simulation) avec la version web de l'app (voir plus bas), et le publie sur GitHub Pages à chaque push sur `main` qui touche le site ou l'app (`docs/site/`, `src/`, `assets/`, `public/`, `modules/`, `app.json`, `package.json`, `package-lock.json`), ou à la main (« Run workflow »). Adresse : https://mloick.github.io/SIMUFLOW/. **À faire une fois** dans le dépôt : Settings > Pages > Build and deployment > Source : « GitHub Actions ». L'accueil a trois boutons : « Ouvrir l'app web », « Installer sur le téléphone » et « Vos données ».
 
 ### Fichiers exclus du dépôt
 
@@ -1744,7 +1746,7 @@ Le `.gitignore` exclut, en plus des fichiers générés :
 
 ## 10. Mise à jour de la documentation
 
-Les fichiers `README.md`, `README.fr.md`, `docs/technique.md` et `docs/fonctionnalites.md` sont tenus à jour de deux façons :
+Les fichiers `README.md`, `README.fr.md`, `docs/technique.md`, `docs/fonctionnalites.md` et le manuel `docs/site/manuel/index.html` sont tenus à jour de deux façons :
 
 1. **Règle `CLAUDE.md`** : quand Claude modifie le code, il met ces documents à jour dans la même pull request.
 2. **Robot GitHub** (`.github/workflows/documentation.yml`) : à chaque push qui touche le code, Claude relit les changements et met la documentation à jour sur la même branche. Il a besoin du secret `CLAUDE_CODE_OAUTH_TOKEN` dans les réglages du dépôt.

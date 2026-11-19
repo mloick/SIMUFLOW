@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manuel SimuFlow</title>
+<link rel="icon" href="../logo/simuflow-symbole.svg">
+<meta name="description" content="Le manuel d'utilisation de SimuFlow : importer, simuler, faire valider et suivre vos process, pas à pas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout : un guide de terrain. Bandeau d'accueil avec une simulation jouable, trois portes par rôle,
+   puis des fiches « Je veux… » rangées par chapitre, qui s'ouvrent en pas à pas avec la vraie capture. */
+:root{
+  --bg:#f3f6fa; --surface:#ffffff; --muted:#eef2f7; --line:#dde5ee;
+  --text:#0e1b2c; --text2:#566476;
+  --primary:#0077bb; --link:#006aa8; --primary-bg:#e2f0fa; --on-primary:#ffffff;
+  --accent:#14a88c; --accent-bg:#ddf4ee; --navy:#0b2540;
+  --warn:#9a4510; --warn-bg:#fdeedf; --danger:#a8261b; --danger-bg:#fbe3e1;
+  --ok:#0b6b4b; --ok-bg:#e2f5ee;
+  --shadow:0 1px 2px rgba(14,27,44,.06),0 8px 24px rgba(14,27,44,.07);
+  --font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c121b; --surface:#151e2b; --muted:#1c2635; --line:#2a374a;
+  --text:#eef3f8; --text2:#a3b2c4;
+  --primary:#0077bb; --link:#5cb8f0; --primary-bg:#0f2c42; --on-primary:#ffffff;
+  --accent:#14a88c; --accent-bg:#0f3a33; --navy:#d9e7f5;
+  --warn:#f5b27a; --warn-bg:#3b2414; --danger:#f29a90; --danger-bg:#3d1a17;
+  --ok:#8fe3c4; --ok-bg:#103a2d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c121b; --surface:#151e2b; --muted:#1c2635; --line:#2a374a;
+  --text:#eef3f8; --text2:#a3b2c4;
+  --primary:#0077bb; --link:#5cb8f0; --primary-bg:#0f2c42; --on-primary:#ffffff;
+  --accent:#14a88c; --accent-bg:#0f3a33; --navy:#d9e7f5;
+  --warn:#f5b27a; --warn-bg:#3b2414; --danger:#f29a90; --danger-bg:#3d1a17;
+  --ok:#8fe3c4; --ok-bg:#103a2d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.3);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-behavior:smooth;scroll-padding-top:calc(72px + env(safe-area-inset-top,0px))}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+a{color:var(--link)}
+h1,h2,h3{line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.02em}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--primary)}
+:root:not([data-theme="light"]) .eyebrow{color:var(--link)}
+
+/* Barre du haut */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:800;font-size:17px;flex:none}
+.brand svg{width:28px;height:30px}
+.brand small{font-weight:600;color:var(--text2);font-size:13px}
+.nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{white-space:nowrap;text-decoration:none;color:var(--text2);font-weight:600;font-size:14px;padding:8px 12px;border-radius:999px}
+.nav a:hover{background:var(--muted);color:var(--text)}
+.theme-btn{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer}
+.theme-btn svg{width:18px;height:18px}
+@media (max-width:760px){.nav{display:none}.brand small{display:none}.top .wrap{justify-content:space-between}}
+
+/* Accueil */
+.hero{padding-block:48px 40px}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(34px,5.2vw,58px);font-weight:800;margin:12px 0 16px}
+.hero h1 span{color:var(--primary)}
+:root:not([data-theme="light"]) .hero h1 span{color:var(--link)}
+.lead{font-size:18px;color:var(--text2);max-width:34em}
+.search{position:relative;margin-top:28px;max-width:520px}
+.search input{width:100%;font:inherit;font-size:16px;padding:14px 16px 14px 46px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.search input:focus{outline:none;border-color:var(--primary)}
+.search > svg{position:absolute;left:15px;top:15px;width:20px;height:20px;color:var(--text2)}
+.results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:360px;overflow:auto;z-index:15;padding:6px}
+.results button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+.results button:hover,.results button:focus-visible{background:var(--muted)}
+.results b{display:block;font-size:15px}
+.results span{font-size:13px;color:var(--text2)}
+.results .none{padding:12px;color:var(--text2);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer}
+.chips button:hover{color:var(--text);border-color:var(--primary)}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr;gap:36px}.hero{padding-block:32px 28px}}
+
+/* Mini simulation */
+.sim{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:20px;max-width:440px;width:100%;justify-self:center}
+.sim-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px}
+.sim-head h2{font-size:18px;font-weight:800}
+.sim-head span{font-size:12.5px;color:var(--text2);font-weight:600}
+.sim-sub{font-size:13px;color:var(--text2);margin-bottom:12px}
+.sim svg{width:100%;height:auto;display:block}
+.sim .node rect{fill:var(--muted);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
+.sim .node polygon{fill:var(--muted);stroke:var(--line);stroke-width:1.5;transition:fill .25s,stroke .25s}
+.sim .node text{fill:var(--text2);font-size:11px;font-weight:600;font-family:var(--font)}
+.sim .node.done rect,.sim .node.done polygon{fill:var(--accent-bg);stroke:var(--accent)}
+.sim .node.done text{fill:var(--text)}
+.sim .node.now rect,.sim .node.now polygon{fill:var(--primary);stroke:var(--primary)}
+.sim .node.now text{fill:#fff}
+.sim .edge{stroke:var(--line);stroke-width:2;fill:none;stroke-dasharray:4 4;transition:stroke .25s}
+.sim .edge.on{stroke:var(--accent);stroke-dasharray:none}
+.sim .elabel{fill:var(--text2);font-size:10px;font-weight:700;font-family:var(--font)}
+.sim-card{margin-top:12px;background:var(--muted);border-radius:14px;padding:14px}
+.sim-card .who{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.sim-card .what{font-size:17px;font-weight:800;margin:2px 0 8px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .35s,background .35s}
+.bar-legend{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);margin-top:6px;font-variant-numeric:tabular-nums}
+.sim-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;font-size:15px;cursor:pointer;background:var(--primary);color:var(--on-primary);flex:1;min-width:120px}
+.btn:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--surface);color:var(--text);border:1.5px solid var(--line)}
+.btn.small{flex:none;min-width:0;padding:8px 12px;font-size:14px}
+.sim-end{border-radius:12px;padding:10px 12px;font-weight:700;font-size:14.5px;margin-top:10px}
+.sim-end.ok{background:var(--ok-bg);color:var(--ok)}
+.sim-end.ko{background:var(--warn-bg);color:var(--warn)}
+
+/* Sections */
+section.block{padding-block:56px}
+section.alt{background:var(--surface);border-block:1px solid var(--line)}
+.sec-head{display:flex;flex-direction:column;gap:8px;margin-bottom:28px;max-width:44em}
+.sec-head h2{font-size:clamp(26px,3.4vw,36px);font-weight:800}
+.sec-head p{color:var(--text2)}
+
+/* Portes par rôle */
+.doors{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.door{text-align:left;border:1.5px solid var(--line);background:var(--bg);border-radius:var(--r);padding:20px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,transform .2s}
+.door:hover{border-color:var(--primary);transform:translateY(-2px)}
+.door[aria-pressed="true"]{border-color:var(--primary);background:var(--primary-bg)}
+.door .ico{width:42px;height:42px;border-radius:12px;background:var(--primary);display:grid;place-items:center;color:#fff}
+.door .ico svg{width:22px;height:22px}
+.door h3{font-size:18px;font-weight:800}
+.door p{font-size:14.5px;color:var(--text2)}
+.path{margin-top:20px;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.path-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.path-top h3{font-size:18px;font-weight:800}
+.progress{font-size:13.5px;color:var(--text2);font-weight:600;font-variant-numeric:tabular-nums}
+.path ol{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:p}
+.path li{counter-increment:p}
+.path li button{width:100%;display:flex;align-items:center;gap:14px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left}
+.path li button:hover{border-color:var(--primary)}
+.path li button::before{content:counter(p);flex:none;width:28px;height:28px;border-radius:50%;background:var(--primary-bg);color:var(--primary);font-weight:800;font-size:13px;display:grid;place-items:center}
+:root:not([data-theme="light"]) .path li button::before{color:var(--link)}
+.path li.done button::before{content:"";background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center/16px no-repeat}
+.path li b{display:block;font-size:15px}
+.path li span{font-size:13px;color:var(--text2)}
+.path li .t{flex:1;min-width:0}
+.path li .go{color:var(--text2);flex:none}
+@media (max-width:760px){.doors{grid-template-columns:1fr}}
+
+/* Fiches */
+.chapter{margin-top:36px}
+.chapter:first-of-type{margin-top:0}
+.chapter > h3{font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.chapter > h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:0;cursor:pointer;text-align:left;display:flex;gap:14px;align-items:stretch;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.card .thumb{flex:none;width:76px;background:var(--muted);overflow:hidden}
+.card .thumb img{width:100%;height:100%;object-fit:cover;object-position:top}
+.card .body{padding:14px 14px 14px 0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.card b{font-size:15.5px;line-height:1.3}
+.card span{font-size:13.5px;color:var(--text2);line-height:1.45}
+.card .meta{margin-top:auto;padding-top:6px;font-size:12px;font-weight:700;color:var(--text2);display:flex;gap:8px;align-items:center}
+.card.done .meta::before{content:"Fait";background:var(--accent-bg);color:var(--ok);padding:2px 8px;border-radius:99px}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--primary-bg);color:var(--primary)}
+:root:not([data-theme="light"]) .tag{color:var(--link)}
+
+/* Fenêtre d'un guide */
+dialog.guide{border:0;padding:0;border-radius:22px;background:var(--surface);color:var(--text);width:min(980px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+dialog.guide::backdrop{background:rgba(8,18,30,.55);backdrop-filter:blur(2px)}
+.g-grid{display:grid;grid-template-columns:330px 1fr;max-height:calc(100dvh - 24px)}
+.g-phone{background:var(--muted);display:flex;align-items:center;justify-content:center;padding:24px}
+.phone{width:100%;max-width:270px;border-radius:34px;padding:8px;background:#0b1622;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.phone img{display:block;width:100%;border-radius:27px;aspect-ratio:390/844;object-fit:cover;object-position:top;background:#fff}
+.phone.wide img{aspect-ratio:auto}
+.g-main{padding:28px;overflow:auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.g-close{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;z-index:2}
+.g-main h2{font-size:26px;font-weight:800;padding-right:36px}
+.g-intro{color:var(--text2)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.steps li button{width:100%;text-align:left;display:flex;gap:12px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;cursor:pointer;align-items:flex-start}
+.steps li button .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--muted);font-weight:800;font-size:13px;display:grid;place-items:center;margin-top:1px}
+.steps li button[aria-current="step"]{border-color:var(--primary);background:var(--primary-bg)}
+.steps li button[aria-current="step"] .n{background:var(--primary);color:#fff}
+.steps li .s{min-width:0}
+.steps li b{display:block;font-size:15px}
+.steps li span{font-size:14px;color:var(--text2)}
+.tip{background:var(--accent-bg);border-radius:12px;padding:12px 14px;font-size:14px}
+.tip b{color:var(--ok)}
+pre.sample{background:var(--muted);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;overflow-x:auto;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.g-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+.check{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;cursor:pointer;margin-right:auto}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+kbd,.ui{font-family:inherit;font-weight:700;background:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 6px;font-size:.92em;white-space:nowrap}
+@media (max-width:760px){
+  dialog.guide{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;margin:0}
+  .g-grid{grid-template-columns:1fr;max-height:none;height:100%;overflow:auto}
+  .g-phone{padding:16px;padding-top:calc(56px + env(safe-area-inset-top,0px))}
+  .phone{max-width:220px}
+  .g-main{padding:20px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow:visible}
+  .g-close{top:calc(10px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px))}
+}
+
+/* Lexique */
+.lex{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.term{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.term b{font-size:15.5px}
+.term p{font-size:14px;color:var(--text2);margin-top:4px}
+
+/* FAQ */
+.faq{display:grid;gap:10px;max-width:820px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 16px}
+.faq summary{cursor:pointer;font-weight:700;padding:14px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:22px;line-height:1;color:var(--primary);flex:none}
+.faq details[open] summary::after{content:"–"}
+.faq details p{padding:0 0 16px;color:var(--text2);font-size:15px}
+
+footer{padding-block:36px;color:var(--text2);font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.flash{animation:flash 1.4s ease}
+@keyframes flash{0%,40%{background:var(--primary-bg)}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#accueil" aria-label="Manuel SimuFlow, accueil">
+      <svg viewBox="40 40 160 172" aria-hidden="true"><path d="M80 64 H150 A30 30 0 0 1 150 124 H90 A30 30 0 0 0 90 184 H160" fill="none" stroke="#007ec5" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><circle cx="64" cy="64" r="18" fill="var(--navy)"/><path d="M160 164 L190 184 L160 204 Z" fill="#007ec5" stroke="#007ec5" stroke-width="6" stroke-linejoin="round"/></svg>
+      SimuFlow <small>Manuel d'utilisation</small>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#parcours">Par où commencer</a>
+      <a href="#guides">Guides</a>
+      <a href="#lexique">Lexique</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Changer le thème clair ou sombre">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="accueil">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Manuel d'utilisation</div>
+        <h1>Vérifiez un process <span>avant</span> de le mettre en place.</h1>
+        <p class="lead">SimuFlow lit votre schéma ou votre tableau, le rejoue étape par étape et vous montre ce qui cloche. Ensuite, chaque personne concernée valide sa partie. Ce manuel vous guide, écran par écran, sans jargon.</p>
+        <div class="search" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <label for="q" class="sr" hidden>Rechercher dans le manuel</label>
+          <input id="q" type="search" placeholder="Que voulez-vous faire ? Ex. : importer, valider, délai…" autocomplete="off" aria-controls="results">
+          <div class="results" id="results" hidden></div>
+        </div>
+        <div class="chips" aria-label="Recherches fréquentes">
+          <button type="button" data-open="importer-fichier">Importer un schéma</button>
+          <button type="button" data-open="partager">Faire valider</button>
+          <button type="button" data-open="relire">Valider ma partie</button>
+          <button type="button" data-open="delais">SLA et OLA</button>
+        </div>
+      </div>
+
+      <div class="sim" id="sim" aria-live="polite">
+        <div class="sim-head"><h2>Essayez tout de suite</h2><span>Exemple fictif</span></div>
+        <p class="sim-sub">« Demande de matériel », délai promis au client (SLA) : 10 jours ouvrés.</p>
+        <svg viewBox="0 0 340 230" role="img" aria-label="Schéma du process Demande de matériel">
+          <g id="edges"></g><g id="nodes"></g>
+        </svg>
+        <div class="sim-card">
+          <div class="who" id="simWho"></div>
+          <div class="what" id="simWhat"></div>
+          <div class="bar" aria-hidden="true"><i id="simBar"></i></div>
+          <div class="bar-legend"><span id="simDays"></span><span>SLA 10 JO</span></div>
+          <div id="simEnd"></div>
+          <div class="sim-actions" id="simActions"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt" id="parcours">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Par où commencer</div>
+        <h2>Qui êtes-vous dans le projet ?</h2>
+        <p>Choisissez votre situation : le manuel vous propose les guides dans le bon ordre. Cochez « C'est fait » au bas de chaque guide pour suivre votre avancée sur cet appareil.</p>
+      </div>
+      <div class="doors" id="doors"></div>
+      <div class="path" id="path"></div>
+    </div>
+  </section>
+
+  <section class="block" id="guides">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Guides</div>
+        <h2>Je veux…</h2>
+        <p>Chaque guide tient en quelques étapes, avec le vrai écran de l'app. Touchez une étape pour voir l'écran correspondant.</p>
+      </div>
+      <div id="chapters"></div>
+    </div>
+  </section>
+
+  <section class="block alt" id="lexique">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Lexique</div>
+        <h2>Les mots de SimuFlow, en clair</h2>
+      </div>
+      <div class="lex" id="lex"></div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Questions fréquentes</div>
+        <h2>Vous vous demandez peut-être…</h2>
+      </div>
+      <div class="faq" id="faqList"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>SimuFlow, un projet de Loïck. Les process montrés sont des exemples fictifs.</span>
+    <span><a href="../app/">Ouvrir SimuFlow dans le navigateur</a> · <a href="../">Le site</a> · <a href="../confidentialite.html">Confidentialité</a></span>
+  </div>
+</footer>
+
+<dialog class="guide" id="guide" aria-labelledby="gTitle">
+  <button class="g-close" id="gClose" type="button" aria-label="Fermer le guide">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <div class="g-grid">
+    <div class="g-phone"><div class="phone" id="gPhone"><img id="gImg" alt=""></div></div>
+    <div class="g-main">
+      <div><span class="tag" id="gTag"></span></div>
+      <h2 id="gTitle"></h2>
+      <p class="g-intro" id="gIntro"></p>
+      <ol class="steps" id="gSteps"></ol>
+      <div id="gExtra"></div>
+      <div class="g-foot">
+        <label class="check"><input type="checkbox" id="gDone"> C'est fait</label>
+        <button class="btn ghost small" type="button" id="gPrev">Étape précédente</button>
+        <button class="btn small" type="button" id="gNext">Étape suivante</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+/* ---------- Contenu ---------- */
+const CHAPTERS=[
+ {id:'demarrer',name:'Démarrer'},
+ {id:'ajouter',name:'Ajouter un process'},
+ {id:'verifier',name:'Vérifier et corriger'},
+ {id:'simuler',name:'Simuler et partager le schéma'},
+ {id:'equipe',name:'Travailler en équipe'},
+ {id:'suivre',name:'Suivre une vraie demande'},
+ {id:'confort',name:'Formulaires et réglages'}
+];
+const G=[
+ {id:'installer',ch:'demarrer',title:'Installer SimuFlow',short:'Sur iPhone, Android ou dans le navigateur, avec ou sans compte.',
+  intro:'SimuFlow marche sur iPhone, sur Android et dans n’importe quel navigateur, sans rien installer.',
+  steps:[
+   {t:'Ouvrir la version web',d:'Allez sur mloick.github.io/SIMUFLOW/app. Tout y est, sauf les rappels d’échéance.',img:'connexion'},
+   {t:'L’ajouter à l’écran d’accueil',d:'La présentation montre les gestes pour iPhone, Android ou ordinateur : l’app s’ouvre ensuite comme une vraie application.',img:'installer'},
+   {t:'Se connecter, ou continuer sans compte',d:'Sans compte, tout reste sur le téléphone. Avec un compte, vos process vous suivent sur tous vos appareils et vous pouvez travailler en équipe.',img:'connexion'}
+  ],tip:'Le mot de passe demande au moins 8 caractères, avec une minuscule, une majuscule, un chiffre et un symbole. L’app dit ce qui manque.'},
+ {id:'importer-fichier',ch:'ajouter',title:'Importer un schéma',short:'Un fichier draw.io, BPMN, Visio ou JSON devient un process prêt à rejouer.',
+  intro:'Votre schéma n’a pas besoin d’un style particulier : l’app suit les flèches.',
+  steps:[
+   {t:'Toucher « Nouveau »',d:'Le bouton se trouve en bas de l’écran Process.',img:'accueil'},
+   {t:'Choisir la source',d:'Huit tuiles : draw.io, BPMN, Visio, Excel ou CSV, formulaire, scanner, texte, JSON. Chacune explique ce qu’elle attend.',img:'sources'},
+   {t:'Vérifier l’aperçu, puis importer',d:'L’app montre ce qu’elle a lu : étapes, acteurs, problèmes. Touchez « Importer », ou « Importer et corriger » pour ouvrir l’éditeur tout de suite.',img:'apercu'}
+  ],tip:'Une étape d’où partent plusieurs flèches nommées est une décision, même dessinée en rectangle. Les acteurs viennent des couloirs, d’une légende de couleurs ou du texte des étapes.'},
+ {id:'importer-texte',ch:'ajouter',title:'Écrire un process en texte',short:'Pas de schéma ? Une ligne par étape suffit.',
+  intro:'Choisissez la tuile « Texte », collez votre process, puis « Lire le texte ».',
+  steps:[
+   {t:'Écrire une ligne par étape',d:'L’acteur avant les deux-points, le délai entre parenthèses, la suite après une flèche.',img:'texte'},
+   {t:'Décrire les cas d’une question',d:'Sous une question, une ligne par cas : « oui → 3 », « non → 5 ». Sans flèche, l’étape mène à la ligne suivante.',img:'texte'},
+   {t:'Lire le texte',d:'Ce que l’app ne comprend pas apparaît en remarque, à corriger ensuite. « Voir un exemple » remplit la zone pour essayer.',img:'texte'}
+  ],sample:'Process : Demande de matériel\n1. Employé : Faire la demande\n2. Responsable : Demande validée ? (2 JO)\n   oui → 3\n   non → 5\n3. Achats : Passer la commande (1 JO)\n4. Logistique : Livrer le matériel (5 JO) → 6\n5. Responsable : Prévenir du refus (1 JO) → 6\n6. Fin : Demande close'},
+ {id:'importer-excel',ch:'ajouter',title:'Importer un tableau Excel',short:'Un tableau Étape, Acteur, Délai devient un process.',
+  intro:'Touchez « Nouveau », puis « Tableau Excel ou CSV ». Le classeur est lu sur le téléphone, sans être envoyé nulle part.',
+  steps:[
+   {t:'Choisir le classeur',d:'L’app dit ce que contient chaque onglet : tableau de process, workflow avec délais, template de formulaire ou onglet non reconnu.',img:'excel'},
+   {t:'Donner le rôle des colonnes inconnues',d:'Vos colonnes s’appellent « Pilote » ou « Durée prévue » ? Touchez « Choisir les colonnes » : l’app retient ces titres pour la prochaine fois.',img:'excel'},
+   {t:'Importer',d:'Un workflow avec délais donne un process par situation, avec une pastille « Lue sans ambiguïté », « À vérifier » ou « À corriger ».',img:'excel'}
+  ]},
+ {id:'scanner',ch:'ajouter',title:'Photographier un tableau',short:'Un tableau sur papier ou sur un écran, lu sans Internet.',
+  intro:'L’onglet Scanner ouvre l’appareil photo. La lecture se fait sur le téléphone : la photo ne le quitte jamais.',
+  steps:[
+   {t:'Cadrer le tableau',d:'Une ligne par étape, avec l’acteur et le délai. Le bouton « ? » donne les conseils pour bien cadrer.',img:'scan-cam'},
+   {t:'Vérifier ce qui a été lu',d:'L’app recadre la feuille, ne garde que le tableau et affiche les colonnes reconnues.',img:'scan-ok'},
+   {t:'Créer le process',d:'Touchez « Créer le process », ou « Créer et corriger » pour reprendre une étape mal lue.',img:'scan-ok'}
+  ],tip:'Dans le navigateur, « Prendre ou choisir une photo » accepte aussi une capture d’écran.'},
+ {id:'diagnostic',ch:'verifier',title:'Comprendre les problèmes signalés',short:'Impasse, branche sans nom, étape jamais atteinte : l’app les trouve.',
+  intro:'La fiche d’un process donne ses chiffres clés et un diagnostic, les problèmes les plus graves en premier.',
+  steps:[
+   {t:'Lire les chiffres clés',d:'Nombre d’étapes, de chemins possibles et de points à corriger, en haut de la fiche.',img:'fiche'},
+   {t:'Ouvrir le diagnostic',d:'Chaque problème est expliqué en une phrase. « Voir » descend jusqu’à l’étape concernée et la surligne.',img:'fiche'},
+   {t:'Le voir en simulation',d:'Une impasse (une étape sans suite) arrête la simulation et l’app vous le dit clairement.',img:'impasse'}
+  ]},
+ {id:'corriger',ch:'verifier',title:'Corriger un process',short:'Changer une étape, ajouter un cas, des tâches en même temps.',
+  intro:'Touchez « Modifier » sur la fiche. Le nombre de points à corriger se met à jour pendant que vous travaillez.',
+  steps:[
+   {t:'Toucher une étape',d:'Changez son titre, son rôle (départ, tâche, décision, en parallèle, fin), son acteur et son délai.',img:'editeur'},
+   {t:'Ajouter ou relier',d:'Ajoutez une étape après, un cas à une décision, reliez à une autre étape, ou supprimez l’étape.',img:'editeur'},
+   {t:'Des tâches en même temps',d:'Quand une étape a plusieurs suites, choisissez « C’est un choix » ou « Ça se fait en même temps ». L’app ajoute alors l’étape qui attend toutes les branches.',img:'editeur-parallele'}
+  ],tip:'L’app apprend de vos corrections : un acteur renommé partout devient une règle, refaite seule aux imports suivants. Les règles se trouvent dans Profil, avec « Oublier ».'},
+ {id:'simuler',ch:'simuler',title:'Rejouer le process pas à pas',short:'Voir le process s’animer, choisir à chaque décision.',
+  intro:'Sur la fiche, touchez « Lancer la simulation ». Le schéma se construit au fil du parcours.',
+  steps:[
+   {t:'Choisir à chaque décision',d:'En mode « Pas à pas », l’app demande quelle branche suivre. « Retour » revient en arrière.',img:'simulation'},
+   {t:'Avancer les branches en parallèle',d:'Quand deux équipes travaillent en même temps, une ligne par branche : avancez-les dans l’ordre que vous voulez.',img:'parallele'},
+   {t:'Lire le bilan',d:'À la fin, le nombre d’étapes, le délai en jours ouvrés et si le délai promis (SLA) est tenu.',img:'fin'}
+  ],tip:'« Simple » prend le chemin le plus court, « Complexe » le plus long. Pincez pour zoomer, le bouton cible recentre sur l’étape en cours.'},
+ {id:'tous',ch:'simuler',title:'Voir tous les cas d’un coup',short:'Le schéma entier, une couleur par famille de chemins.',
+  intro:'L’onglet « Tous » de la simulation affiche le schéma complet, comme un plan de métro.',
+  steps:[
+   {t:'Ouvrir « Tous »',d:'Les flèches contournent les cases. Le chemin critique, le plus long, est en trait épais.',img:'tous'},
+   {t:'Isoler une famille',d:'Touchez une famille dans la légende : seuls ses chemins restent en couleur, avec leurs délais.',img:'tous'}
+  ]},
+ {id:'exporter',ch:'simuler',title:'Exporter et anonymiser',short:'PDF, draw.io, BPMN ou JSON, avec ou sans vrais noms.',
+  intro:'Sur la fiche, touchez « Exporter », ou le bouton en haut à droite de la simulation.',
+  steps:[
+   {t:'Choisir un format',d:'PDF pour envoyer ou imprimer (avec un résumé en quelques phrases), draw.io ou BPMN pour retoucher le schéma ailleurs, JSON pour un autre SimuFlow.',img:'export'},
+   {t:'Anonymiser si besoin',d:'Cochez « Anonymiser les noms » : chaque acteur devient Service A, Service B… Les e-mails, téléphones et liens sont masqués. Seul le fichier partagé change.',img:'export'}
+  ]},
+ {id:'projet',ch:'equipe',title:'Créer un projet et son équipe',short:'Regrouper les process d’un chantier et inviter les collègues.',
+  intro:'Un projet range ensemble les process d’un même chantier. Celui qui le crée en est le chef de projet.',
+  steps:[
+   {t:'Créer le projet',d:'Onglet Projets, « Nouveau projet » : un nom et, si vous voulez, une description.',img:'projets'},
+   {t:'Ajouter des process',d:'« Ajouter des process » affiche vos process à cocher. Un process est dans un seul projet à la fois.',img:'projet'},
+   {t:'Inviter l’équipe',d:'Dans la section Équipe, invitez vos collègues par leur identifiant ou leur e-mail. Il faut être connecté.',img:'equipe'},
+   {t:'Gérer les rôles',d:'Touchez un collaborateur pour le nommer chef de projet ou le retirer du projet.',img:'chef'}
+  ],tip:'Le rôle dépend du projet : on peut être chef d’un projet et collaborateur d’un autre.'},
+ {id:'partager',ch:'equipe',title:'Faire valider chaque partie',short:'Confier chaque acteur du schéma à la bonne personne.',
+  intro:'Sur la fiche d’un de vos process, touchez « Partager avec les acteurs ».',
+  steps:[
+   {t:'Inviter une personne',d:'Écrivez son identifiant ou son e-mail, choisissez l’acteur du schéma dont elle s’occupe, puis « Inviter ». Les membres du projet sont proposés en premier.',img:'partager'},
+   {t:'Créer un lien pour un acteur sans compte',d:'Dans « Liens pour les acteurs sans compte », touchez « Créer un lien », puis « Envoyer ». Le lien est valable 30 jours, « Prolonger » en ajoute 30.',img:'partager'}
+  ],tip:'Les personnes invitées voient et jouent le process, sans pouvoir le modifier. Elles ne donnent leur avis que sur leur partie.'},
+ {id:'relire',ch:'equipe',title:'Valider ma partie',short:'On vous a confié une partie d’un process : donnez votre avis.',
+  intro:'Un process partagé avec vous apparaît dans votre liste, sous « Partagés avec moi ». Sur sa fiche, touchez « Relire et valider ma partie ».',
+  steps:[
+   {t:'Lire vos étapes',d:'« Ma partie » montre les étapes de l’acteur qui vous est confié. « Tout le process » montre aussi les autres, en lecture seule.',img:'relire'},
+   {t:'Valider ou signaler',d:'« Valider » si l’étape est juste. « À revoir… » pour dire ce qui ne va pas, puis « Enregistrer mon avis ».',img:'relire'}
+  ],tip:'Un souci vient d’une étape d’avant ? Expliquez-le dans le commentaire de votre propre étape : le chef de projet tranche.'},
+ {id:'lien',ch:'equipe',title:'J’ai reçu un lien de relecture',short:'Relire sa partie dans le navigateur, sans compte ni installation.',
+  intro:'Ouvrez le lien reçu par message ou par e-mail. La page dit qui demande la relecture et de quelle partie il s’agit.',
+  steps:[
+   {t:'Confirmer qui vous êtes',d:'Écrivez votre nom, puis « C’est moi, je relis ma partie ».',img:'lien-acteur'},
+   {t:'Donner votre avis',d:'Comme un membre : « Valider », ou « À revoir… » avec un commentaire. Chaque avis porte votre nom.',img:'relire'}
+  ],tip:'Le lien affiche « Lien expiré » après 30 jours : demandez à la personne qui vous l’a envoyé de le prolonger.'},
+ {id:'suivi-validation',ch:'equipe',title:'Suivre la validation',short:'Qui a fini, qui doit encore relire, quelles étapes revoir.',
+  intro:'Dès qu’un process est partagé, sa fiche montre la carte « Suivi de la validation ».',
+  steps:[
+   {t:'Lire le résumé',d:'« 2 membres sur 3 ont fini, 1 étape à revoir », puis « Process entièrement validé » quand tout est relu.',img:'validation'},
+   {t:'Corriger les étapes à revoir',d:'Le filtre « À revoir » ne garde que les étapes signalées, avec le commentaire et son auteur. Corrigez-les dans « Modifier » : le membre voit la nouvelle version.',img:'validation'},
+   {t:'Être prévenu',d:'La cloche de l’accueil compte les nouvelles alertes : process partagé, étape à revoir, process validé.',img:'alertes'}
+  ],tip:'Les alertes arrivent quand l’app s’ouvre ou se synchronise. Si l’app reste fermée, rien n’arrive.'},
+ {id:'tableau',ch:'equipe',title:'Lire le tableau de bord du projet',short:'L’avancement de toutes les relectures, sur un seul écran.',
+  intro:'Sur l’écran d’un projet, touchez « Tableau de bord ». Toute l’équipe peut l’ouvrir.',
+  steps:[
+   {t:'Voir l’avancement',d:'Un cercle donne le pourcentage de relectures faites, trois compteurs : validés, en cours, à revoir.',img:'tableau'},
+   {t:'Traiter les étapes signalées',d:'« À traiter » liste chaque étape signalée, avec le commentaire et son auteur.',img:'tableau'},
+   {t:'Parcourir les process',d:'Une carte par process, ceux à revoir d’abord. Touchez-en une pour l’ouvrir. Tirez l’écran vers le bas pour relire les avis.',img:'tableau'}
+  ]},
+ {id:'suivre',ch:'suivre',title:'Suivre une vraie demande',short:'Chaque étape reçoit son échéance, en jours ouvrés.',
+  intro:'Sur la fiche, touchez « Suivre ». Les échéances comptent du lundi au vendredi, de 9 h à 17 h, sans les jours fériés.',
+  steps:[
+   {t:'Terminer l’étape en cours',d:'L’étape en cours est en grand. Touchez « Étape terminée », ou choisissez la branche à une décision.',img:'suivre'},
+   {t:'Voir l’historique',d:'Les étapes passées s’alignent en frise, cochées, avec leur date.',img:'suivi-etapes'}
+  ],tip:'Dans Réglages, activez « Rappels d’échéance » : le téléphone vous prévient le matin du jour de l’échéance, puis à l’échéance si l’étape n’est pas finie.'},
+ {id:'delais',ch:'suivre',title:'Délais SLA et OLA',short:'Le délai promis au client et le délai de chaque équipe.',
+  intro:'Le SLA est le délai promis au client pour toute la demande. L’OLA est le délai d’une étape pour son équipe.',
+  steps:[
+   {t:'Donner les délais',d:'Ils sont lus à l’import (colonne OLA ou Délai, cellule « SLA : 5 JO »), ou saisis dans « Modifier » : SLA client en haut, délai OLA dans chaque étape.',img:'fiche'},
+   {t:'Suivre les chronos',d:'Pendant un suivi, deux chronos donnent le temps restant. Ils passent de vert à orange aux trois quarts du délai, puis à rouge une fois dépassé.',img:'delais'},
+   {t:'Lire le bilan',d:'À la fin, l’app dit si le SLA a été tenu, avec l’avance ou le retard, et combien d’OLA ont été tenus.',img:'fin'}
+  ]},
+ {id:'formulaire',ch:'confort',title:'Tester un formulaire de demande',short:'Voir le formulaire comme le demandeur, et le relier à son workflow.',
+  intro:'Un template de formulaire (un classeur Excel avec ses onglets de questions) est reconnu tout seul à l’import.',
+  steps:[
+   {t:'Voir le formulaire',d:'Il s’affiche tel que le demandeur le verra, et se remplit pour de vrai : les questions conditionnelles apparaissent selon les réponses.',img:'formulaire'},
+   {t:'Envoyer pour vérifier',d:'L’envoi vérifie les réponses obligatoires et les formats, puis affiche le récapitulatif. Rien n’est envoyé.',img:'formulaire-recap'}
+  ],tip:'Relié à son workflow, la réponse choisit la situation à simuler ou à suivre.'},
+ {id:'reglages',ch:'confort',title:'Régler l’app à votre goût',short:'Couleurs, mode sombre, langue, rappels, Siri.',
+  intro:'Le troisième onglet, Réglages. Chaque réglage a son bouton « ? » qui l’explique.',
+  steps:[
+   {t:'Couleurs et mode sombre',d:'Quatre palettes (Océan, Aurore, Menthe, Corail), en clair, en sombre ou selon le téléphone.',img:'reglages'},
+   {t:'Langue',d:'Automatique, Français ou English. Tout change tout de suite, sans relancer l’app.',img:'reglages'},
+   {t:'Raccourcis Siri',d:'Sur iPhone (iOS 18 et plus) : « Dis Siri, ouvrir Projets dans SimuFlow ». Rien à régler.',img:'reglages'}
+  ]}
+];
+const ROLES=[
+ {id:'chef',title:'Je pilote un projet',text:'Vous modélisez les process d’un chantier et vous les faites valider par chaque équipe.',
+  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>',
+  guides:['installer','importer-fichier','diagnostic','corriger','simuler','projet','partager','suivi-validation','tableau']},
+ {id:'collab',title:'On m’a demandé de valider',text:'Une personne vous a confié une partie d’un process, dans l’app ou par un lien.',
+  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  guides:['lien','installer','relire','simuler','tous']},
+ {id:'essai',title:'Je veux juste essayer',text:'Quatre exemples fictifs sont fournis dans l’app : rien à préparer.',
+  icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg>',
+  guides:['installer','simuler','tous','importer-texte','exporter']}
+];
+const LEX=[
+ ['Process','Une suite d’étapes pour obtenir un résultat : traiter une demande d’achat, accueillir un nouvel arrivant…'],
+ ['Étape','Une action faite par un acteur, avec éventuellement un délai.'],
+ ['Acteur','Le service ou le rôle qui fait une étape : Achats, Responsable, Logistique. Pas le nom d’une personne.'],
+ ['Décision','Une étape où le chemin se sépare selon la réponse : « Demande validée ? » oui ou non.'],
+ ['Tâches en parallèle','Des étapes faites en même temps par plusieurs équipes. Une étape les réunit et attend que toutes soient finies.'],
+ ['Chemin','Un parcours possible du départ à la fin. Un process avec deux décisions a souvent plusieurs chemins.'],
+ ['Chemin critique','Le chemin le plus long : c’est lui qui fixe le délai maximal du process.'],
+ ['Impasse','Une étape sans suite, d’où le process ne peut jamais finir.'],
+ ['Jour ouvré (JO)','Un jour de travail : du lundi au vendredi, de 9 h à 17 h, sans les jours fériés.'],
+ ['SLA','Le délai promis au client pour toute la demande. Par exemple : 6 jours ouvrés.'],
+ ['OLA','Le délai d’une étape pour l’équipe qui la fait. Par exemple : 2 jours ouvrés pour les Achats.'],
+ ['Simulation','Rejouer le process à l’écran pour voir où il mène, sans rien lancer pour de vrai.'],
+ ['Suivi en vrai','Accompagner une vraie demande, étape par étape, avec ses échéances.'],
+ ['Projet','Un groupe de process d’un même chantier, partagé avec une équipe.'],
+ ['Chef de projet','La personne qui pilote un projet : elle invite l’équipe et partage les process.'],
+ ['draw.io, BPMN, Visio','Des formats de schéma courants. SimuFlow les lit, et sait exporter en draw.io et en BPMN.'],
+ ['Anonymiser','Remplacer les vrais noms par Service A, Service B… avant de montrer un process.'],
+ ['Synchronisation','Avec un compte, la mise à jour de vos process sur tous vos appareils.']
+];
+const FAQ=[
+ ['Faut-il créer un compte ?','Non. Sans compte, vous importez, corrigez, simulez et exportez, et tout reste sur le téléphone. Le compte sert à retrouver vos process sur plusieurs appareils et à travailler en équipe : projets, partage, validation.'],
+ ['Où vont mes données ?','Sans compte, nulle part : tout reste sur le téléphone. Avec un compte, vos données sont gardées en Union européenne et visibles par vous seul, sauf ce que vous partagez. Les photos du Scanner ne quittent jamais le téléphone.'],
+ ['Le Scanner a-t-il besoin d’Internet ?','Non. Sur iPhone et Android, le texte est lu sur le téléphone, sans connexion.'],
+ ['Puis-je modifier un process qu’on m’a partagé ?','Non. Vous pouvez l’ouvrir, le simuler et suivre une demande, et donner votre avis sur votre partie. Seul son propriétaire le modifie.'],
+ ['La personne qui relit doit-elle installer l’app ?','Non. Créez un lien pour son acteur dans « Partager » : elle relit sa partie dans son navigateur, sans compte. Le lien est valable 30 jours et se prolonge.'],
+ ['Pourquoi n’ai-je pas reçu d’alerte ?','Les alertes arrivent quand l’app s’ouvre, revient au premier plan ou se synchronise. Il n’y a pas de serveur de notifications : tant que l’app reste fermée, rien n’arrive.'],
+ ['Et sans réseau ?','Vos process restent disponibles. La liste affiche « Hors connexion » et l’app envoie vos changements dès le retour du réseau.'],
+ ['J’ai modifié le même process sur deux appareils, que se passe-t-il ?','Les deux modifications sont réunies, étape par étape. Seule exception : la même étape changée de deux façons différentes. L’app garde alors la version déjà enregistrée.'],
+ ['Comment supprimer un process ?','Sur sa fiche, bouton « … » en haut, puis « Supprimer ».'],
+ ['Comment avoir la dernière version ?','Les corrections arrivent toutes seules au lancement suivant. Dans Réglages, rubrique À propos, la ligne Version dit laquelle est installée.']
+];
+
+/* ---------- Outils ---------- */
+const $=s=>document.querySelector(s);
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const byId=Object.fromEntries(G.map(g=>[g.id,g]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let done=new Set(store.get('sf-done',[]));
+const img=k=>'img/'+k+'.webp';
+
+/* ---------- Thème ---------- */
+$('#themeBtn').addEventListener('click',()=>{
+  const r=document.documentElement;
+  const dark=r.dataset.theme? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme=dark?'light':'dark'; store.set('sf-theme',r.dataset.theme);
+});
+const th=store.get('sf-theme',null); if(th) document.documentElement.dataset.theme=th;
+
+/* ---------- Guides ---------- */
+function renderChapters(){
+  $('#chapters').innerHTML=CHAPTERS.map(c=>{
+    const gs=G.filter(g=>g.ch===c.id);
+    return `<div class="chapter"><h3>${c.name}</h3><div class="cards">${gs.map(g=>`
+      <button type="button" class="card${done.has(g.id)?' done':''}" data-open="${g.id}">
+        <div class="thumb"><img src="${img(g.steps[0].img)}" alt="" loading="lazy"></div>
+        <div class="body"><b>${esc(g.title)}</b><span>${esc(g.short)}</span>
+        <div class="meta">${g.steps.length} étapes</div></div>
+      </button>`).join('')}</div></div>`;
+  }).join('');
+}
+let cur=null, step=0;
+const dlg=$('#guide');
+function openGuide(id,push=true){
+  const g=byId[id]; if(!g) return;
+  cur=g; step=0;
+  $('#gTag').textContent=CHAPTERS.find(c=>c.id===g.ch).name;
+  $('#gTitle').textContent=g.title;
+  $('#gIntro').textContent=g.intro;
+  $('#gSteps').innerHTML=g.steps.map((s,i)=>`<li><button type="button" data-step="${i}"><span class="n">${i+1}</span><span class="s"><b>${esc(s.t)}</b><span>${esc(s.d)}</span></span></button></li>`).join('');
+  let extra='';
+  if(g.sample) extra+=`<pre class="sample" aria-label="Exemple de texte">${esc(g.sample)}</pre>`;
+  if(g.tip) extra+=`<p class="tip"><b>Bon à savoir.</b> ${esc(g.tip)}</p>`;
+  $('#gExtra').innerHTML=extra;
+  $('#gDone').checked=done.has(g.id);
+  setStep(0);
+  if(!dlg.open){ try{dlg.showModal()}catch(e){dlg.setAttribute('open','')} }
+  if(push && location.hash!=='#'+g.id) history.replaceState(null,'','#'+g.id);
+}
+function setStep(i){
+  step=Math.max(0,Math.min(cur.steps.length-1,i));
+  document.querySelectorAll('#gSteps button').forEach((b,j)=>{ if(j===step) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); });
+  const s=cur.steps[step], im=$('#gImg');
+  im.src=img(s.img); im.alt='Écran de SimuFlow : '+s.t;
+  $('#gPhone').classList.toggle('wide',['installer','delais'].includes(s.img));
+  $('#gPrev').disabled=step===0;
+  $('#gNext').textContent=step===cur.steps.length-1?'Terminer':'Étape suivante';
+}
+function closeGuide(){ if(dlg.open) dlg.close(); }
+dlg.addEventListener('close',()=>{ if(location.hash && byId[location.hash.slice(1)]) history.replaceState(null,'',location.pathname+location.search); });
+dlg.addEventListener('click',e=>{ if(e.target===dlg) closeGuide(); });
+$('#gClose').addEventListener('click',closeGuide);
+$('#gSteps').addEventListener('click',e=>{const b=e.target.closest('[data-step]'); if(b) setStep(+b.dataset.step);});
+$('#gPrev').addEventListener('click',()=>setStep(step-1));
+$('#gNext').addEventListener('click',()=>{
+  if(step===cur.steps.length-1){ if(!done.has(cur.id)){done.add(cur.id);saveDone();} closeGuide(); }
+  else setStep(step+1);
+});
+$('#gDone').addEventListener('change',e=>{ e.target.checked?done.add(cur.id):done.delete(cur.id); saveDone(); });
+function saveDone(){ store.set('sf-done',[...done]); renderChapters(); renderPath(); }
+document.addEventListener('click',e=>{const b=e.target.closest('[data-open]'); if(b){ e.preventDefault(); openGuide(b.dataset.open); }});
+
+/* ---------- Parcours ---------- */
+let role=store.get('sf-role','chef');
+function renderDoors(){
+  $('#doors').innerHTML=ROLES.map(r=>`<button type="button" class="door" data-role="${r.id}" aria-pressed="${r.id===role}">
+    <span class="ico">${r.icon}</span><h3>${esc(r.title)}</h3><p>${esc(r.text)}</p></button>`).join('');
+}
+function renderPath(){
+  const r=ROLES.find(x=>x.id===role); const n=r.guides.filter(id=>done.has(id)).length;
+  $('#path').innerHTML=`<div class="path-top"><h3>Votre parcours : ${esc(r.title.toLowerCase())}</h3><span class="progress">${n} sur ${r.guides.length} faits</span></div>
+  <ol>${r.guides.map(id=>{const g=byId[id];return `<li class="${done.has(id)?'done':''}"><button type="button" data-open="${id}"><span class="t"><b>${esc(g.title)}</b><span>${esc(g.short)}</span></span><span class="go" aria-hidden="true">›</span></button></li>`}).join('')}</ol>`;
+}
+$('#doors').addEventListener('click',e=>{const b=e.target.closest('[data-role]'); if(!b) return; role=b.dataset.role; store.set('sf-role',role); renderDoors(); renderPath();});
+
+/* ---------- Lexique et FAQ ---------- */
+$('#lex').innerHTML=LEX.map(([t,d])=>`<div class="term" id="lex-${norm(t).replace(/[^a-z0-9]+/g,'-')}"><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('');
+$('#faqList').innerHTML=FAQ.map(([q,a],i)=>`<details id="faq-${i}"><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('');
+
+/* ---------- Recherche ---------- */
+const idx=[
+  ...G.map(g=>({kind:'Guide',title:g.title,sub:g.short,text:norm([g.title,g.short,g.intro,g.tip||'',...g.steps.map(s=>s.t+' '+s.d)].join(' ')),go:()=>openGuide(g.id)})),
+  ...LEX.map(([t,d])=>({kind:'Lexique',title:t,sub:d,text:norm(t+' '+d),go:()=>flash('#lex-'+norm(t).replace(/[^a-z0-9]+/g,'-'))})),
+  ...FAQ.map(([q,a],i)=>({kind:'Question',title:q,sub:a,text:norm(q+' '+a),go:()=>{const d=$('#faq-'+i);d.open=true;flash('#faq-'+i)}}))
+];
+function flash(sel){const el=$(sel); if(!el) return; el.scrollIntoView({block:'center'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');}
+const q=$('#q'), res=$('#results'); let hits=[];
+q.addEventListener('input',()=>{
+  const words=norm(q.value).split(/\s+/).filter(Boolean);
+  if(!words.length){res.hidden=true;return;}
+  hits=idx.map(x=>({x,score:words.reduce((s,w)=>s+(x.text.includes(w)?1:0)+(norm(x.title).includes(w)?2:0),0)}))
+    .filter(h=>words.every(w=>h.x.text.includes(w))).sort((a,b)=>b.score-a.score).slice(0,8).map(h=>h.x);
+  res.innerHTML=hits.length?hits.map((h,i)=>`<button type="button" data-hit="${i}"><b>${esc(h.title)}</b><span>${h.kind} · ${esc(h.sub.length>90?h.sub.slice(0,88)+'…':h.sub)}</span></button>`).join('')
+    :`<div class="none">Rien trouvé pour « ${esc(q.value)} ». Essayez un mot plus simple : importer, valider, délai, projet…</div>`;
+  res.hidden=false;
+});
+q.addEventListener('keydown',e=>{ if(e.key==='Enter'&&hits[0]){e.preventDefault();res.hidden=true;hits[0].go();} if(e.key==='Escape'){res.hidden=true;} });
+res.addEventListener('click',e=>{const b=e.target.closest('[data-hit]'); if(b){res.hidden=true; hits[+b.dataset.hit].go();}});
+document.addEventListener('click',e=>{ if(!e.target.closest('.search')) res.hidden=true; });
+
+/* ---------- Mini simulation ---------- */
+const N={
+  a:{x:10,y:20,w:96,label:'Faire la demande',who:'Employé',d:1,next:'b'},
+  b:{x:150,y:20,w:80,label:'Validée ?',who:'Responsable',d:2,dec:true,opts:[['Oui, validée','c'],['Non, refusée','r']]},
+  c:{x:244,y:96,w:86,label:'Commander',who:'Achats',d:1,next:'l'},
+  l:{x:244,y:176,w:86,label:'Livrer',who:'Logistique',d:5,next:'f'},
+  r:{x:92,y:110,w:96,label:'Prévenir du refus',who:'Responsable',d:1,next:'f'},
+  f:{x:105,y:176,w:70,label:'Fin',who:'Fin',d:0,end:true}
+};
+const E=[['a','b'],['b','c','oui'],['b','r','non'],['c','l'],['l','f'],['r','f']];
+const H=34;
+function cx(n){return n.x+n.w/2} function cy(n){return n.y+H/2}
+const PATHS={ab:'M106 37 H150',bc:'M230 37 H287 V96',br:'M190 60 V80 H140 V110',cl:'M287 130 V176',lf:'M244 193 H175',rf:'M140 144 V176'};
+function edgePath(a,b){return PATHS[a+b];}
+const svgNS='http://www.w3.org/2000/svg';
+const gE=$('#edges'), gN=$('#nodes');
+E.forEach(([a,b,l])=>{
+  const p=document.createElementNS(svgNS,'path'); p.setAttribute('d',edgePath(a,b)); p.setAttribute('class','edge'); p.dataset.k=a+b; gE.appendChild(p);
+  if(l){const t=document.createElementNS(svgNS,'text'); t.setAttribute('class','elabel'); t.textContent=l;
+    if(b==='c'){t.setAttribute('x',240);t.setAttribute('y',31);} else {t.setAttribute('x',196);t.setAttribute('y',76);} gE.appendChild(t);}
+});
+Object.entries(N).forEach(([k,n])=>{
+  const g=document.createElementNS(svgNS,'g'); g.setAttribute('class','node'); g.dataset.k=k;
+  if(n.dec){const p=document.createElementNS(svgNS,'polygon');const X=n.x,Y=n.y,W=n.w;p.setAttribute('points',`${X+W/2},${Y-6} ${X+W},${Y+H/2} ${X+W/2},${Y+H+6} ${X},${Y+H/2}`);g.appendChild(p);}
+  else {const r=document.createElementNS(svgNS,'rect');r.setAttribute('x',n.x);r.setAttribute('y',n.y);r.setAttribute('width',n.w);r.setAttribute('height',H);r.setAttribute('rx',n.end?17:9);g.appendChild(r);}
+  const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',cx(n)); t.setAttribute('y',cy(n)+4); t.setAttribute('text-anchor','middle'); t.textContent=n.label; g.appendChild(t);
+  gN.appendChild(g);
+});
+const SLA=10; let at='a', trail=[], days=0;
+function drawSim(){
+  document.querySelectorAll('#nodes .node').forEach(g=>{const k=g.dataset.k; g.classList.toggle('now',k===at); g.classList.toggle('done',trail.includes(k));});
+  const seq=[...trail,at]; document.querySelectorAll('#edges .edge').forEach(p=>{let on=false; for(let i=0;i<seq.length-1;i++) if(p.dataset.k===seq[i]+seq[i+1]) on=true; p.classList.toggle('on',on);});
+  const n=N[at];
+  $('#simWho').textContent=n.end?'Terminé':n.who+(n.d?` · ${n.d} JO`:'');
+  $('#simWhat').textContent=n.end?'Demande close':(n.dec?'Demande validée ?':n.label);
+  const total=days+(n.end?0:n.d);
+  const pct=Math.min(100,total/SLA*100), bar=$('#simBar');
+  bar.style.width=pct+'%'; bar.style.background=total>SLA?'var(--danger)':(total>=SLA*0.75?'var(--warn)':'var(--accent)');
+  $('#simDays').textContent=`${total} JO cumulés`+(n.end?'':' avec cette étape');
+  const act=$('#simActions'); act.innerHTML='';
+  $('#simEnd').innerHTML='';
+  if(n.end){
+    const ok=days<=SLA;
+    $('#simEnd').innerHTML=`<div class="sim-end ${ok?'ok':'ko'}">${trail.length+1} étapes · ${days} JO · ${ok?'SLA tenu':'SLA dépassé'}</div>`;
+    addBtn('Recommencer','ghost',reset); addBtn('Voir le guide de simulation','',()=>openGuide('simuler'));
+  } else if(n.dec){
+    n.opts.forEach(([l,to])=>addBtn(l,'',()=>go(to)));
+  } else {
+    addBtn('Étape terminée','',()=>go(n.next));
+    if(trail.length) addBtn('Retour','ghost',back);
+  }
+  function addBtn(l,c,f){const b=document.createElement('button');b.type='button';b.className='btn'+(c?' '+c:'');b.textContent=l;b.onclick=f;act.appendChild(b);}
+}
+const hist=[];
+function go(to){hist.push({at,days});days+=N[at].d;trail.push(at);at=to;drawSim();}
+function back(){const h=hist.pop(); if(!h) return; at=h.at; days=h.days; trail.pop(); drawSim();}
+function reset(){at='a';trail=[];days=0;hist.length=0;drawSim();}
+drawSim();
+
+/* ---------- Démarrage ---------- */
+renderChapters(); renderDoors(); renderPath();
+function fromHash(){const h=location.hash.slice(1); if(byId[h]) openGuide(h,false); else if(['chef','collab','essai'].includes(h)){role=h;renderDoors();renderPath();$('#parcours').scrollIntoView();}}
+addEventListener('hashchange',fromHash); fromHash();
+})();
+</script>
+</body>
+</html>
