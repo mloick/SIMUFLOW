@@ -13,7 +13,7 @@ SimuFlow est développé avec Claude Code (Anthropic). Ce document dit ce qui a 
 ### Fichiers d'instructions du dépôt
 
 - **`AGENTS.md`** (modèle fourni par Expo) : lire la documentation Expo de la version installée (SDK 58) plutôt que se fier à sa mémoire ; installer les paquets avec `npx expo install` ; utiliser Expo Router ; ne jamais modifier `ios/` et `android/` à la main ; lancer le lint et le contrôle des types avant de dire qu'une tâche est finie.
-- **`CLAUDE.md`** (écrit pour le projet) : interface et documentation en français, README en anglais et en français ; à chaque changement de code, mettre à jour `README.md`, `README.fr.md`, `docs/technique.md`, `docs/fonctionnalites.md` et le manuel d'utilisation dans la même pull request ; captures d'écran pour chaque étape qui change un écran ; uniquement des exemples fictifs, aucun nom réel d'entreprise, de client ou de service.
+- **`CLAUDE.md`** (écrit pour le projet) : interface et documentation en français, README en anglais et en français ; à chaque changement de code, mettre à jour `README.md`, `README.fr.md`, `docs/technique.md`, `docs/fonctionnalites.md` et le manuel d'utilisation (français et anglais) dans la même pull request ; captures d'écran pour chaque étape qui change un écran ; uniquement des exemples fictifs, aucun nom réel d'entreprise, de client ou de service.
 
 ### Mémoire du projet
 
