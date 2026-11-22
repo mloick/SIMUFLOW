@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy policy · SimuFlow</title>
+  <meta name="description" content="What data SimuFlow uses, where it is kept, and how to delete it.">
+  <link rel="alternate" hreflang="fr" href="https://mloick.github.io/SIMUFLOW/confidentialite.html">
+  <link rel="alternate" hreflang="en" href="https://mloick.github.io/SIMUFLOW/en/privacy.html">
+  <link rel="icon" href="../logo/simuflow-symbole.svg">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="page">
+  <header class="haut">
+    <img src="../logo/simuflow-symbole.svg" alt="">
+    <a href="./">SimuFlow</a>
+    <nav class="liens"><a href="./">Home</a><a href="https://github.com/mloick/SIMUFLOW">Code</a><a href="../confidentialite.html" hreflang="fr" lang="fr">Français</a></nav>
+  </header>
+
+  <main>
+    <h1>Privacy policy</h1>
+    <p class="petit">Last updated: 15 November 2026. Applies to the SimuFlow app for iPhone and Android, and to its web version, version 1.0. This is a translation of the <a href="../confidentialite.html" hreflang="fr">French policy</a>, which prevails in case of difference.</p>
+
+    <h2>In short</h2>
+    <ul>
+      <li>Without an account, everything stays on your phone.</li>
+      <li>With an account, only your e-mail address, your imported processes, your reading rules and your saved forms are sent to the server, hosted in the European Union (Paris). Only you can access them.</li>
+      <li>Scanner photos are read on the phone and are sent nowhere.</li>
+      <li>No ads, no audience tracking, no data sold or shared.</li>
+      <li>You can delete your account and everything in it from the app, at any time.</li>
+      <li>In the web version, “phone” means your browser: without an account, your data stays in its local storage, and the session is kept in the same place. The Scanner reads the photo in the browser itself, with a reading engine served by this site: the image is sent nowhere. Reminders are not available there.</li>
+    </ul>
+
+    <h2>Who is responsible</h2>
+    <p>SimuFlow is a personal project, developed by Loïck. For any question or request about your data, open an issue on the <a href="https://github.com/mloick/SIMUFLOW/issues">project page</a>.</p>
+
+    <h2>The data, one by one</h2>
+    <div class="tableau">
+    <table>
+      <tr><th>Data</th><th>Why</th><th>Where it is kept</th></tr>
+      <tr><td>E-mail address and password</td><td>Create your account and sign in. The password is stored encrypted; the app does not keep it.</td><td>Server (Supabase, Paris), only if you create an account</td></tr>
+      <tr><td>Sign-in token</td><td>Stay signed in from one launch to the next.</td><td>The phone's encrypted keychain (Keychain, Keystore), never copied into a backup</td></tr>
+      <tr><td>Imported processes (steps, actors, time limits, links)</td><td>Find them on all your devices.</td><td>Phone; and server if you are signed in</td></tr>
+      <tr><td>Reading rules learned from your corrections</td><td>Correct the next imports automatically.</td><td>Phone; and server if you are signed in</td></tr>
+      <tr><td>Saved forms (questions, original file, linked workflow)</td><td>Fill them in again on all your devices.</td><td>Phone; and server if you are signed in</td></tr>
+      <tr><td>Scanner photos and the text read</td><td>Turn a table into a process. Reading happens on the phone (Vision on iPhone, ML Kit on Android), without the Internet.</td><td>The app's temporary folder, on the phone only</td></tr>
+      <tr><td>Tracked requests and their deadlines</td><td>Work out the deadlines and schedule the reminders.</td><td>Phone only</td></tr>
+      <tr><td>Settings (reminders, examples, introduction seen)</td><td>Keep your choices from one launch to the next.</td><td>Phone only</td></tr>
+    </table>
+    </div>
+    <p>The processes and rules saved on the server are protected by access rules: each account sees only its own, and nothing can be read without signing in.</p>
+
+    <h2>Phone permissions</h2>
+    <ul>
+      <li><strong>Camera</strong>: asked the first time the Scanner opens, only to photograph a table. No microphone, no photo library.</li>
+      <li><strong>Notifications</strong>: asked at the first deadline reminder. They are scheduled by the phone itself; no server sends them to you. You can turn them off in Settings.</li>
+    </ul>
+
+    <h2>Services used</h2>
+    <ul>
+      <li><strong>Supabase</strong> (hosting of the server and the accounts, Paris region): receives the account data described above.</li>
+      <li><strong>Expo (EAS Update)</strong>: at launch, the app asks whether an update exists. This request contains technical information (app version, phone system), not your data.</li>
+    </ul>
+    <p>No other service receives data from the app.</p>
+
+    <h2>How long</h2>
+    <p>Account data is kept as long as the account exists. On the phone, it is kept until you sign out (the account's copies are then removed) or uninstall the app.</p>
+
+    <h2>Your rights</h2>
+    <p>At any time you can view your processes in the app, change them, delete them, and <strong>delete your account</strong>: Settings, then your profile, then “Delete my account”. The account, your processes and your rules are then erased from the server and the phone. For any other request (access, rectification, objection), write via the <a href="https://github.com/mloick/SIMUFLOW/issues">project page</a>. You can also lodge a complaint with the CNIL, the French data protection authority.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the date at the top of the page is updated, and the change is visible in the history of the <a href="https://github.com/mloick/SIMUFLOW">source code</a>.</p>
+  </main>
+
+  <footer>
+    SimuFlow, a project by Loïck. · <a href="./">Home</a> · <a href="https://github.com/mloick/SIMUFLOW">Source code</a> · <a href="../confidentialite.html" hreflang="fr" lang="fr">Version française</a>
+  </footer>
+</div>
+</body>
+</html>
