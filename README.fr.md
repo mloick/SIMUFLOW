@@ -132,7 +132,7 @@ Le détail, fichier par fichier, est dans la [documentation technique](docs/tech
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, skills, MCP) et comment nous travaillons avec.
 - [BPMN 2.0 en bref](docs/bpmn.md) : la norme, ce que SimuFlow en lit et y écrit, et l'import Visio.
 - [Logo](docs/logo/) : un chemin en S, un process parcouru pas à pas ; c'est aussi l'icône de l'app et son écran de démarrage.
-- [Site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/`.
+- [Site](https://mloick.github.io/SIMUFLOW/) (version anglaise : [/en/](https://mloick.github.io/SIMUFLOW/en/)) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/`.
 
 ## Technologies
 
