@@ -15,6 +15,7 @@ Toute modification du code (`src/`, `app.json`, `package.json`, `modules/`) met 
 - `README.md` (anglais) et `README.fr.md` (français) : mêmes sections, même contenu, chacun dans sa langue.
 - `docs/technique.md` : état actuel, structure, commandes, architecture. Décrire le code tel qu'il est, pas tel qu'on l'espère.
 - `docs/site/manuel/index.html` : le manuel d'utilisation, publié sur https://mloick.github.io/SIMUFLOW/manuel/. C'est la seule description des fonctionnalités pour l'utilisateur non technique : des guides « Je veux… » courts, en « vous », avec l'écran de l'app. Une fonctionnalité nouvelle ou changée y ajoute ou corrige son guide (tableau `G` du script), et le lexique ou la FAQ si besoin.
+- `docs/site/en/manual/index.html` : la traduction anglaise du manuel, publiée sur https://mloick.github.io/SIMUFLOW/en/manual/. Même structure et mêmes identifiants de guides que le manuel français ; ses images viennent de `docs/site/manuel/img/`. Tout guide ajouté ou corrigé en français l'est aussi en anglais, dans la même pull request, avec les libellés anglais de l'app (`src/i18n/messages/en*.ts`).
 - `docs/fonctionnalites.md` : une page courte qui renvoie vers le manuel et donne l'état de chaque fonctionnalité en une ligne. Passer une fonctionnalité de « Prévue » à « Disponible » quand elle fonctionne. Ne pas y redécrire les écrans.
 
 Si une modification ne change rien pour un document, ne pas le toucher.

@@ -4,7 +4,7 @@ SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le
 
 ## Le manuel d'utilisation
 
-**Pour apprendre à vous servir de l'app, ouvrez le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/).** Il est interactif : un parcours selon votre rôle, des guides « Je veux… » de quelques étapes avec le vrai écran de l'app, une démo jouable, une recherche, un lexique et une FAQ.
+**Pour apprendre à vous servir de l'app, ouvrez le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/)** (en anglais : [user manual](https://mloick.github.io/SIMUFLOW/en/manual/)). Il est interactif : un parcours selon votre rôle, des guides « Je veux… » de quelques étapes avec le vrai écran de l'app, une démo jouable, une recherche, un lexique et une FAQ.
 
 Cette page-ci ne fait que lister les fonctionnalités et leur état : **Disponible** ou **Prévue**. Chaque lien ouvre le guide du manuel.
 

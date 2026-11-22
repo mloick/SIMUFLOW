@@ -41,7 +41,7 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Redesigned screens**: the process detail has key figures, a big « Start the simulation » button, four quick actions and folding sections; the simulation docks a step card under a live diagram with auto-follow, a minimap, full screen and a landscape layout; « New process » shows the eight sources as tiles; the scanner has an animated viewfinder; tracking, alerts, sharing, forms and export share the same style.
 - **French or English**: every screen follows the phone's language, or the choice made in Settings. What you import stays as written, and so do the exported files and the four examples, in French.
 
-The full tour is in the interactive [user manual](https://mloick.github.io/SIMUFLOW/manuel/) (French): a path for each role, short step-by-step guides with the real screens, a playable demo, a glossary and FAQ. The [features list](docs/fonctionnalites.md) gives the status of each feature in one line. The screen mockups are in [`docs/maquette/`](docs/maquette/).
+The full tour is in the interactive [user manual](https://mloick.github.io/SIMUFLOW/en/manual/) (also [in French](https://mloick.github.io/SIMUFLOW/manuel/)): a path for each role, short step-by-step guides with the real screens, a playable demo, a glossary and FAQ. The [features list](docs/fonctionnalites.md) gives the status of each feature in one line. The screen mockups are in [`docs/maquette/`](docs/maquette/).
 
 <p align="center"><img src="docs/captures/etape-10d-process.png" width="640" alt="Scanner: a photographed table becomes a process with its key figures and diagnostic"></p>
 
@@ -127,7 +127,7 @@ File-by-file detail is in the [technical documentation](docs/technique.md) (Fren
 
 All in French.
 
-- [User manual](https://mloick.github.io/SIMUFLOW/manuel/) ([source](docs/site/manuel/index.html)): how to use the app, in plain words, guide by guide, with the real screens.
+- [User manual](https://mloick.github.io/SIMUFLOW/en/manual/) ([source](docs/site/en/manual/index.html); French version [/manuel/](https://mloick.github.io/SIMUFLOW/manuel/), [source](docs/site/manuel/index.html)): how to use the app, in plain words, guide by guide, with the real screens.
 - [Features list](docs/fonctionnalites.md): each feature and its status, one line each.
 - [Technical documentation](docs/technique.md): structure, commands, architecture, file by file.
 - [Security](docs/securite.md): the filled-in security checklist (OWASP MASVS), keys, access rules, data on the phone.
