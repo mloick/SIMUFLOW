@@ -134,7 +134,7 @@ All in French.
 - [Working with AI](docs/ia.md): what guides the AI (AGENTS.md, CLAUDE.md, skills, MCP) and how we work with it.
 - [BPMN 2.0 in brief](docs/bpmn.md): the standard, what SimuFlow reads and writes, and the Visio import.
 - [Logo](docs/logo/): an S-shaped path, a process walked step by step; also the app icon and splash screen.
-- [Website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html), built from `docs/site/`.
+- [Website](https://mloick.github.io/SIMUFLOW/) (English version: [/en/](https://mloick.github.io/SIMUFLOW/en/)) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html), built from `docs/site/`.
 
 ## Tech stack
 
