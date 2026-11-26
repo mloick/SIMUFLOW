@@ -33,7 +33,7 @@ Cette page-ci ne fait que lister les fonctionnalités et leur état : **Disponib
 - **Partager avec les acteurs**, et lien de 30 jours pour les acteurs sans compte · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#partager)
 - **Relire et valider ma partie** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#relire)
 - **Relire par un lien**, dans le navigateur, sans compte · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#lien)
-- **Lien de consultation** d'un formulaire, d'un workflow, ou des deux, sans compte et sans vérification · Prévue
+- **Lien de consultation** d'un formulaire, d'un workflow, ou des deux, sans compte, avec un guide · Disponible · [créer](https://mloick.github.io/SIMUFLOW/manuel/#lien-consultation) · [recevoir](https://mloick.github.io/SIMUFLOW/manuel/#voir-lien)
 - **Suivi de la validation** et **alertes du partage** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#suivi-validation)
 - **Tableau de bord du projet** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#tableau)
 

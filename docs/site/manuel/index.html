@@ -476,6 +476,18 @@ const G=[
    {t:'Confirmer qui vous êtes',d:'Écrivez votre nom, puis « C’est moi, je relis ma partie ».',img:'lien-acteur'},
    {t:'Donner votre avis',d:'Comme un membre : « Valider », ou « À revoir… » avec un commentaire. Chaque avis porte votre nom.',img:'relire'}
   ],tip:'Le lien affiche « Lien expiré » après 30 jours : demandez à la personne qui vous l’a envoyé de le prolonger.'},
+ {id:'lien-consultation',ch:'equipe',title:'Envoyer un formulaire ou un workflow par lien',short:'Le montrer à quelqu’un qui n’a ni compte ni formation, dans son navigateur.',
+  intro:'Connecté à votre compte, ouvrez un formulaire (avec ou sans son workflow) et touchez « Partager par lien », ou, sur la fiche d’un process, le bouton « … » puis « Partager par lien de consultation ».',
+  steps:[
+   {t:'Préparer le lien',d:'Vérifiez le titre affiché, puis écrivez si vous voulez un mot pour la personne (« regardez surtout l’étape de validation »). Anonymisez avant si le contenu cite de vrais noms.',img:'partager-lien'},
+   {t:'Créer et envoyer',d:'« Créer le lien », puis « Envoyer » : par message, par e-mail ou copié. Le lien est valable 30 jours. Dans « Mes liens de consultation », « Prolonger » en ajoute 30 et « Retirer » le coupe.',img:'partager-lien'}
+  ],tip:'Le lien garde une copie du formulaire ou du workflow : si vous le modifiez ensuite, créez un nouveau lien. Toute personne qui a le lien voit son contenu, même s’il est transféré.'},
+ {id:'voir-lien',ch:'equipe',title:'J’ai reçu un lien de consultation',short:'Voir un formulaire ou un workflow dans le navigateur, sans compte.',
+  intro:'Ouvrez le lien reçu. La page dit qui l’envoie, jusqu’à quand il est valable, et affiche son mot s’il en a écrit un. Un petit guide explique quoi faire.',
+  steps:[
+   {t:'Essayer le formulaire',d:'Remplissez-le comme la personne qui fait la demande. « Envoyer la demande » vérifie vos réponses et montre le récapitulatif. Rien n’est envoyé ni enregistré.',img:'voir-formulaire'},
+   {t:'Suivre le workflow',d:'Le schéma montre tout le workflow. Touchez « Étape suivante », ou, à une décision, le choix à suivre. Si un formulaire précède le workflow, « Voir le workflow qui suit » l’ouvre après l’envoi.',img:'voir-workflow'}
+  ],tip:'Sur un téléphone, le guide est replié au-dessus du schéma : « Voir le guide » l’ouvre. Sur un grand écran, il reste à côté.'},
  {id:'suivi-validation',ch:'equipe',title:'Suivre la validation',short:'Qui a fini, qui doit encore relire, quelles étapes revoir.',
   intro:'Dès qu’un process est partagé, sa fiche montre la carte « Suivi de la validation ».',
   steps:[
@@ -520,10 +532,10 @@ const G=[
 const ROLES=[
  {id:'chef',title:'Je pilote un projet',text:'Vous modélisez les process d’un chantier et vous les faites valider par chaque équipe.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>',
-  guides:['installer','importer-fichier','diagnostic','corriger','simuler','projet','partager','suivi-validation','tableau']},
+  guides:['installer','importer-fichier','diagnostic','corriger','simuler','projet','partager','lien-consultation','suivi-validation','tableau']},
  {id:'collab',title:'On m’a demandé de valider',text:'Une personne vous a confié une partie d’un process, dans l’app ou par un lien.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
-  guides:['lien','installer','relire','simuler','tous']},
+  guides:['lien','voir-lien','installer','relire','simuler','tous']},
  {id:'essai',title:'Je veux juste essayer',text:'Quatre exemples fictifs sont fournis dans l’app : rien à préparer.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg>',
   guides:['installer','simuler','tous','importer-texte','exporter']}
@@ -546,7 +558,8 @@ const LEX=[
  ['Chef de projet','La personne qui pilote un projet : elle invite l’équipe et partage les process.'],
  ['draw.io, BPMN, Visio','Des formats de schéma courants. SimuFlow les lit, et sait exporter en draw.io et en BPMN.'],
  ['Anonymiser','Remplacer les vrais noms par Service A, Service B… avant de montrer un process.'],
- ['Synchronisation','Avec un compte, la mise à jour de vos process sur tous vos appareils.']
+ ['Synchronisation','Avec un compte, la mise à jour de vos process sur tous vos appareils.'],
+ ['Lien de consultation','Un lien qui montre un formulaire ou un workflow dans le navigateur, sans compte, pendant 30 jours. Rien de ce qu’on y tape n’est enregistré.']
 ];
 const FAQ=[
  ['Faut-il créer un compte ?','Non. Sans compte, vous importez, corrigez, simulez et exportez, et tout reste sur le téléphone. Le compte sert à retrouver vos process sur plusieurs appareils et à travailler en équipe : projets, partage, validation.'],
@@ -558,7 +571,8 @@ const FAQ=[
  ['Et sans réseau ?','Vos process restent disponibles. La liste affiche « Hors connexion » et l’app envoie vos changements dès le retour du réseau.'],
  ['J’ai modifié le même process sur deux appareils, que se passe-t-il ?','Les deux modifications sont réunies, étape par étape. Seule exception : la même étape changée de deux façons différentes. L’app garde alors la version déjà enregistrée.'],
  ['Comment supprimer un process ?','Sur sa fiche, bouton « … » en haut, puis « Supprimer ».'],
- ['Comment avoir la dernière version ?','Les corrections arrivent toutes seules au lancement suivant. Dans Réglages, rubrique À propos, la ligne Version dit laquelle est installée.']
+ ['Comment avoir la dernière version ?','Les corrections arrivent toutes seules au lancement suivant. Dans Réglages, rubrique À propos, la ligne Version dit laquelle est installée.'],
+ ['Peut-on montrer un formulaire ou un workflow sans faire de formation ?','Oui. Créez un lien de consultation (« Partager par lien ») : la personne l’ouvre dans son navigateur, sans compte, essaie le formulaire et suit le workflow avec un petit guide.']
 ];
 
 /* ---------- Outils ---------- */

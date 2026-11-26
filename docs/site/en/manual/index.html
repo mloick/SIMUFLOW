@@ -477,6 +477,18 @@ const G=[
    {t:'Confirm who you are',d:'Type your name, then “It’s me, I’ll review my part”.',img:'lien-acteur'},
    {t:'Give your feedback',d:'Just like a member: “Validate”, or “To review…” with a comment. Each review carries your name.',img:'relire'}
   ],tip:'The link shows “Link expired” after 30 days: ask the person who sent it to you to extend it.'},
+ {id:'lien-consultation',ch:'equipe',title:'Send a form or a workflow by link',short:'Show it to someone with no account and no training, in their browser.',
+  intro:'Signed in to your account, open a form (with or without its workflow) and tap “Share by link”, or, on a process detail screen, the “…” button then “Share by view link”.',
+  steps:[
+   {t:'Prepare the link',d:'Check the displayed title, then write a note for the person if you want (“look at the approval step first”). Anonymise first if the content mentions real names.',img:'partager-lien'},
+   {t:'Create and send',d:'“Create the link”, then “Send”: by message, by e-mail or copied. The link is valid for 30 days. In “My view links”, “Extend” adds 30 more and “Remove” cuts it off.',img:'partager-lien'}
+  ],tip:'The link keeps a copy of the form or workflow: if you edit it afterwards, create a new link. Anyone with the link sees its content, even if it is forwarded.'},
+ {id:'voir-lien',ch:'equipe',title:'I received a view link',short:'See a form or a workflow in the browser, without an account.',
+  intro:'Open the link you received. The page says who sent it, until when it is valid, and shows their note if they wrote one. A short guide explains what to do.',
+  steps:[
+   {t:'Try the form',d:'Fill it in as the person making the request would. “Send the request” checks your answers and shows the summary. Nothing is sent or saved.',img:'voir-formulaire'},
+   {t:'Follow the workflow',d:'The diagram shows the whole workflow. Tap “Next step”, or, at a decision, the choice to follow. If a form comes before the workflow, “See the workflow that follows” opens it after sending.',img:'voir-workflow'}
+  ],tip:'On a phone, the guide is folded above the diagram: “Show the guide” opens it. On a large screen, it stays alongside.'},
  {id:'suivi-validation',ch:'equipe',title:'Follow the validation',short:'Who has finished, who still has to review, which steps to fix.',
   intro:'As soon as a process is shared, its detail screen shows the “Validation follow-up” card.',
   steps:[
@@ -521,10 +533,10 @@ const G=[
 const ROLES=[
  {id:'chef',title:'I run a project',text:'You model the processes of an initiative and have each team validate them.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>',
-  guides:['installer','importer-fichier','diagnostic','corriger','simuler','projet','partager','suivi-validation','tableau']},
+  guides:['installer','importer-fichier','diagnostic','corriger','simuler','projet','partager','lien-consultation','suivi-validation','tableau']},
  {id:'collab',title:'I was asked to validate',text:'Someone has entrusted you with part of a process, in the app or through a link.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
-  guides:['lien','installer','relire','simuler','tous']},
+  guides:['lien','voir-lien','installer','relire','simuler','tous']},
  {id:'essai',title:'I just want to try',text:'Four fictitious examples, in French, come with the app: nothing to prepare.',
   icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg>',
   guides:['installer','simuler','tous','importer-texte','exporter']}
@@ -547,7 +559,8 @@ const LEX=[
  ['Project manager','The person who runs a project: they invite the team and share the processes.'],
  ['draw.io, BPMN, Visio','Common diagram formats. SimuFlow reads them, and can export to draw.io and BPMN.'],
  ['Anonymise','Replace the real names with Service A, Service B… before showing a process.'],
- ['Sync','With an account, keeping your processes up to date on all your devices.']
+ ['Sync','With an account, keeping your processes up to date on all your devices.'],
+ ['View link','A link that shows a form or a workflow in the browser, without an account, for 30 days. Nothing typed there is saved.']
 ];
 const FAQ=[
  ['Do I need to create an account?','No. Without an account, you import, fix, simulate and export, and everything stays on the phone. The account lets you find your processes on several devices and work as a team: projects, sharing, validation.'],
@@ -559,7 +572,8 @@ const FAQ=[
  ['What about without a network?','Your processes stay available. The list shows “Offline” and the app sends your changes as soon as the network is back.'],
  ['I changed the same process on two devices, what happens?','The two changes are combined, step by step. Only exception: the same step changed in two different ways. The app then keeps the version already saved.'],
  ['How do I delete a process?','On its detail screen, the “…” button at the top, then “Delete”.'],
- ['How do I get the latest version?','Fixes arrive on their own at the next launch. In Settings, under About, the Version line says which one is installed.']
+ ['How do I get the latest version?','Fixes arrive on their own at the next launch. In Settings, under About, the Version line says which one is installed.'],
+ ['Can I show a form or a workflow without any training?','Yes. Create a view link (“Share by link”): the person opens it in their browser, without an account, tries the form and follows the workflow with a short guide.']
 ];
 
 /* ---------- Outils ---------- */
