@@ -299,9 +299,11 @@ function readValues<K extends string>(sheet: Sheet, patterns: [K, RegExp][]): Pa
 const QUESTION_PROPERTIES: ['help' | 'example' | 'conditions' | 'mandatory' | 'explanation' | 'type' | 'name', RegExp][] = [
   ['help', /italique|\baide\b|\bhelp\b/],
   ['example', /exemple|example/],
-  ['conditions', /condition|dependance|dependence/],
+  // « Behaviour of Question » : la ligne des conditions des templates anglais.
+  ['conditions', /condition|dependance|dependence|^behaviou?r/],
   ['mandatory', /oblig|mandatory|required/],
-  ['explanation', /explication|\boptions?\b|valeurs|choix/],
+  // « Values of Question » : la ligne des choix des templates anglais.
+  ['explanation', /explication|\boptions?\b|valeurs|choix|^values?\b/],
   ['type', /format|^type/],
   ['name', /question|^nom\b|^name|intitule/],
 ];
@@ -436,6 +438,13 @@ function readExplanation(type: QuestionType, explanation: string) {
     const casesRequired = rest.some((line) => /obligatoire/.test(norm(line)));
     const options = bullets(head);
     if (options.length > 0) return { ...empty, options, cases, casesRequired };
+    // Choix entre guillemets : « "Only me","Several users" » (une virgule peut être dans un choix).
+    const quoted = head.length === 1 ? [...head[0].matchAll(/"([^"]+)"|“([^”]+)”/g)].map((match) => (match[1] ?? match[2]).trim()) : [];
+    if (type !== 'list' && quoted.length >= 2) return { ...empty, options: quoted, cases, casesRequired };
+    // Un choix par ligne, sans tiret : des lignes courtes, sans phrase (ni point ni deux-points à la fin).
+    if (type !== 'list' && head.length >= 2 && head.every((line) => line.length <= 80 && !/[.:!?]$/.test(line))) {
+      return { ...empty, options: head, cases, casesRequired };
+    }
     // Choix écrits sur une ligne : « Cas 1, Cas 2, Cas 3 ».
     if (type !== 'list' && head.length === 1 && /[,;]/.test(head[0])) {
       return { ...empty, options: head[0].split(/[,;]/).map((item) => item.trim()).filter(Boolean), cases, casesRequired };

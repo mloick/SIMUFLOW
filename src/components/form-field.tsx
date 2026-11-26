@@ -298,7 +298,7 @@ export function FormField({
           })
         ) : question.explanation ? (
           <ThemedText type="small" themeColor="textSecondary">
-            {question.explanation}
+            <LinkedText text={question.explanation} color={theme.link} hint={f.openLink} />
           </ThemedText>
         ) : null)}
 

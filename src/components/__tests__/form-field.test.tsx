@@ -165,4 +165,16 @@ describe('FormField', () => {
     expect(openURL).toHaveBeenCalledWith('https://exemple.fr/releve');
     openURL.mockRestore();
   });
+
+  it('rend touchable le lien d’un libellé RTF lu dans un template', async () => {
+    await render(
+      <FormField
+        question={question({ type: 'richlabel', label: 'Vidéo', explanation: 'Regardez la vidéo : https://exemple.fr/video' })}
+        questions={[]}
+        value={undefined}
+        onChange={() => {}}
+      />,
+    );
+    expect(screen.getByRole('link')).toHaveTextContent('https://exemple.fr/video');
+  });
 });

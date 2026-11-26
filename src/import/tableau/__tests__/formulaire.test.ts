@@ -258,3 +258,42 @@ describe('cas particuliers', () => {
     expect(questionType('')).toBeNull();
   });
 });
+
+describe('template en anglais', () => {
+  const form = readFormTemplate(
+    workbook(
+      sheet('3 - Questions', [
+        ['', 'Instructions', 'Question 1', 'Question 2', 'Question 3', 'Question 4'],
+        ['Question', 'Name of the question', 'Where are you?', 'Which site?', 'Who is affected?', 'Training video'],
+        ['Type of Question', 'Check sheet "Values"', 'Select box', 'Single line text', 'Select box', 'Rich Text Label'],
+        ['Is Question mandatory?', '', 'yes', 'no', 'yes', 'no'],
+        [
+          'Values of Question',
+          'Options user can select in "Drop down menu" (Select Box)',
+          '"On site","Working from home, abroad","Travelling"',
+          '',
+          'Only me\nSeveral users',
+          'Watch the video: https://example.com/video',
+        ],
+        ['Behaviour of Question', 'Customize your form', '', 'Show if Question 1 is On site', '', ''],
+        ['Help Text (optional)', 'Help user', '', 'Building and floor', '', ''],
+      ]),
+    ),
+  )!;
+
+  it('lit les choix de « Values of Question », entre guillemets ou un par ligne sans tiret', () => {
+    expect(form.questions.map(({ label, options }) => [label, options])).toEqual([
+      ['Where are you?', ['On site', 'Working from home, abroad', 'Travelling']],
+      ['Which site?', []],
+      ['Who is affected?', ['Only me', 'Several users']],
+      ['Training video', []],
+    ]);
+    expect(form.warnings.filter((warning) => warning.level === 'orange')).toEqual([]);
+  });
+
+  it('lit la condition de « Behaviour of Question » et le texte d’un libellé RTF', () => {
+    expect(form.questions[1]).toMatchObject({ conditions: [{ question: 1, equals: 'On site' }], help: 'Building and floor', mandatory: false });
+    expect(form.questions[3]).toMatchObject({ type: 'richlabel', explanation: 'Watch the video: https://example.com/video' });
+  });
+});
+
