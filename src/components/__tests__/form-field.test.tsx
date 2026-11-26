@@ -5,6 +5,7 @@
 
 import { describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import { conditionText, FormField } from '@/components/form-field';
 import type { FormQuestion } from '@/import/tableau';
@@ -142,5 +143,26 @@ describe('FormField', () => {
     expect(screen.getByText('Ajouter un autre fichier')).toBeOnTheScreen();
     await fireEvent.press(screen.getByLabelText('Retirer facture.pdf'));
     expect(onChange).toHaveBeenCalledWith(['photo.jpg']);
+  });
+
+  it('montre un texte d’information sans champ, avec un lien qui s’ouvre d’un toucher', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await render(
+      <FormField
+        question={question({
+          type: 'info',
+          label: 'Relevé de compteurs\nCe lien vous permet de relever vos compteurs : https://exemple.fr/releve.',
+        })}
+        questions={[]}
+        value={undefined}
+        onChange={() => {}}
+      />,
+    );
+    expect(screen.getByText('Relevé de compteurs')).toBeOnTheScreen();
+    const link = screen.getByRole('link');
+    expect(link).toHaveTextContent('https://exemple.fr/releve');
+    await fireEvent.press(link);
+    expect(openURL).toHaveBeenCalledWith('https://exemple.fr/releve');
+    openURL.mockRestore();
   });
 });

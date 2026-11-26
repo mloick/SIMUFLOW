@@ -288,15 +288,21 @@ function QuestionEditor({
             })}
           </View>
 
-          <View style={styles.switchRow}>
-            <ThemedText style={styles.flex}>{fe.required}</ThemedText>
-            <Switch
-              value={question.mandatory}
-              onValueChange={(mandatory) => update({ mandatory })}
-              accessibilityLabel={fe.required}
-              trackColor={{ true: theme.primary }}
-            />
-          </View>
+          {question.type === 'info' ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {fe.infoHint}
+            </ThemedText>
+          ) : (
+            <View style={styles.switchRow}>
+              <ThemedText style={styles.flex}>{fe.required}</ThemedText>
+              <Switch
+                value={question.mandatory}
+                onValueChange={(mandatory) => update({ mandatory })}
+                accessibilityLabel={fe.required}
+                trackColor={{ true: theme.primary }}
+              />
+            </View>
+          )}
 
           {question.type === 'checkbox' && (
             <View style={styles.switchRow}>

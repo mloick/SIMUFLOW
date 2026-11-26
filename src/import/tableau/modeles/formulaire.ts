@@ -58,7 +58,9 @@ export type QuestionType =
   | 'label'
   | 'richlabel'
   | 'container'
-  | 'break';
+  | 'break'
+  /** Texte à lire, sans réponse : une consigne, un lien utile. Ajouté dans l'éditeur. */
+  | 'info';
 
 /** La question s'affiche quand la question `question` (son numéro) a la réponse `equals`. */
 export type FormCondition = { question: number; equals: string };
@@ -204,6 +206,7 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   richlabel: 'Texte mis en forme',
   container: 'Section',
   break: 'Séparateur',
+  info: 'Texte d’information',
 };
 
 // ---------------------------------------------------------------------------

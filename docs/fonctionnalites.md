@@ -45,6 +45,7 @@ Cette page-ci ne fait que lister les fonctionnalités et leur état : **Disponib
 ## Formulaires, compte et réglages
 
 - **Formulaires de demande** : voir, remplir, relier à leur workflow · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#formulaire)
+- **Corriger un formulaire importé** : conditions d'affichage, texte d'information avec lien · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#corriger-formulaire)
 - **Compte et synchronisation**, hors connexion compris · Disponible · [FAQ](https://mloick.github.io/SIMUFLOW/manuel/#faq)
 - **Version web**, à ajouter à l'écran d'accueil · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#installer)
 - **Mises à jour sans réinstaller** · Disponible

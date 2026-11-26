@@ -14,8 +14,8 @@ export type FormAnswer = string | string[] | Record<string, string>;
 /** Réponses par numéro de question. */
 export type FormAnswers = Record<number, FormAnswer>;
 
-/** Types qui n'attendent pas de réponse : titres, séparateurs. */
-const NO_ANSWER: FormQuestion['type'][] = ['container', 'break'];
+/** Types qui n'attendent pas de réponse : titres, séparateurs, textes d'information. */
+const NO_ANSWER: FormQuestion['type'][] = ['container', 'break', 'info'];
 
 /** Types remplis par l'outil réel (liste de ses données) : on ne peut pas y répondre ici. */
 const TOOL_FILLED: FormQuestion['type'][] = ['list', 'reference'];
