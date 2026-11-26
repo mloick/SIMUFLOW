@@ -308,6 +308,9 @@ const QUESTION_PROPERTIES: ['help' | 'example' | 'conditions' | 'mandatory' | 'e
   ['name', /question|^nom\b|^name|intitule/],
 ];
 
+/** « "Ex: Sage, Cegid" » : les guillemets qui entourent tout le texte ne sont pas à afficher. */
+const unquote = (text: string) => text.replace(/^\s*(?:"([^"]*)"|“([^”]*)”)\s*$/, (_, plain: string | undefined, curly: string | undefined) => (plain ?? curly ?? '').trim()) || text;
+
 const isYes = (text: string) => /^(oui|yes|x|vrai|true|obligatoire)\b/.test(norm(text));
 
 /** Un rappel pour l'équipe, pas une question : « !!!!! Nbre de caractères maximum… ». */
@@ -544,8 +547,8 @@ function readQuestions(sheet: Sheet, warnings: FormWarning[]): FormQuestion[] {
       ...(read.groups.length > 0 ? { atLeastOne: read.groups } : {}),
       documents,
       ...(Object.keys(read.limits).length > 0 ? { limits: read.limits } : {}),
-      help: help ?? null,
-      example: example ?? null,
+      help: help ? unquote(help) : null,
+      example: example ? unquote(example) : null,
       conditions: [],
       conditionText: conditions || null,
       cell: record.cell,

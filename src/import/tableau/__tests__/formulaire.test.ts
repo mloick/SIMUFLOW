@@ -277,6 +277,7 @@ describe('template en anglais', () => {
         ],
         ['Behaviour of Question', 'Customize your form', '', 'Show if Question 1 is On site', '', ''],
         ['Help Text (optional)', 'Help user', '', 'Building and floor', '', ''],
+        ['Example Text (optional)', 'Examples of answers', '', '"Ex: Main office, 2nd floor"', '', ''],
       ]),
     ),
   )!;
@@ -292,7 +293,7 @@ describe('template en anglais', () => {
   });
 
   it('lit la condition de « Behaviour of Question » et le texte d’un libellé RTF', () => {
-    expect(form.questions[1]).toMatchObject({ conditions: [{ question: 1, equals: 'On site' }], help: 'Building and floor', mandatory: false });
+    expect(form.questions[1]).toMatchObject({ conditions: [{ question: 1, equals: 'On site' }], help: 'Building and floor', example: 'Ex: Main office, 2nd floor', mandatory: false });
     expect(form.questions[3]).toMatchObject({ type: 'richlabel', explanation: 'Watch the video: https://example.com/video' });
   });
 });
