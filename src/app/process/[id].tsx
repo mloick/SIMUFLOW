@@ -163,6 +163,11 @@ function ProcessDetail({ process }: { process: Process }) {
   const menu: SheetAction[] = [
     { label: t.detail.exportAll, icon: { ios: 'square.and.arrow.down', android: 'download' }, onPress: openExport },
     { label: t.detail.sendSummary, icon: { ios: 'text.alignleft', android: 'notes' }, onPress: share },
+    {
+      label: t.viewLink.menu,
+      icon: { ios: 'link', android: 'link' },
+      onPress: () => router.push({ pathname: '/partager-lien', params: { source: 'process', id: process.id } }),
+    },
     ...(imported
       ? [
           { label: t.detail.edit, icon: { ios: 'pencil', android: 'edit' }, onPress: openEdit } as SheetAction,
