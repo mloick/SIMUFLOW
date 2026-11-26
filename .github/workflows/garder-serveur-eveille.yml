@@ -1,0 +1,66 @@
+name: Garder le serveur éveillé
+
+# Supabase (offre gratuite) met le projet en pause quand la base ne reçoit
+# aucune requête pendant environ 7 jours. Ce workflow envoie chaque jour une
+# petite requête à la base pour qu'elle ne s'endorme pas.
+#
+# La requête demande à la base d'ouvrir un lien d'acteur qui n'existe pas
+# (fonction link_open). La base cherche le lien, ne le trouve pas et répond
+# « P0002 » (lien inconnu) : rien n'est lu, rien n'est écrit, mais la base a
+# bien travaillé, ce qui compte comme une activité.
+#
+# Seules l'adresse et la clé publique de l'app sont utilisées (celles de
+# src/backend/config.ts, déjà présentes dans l'app installée) : aucun secret.
+# La clé secrète service_role n'est jamais utilisée ici.
+#
+# Si la base ne répond pas (projet déjà en pause, panne), le job échoue et
+# GitHub envoie un e-mail : il faut alors cliquer sur « Restore » dans le
+# tableau de bord Supabase.
+#
+# Limite : GitHub désactive les workflows planifiés d'un dépôt public après
+# 60 jours sans aucun commit. Il suffit alors de le réactiver dans l'onglet
+# Actions (bouton « Enable workflow »).
+on:
+  schedule:
+    # Tous les jours à 6 h 17 (heure UTC), soit 7 h 17 à Paris en hiver.
+    - cron: "17 6 * * *"
+  # Bouton « Run workflow » dans l'onglet Actions, pour tester à la main.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reveiller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: src/backend/config.ts
+          sparse-checkout-cone-mode: false
+      - name: Envoyer une petite requête à la base
+        run: |
+          # Lit l'adresse et la clé publique dans le code de l'app.
+          URL=$(sed -n "s/^export const SUPABASE_URL = '\(.*\)';/\1/p" src/backend/config.ts)
+          KEY=$(sed -n "s/^export const SUPABASE_PUBLISHABLE_KEY = '\(.*\)';/\1/p" src/backend/config.ts)
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "Adresse ou clé introuvable dans src/backend/config.ts"
+            exit 1
+          fi
+
+          # Trois essais, à une minute d'intervalle, au cas où le réseau hoquette.
+          for essai in 1 2 3; do
+            REPONSE=$(curl -sS --max-time 30 -X POST "$URL/rest/v1/rpc/link_open" \
+              -H "apikey: $KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"p_token":"veille-quotidienne"}' || true)
+            if echo "$REPONSE" | grep -q '"P0002"'; then
+              echo "La base a répondu : elle reste éveillée."
+              exit 0
+            fi
+            echo "Essai $essai : réponse inattendue : $REPONSE"
+            [ "$essai" -lt 3 ] && sleep 60
+          done
+          echo "La base ne répond pas. Le projet est peut-être en pause : cliquer sur « Restore » dans Supabase."
+          exit 1
