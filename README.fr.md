@@ -29,12 +29,12 @@ SimuFlow est une application mobile qui transforme un workflow métier en un par
 - **Importer** un fichier draw.io, BPMN 2.0, Visio, Excel, CSV ou JSON, coller un process écrit en texte, ou photographier un tableau.
 - **Diagnostiquer et corriger** : impasses, étapes inatteignables et branches sans nom sont signalées, puis corrigées dans l'éditeur.
 - **Simuler** pas à pas, tâches en parallèle comprises, ou voir tous les chemins d'un coup avec le chemin critique.
-- **Travailler en équipe** : un projet regroupe plusieurs process ; chaque acteur relit et valide sa partie, dans l'app ou par un lien de 30 jours sans compte ; un tableau de bord montre où en est la relecture.
+- **Travailler en équipe** : un projet regroupe plusieurs process ; chaque acteur relit et valide sa partie, dans l'app ou par un lien de 30 jours sans compte ; un tableau de bord montre où en est la relecture ; des liens de consultation montrent un formulaire ou un workflow à quelqu'un sans compte, dans son navigateur.
 - **Suivre une vraie demande**, avec des échéances en jours ouvrés, des rappels et le mode Délais (SLA / OLA).
 - **Exporter** en PDF, draw.io, BPMN 2.0 ou JSON, anonymisé si besoin.
 - **Partout** : iPhone, Android et navigateur, synchronisé avec un compte et utilisable hors connexion, en clair ou en sombre, en français ou en anglais.
 
-La visite complète est dans le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/), interactif : un parcours par rôle, des guides courts pas à pas avec les vrais écrans, une démo jouable, un lexique et une FAQ. La [liste des fonctionnalités](docs/fonctionnalites.md) donne l'état de chacune en une ligne. Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
+La visite complète est dans le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/) (aussi [en anglais](https://mloick.github.io/SIMUFLOW/en/manual/)), interactif : un parcours par rôle, des guides courts pas à pas avec les vrais écrans, une démo jouable, un lexique et une FAQ. La [liste des fonctionnalités](docs/fonctionnalites.md) donne l'état de chacune en une ligne. Les maquettes des écrans sont dans [`docs/maquette/`](docs/maquette/).
 
 <p align="center"><img src="docs/captures/etape-10d-process.png" width="640" alt="Scanner : un tableau photographié devient un process, avec ses chiffres clés et son diagnostic"></p>
 
@@ -118,14 +118,14 @@ Le détail, fichier par fichier, est dans la [documentation technique](docs/tech
 
 ## Documentation
 
-- [Manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/) ([source](docs/site/manuel/index.html)) : comment se servir de l'app, en termes simples, guide par guide, avec les vrais écrans.
+- [Manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/) ([source](docs/site/manuel/index.html) ; version anglaise [/en/manual/](https://mloick.github.io/SIMUFLOW/en/manual/), [source](docs/site/en/manual/index.html)) : comment se servir de l'app, en termes simples, guide par guide, avec les vrais écrans.
 - [Liste des fonctionnalités](docs/fonctionnalites.md) : chaque fonctionnalité et son état, en une ligne.
 - [Documentation technique](docs/technique.md) : structure, commandes, architecture, fichier par fichier.
 - [Sécurité](docs/securite.md) : la checklist sécurité remplie (OWASP MASVS), clés, règles d'accès, données sur le téléphone.
 - [Travailler avec l'IA](docs/ia.md) : ce qui guide l'IA (AGENTS.md, CLAUDE.md, skills, MCP) et comment nous travaillons avec.
 - [BPMN 2.0 en bref](docs/bpmn.md) : la norme, ce que SimuFlow en lit et y écrit, et l'import Visio.
 - [Logo](docs/logo/) : un chemin en S, un process parcouru pas à pas ; c'est aussi l'icône de l'app et son écran de démarrage.
-- [Site](https://mloick.github.io/SIMUFLOW/) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html), construits depuis `docs/site/`.
+- [Site](https://mloick.github.io/SIMUFLOW/) (version anglaise : [/en/](https://mloick.github.io/SIMUFLOW/en/)) et [politique de confidentialité](https://mloick.github.io/SIMUFLOW/confidentialite.html) (en anglais : [privacy.html](https://mloick.github.io/SIMUFLOW/en/privacy.html)), construits depuis `docs/site/`.
 
 ## Technologies
 
@@ -133,4 +133,6 @@ Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), 
 
 ## Licence
 
-Voir [LICENSE](LICENSE).
+Tous droits réservés. Le code est public pour pouvoir être lu, mais il ne peut être ni copié, ni modifié, ni redistribué, ni utilisé à des fins commerciales sans l'accord écrit de l'auteur. Voir [LICENSE](LICENSE).
+
+Les versions publiées avant ce changement étaient sous licence MIT et le restent.

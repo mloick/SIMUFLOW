@@ -29,12 +29,12 @@ SimuFlow is a mobile app that turns a business workflow into an interactive, che
 - **Import** a draw.io, BPMN 2.0, Visio, Excel, CSV or JSON file, paste a process written as text, or photograph a table.
 - **Diagnose and correct**: dead ends, unreachable steps and unlabelled branches are flagged, and fixed in the editor.
 - **Simulate** step by step, including parallel tasks, or see every path at once with the critical path.
-- **Work as a team**: projects group several processes; each actor reviews and validates their own part, in the app or through a 30-day link without an account; a dashboard shows where the review stands.
+- **Work as a team**: projects group several processes; each actor reviews and validates their own part, in the app or through a 30-day link without an account; a dashboard shows where the review stands; view links let anyone without an account try a form or follow a workflow in the browser.
 - **Follow a real request** with deadlines in working days, reminders and the time limits mode (SLA / OLA).
 - **Export** as PDF, draw.io, BPMN 2.0 or JSON, anonymised if needed.
 - **Everywhere**: iPhone, Android and the browser, synced with an account and usable offline, light or dark, in French or English.
 
-The full tour is in the interactive [user manual](https://mloick.github.io/SIMUFLOW/manuel/) (French): a path for each role, short step-by-step guides with the real screens, a playable demo, a glossary and FAQ. The [features list](docs/fonctionnalites.md) gives the status of each feature in one line. The screen mockups are in [`docs/maquette/`](docs/maquette/).
+The full tour is in the interactive [user manual](https://mloick.github.io/SIMUFLOW/en/manual/) (also [in French](https://mloick.github.io/SIMUFLOW/manuel/)): a path for each role, short step-by-step guides with the real screens, a playable demo, a glossary and FAQ. The [features list](docs/fonctionnalites.md) gives the status of each feature in one line. The screen mockups are in [`docs/maquette/`](docs/maquette/).
 
 <p align="center"><img src="docs/captures/etape-10d-process.png" width="640" alt="Scanner: a photographed table becomes a process with its key figures and diagnostic"></p>
 
@@ -120,14 +120,14 @@ File-by-file detail is in the [technical documentation](docs/technique.md) (Fren
 
 All in French.
 
-- [User manual](https://mloick.github.io/SIMUFLOW/manuel/) ([source](docs/site/manuel/index.html)): how to use the app, in plain words, guide by guide, with the real screens.
+- [User manual](https://mloick.github.io/SIMUFLOW/en/manual/) ([source](docs/site/en/manual/index.html); French version [/manuel/](https://mloick.github.io/SIMUFLOW/manuel/), [source](docs/site/manuel/index.html)): how to use the app, in plain words, guide by guide, with the real screens.
 - [Features list](docs/fonctionnalites.md): each feature and its status, one line each.
 - [Technical documentation](docs/technique.md): structure, commands, architecture, file by file.
 - [Security](docs/securite.md): the filled-in security checklist (OWASP MASVS), keys, access rules, data on the phone.
 - [Working with AI](docs/ia.md): what guides the AI (AGENTS.md, CLAUDE.md, skills, MCP) and how we work with it.
 - [BPMN 2.0 in brief](docs/bpmn.md): the standard, what SimuFlow reads and writes, and the Visio import.
 - [Logo](docs/logo/): an S-shaped path, a process walked step by step; also the app icon and splash screen.
-- [Website](https://mloick.github.io/SIMUFLOW/) and [privacy policy](https://mloick.github.io/SIMUFLOW/confidentialite.html), built from `docs/site/`.
+- [Website](https://mloick.github.io/SIMUFLOW/) (English version: [/en/](https://mloick.github.io/SIMUFLOW/en/)) and [privacy policy](https://mloick.github.io/SIMUFLOW/en/privacy.html), built from `docs/site/`.
 
 ## Tech stack
 
@@ -135,4 +135,6 @@ Expo SDK 58, React Native 0.88, React 19.3, Expo Router, TypeScript 6 (strict), 
 
 ## License
 
-See [LICENSE](LICENSE).
+All rights reserved. The code is public so that it can be read, but it may not be copied, modified, redistributed or used commercially without the author's written permission. See [LICENSE](LICENSE).
+
+Versions published before this change were under the MIT License and remain so.

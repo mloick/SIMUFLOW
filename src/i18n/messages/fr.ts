@@ -47,6 +47,8 @@ export const fr = {
     validation: 'Suivi de la validation',
     alerts: 'Alertes',
     link: 'Relire ma partie',
+    view: 'Consultation',
+    shareLink: 'Partager par lien',
     project: 'Projet',
     dashboard: 'Tableau de bord',
     newProject: 'Nouveau projet',

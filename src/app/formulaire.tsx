@@ -273,6 +273,14 @@ export default function FormScreen() {
               {f.edit}
             </ThemedText>
           </Pressable>
+          <Pressable
+            onPress={() => router.push({ pathname: '/partager-lien', params: { source: 'form' } })}
+            accessibilityRole="button"
+            hitSlop={8}>
+            <ThemedText type="smallBold" style={{ color: theme.link }}>
+              {t.viewLink.shareTitle}
+            </ThemedText>
+          </Pressable>
         </View>
       </View>
 

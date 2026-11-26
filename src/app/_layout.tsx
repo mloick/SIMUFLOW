@@ -110,6 +110,8 @@ export default function RootLayout() {
           <Stack.Screen name="projet/ajouter/[id]" options={{ title: t.titles.addToProject, presentation: 'modal' }} />
           <Stack.Screen name="projet/ranger/[id]" options={{ title: t.titles.pickProject, presentation: 'modal' }} />
           <Stack.Screen name="lien/[token]" options={{ title: t.titles.link }} />
+          <Stack.Screen name="voir/[token]" options={{ title: t.titles.view }} />
+          <Stack.Screen name="partager-lien" options={{ title: t.titles.shareLink, presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

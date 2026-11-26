@@ -4,7 +4,7 @@ SimuFlow vous aide à vérifier un process avant de le mettre en place : vous le
 
 ## Le manuel d'utilisation
 
-**Pour apprendre à vous servir de l'app, ouvrez le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/).** Il est interactif : un parcours selon votre rôle, des guides « Je veux… » de quelques étapes avec le vrai écran de l'app, une démo jouable, une recherche, un lexique et une FAQ.
+**Pour apprendre à vous servir de l'app, ouvrez le [manuel d'utilisation](https://mloick.github.io/SIMUFLOW/manuel/)** (en anglais : [user manual](https://mloick.github.io/SIMUFLOW/en/manual/)). Il est interactif : un parcours selon votre rôle, des guides « Je veux… » de quelques étapes avec le vrai écran de l'app, une démo jouable, une recherche, un lexique et une FAQ.
 
 Cette page-ci ne fait que lister les fonctionnalités et leur état : **Disponible** ou **Prévue**. Chaque lien ouvre le guide du manuel.
 
@@ -33,6 +33,7 @@ Cette page-ci ne fait que lister les fonctionnalités et leur état : **Disponib
 - **Partager avec les acteurs**, et lien de 30 jours pour les acteurs sans compte · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#partager)
 - **Relire et valider ma partie** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#relire)
 - **Relire par un lien**, dans le navigateur, sans compte · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#lien)
+- **Lien de consultation** d'un formulaire, d'un workflow, ou des deux, sans compte, avec un guide · Disponible · [créer](https://mloick.github.io/SIMUFLOW/manuel/#lien-consultation) · [recevoir](https://mloick.github.io/SIMUFLOW/manuel/#voir-lien)
 - **Suivi de la validation** et **alertes du partage** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#suivi-validation)
 - **Tableau de bord du projet** · Disponible · [guide](https://mloick.github.io/SIMUFLOW/manuel/#tableau)
 

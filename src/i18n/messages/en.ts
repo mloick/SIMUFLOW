@@ -42,6 +42,8 @@ export const en: Messages = {
     validation: 'Validation follow-up',
     alerts: 'Alerts',
     link: 'Review my part',
+    view: 'View',
+    shareLink: 'Share by link',
     project: 'Project',
     dashboard: 'Dashboard',
     newProject: 'New project',

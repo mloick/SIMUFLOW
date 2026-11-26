@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SimuFlow : rejouez vos process avant de les lancer</title>
-  <meta name="description" content="SimuFlow est une app mobile qui importe un schéma de process (draw.io, photo d'un tableau) et le rejoue étape par étape pour le valider.">
+  <meta name="description" content="SimuFlow est une app mobile qui importe un schéma de process (draw.io, BPMN, Visio, Excel, photo d'un tableau), le rejoue étape par étape et le fait valider par chaque acteur.">
+  <link rel="alternate" hreflang="fr" href="https://mloick.github.io/SIMUFLOW/">
+  <link rel="alternate" hreflang="en" href="https://mloick.github.io/SIMUFLOW/en/">
   <link rel="icon" href="logo/simuflow-symbole.svg">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,13 +15,13 @@
   <header class="haut">
     <img src="logo/simuflow-symbole.svg" alt="">
     <a href="./">SimuFlow</a>
-    <nav class="liens"><a href="manuel/">Manuel</a><a href="confidentialite.html">Confidentialité</a><a href="https://github.com/mloick/SIMUFLOW">Code</a></nav>
+    <nav class="liens"><a href="manuel/">Manuel</a><a href="confidentialite.html">Confidentialité</a><a href="https://github.com/mloick/SIMUFLOW">Code</a><a href="en/" hreflang="en" lang="en">English</a></nav>
   </header>
 
   <main>
     <h1>Rejouez vos process avant de les mettre en place.</h1>
-    <p class="accroche">SimuFlow lit le schéma d'un process (fichier draw.io, JSON, ou photo d'un tableau), le rejoue étape par étape et vous montre ce qui cloche : impasses, étapes isolées, chemins sans fin. Une app iPhone et Android, aussi utilisable dans le navigateur, en français.</p>
-    <p class="boutons"><a class="bouton" href="app/">Ouvrir l'app web</a><a class="bouton second" href="https://github.com/mloick/SIMUFLOW#getting-started">Installer sur le téléphone</a><a class="bouton second" href="manuel/">Manuel d'utilisation</a><a class="bouton second" href="confidentialite.html">Vos données</a></p>
+    <p class="accroche">SimuFlow lit le schéma d'un process (draw.io, BPMN, Visio, Excel, texte, ou photo d'un tableau), le rejoue étape par étape et vous montre ce qui cloche : impasses, étapes isolées, chemins sans fin. Puis chaque acteur valide sa partie. Une app iPhone et Android, aussi utilisable dans le navigateur, en français et en anglais.</p>
+    <p class="boutons"><a class="bouton" href="app/">Ouvrir l'app web</a><a class="bouton second" href="https://github.com/mloick/SIMUFLOW/blob/main/README.fr.md#démarrer">Installer sur le téléphone</a><a class="bouton second" href="manuel/">Manuel d'utilisation</a><a class="bouton second" href="confidentialite.html">Vos données</a></p>
 
     <figure>
       <img src="captures/etape-6-simulation.png" alt="Écrans de simulation : le schéma s'allume étape par étape et chaque décision demande quelle branche suivre.">
@@ -28,13 +30,13 @@
 
     <h2>Ce que fait l'app</h2>
     <div class="cartes">
-      <div class="carte"><h3>Importer</h3><p>Un fichier draw.io ou JSON, quel que soit le style du dessin. Les acteurs viennent des couloirs, d'une légende ou du texte.</p></div>
+      <div class="carte"><h3>Importer</h3><p>Un fichier draw.io, BPMN 2.0, Visio, JSON, Excel ou CSV, quel que soit le style du dessin, ou un process écrit en texte, une ligne par étape.</p></div>
       <div class="carte"><h3>Scanner</h3><p>Photographiez un tableau (étape, acteur, délai) : le texte est lu sur le téléphone, sans Internet.</p></div>
-      <div class="carte"><h3>Rejouer</h3><p>Pas à pas, cas simple, cas complexe, ou tous les chemins avec le chemin critique.</p></div>
+      <div class="carte"><h3>Rejouer</h3><p>Pas à pas, cas simple, cas complexe, ou tous les chemins avec le chemin critique. Les tâches en parallèle avancent en même temps.</p></div>
       <div class="carte"><h3>Corriger</h3><p>Renommez, ajoutez, supprimez. L'app retient vos corrections pour les imports suivants.</p></div>
-      <div class="carte"><h3>Suivre une vraie demande</h3><p>Échéance de chaque étape en jours ouvrés, et rappel le matin du jour J.</p></div>
-      <div class="carte"><h3>Valider en équipe</h3><p>Regroupez les process d'un chantier dans un projet, invitez l'équipe : chaque acteur relit et valide sa partie.</p></div>
-      <div class="carte"><h3>Exporter</h3><p>En PDF, en draw.io ou en JSON, pour partager le schéma validé.</p></div>
+      <div class="carte"><h3>Suivre une vraie demande</h3><p>Échéance de chaque étape en jours ouvrés, rappel le matin du jour J, et mode Délais (SLA / OLA) avec chronos et bilan.</p></div>
+      <div class="carte"><h3>Valider en équipe</h3><p>Regroupez les process d'un chantier dans un projet, invitez l'équipe : chaque acteur relit et valide sa partie, même sans compte grâce à un lien. Un tableau de bord montre où en est la validation.</p></div>
+      <div class="carte"><h3>Exporter</h3><p>En PDF, draw.io, BPMN 2.0 ou JSON, anonymisé si besoin, pour partager le schéma validé.</p></div>
     </div>
 
     <h2>Pour qui ?</h2>
@@ -46,7 +48,7 @@
 
   <footer>
     SimuFlow, un projet de Loïck. Tous les exemples sont fictifs.
-    · <a href="confidentialite.html">Confidentialité</a> · <a href="https://github.com/mloick/SIMUFLOW">Code source</a>
+    · <a href="confidentialite.html">Confidentialité</a> · <a href="https://github.com/mloick/SIMUFLOW">Code source</a> · <a href="en/" hreflang="en" lang="en">English version</a>
   </footer>
 </div>
 </body>

@@ -32,6 +32,7 @@ from source_check, (values
   ('20261122000000', 'tableau_de_bord',    to_regprocedure('public.in_my_project(uuid)') is not null),
   ('20261123000000', 'liens_equipe',       to_regprocedure('public.link_activity_of(uuid)') is not null),
   ('20261124000000', 'avis_sa_partie',     to_regprocedure('public.is_my_step(uuid,text)') is not null),
-  ('20261125000000', 'liens_expiration',   to_regprocedure('public.link_extend(uuid)') is not null)
+  ('20261125000000', 'liens_expiration',   to_regprocedure('public.link_extend(uuid)') is not null),
+  ('20261126000000', 'liens_consultation', to_regclass('public.view_links') is not null)
 ) as scripts(version, script, ok)
 order by version;
