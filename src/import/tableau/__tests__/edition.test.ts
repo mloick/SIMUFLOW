@@ -58,6 +58,14 @@ describe('modifier un formulaire', () => {
     expect(addQuestion(form, 0).n).toBe(1);
   });
 
+  it('transforme une question en texte d’information, jamais obligatoire, conditions gardées', () => {
+    let form = template();
+    form = updateQuestion(form, 4, { mandatory: true });
+    const conditions = form.questions[3].conditions;
+    form = changeType(form, 4, 'info');
+    expect(form.questions[3]).toMatchObject({ type: 'info', typeText: 'Texte d’information', mandatory: false, conditions });
+  });
+
   it('change le type, l’obligation, les choix et les conditions', () => {
     let form = template();
     form = changeType(form, 12, 'yesno');

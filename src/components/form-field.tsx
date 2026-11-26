@@ -1,6 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
+import { Linking, Pressable, StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
 import { SymbolView } from '@/components/symbol';
 import { ThemedText } from '@/components/themed-text';
@@ -8,6 +8,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getT, useT, type Messages } from '@/i18n';
 import { groupOf, groupText, isFieldOptional, type FormAnswer, type FormQuestion } from '@/import/tableau';
+import { splitLinks } from '@/utils/links';
 
 export type { FormAnswer };
 
@@ -65,6 +66,40 @@ export function FormField({
   const sameAsPrevious = previous !== undefined && JSON.stringify(previous.conditions) === JSON.stringify(question.conditions);
   const condition = sameAsPrevious ? null : conditionText(question, questions, t);
 
+  const conditionBanner = condition ? (
+    <View style={[styles.condition, { backgroundColor: theme.primaryBackground }]}>
+      <SymbolView name={{ ios: 'arrow.turn.down.right', android: 'subdirectory_arrow_right' }} size={14} tintColor={theme.link} />
+      <ThemedText type="small" style={[styles.flex, { color: theme.link }]}>
+        {f.showsIf(condition)}
+      </ThemedText>
+    </View>
+  ) : null;
+
+  if (question.type === 'info') {
+    // Un texte à lire : pas de champ, pas d'astérisque ; les liens s'ouvrent d'un toucher.
+    return (
+      <View style={styles.question}>
+        {conditionBanner}
+        <View style={[styles.info, { backgroundColor: theme.primaryBackground, borderColor: theme.link }]}>
+          {title.trim() ? (
+            <ThemedText type="smallBold" style={styles.label}>
+              <LinkedText text={title} color={theme.link} hint={f.openLink} />
+            </ThemedText>
+          ) : null}
+          {subtitle ? (
+            <ThemedText>
+              <LinkedText text={subtitle} color={theme.link} hint={f.openLink} />
+            </ThemedText>
+          ) : null}
+          {question.help ? (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.help}>
+              <LinkedText text={question.help} color={theme.link} hint={f.openLink} />
+            </ThemedText>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
   if (question.type === 'break') {
     return <View style={[styles.break, { backgroundColor: theme.border }]} accessibilityRole="none" />;
   }
@@ -91,14 +126,7 @@ export function FormField({
 
   return (
     <View style={styles.question}>
-      {condition && (
-        <View style={[styles.condition, { backgroundColor: theme.primaryBackground }]}>
-          <SymbolView name={{ ios: 'arrow.turn.down.right', android: 'subdirectory_arrow_right' }} size={14} tintColor={theme.link} />
-          <ThemedText type="small" style={[styles.flex, { color: theme.link }]}>
-            {f.showsIf(condition)}
-          </ThemedText>
-        </View>
-      )}
+      {conditionBanner}
       <ThemedText type="smallBold" style={styles.label}>
         {title}
         {question.mandatory && <ThemedText style={{ color: theme.danger }}> *</ThemedText>}
@@ -436,7 +464,31 @@ export function Dropdown({
   );
 }
 
+/** Un texte dont les liens (https://…, www.…) sont soulignés et s'ouvrent d'un toucher. */
+function LinkedText({ text, color, hint }: { text: string; color: string; hint: string }) {
+  return (
+    <>
+      {splitLinks(text).map((part, index) =>
+        part.url ? (
+          <ThemedText
+            key={index}
+            onPress={() => void Linking.openURL(part.url!)}
+            accessibilityRole="link"
+            accessibilityHint={hint}
+            style={[styles.link, { color }]}>
+            {part.text}
+          </ThemedText>
+        ) : (
+          part.text
+        ),
+      )}
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
+  info: { gap: Spacing.one, padding: Spacing.three, borderLeftWidth: 3, borderRadius: Radius.small },
+  link: { textDecorationLine: 'underline' },
   groupNote: { fontStyle: 'italic', marginBottom: Spacing.one },
   question: { gap: Spacing.two },
   label: { fontSize: 16 },

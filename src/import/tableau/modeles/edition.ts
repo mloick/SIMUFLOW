@@ -21,6 +21,7 @@ export const EDITABLE_TYPES: { type: QuestionType; label: string }[] = [
   { type: 'date', label: 'Date' },
   { type: 'email', label: 'E-mail' },
   { type: 'container', label: 'Titre de section' },
+  { type: 'info', label: 'Texte d’information' },
 ];
 
 /** Le nom d'un type, tel que l'éditeur l'affiche. */
@@ -136,9 +137,12 @@ export function updateQuestion(form: FormTemplate, n: number, patch: Partial<Omi
   return { ...form, questions: form.questions.map((question) => (question.n === n ? { ...question, ...patch } : question)) };
 }
 
-/** Change le type ; les choix, champs et documents déjà écrits sont gardés. */
+/**
+ * Change le type ; les choix, champs et documents déjà écrits sont gardés.
+ * Un texte d'information n'attend pas de réponse : il n'est jamais obligatoire.
+ */
 export function changeType(form: FormTemplate, n: number, type: QuestionType): FormTemplate {
-  return updateQuestion(form, n, { type, typeText: typeLabel(type) });
+  return updateQuestion(form, n, { type, typeText: typeLabel(type), ...(type === 'info' ? { mandatory: false } : {}) });
 }
 
 /** Les questions qui dépendent de la question `n`. */

@@ -114,6 +114,8 @@ describe('vérification avant l’envoi', () => {
 
   it('n’attend pas de réponse aux titres, séparateurs et listes de l’outil', () => {
     expect(expectsAnswer(question({ type: 'container' }))).toBe(false);
+    expect(expectsAnswer(question({ type: 'info' }))).toBe(false);
+    expect(answerProblem(question({ type: 'info', mandatory: true }), undefined)).toBeNull();
     expect(expectsAnswer(question({ type: 'reference' }))).toBe(false);
     expect(expectsAnswer(question({ type: 'label' }))).toBe(false);
     expect(expectsAnswer(question({ type: 'label', fields: ['Nom'] }))).toBe(true);

@@ -522,6 +522,14 @@ const G=[
    {t:'See the form',d:'It is shown as the requester will see it, and can really be filled in: conditional questions appear depending on the answers.',img:'formulaire'},
    {t:'Submit to check',d:'Submitting checks the required answers and the formats, then shows the summary. Nothing is sent.',img:'formulaire-recap'}
   ],tip:'Once linked to its workflow, the answer chooses the situation to simulate or track.'},
+ {id:'corriger-formulaire',ch:'confort',title:'Correct an imported form',short:'Show a question for one answer, add a text with a link.',
+  intro:'A template is often filled in by hand: some conditions are missing or wrong. You can correct everything in the app, without touching the file.',
+  steps:[
+   {t:'Open the editor',d:'On the form, tap « Edit the form », then « Edit » on a question’s row to open it.',img:'editeur-formulaire'},
+   {t:'Show a question for one answer',d:'Open the question that must appear, not the one that decides. Under « Shown », choose the question it depends on, then the answer that shows it. « Remove » takes away a condition that was read wrong.',img:'editeur-formulaire'},
+   {t:'Add an information text',d:'Tap « Add a question after » under a supporting document, then the « Information text » type. The first line of the label is the title; an https:// link opens with a tap. It takes the conditions of the question before it and expects no answer.',img:'texte-information'},
+   {t:'Save',d:'Tap « Save », then fill in the form to check that each question appears for the right choice.',img:'texte-information'}
+  ],tip:'Two conditions on the same question must both be true. Your corrections stay in the kept form; a new import of the same file starts again from the template.'},
  {id:'reglages',ch:'confort',title:'Set up the app your way',short:'Colours, dark mode, language, reminders, Siri.',
   intro:'The third tab, Settings. Each setting has a “?” button that explains it.',
   steps:[

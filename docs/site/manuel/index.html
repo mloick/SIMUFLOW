@@ -521,6 +521,14 @@ const G=[
    {t:'Voir le formulaire',d:'Il s’affiche tel que le demandeur le verra, et se remplit pour de vrai : les questions conditionnelles apparaissent selon les réponses.',img:'formulaire'},
    {t:'Envoyer pour vérifier',d:'L’envoi vérifie les réponses obligatoires et les formats, puis affiche le récapitulatif. Rien n’est envoyé.',img:'formulaire-recap'}
   ],tip:'Relié à son workflow, la réponse choisit la situation à simuler ou à suivre.'},
+ {id:'corriger-formulaire',ch:'confort',title:'Corriger un formulaire importé',short:'Faire apparaître une question selon une réponse, ajouter un texte avec un lien.',
+  intro:'Un template est souvent rempli à la main : des conditions manquent ou sont fausses. Tout se corrige dans l’app, sans toucher au fichier.',
+  steps:[
+   {t:'Ouvrir l’éditeur',d:'Sur le formulaire, touchez « Modifier le formulaire », puis « Modifier » sur la ligne d’une question pour l’ouvrir.',img:'editeur-formulaire'},
+   {t:'Faire apparaître une question selon une réponse',d:'Ouvrez la question qui doit apparaître, pas celle qui décide. Sous « S’affiche », choisissez la question dont elle dépend, puis la réponse qui la fait apparaître. « Retirer » enlève une condition mal lue.',img:'editeur-formulaire'},
+   {t:'Ajouter un texte d’information',d:'Touchez « Ajouter une question après » sous un justificatif, puis le type « Texte d’information ». La première ligne de l’intitulé sert de titre ; un lien https:// s’ouvre d’un toucher. Il reprend les conditions de la question d’avant et n’attend aucune réponse.',img:'texte-information'},
+   {t:'Enregistrer',d:'Touchez « Enregistrer », puis remplissez le formulaire pour vérifier que chaque question apparaît au bon choix.',img:'texte-information'}
+  ],tip:'Deux conditions sur une même question doivent être vraies toutes les deux. Vos corrections restent dans le formulaire gardé ; un nouvel import du même fichier repart du template.'},
  {id:'reglages',ch:'confort',title:'Régler l’app à votre goût',short:'Couleurs, mode sombre, langue, rappels, Siri.',
   intro:'Le troisième onglet, Réglages. Chaque réglage a son bouton « ? » qui l’explique.',
   steps:[
