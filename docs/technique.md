@@ -1652,6 +1652,14 @@ Résultat sur le Simulateur iOS : `[Passed] Simuler un process pas à pas (16s)`
 
 Le résultat s'affiche sur la pull request (« Vérifications / verifier ») : vert, on peut fusionner ; rouge, le journal du job dit quelle étape a échoué. Les types des routes (`.expo/types/`) ne sont pas générés en CI ; sans eux, les liens sont vérifiés comme du texte simple.
 
+### Garder le serveur éveillé
+
+Avec l'offre gratuite, Supabase met le projet en pause quand la base ne reçoit aucune requête pendant environ 7 jours : l'app affiche alors « serveur injoignable » jusqu'à un clic sur « Restore » dans le tableau de bord Supabase. `.github/workflows/garder-serveur-eveille.yml` l'évite : chaque jour à 6 h 17 UTC (et à la main par « Run workflow »), il appelle `link_open` avec un lien qui n'existe pas. La base cherche le lien et répond `P0002` (lien inconnu) : rien n'est lu ni écrit, mais la requête compte comme une activité. `/auth/v1/health` ne suffirait pas : il ne passe pas par la base.
+
+- Il lit l'adresse et la clé publique dans `src/backend/config.ts` (aucun secret, jamais la clé `service_role`). Renommer ces deux constantes casse le workflow.
+- Trois essais à une minute d'intervalle ; si la base ne répond toujours pas (projet déjà en pause), le job échoue et GitHub envoie un e-mail.
+- GitHub désactive les workflows planifiés d'un dépôt public après 60 jours sans commit : le réactiver dans l'onglet Actions (« Enable workflow »).
+
 ## 9. Build et publication
 
 Comment l'app est compilée, installée, mise à jour et publiée sur le web.
